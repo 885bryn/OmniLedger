@@ -41,7 +41,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can create an item through `POST /items` and receive a successful response with persisted item data.
   2. Created item responses include default attribute keys auto-populated according to the submitted item type.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 02-01-PLAN.md - Implement domain item-create defaults, parent validation, and canonical persistence output.
+- [ ] 02-02-PLAN.md - Expose POST /items with centralized error mapping and endpoint integration coverage.
 
 ### Phase 3: Net-Status Retrieval
 **Goal**: Users can inspect an asset and its linked commitments in one net-status response.
@@ -76,7 +79,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Domain Model Foundation | 3/3 | Complete | 2026-02-24 |
-| 2. Item Creation Workflow | 0/TBD | Not started | - |
+| 2. Item Creation Workflow | 0/2 | Not started | - |
 | 3. Net-Status Retrieval | 0/TBD | Not started | - |
 | 4. Event Completion and Audit Traceability | 0/TBD | Not started | - |
 | 5. Local Deployment Runtime | 0/TBD | Not started | - |

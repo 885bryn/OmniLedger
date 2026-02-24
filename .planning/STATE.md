@@ -5,16 +5,19 @@
 See: `.planning/PROJECT.md` (updated 2026-02-23)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 1 - Domain Model Foundation
+**Current focus:** Phase 2 - Item Creation Workflow
 
 ## Current Position
 
-Phase: 2 of 5 (Item Creation Workflow)
-Plan: 0 of TBD in current phase
-Status: In progress
-Last activity: 2026-02-24 - Completed 01-03 runtime bootstrap, model registry wiring, and domain runtime smoke verification.
+**Current Phase:** 2
+**Current Phase Name:** Item Creation Workflow
+**Total Phases:** 5
+**Current Plan:** 1
+**Total Plans in Phase:** 2
+**Status:** Ready to execute
+**Last Activity:** 2026-02-24
 
-Progress: [██░░░░░░░░] 20%
+**Progress:** [████████░░] 80%
 
 ## Performance Metrics
 
@@ -39,6 +42,8 @@ Progress: [██░░░░░░░░] 20%
 | Phase 01 P01 | 4 min | 3 tasks | 11 files |
 | Phase 01 P02 | 3 min | 3 tasks | 5 files |
 | Phase 01 P03 | 1 min | 3 tasks | 5 files |
+| Phase 02 P01 | 3 min | 3 tasks | 4 files |
+| Phase 02 P01 | 3 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -55,6 +60,9 @@ Recent decisions affecting current work:
 - [Phase 01]: Use verb-style dot-notation (e.g., event.completed) as the enforced audit action format.
 - [Phase 01]: Expose a singleton runtime bootstrap (sequelize/models) as the API-facing database entrypoint.
 - [Phase 01]: Use PostgreSQL-first config with sqlite fallback to keep local runtime verification executable when PG is unavailable.
+- [Phase 02]: Use ItemCreateValidationError categories for invalid item type, missing minimum attributes, and parent link failures
+- [Phase 02]: Apply defaults before validation and let client values override overlapping default keys
+- [Phase 02]: Serialize createItem output to canonical persisted item columns only
 
 ### Pending Todos
 
@@ -66,6 +74,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-24 07:22 UTC
-Stopped at: Completed 01-03-PLAN.md
-Resume file: None
+**Last session:** 2026-02-24T09:26:51.540Z
+**Stopped at:** Completed 02-01-PLAN.md
+**Resume file:** None
