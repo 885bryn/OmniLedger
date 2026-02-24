@@ -43,7 +43,6 @@ See: `.planning/PROJECT.md` (updated 2026-02-23)
 | Phase 01 P02 | 3 min | 3 tasks | 5 files |
 | Phase 01 P03 | 1 min | 3 tasks | 5 files |
 | Phase 02 P01 | 3 min | 3 tasks | 4 files |
-| Phase 02 P01 | 3 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 

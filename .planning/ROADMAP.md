@@ -43,7 +43,7 @@ Plans:
   2. Created item responses include default attribute keys auto-populated according to the submitted item type.
 **Plans**: 2 plans
 Plans:
-- [ ] 02-01-PLAN.md - Implement domain item-create defaults, parent validation, and canonical persistence output.
+- [x] 02-01-PLAN.md - Implement domain item-create defaults, parent validation, and canonical persistence output.
 - [ ] 02-02-PLAN.md - Expose POST /items with centralized error mapping and endpoint integration coverage.
 
 ### Phase 3: Net-Status Retrieval
@@ -79,7 +79,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Domain Model Foundation | 3/3 | Complete | 2026-02-24 |
-| 2. Item Creation Workflow | 0/2 | Not started | - |
+| 2. Item Creation Workflow | 1/2 | In Progress | - |
 | 3. Net-Status Retrieval | 0/TBD | Not started | - |
 | 4. Event Completion and Audit Traceability | 0/TBD | Not started | - |
 | 5. Local Deployment Runtime | 0/TBD | Not started | - |
