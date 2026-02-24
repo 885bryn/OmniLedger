@@ -10,7 +10,7 @@ This roadmap delivers HACT as a usable backend ledger in dependency order: first
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Domain Model Foundation** - Establish persistent account, item, event, and audit models with required ledger relationships.
+- [x] **Phase 1: Domain Model Foundation** - Establish persistent account, item, event, and audit models with required ledger relationships.
 - [ ] **Phase 2: Item Creation Workflow** - Deliver `POST /items` with type-aware default attributes for consistent item onboarding.
 - [ ] **Phase 3: Net-Status Retrieval** - Deliver nested commitment visibility through `GET /items/:id/net-status`.
 - [ ] **Phase 4: Event Completion and Audit Traceability** - Complete event lifecycle behavior including completion status, audit writes, and next-date prompting.
@@ -32,7 +32,7 @@ This roadmap delivers HACT as a usable backend ledger in dependency order: first
 Plans:
 - [x] 01-01-PLAN.md - Create migration and model invariants for Users and Items with strict parent-child linkage.
 - [x] 01-02-PLAN.md - Add Events and AuditLog persistence contracts plus event/audit domain validation tests.
-- [ ] 01-03-PLAN.md - Wire Sequelize runtime bootstrap and verify model registration against PostgreSQL.
+- [x] 01-03-PLAN.md - Wire Sequelize runtime bootstrap and verify model registration against PostgreSQL.
 
 ### Phase 2: Item Creation Workflow
 **Goal**: Users can create ledger items through the API without manually supplying every type-specific field.
@@ -75,7 +75,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Domain Model Foundation | 2/3 | In Progress | - |
+| 1. Domain Model Foundation | 3/3 | Complete | 2026-02-24 |
 | 2. Item Creation Workflow | 0/TBD | Not started | - |
 | 3. Net-Status Retrieval | 0/TBD | Not started | - |
 | 4. Event Completion and Audit Traceability | 0/TBD | Not started | - |
