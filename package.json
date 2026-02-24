@@ -7,6 +7,7 @@
     "test": "jest --runInBand"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.5"
@@ -14,6 +15,7 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "sequelize-cli": "^6.6.2",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "supertest": "^7.2.2"
   }
 }
