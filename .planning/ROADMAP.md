@@ -31,7 +31,7 @@ This roadmap delivers HACT as a usable backend ledger in dependency order: first
 **Plans**: 3 plans
 Plans:
 - [x] 01-01-PLAN.md - Create migration and model invariants for Users and Items with strict parent-child linkage.
-- [ ] 01-02-PLAN.md - Add Events and AuditLog persistence contracts plus event/audit domain validation tests.
+- [x] 01-02-PLAN.md - Add Events and AuditLog persistence contracts plus event/audit domain validation tests.
 - [ ] 01-03-PLAN.md - Wire Sequelize runtime bootstrap and verify model registration against PostgreSQL.
 
 ### Phase 2: Item Creation Workflow
@@ -75,7 +75,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Domain Model Foundation | 1/3 | In Progress | - |
+| 1. Domain Model Foundation | 2/3 | In Progress | - |
 | 2. Item Creation Workflow | 0/TBD | Not started | - |
 | 3. Net-Status Retrieval | 0/TBD | Not started | - |
 | 4. Event Completion and Audit Traceability | 0/TBD | Not started | - |
