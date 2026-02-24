@@ -1,0 +1,78 @@
+# Roadmap: Household Asset & Commitment Tracker (HACT) API
+
+## Overview
+
+This roadmap delivers HACT as a usable backend ledger in dependency order: first establish correct Sequelize/PostgreSQL domain models, then expose core item workflows, then add net-status visibility, then complete event lifecycle auditing semantics, and finally package everything for local-network runtime with Docker Compose.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+- [ ] **Phase 1: Domain Model Foundation** - Establish persistent account, item, event, and audit models with required ledger relationships.
+- [ ] **Phase 2: Item Creation Workflow** - Deliver `POST /items` with type-aware default attributes for consistent item onboarding.
+- [ ] **Phase 3: Net-Status Retrieval** - Deliver nested commitment visibility through `GET /items/:id/net-status`.
+- [ ] **Phase 4: Event Completion and Audit Traceability** - Complete event lifecycle behavior including completion status, audit writes, and next-date prompting.
+- [ ] **Phase 5: Local Deployment Runtime** - Run API and PostgreSQL together via Docker Compose on the local network.
+
+## Phase Details
+
+### Phase 1: Domain Model Foundation
+**Goal**: Users can persist the core ledger domain with UUID-backed accounts, items, events, and audit records, including parent-child commitment linkage.
+**Depends on**: Nothing (first phase)
+**Requirements**: ACCT-01, ITEM-01, ITEM-02, ITEM-03, EVNT-01, DEPL-02
+**Success Criteria** (what must be TRUE):
+  1. User account records can be created and stored with UUID id, username, email, and password hash.
+  2. Users can persist items of types `RealEstate`, `Vehicle`, `FinancialCommitment`, and `Subscription` with JSONB `attributes`.
+  3. Users can link `FinancialCommitment` items to parent assets via `parent_item_id` and later retrieve that relationship from stored data.
+  4. Users can persist item timeline events including type, due date, amount, status, and recurrence flag.
+  5. API runtime uses Sequelize models for `Users`, `Items`, `Events`, and `AuditLog` against PostgreSQL.
+**Plans**: TBD
+
+### Phase 2: Item Creation Workflow
+**Goal**: Users can create ledger items through the API without manually supplying every type-specific field.
+**Depends on**: Phase 1
+**Requirements**: ITEM-04
+**Success Criteria** (what must be TRUE):
+  1. User can create an item through `POST /items` and receive a successful response with persisted item data.
+  2. Created item responses include default attribute keys auto-populated according to the submitted item type.
+**Plans**: TBD
+
+### Phase 3: Net-Status Retrieval
+**Goal**: Users can inspect an asset and its linked commitments in one net-status response.
+**Depends on**: Phase 2
+**Requirements**: ITEM-05
+**Success Criteria** (what must be TRUE):
+  1. User can request `GET /items/:id/net-status` and receive the target item with its current attributes.
+  2. Net-status response includes nested linked child commitments associated with the requested item.
+**Plans**: TBD
+
+### Phase 4: Event Completion and Audit Traceability
+**Goal**: Users can complete events with deterministic follow-up signaling and auditable change history.
+**Depends on**: Phase 3
+**Requirements**: EVNT-02, EVNT-03, AUDT-01
+**Success Criteria** (what must be TRUE):
+  1. User can complete an event via `PATCH /events/:id/complete`, and the event status is persisted as `Completed`.
+  2. When a completed event is non-recurring, completion response includes `prompt_next_date: true`.
+  3. Completing an event records an `AuditLog` entry with user id, action, and timestamp.
+**Plans**: TBD
+
+### Phase 5: Local Deployment Runtime
+**Goal**: Users can run the full API stack locally with one Compose workflow.
+**Depends on**: Phase 4
+**Requirements**: DEPL-01
+**Success Criteria** (what must be TRUE):
+  1. User can start API and PostgreSQL together through `docker-compose.yml`.
+  2. Services are reachable on the local network after compose startup.
+**Plans**: TBD
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Domain Model Foundation | 0/TBD | Not started | - |
+| 2. Item Creation Workflow | 0/TBD | Not started | - |
+| 3. Net-Status Retrieval | 0/TBD | Not started | - |
+| 4. Event Completion and Audit Traceability | 0/TBD | Not started | - |
+| 5. Local Deployment Runtime | 0/TBD | Not started | - |

@@ -65,24 +65,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ACCT-01 | TBD | Pending |
-| ITEM-01 | TBD | Pending |
-| ITEM-02 | TBD | Pending |
-| ITEM-03 | TBD | Pending |
-| ITEM-04 | TBD | Pending |
-| ITEM-05 | TBD | Pending |
-| EVNT-01 | TBD | Pending |
-| EVNT-02 | TBD | Pending |
-| EVNT-03 | TBD | Pending |
-| AUDT-01 | TBD | Pending |
-| DEPL-01 | TBD | Pending |
-| DEPL-02 | TBD | Pending |
+| ACCT-01 | Phase 1 | Pending |
+| ITEM-01 | Phase 1 | Pending |
+| ITEM-02 | Phase 1 | Pending |
+| ITEM-03 | Phase 1 | Pending |
+| ITEM-04 | Phase 2 | Pending |
+| ITEM-05 | Phase 3 | Pending |
+| EVNT-01 | Phase 1 | Pending |
+| EVNT-02 | Phase 4 | Pending |
+| EVNT-03 | Phase 4 | Pending |
+| AUDT-01 | Phase 4 | Pending |
+| DEPL-01 | Phase 5 | Pending |
+| DEPL-02 | Phase 1 | Pending |
 
 **Coverage:**
 - v1 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12 ⚠️
+- Mapped to phases: 12
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-23*
-*Last updated: 2026-02-23 after initial definition*
+*Last updated: 2026-02-23 after roadmap traceability mapping*
