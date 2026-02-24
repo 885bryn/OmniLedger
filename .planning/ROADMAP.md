@@ -44,7 +44,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 02-01-PLAN.md - Implement domain item-create defaults, parent validation, and canonical persistence output.
-- [ ] 02-02-PLAN.md - Expose POST /items with centralized error mapping and endpoint integration coverage.
+- [x] 02-02-PLAN.md - Expose POST /items with centralized error mapping and endpoint integration coverage.
 
 ### Phase 3: Net-Status Retrieval
 **Goal**: Users can inspect an asset and its linked commitments in one net-status response.

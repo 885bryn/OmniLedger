@@ -12,13 +12,13 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Item creation endpoint supports `POST /items` with type-aware defaults and actionable validation feedback (ITEM-04) — Phase 2
 
 ### Active
 
 - [ ] Implement a Node.js + Express + Sequelize + PostgreSQL API for household asset and commitment tracking.
 - [ ] Model users, assets/items, events, and audit history with UUID keys and required relationships, including parent-child item linkage.
-- [ ] Implement core endpoints for item creation with typed default attributes, net-status retrieval with nested child commitments, and event completion with audit logging and frontend prompt hinting.
+- [ ] Implement core endpoints for net-status retrieval with nested child commitments, and event completion with audit logging and frontend prompt hinting.
 - [ ] Provide local-network development deployment using Docker Compose for API + PostgreSQL.
 
 ### Out of Scope
@@ -50,6 +50,8 @@ Users can see each asset together with its linked obligations and timeline statu
 | Use `parent_item_id` self-reference for commitment-to-asset linkage | Enables explicit ownership context (e.g., mortgage linked to property) and nested net-status responses | — Pending |
 | Treat event completion as both state change and audit event | Preserves operational history and traceability for household actions | — Pending |
 | Return `prompt_next_date: true` on completed non-recurring events | Encodes frontend interaction hint in API response for smooth follow-up workflow | — Pending |
+| Use domain-level item creation defaults and validation taxonomy, then map to centralized HTTP 422 envelopes | Keeps business invariants transport-agnostic and provides deterministic client correction loops | Adopted in Phase 2 |
+| Return canonical persisted item fields directly from create service and `POST /items` | Preserves stable API contract without derived relation payload drift | Adopted in Phase 2 |
 
 ---
-*Last updated: 2026-02-23 after initialization*
+*Last updated: 2026-02-24 after Phase 2*
