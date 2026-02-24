@@ -12,12 +12,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-23)
 **Current Phase:** 2
 **Current Phase Name:** Item Creation Workflow
 **Total Phases:** 5
-**Current Plan:** 1
+**Current Plan:** 2
 **Total Plans in Phase:** 2
 **Status:** Ready to execute
 **Last Activity:** 2026-02-24
 
-**Progress:** [████████░░] 80%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-23)
 | Phase 01 P02 | 3 min | 3 tasks | 5 files |
 | Phase 01 P03 | 1 min | 3 tasks | 5 files |
 | Phase 02 P01 | 3 min | 3 tasks | 4 files |
+| Phase 02 P02 | 3 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,9 @@ Recent decisions affecting current work:
 - [Phase 02]: Use ItemCreateValidationError categories for invalid item type, missing minimum attributes, and parent link failures
 - [Phase 02]: Apply defaults before validation and let client values override overlapping default keys
 - [Phase 02]: Serialize createItem output to canonical persisted item columns only
+- [Phase 02]: Centralized ItemCreateValidationError mapping at app middleware returns stable HTTP 422 envelopes with field-level issues.
+- [Phase 02]: POST /items returns canonical persisted item fields directly from createItem for deterministic transport payloads.
+- [Phase 02]: API integration tests run against createApp with sqlite-backed mocked db module to validate route plus middleware behavior end-to-end.
 
 ### Pending Todos
 
@@ -73,6 +77,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-24T09:26:51.540Z
-**Stopped at:** Completed 02-01-PLAN.md
+**Last session:** 2026-02-24T09:40:42.349Z
+**Stopped at:** Completed 02-02-PLAN.md
 **Resume file:** None
