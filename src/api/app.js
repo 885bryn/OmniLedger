@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require("express");
+const { mapItemCreateError } = require("./errors/http-error-mapper");
 
 let createItemsRouter = () => express.Router();
 
@@ -20,6 +21,17 @@ function createApp() {
   app.disable("x-powered-by");
   app.use(express.json());
   app.use("/", createItemsRouter());
+
+  app.use((error, req, res, next) => {
+    const mapped = mapItemCreateError(error);
+
+    if (!mapped) {
+      next(error);
+      return;
+    }
+
+    res.status(mapped.status).json(mapped.body);
+  });
 
   app.use((req, res) => {
     res.status(404).json({
