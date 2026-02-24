@@ -8,11 +8,14 @@ const { AuditLog } = require("../../src/db/models/audit-log.model");
 
 describe("event-audit domain models", () => {
   let sequelize;
+  let counter = 0;
 
   async function createUserAndItem() {
+    counter += 1;
+
     const user = await User.create({
-      username: "owner",
-      email: "owner@example.com",
+      username: `owner-${counter}`,
+      email: `owner-${counter}@example.com`,
       password_hash: "hashed-password"
     });
 
@@ -79,6 +82,55 @@ describe("event-audit domain models", () => {
     expect(event.status).toBe("Completed");
   });
 
+  it("persists event timeline fields with canonical Pending status", async () => {
+    const { item } = await createUserAndItem();
+
+    const event = await Event.create({
+      item_id: item.id,
+      event_type: "insurance.payment",
+      due_date: "2026-04-15",
+      amount: 220.35,
+      status: "Pending",
+      is_recurring: true
+    });
+
+    expect(event.event_type).toBe("insurance.payment");
+    expect(event.status).toBe("Pending");
+    expect(event.is_recurring).toBe(true);
+    expect(Number(event.amount)).toBeCloseTo(220.35, 2);
+    expect(event.completed_at).toBeUndefined();
+  });
+
+  it("rejects non-canonical event status values", async () => {
+    const { item } = await createUserAndItem();
+
+    await expect(
+      Event.create({
+        item_id: item.id,
+        event_type: "payment",
+        due_date: "2026-03-02",
+        amount: 400,
+        status: "Cancelled",
+        is_recurring: false
+      })
+    ).rejects.toThrow();
+  });
+
+  it("rejects negative event amounts", async () => {
+    const { item } = await createUserAndItem();
+
+    await expect(
+      Event.create({
+        item_id: item.id,
+        event_type: "maintenance",
+        due_date: "2026-05-01",
+        amount: -10,
+        status: "Pending",
+        is_recurring: false
+      })
+    ).rejects.toThrow(/cannot be negative/i);
+  });
+
   it("enforces verb-style audit actions", async () => {
     const { user } = await createUserAndItem();
 
@@ -90,5 +142,33 @@ describe("event-audit domain models", () => {
         timestamp: "2026-03-02T10:00:00.000Z"
       })
     ).rejects.toThrow(/verb-style/i);
+  });
+
+  it("requires minimum audit metadata fields", async () => {
+    const { user } = await createUserAndItem();
+
+    await expect(
+      AuditLog.create({
+        user_id: user.id,
+        action: "event.completed",
+        entity: "Events"
+      })
+    ).rejects.toThrow();
+  });
+
+  it("persists valid audit metadata rows", async () => {
+    const { user } = await createUserAndItem();
+
+    const audit = await AuditLog.create({
+      user_id: user.id,
+      action: "event.completed",
+      entity: "Events",
+      timestamp: "2026-03-02T10:00:00.000Z"
+    });
+
+    expect(audit.user_id).toBe(user.id);
+    expect(audit.action).toBe("event.completed");
+    expect(audit.entity).toBe("Events");
+    expect(audit.timestamp).toBeInstanceOf(Date);
   });
 });
