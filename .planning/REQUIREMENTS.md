@@ -9,13 +9,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Accounts
 
-- [ ] **ACCT-01**: User can be stored as an account with UUID id, username, email, and password hash.
+- [x] **ACCT-01**: User can be stored as an account with UUID id, username, email, and password hash.
 
 ### Ledger Items
 
-- [ ] **ITEM-01**: User can create an item with type `RealEstate`, `Vehicle`, `FinancialCommitment`, or `Subscription`.
-- [ ] **ITEM-02**: User can create an item with `attributes` stored as JSONB so type-specific and custom fields can coexist.
-- [ ] **ITEM-03**: User can create a `FinancialCommitment` item linked to a parent asset using `parent_item_id`.
+- [x] **ITEM-01**: User can create an item with type `RealEstate`, `Vehicle`, `FinancialCommitment`, or `Subscription`.
+- [x] **ITEM-02**: User can create an item with `attributes` stored as JSONB so type-specific and custom fields can coexist.
+- [x] **ITEM-03**: User can create a `FinancialCommitment` item linked to a parent asset using `parent_item_id`.
 - [ ] **ITEM-04**: User can create an item through `POST /items` and receive default attribute keys auto-populated based on item type.
 - [ ] **ITEM-05**: User can request `GET /items/:id/net-status` and receive the item with attributes plus nested linked child commitments.
 
@@ -65,10 +65,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ACCT-01 | Phase 1 | Pending |
-| ITEM-01 | Phase 1 | Pending |
-| ITEM-02 | Phase 1 | Pending |
-| ITEM-03 | Phase 1 | Pending |
+| ACCT-01 | Phase 1 | Complete |
+| ITEM-01 | Phase 1 | Complete |
+| ITEM-02 | Phase 1 | Complete |
+| ITEM-03 | Phase 1 | Complete |
 | ITEM-04 | Phase 2 | Pending |
 | ITEM-05 | Phase 3 | Pending |
 | EVNT-01 | Phase 1 | Pending |
