@@ -60,8 +60,14 @@ function buildValidationError(issues) {
 
 function toCanonicalItem(itemInstance) {
   const raw = itemInstance.get({ plain: true });
+  const normalizedRaw = {
+    ...raw,
+    created_at: raw.created_at || raw.createdAt,
+    updated_at: raw.updated_at || raw.updatedAt
+  };
+
   return CANONICAL_ITEM_FIELDS.reduce((output, key) => {
-    output[key] = raw[key];
+    output[key] = normalizedRaw[key];
     return output;
   }, {});
 }
