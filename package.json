@@ -4,6 +4,8 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "start": "node src/api/server.js",
+    "start:compose": "node src/scripts/startup.js",
     "test": "jest --runInBand"
   },
   "dependencies": {
