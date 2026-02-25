@@ -55,9 +55,9 @@ export function UserSwitcher() {
 
     await Promise.all(
       actorSensitiveQueryRoots.map((queryKey) =>
-        queryClient.invalidateQueries({
+        queryClient.refetchQueries({
           queryKey,
-          refetchType: 'active',
+          type: 'active',
         }),
       ),
     )
@@ -76,6 +76,10 @@ export function UserSwitcher() {
   const validActorIds = useMemo(() => new Set(users.map((user) => user.id)), [users])
 
   useEffect(() => {
+    if (usersQuery.isLoading) {
+      return
+    }
+
     if (!users.length) {
       void applyActorSelection(null)
       return
@@ -98,7 +102,7 @@ export function UserSwitcher() {
 
     const fallbackActorId = users[0]?.id ?? null
     void applyActorSelection(fallbackActorId)
-  }, [applyActorSelection, users, validActorIds])
+  }, [applyActorSelection, users, usersQuery.isLoading, validActorIds])
 
   const isDisabled = usersQuery.isLoading || users.length === 0
 

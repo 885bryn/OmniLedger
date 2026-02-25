@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { EventsPage } from '../pages/events/events-page'
@@ -58,8 +58,12 @@ function renderEventsPage() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <EventsPage />
+      <MemoryRouter initialEntries={['/events']}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/items/:itemId/edit" element={<p>Item edit page</p>} />
+          <Route path="/items" element={<p>Items list page</p>} />
+        </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -169,5 +173,50 @@ describe('dashboard/events completion flow', () => {
     await waitFor(() => {
       expect(screen.queryByText('Schedule the next date')).toBeNull()
     })
+  })
+
+  it('routes schedule action to item edit when itemId is available', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=pending') && method === 'GET') {
+        return createResponse({ status: 200, json: buildEventsResponse() })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [{ id: 'item-1', item_type: 'FinancialCommitment', attributes: { name: 'Maple Mortgage' } }],
+          },
+        })
+      }
+
+      if (url.includes('/events/event-1/complete') && method === 'PATCH') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'event-1',
+            prompt_next_date: true,
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage()
+
+    await screen.findByText('Mortgage')
+    await userEvent.click(screen.getByRole('button', { name: 'Complete' }))
+    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Complete' }))
+
+    await screen.findByText('Schedule the next date')
+    await userEvent.click(screen.getByRole('button', { name: 'Schedule next date' }))
+
+    expect(await screen.findByText('Item edit page')).toBeTruthy()
   })
 })
