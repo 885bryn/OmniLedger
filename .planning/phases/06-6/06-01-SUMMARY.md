@@ -71,7 +71,7 @@ Each task was committed atomically:
 1. **Task 1: Implement item and event domain services required by Phase 6 UI journeys** - `31378f6` (feat)
 2. **Task 2: Add focused domain regression tests for ordering, filtering, and guard semantics** - `5b64a50` (test)
 
-**Plan metadata:** pending
+**Plan metadata:** `16662e6` (docs)
 
 ## Files Created/Modified
 - `src/domain/items/list-items.js` - Item list query orchestration for search/filter/sort defaults and deterministic ordering.
