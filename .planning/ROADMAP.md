@@ -82,7 +82,7 @@ v2.0 delivers secure multi-user operation, contract-and-occurrence financial mod
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Auth Sessions & Protected Access | 2/6 | In Progress | - |
+| 8. Auth Sessions & Protected Access | 4/6 | In Progress | - |
 | 9. RBAC Scope & Admin Safety Mode | 0/TBD | Not started | - |
 | 10. Financial Contract-Occurrence Foundation | 0/TBD | Not started | - |
 | 11. Timeline Projection & Asset Ledger Views | 0/TBD | Not started | - |

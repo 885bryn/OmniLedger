@@ -10,11 +10,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 8 of 12 (Auth Sessions & Protected Access)
-Plan: 2 of 6 in current phase
+Plan: 4 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-25 - Completed 08-02 frontend auth UX and protected route gating
+Last activity: 2026-02-25 - Completed 08-06 session-auth migration for remaining API integration suites
 
-Progress: [███░░░░░░░] 33%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -38,6 +38,7 @@ Progress: [███░░░░░░░] 33%
 - Trend: Authorization boundary migration landed with faster second-plan execution.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
+| Phase 08 P06 | 5 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -57,6 +58,8 @@ Recent decisions affecting current work:
 - [Phase 08]: Store returnTo in sessionStorage only after app-relative sanitization and consume it once after successful auth.
 - [Phase 08]: Wrap the protected app shell route tree with RequireAuth, while exposing /login and /register as public routes.
 - [Phase 08]: Use a generic failed-login alert plus inline field errors and cooldown submit lock to satisfy security-safe UX requirements.
+- [Phase 08]: Standardized migrated API suites on /auth/login + supertest.agent so session cookies are the sole identity transport in integration tests.
+- [Phase 08]: Hashed fixture user passwords with bcrypt in migrated suites so login-based session setup mirrors production credential verification.
 
 ### Pending Todos
 
@@ -69,6 +72,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25 22:59
-Stopped at: Completed 08-02-PLAN.md
-Resume file: .planning/phases/08-auth-sessions-protected-access/08-03-PLAN.md
+Last session: 2026-02-25 23:07
+Stopped at: Completed 08-06-PLAN.md
+Resume file: .planning/phases/08-auth-sessions-protected-access/08-04-PLAN.md
