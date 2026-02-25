@@ -67,7 +67,7 @@ Each task was committed atomically:
 1. **Task 1: Expand items/events/users routes and mapper wiring for Phase 6 contracts** - `7a6ab75` (feat)
 2. **Task 2: Add endpoint integration suites proving frontend contract completeness** - `ba2fc4d` (test)
 
-**Plan metadata:** pending
+**Plan metadata:** captured in planning docs commits (`9a23167`, follow-up normalization commit).
 
 ## Files Created/Modified
 - `src/api/routes/items.routes.js` - Added list/update/delete/activity routes with query/body mapping into domain services.
