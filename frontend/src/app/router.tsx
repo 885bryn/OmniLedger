@@ -1,4 +1,7 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
+import { RequireAuth } from '../auth/require-auth'
+import { LoginPage } from '../pages/auth/login-page'
+import { RegisterPage } from '../pages/auth/register-page'
 import { DashboardPage } from '../pages/dashboard/dashboard-page'
 import { EventsPage } from '../pages/events/events-page'
 import { ItemCreateWizardPage } from '../pages/items/item-create-wizard-page'
@@ -9,8 +12,20 @@ import { AppShell } from './shell/app-shell'
 
 export const appRouter = createBrowserRouter([
   {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <RegisterPage />,
+  },
+  {
     path: '/',
-    element: <AppShell />,
+    element: (
+      <RequireAuth>
+        <AppShell />
+      </RequireAuth>
+    ),
     children: [
       {
         index: true,
