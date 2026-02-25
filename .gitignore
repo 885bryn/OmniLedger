@@ -1,3 +1,6 @@
 node_modules/
 .tmp/*.sqlite
 npm-debug.log*
+.env
+.env.*
+!.env.example
