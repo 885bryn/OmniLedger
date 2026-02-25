@@ -3,6 +3,7 @@ import { ApiClientError, SESSION_EXPIRED_EVENT, apiRequest } from '../lib/api-cl
 
 const DEFAULT_AUTH_REDIRECT = '/dashboard'
 const RETURN_TO_STORAGE_KEY = 'hact.auth.return-to'
+const SESSION_EXPIRED_NOTICE_KEY = 'hact.auth.session-expired'
 
 type SessionPayload = {
   user: {
@@ -37,6 +38,7 @@ type AuthContextValue = {
   logout: () => Promise<void>
   storeReturnTo: (value: string | null | undefined) => string | null
   consumeReturnTo: (preferred?: string | null) => string
+  completeSessionExpiredRedirect: () => void
   clearSessionExpired: () => void
 }
 
@@ -83,12 +85,30 @@ function readStoredReturnTo() {
   return window.sessionStorage.getItem(RETURN_TO_STORAGE_KEY)
 }
 
+function persistSessionExpiredNotice(value: boolean) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  if (!value) {
+    window.sessionStorage.removeItem(SESSION_EXPIRED_NOTICE_KEY)
+    return
+  }
+
+  window.sessionStorage.setItem(SESSION_EXPIRED_NOTICE_KEY, '1')
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionPayload['user']>(null)
   const [loading, setLoading] = useState(true)
   const [sessionExpiredReturnTo, setSessionExpiredReturnTo] = useState<string | null>(null)
 
   const clearSessionExpired = useCallback(() => {
+    setSessionExpiredReturnTo(null)
+  }, [])
+
+  const completeSessionExpiredRedirect = useCallback(() => {
+    setSession(null)
     setSessionExpiredReturnTo(null)
   }, [])
 
@@ -125,10 +145,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`
         const sanitized = isSafeReturnTo(returnTo) ? returnTo : DEFAULT_AUTH_REDIRECT
         persistReturnTo(sanitized)
+        persistSessionExpiredNotice(true)
         return sanitized
       })
 
       setSession(null)
+
     }
 
     window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired)
@@ -167,6 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setSession(payload.user)
       clearSessionExpired()
+      persistSessionExpiredNotice(false)
       return { redirectTo: consumeReturnTo(returnTo) }
     },
     [clearSessionExpired, consumeReturnTo],
@@ -184,6 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setSession(payload.user)
       clearSessionExpired()
+      persistSessionExpiredNotice(false)
       return { redirectTo: consumeReturnTo(returnTo) }
     },
     [clearSessionExpired, consumeReturnTo],
@@ -201,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       persistReturnTo(null)
       clearSessionExpired()
+      persistSessionExpiredNotice(false)
       setSession(null)
     }
   }, [clearSessionExpired])
@@ -216,9 +241,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       storeReturnTo,
       consumeReturnTo,
+      completeSessionExpiredRedirect,
       clearSessionExpired,
     }),
-    [clearSessionExpired, consumeReturnTo, loading, login, logout, register, session, sessionExpiredReturnTo, storeReturnTo],
+    [clearSessionExpired, completeSessionExpiredRedirect, consumeReturnTo, loading, login, logout, register, session, sessionExpiredReturnTo, storeReturnTo],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

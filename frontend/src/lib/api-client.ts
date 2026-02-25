@@ -135,7 +135,7 @@ export async function apiRequest<TResponse>(path: string, init: ApiRequestInit =
   const responseBody = await parseJsonBody(response)
 
   if (!response.ok) {
-    if (response.status === 401 && !path.startsWith('/auth/')) {
+    if (typeof window !== 'undefined' && response.status === 401 && !path.startsWith('/auth/')) {
       window.dispatchEvent(
         new CustomEvent(SESSION_EXPIRED_EVENT, {
           detail: {

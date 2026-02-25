@@ -37,6 +37,13 @@ export function LoginPage() {
     return sanitizeReturnTo(query.get('returnTo'))
   }, [location.search])
 
+  const showSessionExpiredNotice = useMemo(() => {
+    const query = new URLSearchParams(location.search)
+    const queryFlag = query.get('expired') === '1'
+    const storedFlag = typeof window !== 'undefined' && window.sessionStorage.getItem('hact.auth.session-expired') === '1'
+    return queryFlag || storedFlag
+  }, [location.search])
+
   useEffect(() => {
     storeReturnTo(returnTo)
   }, [returnTo, storeReturnTo])
@@ -133,6 +140,13 @@ export function LoginPage() {
         {topError ? (
           <div role="alert" className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {topError}
+          </div>
+        ) : null}
+
+        {showSessionExpiredNotice ? (
+          <div role="alert" className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900">
+            <p className="font-semibold">{t('auth.sessionExpired.title')}</p>
+            <p className="mt-1">{t('auth.sessionExpired.body')}</p>
           </div>
         ) : null}
 
