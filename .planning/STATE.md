@@ -10,32 +10,33 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 8 of 12 (Auth Sessions & Protected Access)
-Plan: 1 of 6 in current phase
+Plan: 2 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-25 - Completed 08-01 auth session foundation
+Last activity: 2026-02-25 - Completed 08-03 authorization boundary migration
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
-- Average duration: 4 min (v2.0)
-- Total execution time: 4 min (v2.0)
+- Total plans completed: 21
+- Average duration: 3 min (v2.0)
+- Total execution time: 6 min (v2.0)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Auth Sessions & Protected Access | 1 | 4 min | 4 min |
+| 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
 | 9. RBAC Scope & Admin Safety Mode | 0 | 0 min | 0 min |
 | 10. Financial Contract-Occurrence Foundation | 0 | 0 min | 0 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 08-01 (4 min)
-- Trend: Baseline established for Phase 8 execution.
+- Last 5 plans: 08-01 (4 min), 08-03 (2 min)
+- Trend: Authorization boundary migration landed with faster second-plan execution.
+| Phase 08 P03 | 2 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -50,6 +51,8 @@ Recent decisions affecting current work:
 - [Phase 08]: Adopted express-session with connect-session-sequelize for durable, server-managed auth state in Phase 8.
 - [Phase 08]: Kept invalid-credential responses generic and uniform to avoid account existence leakage.
 - [Phase 08]: Derived internal usernames from email local-part so signup remains email+password-only.
+- [Phase 08]: Added requireAuth middleware as the single API boundary that enforces session identity and hydrates req.actor.
+- [Phase 08]: Removed x-user-id as an authorization source by passing req.actor.userId into protected route domain calls.
 
 ### Pending Todos
 
@@ -62,6 +65,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25 22:50
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-02-25 22:55
+Stopped at: Completed 08-03-PLAN.md
 Resume file: .planning/phases/08-auth-sessions-protected-access/08-02-PLAN.md
