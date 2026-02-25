@@ -13,7 +13,7 @@ This roadmap delivers HACT as a usable backend ledger in dependency order: first
 - [x] **Phase 1: Domain Model Foundation** - Establish persistent account, item, event, and audit models with required ledger relationships.
 - [x] **Phase 2: Item Creation Workflow** - Deliver `POST /items` with type-aware default attributes for consistent item onboarding. (completed 2026-02-24)
 - [x] **Phase 3: Net-Status Retrieval** - Deliver nested commitment visibility through `GET /items/:id/net-status`. (completed 2026-02-25)
-- [ ] **Phase 4: Event Completion and Audit Traceability** - Complete event lifecycle behavior including completion status, audit writes, and next-date prompting.
+- [x] **Phase 4: Event Completion and Audit Traceability** - Complete event lifecycle behavior including completion status, audit writes, and next-date prompting. (completed 2026-02-25)
 - [ ] **Phase 5: Local Deployment Runtime** - Run API and PostgreSQL together via Docker Compose on the local network.
 
 ## Phase Details
@@ -87,5 +87,5 @@ Plans:
 | 1. Domain Model Foundation | 3/3 | Complete | 2026-02-24 |
 | 2. Item Creation Workflow | 2/2 | Complete   | 2026-02-24 |
 | 3. Net-Status Retrieval | 2/2 | Complete | 2026-02-25 |
-| 4. Event Completion and Audit Traceability | 1/2 | In Progress|  |
+| 4. Event Completion and Audit Traceability | 2/2 | Complete   | 2026-02-25 |
 | 5. Local Deployment Runtime | 0/TBD | Not started | - |

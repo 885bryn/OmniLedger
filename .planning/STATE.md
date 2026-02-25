@@ -14,10 +14,10 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 **Total Phases:** 5
 **Current Plan:** 2 of 2
 **Total Plans in Phase:** 2
-**Status:** In progress
+**Status:** Phase complete — ready for verification
 **Last Activity:** 2026-02-25
 
-**Progress:** [█████████░] 89%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 03 P01 | 2 min | 3 tasks | 3 files |
 | Phase 03 P02 | 2 min | 3 tasks | 4 files |
 | Phase 04 P01 | 3 min | 3 tasks | 3 files |
+| Phase 04 P02 | 2 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 03]: Map ItemNetStatusError categories centrally in app middleware so net-status failures share the established issue-envelope format.
 - [Phase 04]: Represent completion target deterministically in AuditLog.entity as event:<event-id> to satisfy audit traceability without schema changes.
 - [Phase 04]: Return canonical completion payload for both first-complete and idempotent re-complete paths so transport behavior stays deterministic.
+- [Phase 04]: Expose PATCH /events/:id/complete as a thin transport route that returns completeEvent payload directly.
+- [Phase 04]: Map EventCompletionError categories in shared app middleware to keep issue-envelope semantics consistent across endpoints.
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T01:23:28.301Z
-**Stopped at:** Completed 04-01-PLAN.md
+**Last session:** 2026-02-25T01:29:33.585Z
+**Stopped at:** Completed 04-02-PLAN.md
 **Resume file:** None
