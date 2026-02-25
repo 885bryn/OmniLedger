@@ -1,111 +1,137 @@
 # Stack Research
 
-**Domain:** Household asset and financial commitment tracking API (Node/Express/Sequelize/PostgreSQL)
-**Researched:** 2026-02-23
+**Domain:** Stack deltas for HACT v2.0 milestone (auth/RBAC, financial hierarchy + recurrence, smart timeline, soft delete lifecycle)
+**Researched:** 2026-02-25
 **Confidence:** HIGH
 
 ## Recommended Stack
 
 ### Core Technologies
 
-| Technology | Version | Purpose | Why Recommended | Confidence |
-|------------|---------|---------|-----------------|------------|
-| Node.js | 22.22.x LTS | Runtime for API services | 2025-standard baseline for production Node APIs: long support window, broad package compatibility, stable async/perf behavior for API workloads. | HIGH |
-| Express | 5.2.1 | HTTP framework and middleware pipeline | Express 5 is now default and keeps the largest ecosystem for API middleware, docs, and hiring familiarity while staying unopinionated. | HIGH |
-| Sequelize | 6.37.7 | ORM for models, associations, transactions, and migrations | v6 is the stable Sequelize line; it maps well to relational domain rules (FKs, constraints, transactions) required for household ledger integrity. | HIGH |
-| PostgreSQL | 17.8 (target major 17) | Primary relational database | Best fit for financial-style data correctness (ACID), JSONB for typed attributes, UUID native type, and robust indexing for ledger/event queries. | HIGH |
-| Docker Compose | v2 (use current stable plugin) | Local-network deployment for API + DB | Matches project constraint directly; gives reproducible local environments and one-command startup for API + Postgres. | MEDIUM |
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| `jsonwebtoken` | 9.0.3 | Access/refresh token signing + verification | Fits current Express API style and lets you move off temporary `x-user-id` transport with minimal architecture churn. |
+| `argon2` | 0.44.0 | Password hashing (`argon2id`) | OWASP recommends Argon2id for password storage; this package supports Argon2id and Node 18+ with prebuilt binaries. |
+| `rrule` | 2.8.1 | Recurrence rule parsing/generation for projected occurrences | Encodes recurrence behavior explicitly (FREQ/INTERVAL/BYDAY/COUNT/UNTIL), which is safer than ad hoc date math in services. |
+| `luxon` | 3.7.2 | Timezone-safe date math for 3-year timeline windows and recurrence boundaries | Reduces DST/offset bugs in projection and UI grouping compared with native `Date` arithmetic. |
+| `pg-boss` | 12.13.0 | Durable background jobs for 30-day hard-delete cleanup and projection materialization | Uses existing PostgreSQL infra, supports cron scheduling, retries, and exactly-once semantics without adding Redis. |
+| Sequelize v6 paranoid + scopes (existing `sequelize`) | 6.37.x (stay on latest v6 patch) | Soft-delete + owner/admin visibility model | Native paranoid semantics (`deletedAt`, `restore`) and scopes line up with restore/trash workflows and owner-scoped reads. |
 
 ### Supporting Libraries
 
-| Library | Version | Purpose | When to Use | Confidence |
-|---------|---------|---------|-------------|------------|
-| `pg` | 8.18.0 | PostgreSQL driver used by Sequelize | Always with Sequelize + Postgres; required for pooling and dialect features. | HIGH |
-| `sequelize-cli` | 6.6.5 | Migration and model scaffolding CLI | Use for team-consistent migration workflow (`db:migrate`, undo, seed in dev). | HIGH |
-| `umzug` | 3.8.2 | Programmatic migration runner | Use when you want migrations executed in app bootstrapping/ops scripts instead of only CLI. | MEDIUM |
-| `zod` | 4.3.6 | Request/response schema validation | Use at API boundaries to enforce typed payloads before hitting business logic. | HIGH |
-| `pino` + `pino-http` | 10.3.1 / 11.0.0 | Structured JSON logging | Use for correlation IDs, latency, and audit-friendly logs in local and production-like runs. | HIGH |
-| `helmet` | 8.1.0 | Secure HTTP headers | Use by default for API hardening (especially if any browser clients hit the API). | HIGH |
-| `cors` | 2.8.6 | Cross-origin policy control | Use when frontend clients call API from separate host/port. | HIGH |
-| `express-rate-limit` | 8.2.1 | Basic abuse protection | Use on auth-like or write-heavy endpoints to reduce accidental/hostile request bursts. | HIGH |
-| `dotenv` | 17.3.1 | Environment variable loading | Use only in local/dev startup; production should inject env vars via runtime. | HIGH |
-| `vitest` + `supertest` | 4.0.18 / 7.2.2 | API and integration test stack | Use for route-level and DB-backed integration tests around net-status and event completion flows. | HIGH |
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `helmet` | 8.1.0 | Security headers | Required once auth is introduced; apply globally in `src/api/app.js`. |
+| `express-rate-limit` | 8.2.1 | Brute-force/throttle controls | Required on `/auth/login`, `/auth/refresh`, and reset endpoints if added. |
+| `pino` + `pino-http` | 10.3.1 / 11.0.0 | Structured security/audit logging | Optional but strongly recommended for auth events, restore/hard-delete jobs, and admin bypass traceability. |
+| `@tanstack/react-virtual` | 3.13.19 | Virtualized rendering for long timeline lists | Optional for frontend if 3-year timeline causes client render lag on lower-end devices. |
 
 ### Development Tools
 
-| Tool | Purpose | Notes | Confidence |
-|------|---------|-------|------------|
-| ESLint (`eslint` 10.0.2) | Code quality and consistency | Enforce async error handling, import hygiene, and unsafe-any guards early. | HIGH |
-| Prettier (`prettier` 3.8.1) | Formatting consistency | Keep migration/model/controller diffs clean for roadmap-phase velocity. | HIGH |
-| Swagger UI (`swagger-ui-express` 5.0.1) | Interactive API docs | Use if roadmap includes external consumers or contract-first collaboration. | MEDIUM |
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| `sequelize-cli` (existing) | Schema/migration management | Keep migration-first flow for new auth/RBAC, financial hierarchy, and soft-delete columns. |
+| Job worker bootstrap in `src/scripts/startup.js` | Start/stop background workers with API runtime | Keep worker registration centralized so local Docker behavior matches milestone behavior. |
+
+## Required vs Optional Deltas
+
+**Required now (milestone scope):**
+- `jsonwebtoken`, `argon2`, `rrule`, `luxon`, `pg-boss`, `helmet`, `express-rate-limit`.
+- Sequelize model/migration changes for paranoid soft delete, owner scope, admin bypass queries, and financial parent/occurrence schema.
+
+**Optional now (add only if needed):**
+- `pino` + `pino-http` for richer auditability.
+- `@tanstack/react-virtual` for timeline performance if real datasets show UI jank.
+
+## Integration Points (Current Architecture)
+
+- `src/api/app.js`: add `helmet()` and auth rate limiters; keep CORS header allow-list synchronized with `Authorization` header.
+- `src/api/routes/items.routes.js` and `src/api/routes/events.routes.js`: replace `x-user-id` reads with auth middleware context (e.g., `req.auth.userId`, `req.auth.role`).
+- `src/db/models/user.model.js`: add role field(s), password policy metadata as needed, and token/session revocation relation if refresh tokens are persisted.
+- `src/db/models/item.model.js` and `src/db/models/event.model.js`: enable `paranoid: true`, add owner/admin scopes, and support parent FinancialItem + child occurrence relations.
+- `src/domain/events/*` and new recurrence services: use `rrule` + `luxon` for projection, instantiation edits, and deterministic timeline slicing.
+- `src/scripts/startup.js`: initialize `pg-boss`, register cleanup/materialization workers, and ensure graceful shutdown.
+
+## Migration Impact
+
+- Add auth schema: roles, token/session storage (if using refresh-token rotation), and indexes for login lookups.
+- Refactor financial data shape: parent FinancialItem table/model semantics + child Event occurrence records; backfill existing one-off/recurring events.
+- Add soft-delete columns/indexes (`deleted_at`) and partial indexes for hot queries (active rows vs deleted rows).
+- Add job tables managed by `pg-boss` in Postgres and seed schedules for 30-day hard cleanup.
+- Update API contracts: swap actor header model (`x-user-id`) to bearer token auth, preserving admin all-data behavior explicitly.
+
+## Security Defaults (Set Immediately)
+
+- Access token short TTL (for example 10-15 min), refresh token rotation, and server-side revocation on logout/password change.
+- Pin JWT verification algorithms explicitly and validate `iss`/`aud`/`exp`; never accept `alg` from client input.
+- Hash passwords with `argon2id` and tuned cost params; rehash on login when params change.
+- Apply IP + account-aware throttling for auth endpoints (`express-rate-limit`).
+- Default all data reads to owner scope; admin bypass must be explicit and auditable in logs.
 
 ## Installation
 
 ```bash
-# Core
-npm install express@5.2.1 sequelize@6.37.7 pg@8.18.0 zod@4.3.6 pino@10.3.1 pino-http@11.0.0 helmet@8.1.0 cors@2.8.6 express-rate-limit@8.2.1 dotenv@17.3.1
+# Required additions
+npm install jsonwebtoken@9.0.3 argon2@0.44.0 rrule@2.8.1 luxon@3.7.2 pg-boss@12.13.0 helmet@8.1.0 express-rate-limit@8.2.1
 
-# Supporting (optional but recommended)
-npm install umzug@3.8.2
-
-# Dev dependencies
-npm install -D sequelize-cli@6.6.5 vitest@4.0.18 supertest@7.2.2 eslint@10.0.2 prettier@3.8.1
+# Optional additions
+npm install pino@10.3.1 pino-http@11.0.0
+npm install --prefix frontend @tanstack/react-virtual@3.13.19
 ```
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative | Why Not as Default Here | Confidence |
-|-------------|-------------|--------------------------|--------------------------|------------|
-| Express 5.2.1 | Fastify 5.x | If throughput per core is top priority and team accepts ecosystem shift | Constraint explicitly names Express; Fastify changes middleware conventions and roadmap complexity. | HIGH |
-| Sequelize 6.37.7 | Prisma 6.x | If greenfield can change ORM and prefers schema-first DX | Constraint explicitly names Sequelize; switching ORM breaks requested deliverables and model style. | HIGH |
-| PostgreSQL 17 | MySQL 8.4 | If org already standardized on MySQL tooling/ops | Postgres is stronger default for JSONB + complex relational queries + domain audit trails. | HIGH |
-| `sequelize-cli` + migrations | `sequelize.sync()`-driven schema changes | Only for throwaway prototypes | Sync-based schema drift is risky for repeatable environments and auditability. | HIGH |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| `argon2` | Node `crypto.scrypt` (built-in) | Use if native addon constraints block `argon2` in a specific runtime image; still memory-hard and avoids extra dependency. |
+| `pg-boss` | `node-cron` + direct SQL deletes | Use only for single-process dev setups where missed jobs/retries are acceptable. |
+| Service-level owner scopes in Sequelize | PostgreSQL RLS policies | Use RLS later when you need DB-enforced tenant isolation across multiple services/reporting paths. |
 
 ## What NOT to Use
 
-| Avoid | Why | Use Instead | Confidence |
-|-------|-----|-------------|------------|
-| Node.js 18.x for new builds | EOL in 2025; shorter security runway for a new codebase | Node.js 22 LTS baseline (or 24 LTS for late-2025+ starts) | HIGH |
-| Express 4.x on greenfield | Express 5 is default and reduces future migration work | Express 5.2.1 | HIGH |
-| `@sequelize/core` 7 alpha in production | v7 remains pre-release (`alpha`), so API and behavior can shift | Sequelize 6.37.7 stable | HIGH |
-| `sequelize.sync({ alter: true })` outside local prototyping | Non-deterministic schema evolution and poor rollback story | Versioned migrations (`sequelize-cli`/`umzug`) | HIGH |
-| PostgreSQL `json` for queryable attributes | Slower processing and weaker indexing vs `jsonb` | PostgreSQL `jsonb` + GIN/expression indexes | HIGH |
-| UUID generation via legacy app-only libraries by default | Extra dependency and inconsistent key strategy across services | PostgreSQL native UUID type/functions and/or `crypto.randomUUID()` | MEDIUM |
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| Redis/BullMQ for this milestone | Adds new infra solely for cleanup/projection jobs; current stack already has PostgreSQL and Node 22. | `pg-boss` on existing Postgres. |
+| External IdP/OAuth platform right now (Auth0/Keycloak/etc.) | Over-scopes milestone and introduces tenant/app registration overhead before core auth+RBAC stabilizes. | Local JWT auth with strong defaults; revisit SSO later. |
+| Policy engine frameworks (CASL/Oso) for initial RBAC | Current requirements are simple (`owner` scope + `admin` bypass); policy engine adds indirection early. | Explicit role checks + query scopes. |
+| Ad hoc recurrence math with native `Date` only | High DST/timezone bug risk in 3-year timeline projection and instantiation edits. | `rrule` + `luxon`. |
+| Sequelize v7 alpha migration now | v7 is not the stable line; avoid concurrent ORM-upgrade risk during domain refactor. | Stay on latest Sequelize v6 patch. |
 
 ## Stack Patterns by Variant
 
-**If MVP is local-network only (current milestone):**
-- Use single Express service + single PostgreSQL container.
-- Keep migrations explicit (manual `db:migrate` in startup docs) to avoid silent schema side effects.
-- Prefer synchronous request/transaction flow; defer queues.
+**If timeline density remains moderate (<~5k visible rows per view):**
+- Keep current React rendering model.
+- Use backend paging/windowed endpoints only.
 
-**If reminders/audit jobs become asynchronous:**
-- Add `pg-boss@12.13.0` for Postgres-backed jobs.
-- Keep job payloads small and idempotent; write audit events in same transaction boundary where possible.
+**If timeline density is high (multi-year, many occurrences per asset):**
+- Add `@tanstack/react-virtual` in frontend lists.
+- Keep backend projection windowed and indexed by owner/date/deleted status.
 
 ## Version Compatibility
 
-| Package A | Compatible With | Notes | Confidence |
-|-----------|-----------------|-------|------------|
-| Node.js 22.22.x | Express 5.2.1 | Express 5 is current default and widely deployed on current LTS Node lines. | HIGH |
-| Node.js 22.22.x | `pg` 8.18.0 | node-postgres docs explicitly track support for Node 18/20/22/24. | HIGH |
-| Sequelize 6.37.7 | `pg` 8.18.0 | Standard Sequelize+Postgres pairing for v6 production apps. | MEDIUM |
-| PostgreSQL 17.x | Sequelize 6.37.7 | Supported in real-world usage; keep integration tests around enums/JSONB/indexes. | MEDIUM |
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| `pg-boss@12.13.0` | Node `>=22.12`, PostgreSQL `>=13` | Matches current Docker image (`node:22`) and Postgres 17 compose setup. |
+| `argon2@0.44.0` | Node `>=18` | Compatible with current Node 22 runtime; includes prebuilt binaries for common OS targets. |
+| `jsonwebtoken@9.0.3` | Node/Express current majors | Stable and widely adopted for bearer token flows. |
+| Sequelize v6 paranoid/scopes | PostgreSQL current versions | Supports soft-delete and scoped querying without stack switch. |
 
 ## Sources
 
-- https://nodejs.org/en/about/previous-releases - Node release status/LTS guidance (HIGH)
-- https://expressjs.com/ - Express 5.2.1 current and v5 default note (HIGH)
-- https://expressjs.com/2025/03/31/v5-1-latest-release.html - Express v5 default + LTS direction (HIGH)
-- https://sequelize.org/docs/v6/ - Sequelize v6 marked stable (HIGH)
-- https://github.com/sequelize/sequelize/releases - v6 latest stable vs v7 alpha pre-release (HIGH)
-- https://sequelize.org/docs/v6/other-topics/migrations/ - Sequelize migration/CLI guidance (HIGH)
-- https://www.postgresql.org/support/versioning/ - Postgres supported majors and current minors (HIGH)
-- https://www.postgresql.org/docs/current/datatype-json.html - `jsonb` performance/indexing rationale (HIGH)
-- https://www.postgresql.org/docs/current/datatype-uuid.html - Native UUID type and generation support (HIGH)
-- https://node-postgres.com/ - `pg` capabilities and Node compatibility statement (HIGH)
-- npm registry versions checked via `npm view` on 2026-02-23 for all listed npm packages (MEDIUM)
+- https://sequelize.org/docs/v6/core-concepts/paranoid/ - paranoid soft-delete + restore semantics (HIGH)
+- https://sequelize.org/docs/v6/other-topics/scopes/ - default/override scopes for owner/admin visibility (HIGH)
+- https://expressjs.com/en/advanced/best-practice-security.html - Express security baseline, Helmet and brute-force mitigation guidance (HIGH)
+- https://helmetjs.github.io/ - default security headers and config behavior (HIGH)
+- https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html - Argon2id recommendation and tuning guidance (HIGH)
+- https://www.npmjs.com/package/argon2 - Node package behavior, Argon2id default, Node support (MEDIUM)
+- https://www.npmjs.com/package/jsonwebtoken - JWT implementation details and verification options (MEDIUM)
+- https://www.rfc-editor.org/rfc/rfc7519 - JWT claim and validation standard (HIGH)
+- https://www.npmjs.com/package/pg-boss - Postgres-backed queue features, requirements, scheduling/retries (MEDIUM)
+- https://github.com/jkbrzt/rrule - RFC 5545 recurrence support and timezone caveats (MEDIUM)
+- https://www.postgresql.org/docs/current/indexes-partial.html - partial index patterns for active/deleted query performance (HIGH)
+- https://www.postgresql.org/docs/current/ddl-rowsecurity.html - RLS capability/tradeoff reference for later phase consideration (HIGH)
+- npm versions verified via `npm view` on 2026-02-25: `jsonwebtoken`, `argon2`, `helmet`, `express-rate-limit`, `rrule`, `luxon`, `pg-boss`, `@tanstack/react-virtual`, `pino`, `pino-http` (HIGH)
 
 ---
-*Stack research for: Household Asset & Commitment Tracker API*
-*Researched: 2026-02-23*
+*Stack research for: HACT v2.0 milestone stack deltas*
+*Researched: 2026-02-25*

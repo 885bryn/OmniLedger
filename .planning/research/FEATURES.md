@@ -1,145 +1,153 @@
 # Feature Research
 
-**Domain:** Household asset + commitment tracking API
-**Researched:** 2026-02-23
+**Domain:** Household asset + commitment tracking (v2.0 auth/timeline/lifecycle milestone)
+**Researched:** 2026-02-25
 **Confidence:** MEDIUM
 
 ## Feature Landscape
 
 ### Table Stakes (Users Expect These)
 
-Features users assume exist. Missing these = product feels incomplete.
+Features users assume exist for these capabilities. Missing these = product feels unsafe or unreliable.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Asset + liability/commitment CRUD with typed categories | Competitors center on unified account/asset tracking and organization | LOW | Required base model (`items` + `type` + `attributes`); API-first fit |
-| Parent-child linkage between assets and obligations | Users expect context like mortgage tied to property or loan tied to vehicle | MEDIUM | Requires reliable self-reference and validation rules |
-| Timeline events for due dates and completions | Products consistently emphasize bills/subscriptions/maintenance tracking | MEDIUM | Core operational object for reminders, completion, and history |
-| Recurring and one-time commitment support | Bills and subscriptions are a universal expectation | MEDIUM | Recurrence rules + next-occurrence materialization are required |
-| Net status endpoint (asset value minus linked obligations) | Users expect at-a-glance "where do I stand" views | MEDIUM | Aggregate query across parent + children; return nested detail for UI |
-| Filtering, sorting, and pagination on list endpoints | Baseline for any practical dashboard/client integration | LOW | Keep query params simple and documented |
-| Audit history for key mutations | Financial tools are expected to preserve traceability | MEDIUM | Already aligned to PROJECT requirement for event completion audit logging |
-| Stable API contract + validation errors | API consumers expect deterministic behavior and actionable errors | LOW | OpenAPI spec + consistent error schema is enough for v1 |
+| Authentication sessions with protected API/UI | Multi-user systems are expected to require sign-in and block anonymous access | MEDIUM | Must cover login, logout, session expiry/refresh, and route protection; replace `x-user-id` shim behavior with real identity claims |
+| Role-based authorization enforced server-side | Users expect role limits to be real, not just hidden buttons | MEDIUM | Enforce on every read/write path; keep role set small in milestone scope (for example: admin vs standard user) |
+| Owner-scoped data isolation with explicit admin bypass | In household/workspace apps, users expect only their data unless elevated admin role is active | HIGH | Use deny-by-default scoping; admin bypass must be intentional, visible in UI, and audit-logged |
+| Parent `FinancialItem` + child occurrence model | Recurring financial obligations are expected to have one contract and many dated occurrences | HIGH | Parent holds recurrence and defaults; child occurrence holds due date, amount snapshot, status, completion/undo state |
+| Recurrence projection window with controlled instantiation | Users expect upcoming obligations to appear in advance without manually creating each one | HIGH | Production pattern: project into a bounded horizon (milestone target: 3 years), instantiate only needed exceptions/edits |
+| Series edit semantics for recurrence | Users expect "this occurrence", "this and following", and "entire series" behaviors | HIGH | Avoid per-instance mutation of every future row; split series when editing "this and following" |
+| Unified timeline segmented by temporal state | Users expect one timeline view with clear "current/upcoming" vs "historical" separation | MEDIUM | Must support stable sorting, filtering, pagination/windowing, and quick jump between now and history |
+| Soft delete + restore + retention purge | Production users expect recoverability and predictable retention windows | MEDIUM | Move to trash first, allow restore, run automated 30-day hard purge job, and keep audit evidence |
+| Delete intercept for linked records | Users expect guardrails before deleting records with dependents | MEDIUM | Block destructive action when linked children exist, show impact preview, provide safe alternatives (archive/soft-delete) |
 
 ### Differentiators (Competitive Advantage)
 
-Features that set the product apart. Not required, but valuable.
+Features that can make this milestone feel "enterprise-ready" rather than merely functional.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Commitment-aware net status with nested child obligations | Gives immediate, decision-ready view for each asset (not just global totals) | MEDIUM | Directly aligns with HACT core value and required nested response |
-| Action-hint responses (for example `prompt_next_date` on non-recurring completion) | Reduces client logic and enables guided workflows with less UI guesswork | LOW | Already in scope and rare in generic finance trackers |
-| Typed default attributes by item category | Faster creation and cleaner data quality without frequent schema migrations | MEDIUM | Keep defaults server-side and versioned |
-| Asset lifecycle event model (payments + maintenance in one ledger) | Combines home/vehicle ownership operations with financial commitments | MEDIUM | Differentiates from pure budgeting apps and pure inventory apps |
-| Household-ready multi-user sharing hooks (ownership, visibility fields) | Enables future family/couple workflows without major data remodel | MEDIUM | Add fields and policy scaffolding now; defer full auth policy engine |
+| Explainable authorization feedback | Reduces support burden by showing why access was denied and which role is required | MEDIUM | Return structured denial reasons and expose actionable UI guidance |
+| Visible admin context mode | Prevents accidental cross-owner actions when using admin bypass | LOW | Add persistent "admin all-data mode" indicator + quick exit back to owner-scoped view |
+| Projection confidence states | Improves trust by clearly labeling projected vs instantiated vs completed occurrences | MEDIUM | Leverages existing completion/undo and audit trail; reduces timeline confusion |
+| Timeline "decision lanes" (Upcoming, Due Soon, Overdue, History) | Makes the 3-year timeline actionable rather than just chronological | MEDIUM | Build on current dashboard/events journeys and existing net-status patterns |
+| Restore-safe conflict handling | Makes trash/restore usable when parent/child records changed after deletion | HIGH | On restore, validate foreign keys and ownership scope; present conflict options instead of silent failure |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
-Features that seem good but create problems.
+Features that seem attractive but usually create major risk for this milestone.
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Real-time bank aggregation in v1 | "Auto-sync everything" expectation from Mint-style tools | High integration and compliance overhead; distracts from core ledger reliability | Support manual and API-imported events first; define import contract |
-| Full budgeting engine (envelopes/zero-based rules) | Users conflate asset tracking with full personal finance suite | Expands domain and UX drastically; weak fit with current core value | Keep to asset/commitment ledger + net status; export data for budgeting tools |
-| In-app payment execution/autopay | Desire to "take action directly" | Adds regulatory, fraud, and failure-handling burden beyond MVP | Store due/paid events and reminders only |
-| AI assistant in core API v1 | Market pressure toward AI everywhere | Low trust if underlying data quality is immature; adds opaque behavior | Build deterministic analytics endpoints first; add AI later on top |
-| Complex forecasting/simulation engine at launch | Attractive for planning scenarios | High model complexity and low validation confidence in greenfield phase | Ship simple forward schedule of known commitments first |
+| Client-only RBAC (hide controls, skip backend checks) | Faster UI implementation | Security bypass risk; API remains vulnerable | Enforce authz in API first, then mirror rules in UI for UX only |
+| Unlimited custom roles/permissions in this milestone | "Future-proof" flexibility | Explodes scope (policy editor, migration, support model) | Ship a fixed role matrix now; add custom role management later |
+| Materializing every projected occurrence immediately | Simpler queries at first | Massive row growth, slow writes, difficult series edits | Keep canonical parent schedule + bounded projection; instantiate only exceptions/actions |
+| Hard delete as default path | Feels "clean" and simple | Irrecoverable user mistakes, audit gaps, high support cost | Soft-delete default, explicit hard-delete via retention job |
+| Running purge synchronously during user actions | "Immediate cleanup" expectation | Slow/failing UI operations, lock contention, brittle retries | Async scheduled purge worker with idempotent batches |
+| Cross-owner admin search by default on every screen | Convenience for admins | Easy privacy mistakes and accidental edits at wrong scope | Keep owner-scoped default; require explicit admin mode toggle |
 
 ## Feature Dependencies
 
 ```text
-Typed item model + validation
-    -> Asset/commitment CRUD
-        -> Parent-child linkage
-            -> Net status aggregation
+Authenticated identity (replace actor shim)
+    -> Server-side RBAC checks
+        -> Owner-scoped isolation policies
+            -> Admin bypass mode + audit logging
 
-Event model (one-time + recurring)
-    -> Event completion workflow
-        -> Audit history
-            -> Action-hint response (`prompt_next_date`)
+FinancialItem parent model
+    -> Occurrence model (due/completed/undone)
+        -> Recurrence projection service (3-year horizon)
+            -> Timeline segmentation (upcoming vs historical)
 
-Pagination/filtering
-    -> Usable dashboard/consumer integrations
+Soft-delete flags + trash state
+    -> Linked-record delete intercept
+        -> Restore workflows
+            -> 30-day hard purge automation
 
-Auth policy engine (defer)
-    -> Multi-user collaboration actions
-
-External account aggregation (defer)
-    -> Advanced automation and auto-reconciliation
+Existing event completion/undo + audit trail
+    -> Occurrence lifecycle correctness
+        -> Trustworthy timeline and restore history
 ```
 
 ### Dependency Notes
 
-- **Net status requires parent-child linkage:** without explicit relationships, liability rollups are unreliable.
-- **Action hints require event semantics:** `prompt_next_date` only makes sense when recurrence + completion state are modeled correctly.
-- **Auditability requires mutation boundaries:** completion and update endpoints must emit history records atomically.
-- **Collaboration depends on auth model:** add ownership metadata now, but defer full sharing permissions until post-validation.
-- **Automation depends on stable core schema:** external integrations should not start until item/event contracts stabilize.
+- **Auth before RBAC/scoping:** role and ownership rules are meaningless until identity is authoritative (not header-shimmed).
+- **RBAC before admin bypass UX:** admin mode is an extension of policy, not a UI shortcut.
+- **Parent/occurrence model before timeline refactor:** timeline quality depends on correct temporal entities and recurrence semantics.
+- **Projection service before 3-year timeline:** long-horizon views need bounded generation logic to avoid data explosion.
+- **Soft-delete before retention purge:** purge job must operate only on records already in trash with retention metadata.
+- **Delete intercept before broad delete rollout:** prevents integrity breaks while parent/child financial model is being introduced.
+- **Existing completion/undo/audit integration is mandatory:** recurrence and restore changes must preserve established audit trust.
 
 ## MVP Definition
 
-### Launch With (v1)
+### Launch With (this milestone)
 
-Minimum viable product - what's needed to validate the concept.
+Minimum viable delivery for v2.0 target capabilities.
 
-- [x] Item CRUD for assets and commitments with typed defaults and UUID keys - core ledger foundation.
-- [x] Parent-child linkage and nested net-status retrieval - core value delivery for "what I own vs owe".
-- [x] Event lifecycle endpoints (create/list/complete) with one-time + recurring support - commitment tracking baseline.
-- [x] Completion audit logging plus `prompt_next_date` hinting - traceability and workflow continuity.
-- [x] Basic list/search ergonomics (filter, sort, paginate) - necessary for real clients.
+- [ ] Real authentication/session flow replacing actor-context transport shim
+- [ ] Backend-enforced RBAC + owner isolation + explicit admin bypass mode
+- [ ] `FinancialItem` parent + occurrence child model with recurrence projection (bounded 3-year horizon)
+- [ ] Series edit semantics: this occurrence / this and following / entire series
+- [ ] Unified timeline with upcoming/current vs historical segmentation
+- [ ] Soft delete, trash restore, linked-record delete intercept, and automated 30-day cleanup
 
-### Add After Validation (v1.x)
+### Add After Validation (v2.1)
 
-Features to add once core is working.
+Useful once baseline behavior is stable in production.
 
-- [ ] Idempotency keys + webhook events - when first external clients require robust automation.
-- [ ] Lightweight household sharing scopes - when multi-user demand is validated.
-- [ ] CSV import/export and migration helpers - when onboarding friction becomes top complaint.
+- [ ] Granular role capabilities beyond core admin/standard split
+- [ ] Conflict-resolution assistant for complex restore cases (merge/relink suggestions)
+- [ ] Bulk timeline operations (bulk complete/reschedule/archive) with guardrails
 
-### Future Consideration (v2+)
+### Future Consideration (v3+)
 
-Features to defer until product-market fit is established.
+Defer until usage patterns and support load justify complexity.
 
-- [ ] External account aggregation connectors - defer until schema and ops are stable.
-- [ ] Scenario forecasting/simulation models - defer until enough historical data exists.
-- [ ] Embedded payments/autopay orchestration - defer due to compliance/operational burden.
+- [ ] Tenant-configurable retention windows and legal-hold policies
+- [ ] Fine-grained delegated administration across household sub-groups
+- [ ] Predictive timeline intelligence (risk scoring, anomaly detection)
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Asset/commitment CRUD + typed defaults | HIGH | MEDIUM | P1 |
-| Parent-child linking + nested net status | HIGH | MEDIUM | P1 |
-| Event completion + audit logging + prompt hints | HIGH | MEDIUM | P1 |
-| Recurrence handling for commitments | HIGH | MEDIUM | P1 |
-| Filtering/sorting/pagination | MEDIUM | LOW | P1 |
-| Collaboration scopes | MEDIUM | MEDIUM | P2 |
-| Webhooks + idempotency | MEDIUM | MEDIUM | P2 |
-| External account aggregation | MEDIUM | HIGH | P3 |
+| Authentication + session protection | HIGH | MEDIUM | P1 |
+| Server-enforced RBAC + owner isolation | HIGH | HIGH | P1 |
+| Admin bypass mode with clear UX + audit | HIGH | MEDIUM | P1 |
+| Parent/occurrence financial model | HIGH | HIGH | P1 |
+| Recurrence projection + series edit semantics | HIGH | HIGH | P1 |
+| Unified 3-year timeline segmentation | HIGH | MEDIUM | P1 |
+| Soft delete/restore + 30-day purge | HIGH | MEDIUM | P1 |
+| Restore conflict assistant | MEDIUM | HIGH | P2 |
+| Granular/custom role matrix | MEDIUM | HIGH | P3 |
 
 **Priority key:**
-- P1: Must have for launch
-- P2: Should have, add when possible
-- P3: Nice to have, future consideration
+- P1: Must have for milestone acceptance
+- P2: Should have after initial stabilization
+- P3: Defer to avoid high-risk scope expansion
 
 ## Competitor Feature Analysis
 
 | Feature | Competitor A | Competitor B | Our Approach |
 |---------|--------------|--------------|--------------|
-| Unified account/asset visibility | Monarch: all accounts in one place | Empower: connect all accounts for full picture | API-level unified `items` model with explicit type system |
-| Recurring bills/subscriptions tracking | Quicken Simplifi: upcoming bills/subscriptions | Rocket Money: subscription tracking/cancellation focus | Event-first commitment tracking linked directly to assets |
-| Home operations (inventory/maintenance/projects) | HomeZada: home inventory + maintenance + projects | Typical budget apps: limited or absent | Treat maintenance as first-class event in same ledger as obligations |
-| Forecasting/planning depth | Quicken/Kubera include cash flow and advanced planning | Varies by segment | Defer advanced simulation; prioritize deterministic status + timeline |
+| Recurring series edits | Google Calendar supports instance, series, and split-series style changes | Many finance apps expose upcoming recurring bills and projected cash flow | Use parent+occurrence model with explicit series-edit options and bounded projection horizon |
+| Soft delete lifecycle | Google Drive/Gmail use Trash with automatic deletion after 30 days | GitHub supports restore window before permanent deletion | Mirror enterprise lifecycle: trash first, restore window, automated permanent purge |
+| Multi-user access controls | Workspace apps and SaaS platforms rely on role assignments + scoped access | Multitenant guidance emphasizes explicit isolation boundaries | Enforce owner scope in backend with intentional admin bypass and auditability |
 
 ## Sources
 
-- Monarch Money feature pages (account aggregation, net worth, recurring detection, goals): https://www.monarchmoney.com/ (official site)
-- Quicken Simplifi product/features page (projected cash flow, bills/subscriptions, reporting): https://www.quicken.com/products/simplifi/ (official site)
-- Rocket Money feature pages (subscriptions, budgeting, net worth, alerts): https://www.rocketmoney.com/ (official site)
-- Empower tools and dashboard pages (net worth, budgeting/cash flow, transactions): https://www.empower.com/personal-investors (official site)
-- Kubera product page (unified asset tracking, reporting, nested portfolios, cash forecasting): https://www.kubera.com/ (official site)
-- HomeZada feature pages (inventory, maintenance, projects, home finances): https://www.homezada.com/ (official site)
+- PostgreSQL row-level security and BYPASSRLS behavior (official docs, current): https://www.postgresql.org/docs/current/ddl-rowsecurity.html (HIGH)
+- Auth0 RBAC concepts and additive role model (official docs): https://auth0.com/docs/manage-users/access-control/rbac (MEDIUM)
+- Supabase RLS implementation guidance and policy patterns (official docs): https://supabase.com/docs/guides/database/postgres/row-level-security (MEDIUM)
+- Google Calendar recurring events and instance/series modification behavior (official API guide, last updated 2025-12-11): https://developers.google.com/calendar/api/guides/recurringevents (HIGH)
+- Google Calendar recurring UX, including repeat limits and series update prompts: https://support.google.com/calendar/answer/37115 (MEDIUM)
+- Google Drive and Gmail trash/restore/30-day permanent deletion behavior: https://support.google.com/drive/answer/2375102 and https://support.google.com/mail/answer/7401 (MEDIUM)
+- GitHub deleted repository restoration window and caveats: https://docs.github.com/en/repositories/creating-and-managing-repositories/restoring-a-deleted-repository (MEDIUM)
+- Microsoft multitenant data isolation patterns and anti-patterns (updated 2025-07-17): https://learn.microsoft.com/en-us/azure/architecture/guide/multitenant/approaches/storage-data (MEDIUM)
+- Quicken Simplifi feature positioning for upcoming bills and projected cash flow (product page): https://www.quicken.com/products/simplifi/ (LOW)
 
 ---
-*Feature research for: Household asset + commitment tracking API*
-*Researched: 2026-02-23*
+*Feature research for: Household asset + commitment tracking (v2.0 new capabilities only)*
+*Researched: 2026-02-25*
