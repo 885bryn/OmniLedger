@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require("express");
+const { sequelize } = require("../db");
 const {
   mapItemCreateError,
   mapItemNetStatusError,
@@ -37,6 +38,25 @@ function createApp() {
   app.use(express.json());
   app.use("/", createItemsRouter());
   app.use("/", createEventsRouter());
+
+  app.get("/health", async (req, res) => {
+    try {
+      await sequelize.authenticate();
+      res.status(200).json({
+        status: "ok",
+        ready: true
+      });
+    } catch (error) {
+      res.status(503).json({
+        status: "unhealthy",
+        ready: false,
+        error: {
+          code: "database_unavailable",
+          message: "Database connectivity check failed."
+        }
+      });
+    }
+  });
 
   app.use((error, req, res, next) => {
     const mapped = mapItemCreateError(error) || mapItemNetStatusError(error) || mapEventCompletionError(error);
