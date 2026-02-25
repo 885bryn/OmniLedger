@@ -95,7 +95,7 @@ Plans:
 | 4. Event Completion and Audit Traceability | 2/2 | Complete   | 2026-02-25 |
 | 5. Local Deployment Runtime | 2/2 | Complete | 2026-02-25 |
 | 6. Full Frontend UI Stack | 6/6 | Complete | 2026-02-25 |
-| 7. Milestone Gap Closure | 0/2 | Not started | - |
+| 7. Milestone Gap Closure | 1/2 | In Progress | - |
 
 ### Phase 6: 6
 
@@ -121,5 +121,5 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 07-01-PLAN.md - Fix actor-switch cache invalidation and prompt-next-date completion wiring across dashboard/events/items workflows.
+- [x] 07-01-PLAN.md - Fix actor-switch cache invalidation and prompt-next-date completion wiring across dashboard/events/items workflows.
 - [ ] 07-02-PLAN.md - Backfill missing Phase 01 verification artifact and close remaining human-verification evidence for phases 5-6.

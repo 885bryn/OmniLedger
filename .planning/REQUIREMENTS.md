@@ -23,7 +23,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **EVNT-01**: User can store timeline events for an item with event type, due date, amount, status, and recurrence flag.
 - [x] **EVNT-02**: User can complete an event through `PATCH /events/:id/complete` and the event status becomes `Completed`.
-- [ ] **EVNT-03**: User receives `prompt_next_date: true` in completion response when the completed event is non-recurring.
+- [x] **EVNT-03**: User receives `prompt_next_date: true` in completion response when the completed event is non-recurring.
 
 ### Audit History
 
@@ -73,7 +73,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ITEM-05 | Phase 3 | Complete |
 | EVNT-01 | Phase 1 | Complete |
 | EVNT-02 | Phase 4 | Complete |
-| EVNT-03 | Phase 7 | Pending |
+| EVNT-03 | Phase 7 | Complete |
 | AUDT-01 | Phase 4 | Complete |
 | DEPL-01 | Phase 5 | Complete |
 | DEPL-02 | Phase 1 | Complete |

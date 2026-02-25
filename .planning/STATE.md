@@ -5,19 +5,19 @@
 See: `.planning/PROJECT.md` (updated 2026-02-25)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone complete; ready to run milestone closeout workflow.
+**Current focus:** Execute Phase 7 Plan 02 to finish milestone gap-closure evidence.
 
 ## Current Position
 
-**Current Phase:** 06
-**Current Phase Name:** 6
-**Total Phases:** 6
-**Current Plan:** Not started
-**Total Plans in Phase:** 6
-**Status:** Milestone complete
+**Current Phase:** 07
+**Current Phase Name:** milestone-gap-closure
+**Total Phases:** 7
+**Current Plan:** 02
+**Total Plans in Phase:** 2
+**Status:** In progress
 **Last Activity:** 2026-02-25
 
-**Progress:** [██████████] 100%
+**Progress:** [██████████] 95%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 | Phase 06-6 P04 | 2 min | 2 tasks | 11 files |
 | Phase 06-6 P05 | 7 min | 2 tasks | 14 files |
 | Phase 06-6 P06 | 9 min | 2 tasks | 14 files |
+| Phase 07 P01 | 5 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,9 @@ Recent decisions affecting current work:
 - [Phase 06-6]: Use one items list query surface with debounced search and quick chips so sort/filter/search state stays deterministic and API-aligned.
 - [Phase 06-6]: Drive item edit through a dedicated form page with beforeunload and route-blocking guard to enforce unsaved-change protections across browser and in-app navigation.
 - [Phase 06-6]: Validate FinancialCommitment parent-asset selection before wizard step advancement to prevent invalid payload progression.
+- [Phase 07]: Treat dashboard/events/items as explicit actor-sensitive query roots and purge them on actor changes.
+- [Phase 07]: Drive follow-up modal visibility strictly from completion payload prompt_next_date instead of assumed client behavior.
+- [Phase 07]: Route schedule-next action to /items/:itemId/edit when available, otherwise /items.
 
 ### Roadmap Evolution
 
@@ -123,6 +127,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T09:30:49.462Z
-**Stopped at:** Phase 6 marked complete; ready to run /gsd-complete-milestone
+**Last session:** 2026-02-25T10:06:53.031Z
+**Stopped at:** Completed 07-01-PLAN.md
 **Resume file:** None
