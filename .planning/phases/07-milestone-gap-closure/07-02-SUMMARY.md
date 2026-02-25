@@ -89,7 +89,7 @@ None.
 
 ## Issues Encountered
 
-None.
+- `gsd-tools requirements mark-complete EVNT-03` returned `not_found`; requirement was already checked and traceability already mapped to Phase 7 before this run.
 
 ## User Setup Required
 
