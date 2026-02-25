@@ -1,7 +1,7 @@
 "use strict";
 
 const express = require("express");
-const { mapItemCreateError } = require("./errors/http-error-mapper");
+const { mapItemCreateError, mapItemNetStatusError } = require("./errors/http-error-mapper");
 
 let createItemsRouter = () => express.Router();
 
@@ -23,7 +23,7 @@ function createApp() {
   app.use("/", createItemsRouter());
 
   app.use((error, req, res, next) => {
-    const mapped = mapItemCreateError(error);
+    const mapped = mapItemCreateError(error) || mapItemNetStatusError(error);
 
     if (!mapped) {
       next(error);
