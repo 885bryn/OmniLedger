@@ -56,3 +56,16 @@ Run the API and PostgreSQL together with Docker Compose using one repeatable pat
   - `docker compose logs -f db`
 - Wait until `db` is healthy, then re-check:
   - `curl http://localhost:8080/health`
+
+## Frontend Workspace
+
+Phase 6 introduces a dedicated React + TypeScript + Vite workspace at `frontend/` with a Tailwind baseline for upcoming UI plans.
+
+1. Install frontend dependencies:
+   - `npm --prefix frontend install`
+2. Start frontend dev server:
+   - `npm --prefix frontend run dev`
+3. Build frontend for production:
+   - `npm --prefix frontend run build`
+4. Run frontend tests (baseline command):
+   - `npm --prefix frontend run test`

@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+
+:root {
+  --background: 210 25% 98%;
+  --foreground: 222 21% 17%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 21% 17%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 21% 17%;
+  --primary: 220 45% 31%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 26% 93%;
+  --secondary-foreground: 222 30% 20%;
+  --muted: 210 20% 92%;
+  --muted-foreground: 218 14% 43%;
+  --accent: 150 37% 42%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 65% 47%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214 20% 84%;
+  --input: 214 20% 84%;
+  --ring: 220 45% 31%;
+  --radius: 0.75rem;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
