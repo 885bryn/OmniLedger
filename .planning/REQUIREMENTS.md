@@ -85,4 +85,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-23*
-*Last updated: 2026-02-23 after roadmap traceability mapping*
+*Last updated: 2026-02-25 after milestone gap-closure evidence refresh*
