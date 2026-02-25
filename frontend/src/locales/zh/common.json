@@ -1,0 +1,57 @@
+{
+  "shell": {
+    "title": "家庭资产与承诺追踪器",
+    "workspace": "HACT 工作区"
+  },
+  "navigation": {
+    "dashboard": "仪表盘",
+    "items": "资产",
+    "events": "事件"
+  },
+  "language": {
+    "english": "English",
+    "chinese": "中文"
+  },
+  "userSwitcher": {
+    "actorLabel": "用户",
+    "loading": "正在加载用户...",
+    "noUsers": "暂无用户"
+  },
+  "dashboard": {
+    "loadError": "无法加载仪表盘数据，请刷新后重试。",
+    "dueEvents": "待处理事件",
+    "overdue": "逾期",
+    "dueInWeek": "7 天内到期",
+    "upcomingAmount": "即将到期金额",
+    "noDueEventsTitle": "暂无待处理事件",
+    "noDueEventsDescription": "先添加资产或承诺，即可在仪表盘开启到期优先视图。",
+    "addItem": "添加资产",
+    "openEvents": "打开事件页",
+    "amountPending": "金额待定",
+    "itemLabel": "项目 {{itemId}}"
+  },
+  "events": {
+    "loadError": "无法加载事件，请刷新后重试。",
+    "title": "待处理事件",
+    "subtitle": "按最近到期时间分组显示，便于优先完成最紧急的事项。",
+    "noPendingTitle": "暂无待处理事件",
+    "noPendingDescription": "当前已全部处理完成。可添加新资产以生成后续时间线事项。",
+    "createItem": "创建资产",
+    "returnDashboard": "返回仪表盘",
+    "amountPending": "金额待定",
+    "itemLabel": "项目 {{itemId}}",
+    "completeAction": {
+      "button": "完成",
+      "pending": "处理中...",
+      "completed": "已完成",
+      "failed": "完成失败，请重试。",
+      "confirm": "现在确认完成此事件吗？"
+    },
+    "followUp": {
+      "title": "安排下一次日期",
+      "description": "该事件可立即安排下一次到期日期。",
+      "scheduleNow": "安排下一次日期",
+      "notNow": "暂不安排"
+    }
+  }
+}

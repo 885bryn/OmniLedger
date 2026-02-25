@@ -1,0 +1,57 @@
+{
+  "shell": {
+    "title": "Household Asset and Commitment Tracker",
+    "workspace": "HACT Workspace"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "items": "Items",
+    "events": "Events"
+  },
+  "language": {
+    "english": "English",
+    "chinese": "中文"
+  },
+  "userSwitcher": {
+    "actorLabel": "Actor",
+    "loading": "Loading users...",
+    "noUsers": "No users"
+  },
+  "dashboard": {
+    "loadError": "Dashboard data could not be loaded. Please refresh and try again.",
+    "dueEvents": "Due events",
+    "overdue": "Overdue",
+    "dueInWeek": "Due in 7 days",
+    "upcomingAmount": "Upcoming amount",
+    "noDueEventsTitle": "No due events yet",
+    "noDueEventsDescription": "Add your first asset or commitment to unlock due-first planning on this dashboard.",
+    "addItem": "Add an item",
+    "openEvents": "Open events",
+    "amountPending": "Amount pending",
+    "itemLabel": "Item {{itemId}}"
+  },
+  "events": {
+    "loadError": "Events could not be loaded. Please refresh and try again.",
+    "title": "Due events",
+    "subtitle": "Nearest due groups are shown first so completion actions stay focused on what needs attention now.",
+    "noPendingTitle": "No pending events",
+    "noPendingDescription": "You are caught up. Add a new item to generate upcoming timeline obligations.",
+    "createItem": "Create item",
+    "returnDashboard": "Return to dashboard",
+    "amountPending": "Amount pending",
+    "itemLabel": "Item {{itemId}}",
+    "completeAction": {
+      "button": "Complete",
+      "pending": "Completing...",
+      "completed": "Completed",
+      "failed": "Completion failed. Try again.",
+      "confirm": "Complete this event now?"
+    },
+    "followUp": {
+      "title": "Schedule the next date",
+      "description": "This event can be scheduled for the next due date now.",
+      "scheduleNow": "Schedule next date",
+      "notNow": "Not now"
+    }
+  }
+}

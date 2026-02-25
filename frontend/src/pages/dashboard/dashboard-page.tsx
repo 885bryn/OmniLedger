@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { apiRequest } from '../../lib/api-client'
 import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
 import { queryKeys } from '../../lib/query-keys'
@@ -64,16 +66,18 @@ function DashboardSkeleton() {
 }
 
 function DashboardEmptyState() {
+  const { t } = useTranslation()
+
   return (
     <section className="rounded-2xl border border-dashed border-border bg-card/70 p-8 text-center">
-      <h2 className="text-lg font-semibold">No due events yet</h2>
-      <p className="mt-2 text-sm text-muted-foreground">Add your first asset or commitment to unlock due-first planning on this dashboard.</p>
+      <h2 className="text-lg font-semibold">{t('dashboard.noDueEventsTitle')}</h2>
+      <p className="mt-2 text-sm text-muted-foreground">{t('dashboard.noDueEventsDescription')}</p>
       <div className="mt-5 flex flex-wrap justify-center gap-3">
         <Link to="/items/create/wizard" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-          Add an item
+          {t('dashboard.addItem')}
         </Link>
         <Link to="/events" className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground">
-          Open events view
+          {t('dashboard.openEvents')}
         </Link>
       </div>
     </section>
@@ -81,6 +85,8 @@ function DashboardEmptyState() {
 }
 
 export function DashboardPage() {
+  const { t } = useTranslation()
+
   const eventsQuery = useQuery({
     queryKey: queryKeys.dashboard.all,
     queryFn: async () => apiRequest<EventsResponse>('/events?status=pending'),
@@ -126,7 +132,7 @@ export function DashboardPage() {
   if (eventsQuery.isError) {
     return (
       <section className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
-        Dashboard data could not be loaded. Please refresh and try again.
+        {t('dashboard.loadError')}
       </section>
     )
   }
@@ -135,19 +141,19 @@ export function DashboardPage() {
     <section className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Due events</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('dashboard.dueEvents')}</p>
           <p className="mt-2 text-2xl font-semibold">{metrics.totalDue}</p>
         </article>
         <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Overdue</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('dashboard.overdue')}</p>
           <p className="mt-2 text-2xl font-semibold text-destructive">{metrics.overdue}</p>
         </article>
         <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Due in 7 days</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('dashboard.dueInWeek')}</p>
           <p className="mt-2 text-2xl font-semibold">{metrics.thisWeekCount}</p>
         </article>
         <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Upcoming amount</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('dashboard.upcomingAmount')}</p>
           <p className="mt-2 text-2xl font-semibold">{formatCurrency(metrics.dueAmount)}</p>
         </article>
       </div>
@@ -161,16 +167,19 @@ export function DashboardPage() {
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <h2 className="text-sm font-semibold">{formatDueLabel(group.due_date)}</h2>
                 <Link to="/events" className="text-xs font-medium text-primary">
-                  Open events
+                  {t('dashboard.openEvents')}
                 </Link>
               </div>
               <ul className="mt-3 space-y-2">
                 {group.events.slice(0, 4).map((event) => (
-                  <li key={event.id} className="rounded-xl border border-border bg-background/80 p-3">
-                    <p className="text-sm font-medium">{event.type}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Item {event.item_id} - {event.amount ? formatCurrency(Number(event.amount)) : 'Amount pending'}
-                    </p>
+                  <li key={event.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{event.type}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('dashboard.itemLabel', { itemId: event.item_id })} - {event.amount === null ? t('dashboard.amountPending') : formatCurrency(Number(event.amount))}
+                      </p>
+                    </div>
+                    <CompleteEventRowAction eventId={event.id} />
                   </li>
                 ))}
               </ul>

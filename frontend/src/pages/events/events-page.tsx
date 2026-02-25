@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { apiRequest } from '../../lib/api-client'
 import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
 import { queryKeys } from '../../lib/query-keys'
@@ -40,7 +42,7 @@ function formatDueLabel(value: string) {
 
 function formatCurrency(value: number | null) {
   if (value === null || Number.isNaN(value)) {
-    return 'Amount pending'
+    return null
   }
 
   return new Intl.NumberFormat(undefined, {
@@ -68,16 +70,18 @@ function EventsSkeleton() {
 }
 
 function EventsEmptyState() {
+  const { t } = useTranslation()
+
   return (
     <section className="rounded-2xl border border-dashed border-border bg-card/70 p-8 text-center">
-      <h1 className="text-lg font-semibold">No pending events</h1>
-      <p className="mt-2 text-sm text-muted-foreground">You are caught up. Add a new item to generate upcoming timeline obligations.</p>
+      <h1 className="text-lg font-semibold">{t('events.noPendingTitle')}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{t('events.noPendingDescription')}</p>
       <div className="mt-5 flex flex-wrap justify-center gap-3">
         <Link to="/items/create/wizard" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-          Create item
+          {t('events.createItem')}
         </Link>
         <Link to="/dashboard" className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground">
-          Return to dashboard
+          {t('events.returnDashboard')}
         </Link>
       </div>
     </section>
@@ -85,6 +89,8 @@ function EventsEmptyState() {
 }
 
 export function EventsPage() {
+  const { t } = useTranslation()
+
   const eventsQuery = useQuery({
     queryKey: queryKeys.events.list({ status: 'pending' }),
     queryFn: async () => apiRequest<EventsResponse>('/events?status=pending'),
@@ -107,8 +113,8 @@ export function EventsPage() {
 
   if (eventsQuery.isError) {
     return (
-      <section className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
-        Events could not be loaded. Please refresh and try again.
+        <section className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
+        {t('events.loadError')}
       </section>
     )
   }
@@ -120,8 +126,8 @@ export function EventsPage() {
   return (
     <section className="space-y-4">
       <header className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">Due events</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Nearest due groups are shown first so completion actions stay focused on what needs attention now.</p>
+        <h1 className="text-xl font-semibold">{t('events.title')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t('events.subtitle')}</p>
       </header>
 
       {groups.map((group) => (
@@ -132,9 +138,12 @@ export function EventsPage() {
               <li key={event.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-medium">{event.type}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Item {event.item_id}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t('events.itemLabel', { itemId: event.item_id })}</p>
                 </div>
-                <div className="text-sm font-medium">{formatCurrency(event.amount)}</div>
+                <div className="flex items-center gap-3">
+                  <div className="text-sm font-medium">{formatCurrency(event.amount) ?? t('events.amountPending')}</div>
+                  <CompleteEventRowAction eventId={event.id} />
+                </div>
               </li>
             ))}
           </ul>
