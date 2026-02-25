@@ -1,6 +1,7 @@
 "use strict";
 
 const request = require("supertest");
+const bcrypt = require("bcryptjs");
 
 jest.mock("../../src/db", () => {
   const { Sequelize } = require("sequelize");
@@ -19,6 +20,37 @@ const { createApp } = require("../../src/api/app");
 
 describe("GET /users", () => {
   const app = createApp();
+  let userCounter = 0;
+
+  async function createUser(overrides = {}) {
+    userCounter += 1;
+    const password = overrides.password || "StrongPass123!";
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const created = await models.User.create({
+      username: overrides.username || `users-api-${userCounter}`,
+      email: overrides.email || `users-api-${userCounter}@example.com`,
+      password_hash: passwordHash
+    });
+
+    return {
+      id: created.id,
+      email: created.email,
+      password
+    };
+  }
+
+  async function signInAs(user) {
+    const agent = request.agent(app);
+    const loginResponse = await agent.post("/auth/login").send({
+      email: user.email,
+      password: user.password
+    });
+
+    expect(loginResponse.status).toBe(200);
+
+    return agent;
+  }
 
   beforeAll(async () => {
     await sequelize.query("PRAGMA foreign_keys = ON");
@@ -72,11 +104,14 @@ describe("GET /users", () => {
     await setUserCreatedAt(charlie.id, "2026-01-05T00:00:00.000Z");
     await setUserCreatedAt(beta.id, "2026-01-02T00:00:00.000Z");
 
-    const response = await request(app).get("/users");
+    const authUser = await createUser({ username: "ZuluAuth", email: "zulu-auth@example.com" });
+    const agent = await signInAs(authUser);
+
+    const response = await agent.get("/users");
 
     expect(response.status).toBe(200);
-    expect(response.body.total_count).toBe(3);
-    expect(response.body.users.map((user) => user.id)).toEqual([alphaEarly.id, beta.id, charlie.id]);
+    expect(response.body.total_count).toBe(4);
+    expect(response.body.users.map((user) => user.id)).toEqual([alphaEarly.id, beta.id, charlie.id, authUser.id]);
     expect(Object.keys(response.body.users[0]).sort()).toEqual([
       "created_at",
       "email",
@@ -94,7 +129,12 @@ describe("GET /users", () => {
   });
 
   it("returns empty contract shape when no users exist", async () => {
-    const response = await request(app).get("/users");
+    const authUser = await createUser();
+    const agent = await signInAs(authUser);
+
+    await models.User.destroy({ where: { id: authUser.id }, force: true });
+
+    const response = await agent.get("/users");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({

@@ -1,6 +1,7 @@
 "use strict";
 
 const request = require("supertest");
+const bcrypt = require("bcryptjs");
 
 jest.mock("../../src/db", () => {
   const { Sequelize } = require("sequelize");
@@ -24,11 +25,32 @@ describe("PATCH /events/:id/complete", () => {
   async function createUser() {
     counter += 1;
 
-    return models.User.create({
+    const password = "StrongPass123!";
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const created = await models.User.create({
       username: `event-api-user-${counter}`,
       email: `event-api-user-${counter}@example.com`,
-      password_hash: "hashed-password"
+      password_hash: passwordHash
     });
+
+    return {
+      id: created.id,
+      email: created.email,
+      password
+    };
+  }
+
+  async function signInAs(user) {
+    const agent = request.agent(app);
+    const loginResponse = await agent.post("/auth/login").send({
+      email: user.email,
+      password: user.password
+    });
+
+    expect(loginResponse.status).toBe(200);
+
+    return agent;
   }
 
   async function createItem({ userId }) {
@@ -38,6 +60,19 @@ describe("PATCH /events/:id/complete", () => {
       attributes: {
         address: "19 Ledger Drive",
         estimatedValue: 300000
+      }
+    });
+  }
+
+  async function createCommitment({ userId, parentItemId }) {
+    return models.Item.create({
+      user_id: userId,
+      item_type: "FinancialCommitment",
+      parent_item_id: parentItemId || null,
+      attributes: {
+        name: "1578 payment test",
+        amount: 9,
+        dueDate: "2026-03-02"
       }
     });
   }
@@ -73,12 +108,11 @@ describe("PATCH /events/:id/complete", () => {
 
   it("returns 200 with canonical completion payload for first completion", async () => {
     const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
     const item = await createItem({ userId: owner.id });
     const event = await createEvent({ itemId: item.id, recurring: false });
 
-    const response = await request(app)
-      .patch(`/events/${event.id}/complete`)
-      .set("x-user-id", owner.id);
+    const response = await ownerAgent.patch(`/events/${event.id}/complete`);
 
     expect(response.status).toBe(200);
     expect(Object.keys(response.body).sort()).toEqual([
@@ -108,6 +142,7 @@ describe("PATCH /events/:id/complete", () => {
 
   it("keeps prompt metadata in recurring completion responses", async () => {
     const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
     const item = await createItem({ userId: owner.id });
     const recurring = await createEvent({
       itemId: item.id,
@@ -115,9 +150,7 @@ describe("PATCH /events/:id/complete", () => {
       dueDate: "2026-08-01T00:00:00.000Z"
     });
 
-    const response = await request(app)
-      .patch(`/events/${recurring.id}/complete`)
-      .set("x-user-id", owner.id);
+    const response = await ownerAgent.patch(`/events/${recurring.id}/complete`);
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
@@ -131,10 +164,9 @@ describe("PATCH /events/:id/complete", () => {
 
   it("returns 404 issue envelope for unknown event id without prompt metadata", async () => {
     const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
 
-    const response = await request(app)
-      .patch("/events/11111111-1111-4111-8111-111111111111/complete")
-      .set("x-user-id", owner.id);
+    const response = await ownerAgent.patch("/events/11111111-1111-4111-8111-111111111111/complete");
 
     expect(response.status).toBe(404);
     expect(response.body.error).toMatchObject({
@@ -156,12 +188,11 @@ describe("PATCH /events/:id/complete", () => {
   it("returns 403 issue envelope for foreign-owned event without prompt metadata", async () => {
     const owner = await createUser();
     const outsider = await createUser();
+    const outsiderAgent = await signInAs(outsider);
     const item = await createItem({ userId: owner.id });
     const event = await createEvent({ itemId: item.id });
 
-    const response = await request(app)
-      .patch(`/events/${event.id}/complete`)
-      .set("x-user-id", outsider.id);
+    const response = await outsiderAgent.patch(`/events/${event.id}/complete`);
 
     expect(response.status).toBe(403);
     expect(response.body.error).toMatchObject({
@@ -182,16 +213,13 @@ describe("PATCH /events/:id/complete", () => {
 
   it("remains idempotent on repeated completion and does not duplicate audit rows", async () => {
     const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
     const item = await createItem({ userId: owner.id });
     const event = await createEvent({ itemId: item.id });
 
-    const first = await request(app)
-      .patch(`/events/${event.id}/complete`)
-      .set("x-user-id", owner.id);
+    const first = await ownerAgent.patch(`/events/${event.id}/complete`);
 
-    const second = await request(app)
-      .patch(`/events/${event.id}/complete`)
-      .set("x-user-id", owner.id);
+    const second = await ownerAgent.patch(`/events/${event.id}/complete`);
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
@@ -206,5 +234,127 @@ describe("PATCH /events/:id/complete", () => {
       }
     });
     expect(audits).toHaveLength(1);
+  });
+
+  it("completes derived event ids by creating a pending event from item attributes", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const parent = await createItem({ userId: owner.id });
+    const commitment = await createCommitment({ userId: owner.id, parentItemId: parent.id });
+
+    const response = await ownerAgent.patch(`/events/derived-${commitment.id}/complete`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      item_id: commitment.id,
+      status: "Completed",
+      type: "1578 payment test"
+    });
+
+    const persisted = await models.Event.findAll({ where: { item_id: commitment.id } });
+    expect(persisted).toHaveLength(1);
+    expect(persisted[0].status).toBe("Completed");
+  });
+
+  it("returns 200 for legacy commitment rows with missing dueDate attributes", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const legacyCommitment = await models.Item.create(
+      {
+        user_id: owner.id,
+        item_type: "FinancialCommitment",
+        attributes: {
+          amount: 25,
+          billingCycle: "monthly",
+          remainingBalance: 150
+        }
+      },
+      { validate: false }
+    );
+
+    const event = await createEvent({ itemId: legacyCommitment.id, amount: "25.00" });
+
+    const response = await ownerAgent.patch(`/events/${event.id}/complete`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: event.id,
+      item_id: legacyCommitment.id,
+      status: "Completed"
+    });
+
+    const persistedItem = await models.Item.findByPk(legacyCommitment.id);
+    expect(persistedItem.attributes.remainingBalance).toBe(150);
+    expect(persistedItem.attributes.lastPaymentAmount).toBeUndefined();
+  });
+
+  it("does not immediately recreate pending event for same due date after completion", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const parent = await createItem({ userId: owner.id });
+    const rentItem = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialIncome",
+      parent_item_id: parent.id,
+      attributes: {
+        name: "1578 rent test",
+        amount: 5.53,
+        dueDate: "2026-02-28"
+      }
+    });
+
+    const firstCompletion = await ownerAgent.patch(`/events/derived-${rentItem.id}/complete`);
+
+    expect(firstCompletion.status).toBe(200);
+
+    const pendingAfterComplete = await ownerAgent.get("/events?status=pending");
+
+    expect(pendingAfterComplete.status).toBe(200);
+    const matchingPending = pendingAfterComplete.body.groups
+      .flatMap((group) => group.events)
+      .filter((event) => event.item_id === rentItem.id);
+    expect(matchingPending).toHaveLength(0);
+  });
+
+  it("undoes completion and restores pending event plus financial totals", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const parent = await createItem({ userId: owner.id });
+    const commitment = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialCommitment",
+      parent_item_id: parent.id,
+      attributes: {
+        name: "Undo test loan",
+        amount: 100,
+        remainingBalance: 900,
+        dueDate: "2026-03-10"
+      }
+    });
+    const event = await createEvent({ itemId: commitment.id, dueDate: "2026-03-10T00:00:00.000Z", amount: "100.00" });
+
+    const completed = await ownerAgent.patch(`/events/${event.id}/complete`);
+    expect(completed.status).toBe(200);
+
+    const undone = await ownerAgent.patch(`/events/${event.id}/undo-complete`);
+
+    expect(undone.status).toBe(200);
+    expect(undone.body.status).toBe("Pending");
+    expect(undone.body.completed_at).toBeNull();
+
+    const refreshed = await models.Item.findByPk(commitment.id);
+    expect(refreshed.attributes.remainingBalance).toBe(900);
+
+    const pendingList = await ownerAgent.get("/events?status=pending");
+    const pendingIds = pendingList.body.groups.flatMap((group) => group.events).map((row) => row.id);
+    expect(pendingIds).toContain(event.id);
+
+    const undoAudit = await models.AuditLog.findOne({
+      where: {
+        action: "event.reopened",
+        entity: `event:${event.id}`
+      }
+    });
+    expect(undoAudit).toBeTruthy();
   });
 });
