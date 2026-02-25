@@ -61,6 +61,8 @@ Run the API and PostgreSQL together with Docker Compose using one repeatable pat
 
 Phase 6 introduces a dedicated React + TypeScript + Vite workspace at `frontend/` with a Tailwind baseline for upcoming UI plans.
 
+Run the frontend commands from the repository root using the `npm --prefix frontend` pattern:
+
 1. Install frontend dependencies:
    - `npm --prefix frontend install`
 2. Start frontend dev server:
