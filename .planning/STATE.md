@@ -12,12 +12,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 **Current Phase:** 06
 **Current Phase Name:** 6
 **Total Phases:** 6
-**Current Plan:** 5
+**Current Plan:** 6
 **Total Plans in Phase:** 6
 **Status:** Ready to execute
 **Last Activity:** 2026-02-25
 
-**Progress:** [█████████░] 88%
+**Progress:** [█████████░] 94%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 06 P02 | 5 min | 2 tasks | 8 files |
 | Phase 06-6 P03 | 9 min | 1 tasks | 4 files |
 | Phase 06-6 P04 | 2 min | 2 tasks | 11 files |
+| Phase 06-6 P05 | 7 min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,9 @@ Recent decisions affecting current work:
 - [Phase 06-6]: Use one app-shell route root with nested dashboard/items/events/detail/edit/wizard placeholders so later plans can drop in page implementations without changing topology.
 - [Phase 06-6]: Use a module-level active actor source in api-client and hydrate it from a /users-backed user switcher to guarantee x-user-id propagation on every request.
 - [Phase 06-6]: Initialize i18next once at provider boot with fallbackLng: en and keep user-entered values untouched by limiting translation to interface labels.
+- [Phase 06-6]: Use one deterministic date-ordering utility across dashboard and events pages to keep nearest-due grouping stable.
+- [Phase 06-6]: Invalidate dashboard and events query namespaces after event completion to enforce confirm-then-refresh semantics.
+- [Phase 06-6]: Show follow-up modal only when completion payload includes prompt_next_date true while preserving a clear Not now branch.
 
 ### Roadmap Evolution
 
@@ -114,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T04:44:07.913Z
-**Stopped at:** Completed 06-04-PLAN.md
+**Last session:** 2026-02-25T04:54:22.424Z
+**Stopped at:** Completed 06-05-PLAN.md
 **Resume file:** None
