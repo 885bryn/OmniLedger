@@ -10,11 +10,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 8 of 12 (Auth Sessions & Protected Access)
-Plan: 5 of 6 in current phase
-Status: In progress
-Last activity: 2026-02-25 - Completed 08-05 frontend session-expiry redirect UX and regression coverage
+Plan: 6 of 6 in current phase
+Status: Complete
+Last activity: 2026-02-25 - Completed 08-04 frontend session identity migration and regression coverage
 
-Progress: [████████░░] 83%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -40,6 +40,7 @@ Progress: [████████░░] 83%
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
 | Phase 08 P05 | 4 min | 2 tasks | 8 files |
+| Phase 08 P04 | 5 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -63,6 +64,9 @@ Recent decisions affecting current work:
 - [Phase 08]: Hashed fixture user passwords with bcrypt in migrated suites so login-based session setup mirrors production credential verification.
 - [Phase 08]: Frontend now emits a single hact:session-expired event for protected API 401 responses.
 - [Phase 08]: Session-expired notice state is persisted in sessionStorage so login always shows expiry feedback during forced re-auth.
+- [Phase 08]: Removed frontend x-user-id injection and standardized session-cookie identity transport.
+- [Phase 08]: Replaced shell actor switcher with authenticated identity plus explicit logout control.
+- [Phase 08]: Updated frontend regressions to enforce credentialed requests and logout-driven cache reset.
 
 ### Pending Todos
 
@@ -75,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25 23:10
-Stopped at: Completed 08-05-PLAN.md
-Resume file: .planning/phases/08-auth-sessions-protected-access/08-04-PLAN.md
+Last session: 2026-02-25 23:19
+Stopped at: Completed 08-04-PLAN.md
+Resume file: None
