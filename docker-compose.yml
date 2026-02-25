@@ -1,0 +1,55 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hact-api
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-change_me_local}@db:5432/${DB_NAME:-hact_dev}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-hact_dev}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-change_me_local}
+      JWT_SECRET: ${JWT_SECRET:-change_me_jwt_secret}
+      HOST: 0.0.0.0
+      PORT: 8080
+      STARTUP_DB_MAX_RETRIES: ${STARTUP_DB_MAX_RETRIES:-30}
+      STARTUP_DB_RETRY_MS: ${STARTUP_DB_RETRY_MS:-2000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const http=require('http');const req=http.get('http://127.0.0.1:8080/health',(res)=>{process.exit(res.statusCode===200?0:1);});req.on('error',()=>process.exit(1));req.setTimeout(2000,()=>{req.destroy();process.exit(1);});"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+
+  db:
+    image: postgres:17
+    container_name: hact-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-hact_dev}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_local}
+    ports:
+      - "5433:5432"
+    volumes:
+      - hact-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  hact-postgres-data:
