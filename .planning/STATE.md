@@ -12,12 +12,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 **Current Phase:** 06
 **Current Phase Name:** 6
 **Total Phases:** 6
-**Current Plan:** 3
+**Current Plan:** 4
 **Total Plans in Phase:** 6
 **Status:** Ready to execute
 **Last Activity:** 2026-02-25
 
-**Progress:** [████████░░] 76%
+**Progress:** [████████░░] 82%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 05 P02 | 14 min | 3 tasks | 5 files |
 | Phase 06 P01 | 8 min | 2 tasks | 12 files |
 | Phase 06 P02 | 5 min | 2 tasks | 8 files |
+| Phase 06-6 P03 | 9 min | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,8 @@ Recent decisions affecting current work:
 - [Phase 06]: Standardize event list domain output as due-date grouped sections with deterministic due_date/updated_at/id ordering before route mapping.
 - [Phase 06]: Standardize new item/event route failures under item_query_failed and event_query_failed envelopes with category-level issues for frontend rendering.
 - [Phase 06]: Expose GET /users as deterministic username-sorted actor source while keeping x-user-id request semantics unchanged.
+- [Phase 06-6]: Pin frontend dev runtime to host=true with strict port 5173 to keep startup deterministic across contributors.
+- [Phase 06-6]: Keep provider/router wrapper seam at frontend entrypoint with fail-fast root guard for upcoming shell/providers/i18n integration.
 
 ### Roadmap Evolution
 
@@ -107,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T03:45:41.892Z
-**Stopped at:** Completed 06-02-PLAN.md
+**Last session:** 2026-02-25T04:35:20.631Z
+**Stopped at:** Completed 06-03-PLAN.md
 **Resume file:** None
