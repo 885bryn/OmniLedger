@@ -173,6 +173,14 @@ export function ItemCreateWizardPage() {
       <form
         onSubmit={form.handleSubmit(() => {
           if (step < 3) {
+            if (step === 2 && selectedType === 'FinancialCommitment' && !form.getValues('parent_item_id')) {
+              form.setError('parent_item_id', {
+                type: 'required',
+                message: t('items.wizard.parentRequired'),
+              })
+              return
+            }
+
             setStep((current) => current + 1)
             return
           }

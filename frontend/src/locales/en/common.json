@@ -53,5 +53,94 @@
       "scheduleNow": "Schedule next date",
       "notNow": "Not now"
     }
+  },
+  "items": {
+    "title": "Items",
+    "subtitle": "{{total}} items in your working set",
+    "createAction": "Create item",
+    "loadError": "Items could not be loaded. Please refresh and try again.",
+    "empty": "No items yet. Create an asset or commitment to begin.",
+    "emptyFiltered": "No items match the active filters.",
+    "updatedLabel": "Updated {{date}}",
+    "viewAction": "View",
+    "editAction": "Edit",
+    "deleteAction": "Delete",
+    "filters": {
+      "searchLabel": "Search",
+      "searchPlaceholder": "Search by type or attribute",
+      "sortLabel": "Sort",
+      "chips": {
+        "all": "All",
+        "assets": "Assets",
+        "commitments": "Commitments",
+        "active": "Active",
+        "deleted": "Deleted"
+      },
+      "sortOptions": {
+        "recently_updated": "Recently updated",
+        "oldest_updated": "Oldest updated",
+        "due_soon": "Due soon"
+      }
+    },
+    "detail": {
+      "loadError": "Item details could not be loaded.",
+      "summaryMonthly": "Monthly obligation",
+      "summaryLinked": "Linked commitments",
+      "summaryExcluded": "Excluded rows",
+      "noCommitments": "No linked commitments yet.",
+      "tabs": {
+        "overview": "Overview",
+        "commitments": "Commitments",
+        "activity": "Activity"
+      },
+      "commitmentFallbackTitle": "Commitment detail",
+      "commitmentFallbackBody": "This item type does not have net-status cards, but activity and edit workflows are available."
+    },
+    "edit": {
+      "title": "Edit item",
+      "loadError": "This item could not be loaded for editing.",
+      "attributesLabel": "Attributes JSON",
+      "invalidJson": "Attributes must be valid JSON object.",
+      "saveError": "Changes could not be saved.",
+      "saveAction": "Save changes",
+      "saving": "Saving...",
+      "cancelAction": "Cancel"
+    },
+    "wizard": {
+      "title": "Create item wizard",
+      "stepLabel": "Step {{step}} of 3",
+      "typeLabel": "Item type",
+      "addressLabel": "Address",
+      "vinLabel": "VIN",
+      "estimatedValueLabel": "Estimated value",
+      "amountLabel": "Amount",
+      "dueDateLabel": "Due date",
+      "billingCycleLabel": "Billing cycle",
+      "parentLabel": "Parent asset",
+      "parentPlaceholder": "Select an asset",
+      "parentRequired": "Financial commitments require a parent asset.",
+      "reviewLabel": "Review payload",
+      "nextAction": "Next",
+      "backAction": "Back",
+      "createAction": "Create item",
+      "creating": "Creating...",
+      "cancelAction": "Cancel",
+      "actorMissing": "Select an active user before creating an item.",
+      "createError": "Item could not be created."
+    },
+    "deleteDialog": {
+      "title": "Delete item",
+      "description": "Delete {{itemLabel}}? This action is soft-delete and will refresh your list.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "pending": "Deleting..."
+    },
+    "activity": {
+      "loadError": "Activity could not be loaded.",
+      "empty": "No activity recorded yet."
+    },
+    "form": {
+      "unsavedWarning": "You have unsaved changes. Leave this page?"
+    }
   }
 }

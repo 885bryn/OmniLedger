@@ -53,5 +53,94 @@
       "scheduleNow": "安排下一次日期",
       "notNow": "暂不安排"
     }
+  },
+  "items": {
+    "title": "资产",
+    "subtitle": "当前工作集中共有 {{total}} 条资产",
+    "createAction": "创建资产",
+    "loadError": "无法加载资产，请刷新后重试。",
+    "empty": "暂无资产。请先创建资产或承诺。",
+    "emptyFiltered": "当前筛选条件下没有匹配项。",
+    "updatedLabel": "更新于 {{date}}",
+    "viewAction": "查看",
+    "editAction": "编辑",
+    "deleteAction": "删除",
+    "filters": {
+      "searchLabel": "搜索",
+      "searchPlaceholder": "按类型或属性搜索",
+      "sortLabel": "排序",
+      "chips": {
+        "all": "全部",
+        "assets": "资产",
+        "commitments": "承诺",
+        "active": "有效",
+        "deleted": "已删除"
+      },
+      "sortOptions": {
+        "recently_updated": "最近更新",
+        "oldest_updated": "最早更新",
+        "due_soon": "即将到期"
+      }
+    },
+    "detail": {
+      "loadError": "无法加载资产详情。",
+      "summaryMonthly": "每月承诺总额",
+      "summaryLinked": "关联承诺",
+      "summaryExcluded": "排除行",
+      "noCommitments": "暂无关联承诺。",
+      "tabs": {
+        "overview": "概览",
+        "commitments": "承诺",
+        "activity": "动态"
+      },
+      "commitmentFallbackTitle": "承诺详情",
+      "commitmentFallbackBody": "该类型不提供净状态卡片，但可继续使用动态与编辑流程。"
+    },
+    "edit": {
+      "title": "编辑资产",
+      "loadError": "无法加载该资产用于编辑。",
+      "attributesLabel": "属性 JSON",
+      "invalidJson": "属性必须是有效的 JSON 对象。",
+      "saveError": "无法保存修改。",
+      "saveAction": "保存修改",
+      "saving": "保存中...",
+      "cancelAction": "取消"
+    },
+    "wizard": {
+      "title": "创建资产向导",
+      "stepLabel": "第 {{step}} 步，共 3 步",
+      "typeLabel": "资产类型",
+      "addressLabel": "地址",
+      "vinLabel": "车架号",
+      "estimatedValueLabel": "估值",
+      "amountLabel": "金额",
+      "dueDateLabel": "到期日期",
+      "billingCycleLabel": "计费周期",
+      "parentLabel": "父级资产",
+      "parentPlaceholder": "选择资产",
+      "parentRequired": "财务承诺必须选择父级资产。",
+      "reviewLabel": "检查请求内容",
+      "nextAction": "下一步",
+      "backAction": "上一步",
+      "createAction": "创建资产",
+      "creating": "创建中...",
+      "cancelAction": "取消",
+      "actorMissing": "创建前请先选择当前用户。",
+      "createError": "无法创建资产。"
+    },
+    "deleteDialog": {
+      "title": "删除资产",
+      "description": "确认删除 {{itemLabel}} 吗？该操作为软删除并会刷新列表。",
+      "cancel": "取消",
+      "confirm": "删除",
+      "pending": "删除中..."
+    },
+    "activity": {
+      "loadError": "无法加载动态。",
+      "empty": "暂无动态记录。"
+    },
+    "form": {
+      "unsavedWarning": "你有未保存的修改，确定离开此页面吗？"
+    }
   }
 }
