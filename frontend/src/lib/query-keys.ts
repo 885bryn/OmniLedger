@@ -18,3 +18,5 @@ export const queryKeys = {
       ['events', 'list', params] as const,
   },
 } as const
+
+export const actorSensitiveQueryRoots = [queryKeys.dashboard.all, queryKeys.events.all, queryKeys.items.all] as const

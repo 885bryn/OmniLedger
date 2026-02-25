@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { fetchUsers, getActiveActorUserId, setActiveActorUserId } from '../../lib/api-client'
-import { queryKeys } from '../../lib/query-keys'
+import { actorSensitiveQueryRoots, queryKeys } from '../../lib/query-keys'
 
 const ACTIVE_USER_STORAGE_KEY = 'hact.active-user-id'
 
@@ -29,7 +29,39 @@ function persistActorId(userId: string | null) {
 
 export function UserSwitcher() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const [activeUserId, setActiveUserId] = useState<string | null>(() => getActiveActorUserId())
+
+  const applyActorSelection = useCallback(async (nextUserId: string | null) => {
+    const previousUserId = getActiveActorUserId()
+
+    setActiveUserId(nextUserId)
+
+    if (previousUserId === nextUserId) {
+      setActiveActorUserId(nextUserId)
+      persistActorId(nextUserId)
+      return
+    }
+
+    await Promise.all(
+      actorSensitiveQueryRoots.map(async (queryKey) => {
+        await queryClient.cancelQueries({ queryKey })
+        queryClient.removeQueries({ queryKey })
+      }),
+    )
+
+    setActiveActorUserId(nextUserId)
+    persistActorId(nextUserId)
+
+    await Promise.all(
+      actorSensitiveQueryRoots.map((queryKey) =>
+        queryClient.invalidateQueries({
+          queryKey,
+          refetchType: 'active',
+        }),
+      ),
+    )
+  }, [queryClient])
 
   const usersQuery = useQuery({
     queryKey: queryKeys.users.all,
@@ -45,9 +77,7 @@ export function UserSwitcher() {
 
   useEffect(() => {
     if (!users.length) {
-      setActiveUserId(null)
-      setActiveActorUserId(null)
-      persistActorId(null)
+      void applyActorSelection(null)
       return
     }
 
@@ -56,22 +86,19 @@ export function UserSwitcher() {
 
     if (currentActor && validActorIds.has(currentActor)) {
       setActiveUserId(currentActor)
+      setActiveActorUserId(currentActor)
       persistActorId(currentActor)
       return
     }
 
     if (storedActorId && validActorIds.has(storedActorId)) {
-      setActiveUserId(storedActorId)
-      setActiveActorUserId(storedActorId)
-      persistActorId(storedActorId)
+      void applyActorSelection(storedActorId)
       return
     }
 
     const fallbackActorId = users[0]?.id ?? null
-    setActiveUserId(fallbackActorId)
-    setActiveActorUserId(fallbackActorId)
-    persistActorId(fallbackActorId)
-  }, [users, validActorIds])
+    void applyActorSelection(fallbackActorId)
+  }, [applyActorSelection, users, validActorIds])
 
   const isDisabled = usersQuery.isLoading || users.length === 0
 
@@ -83,9 +110,7 @@ export function UserSwitcher() {
         disabled={isDisabled}
         onChange={(event) => {
           const nextUserId = event.target.value || null
-          setActiveUserId(nextUserId)
-          setActiveActorUserId(nextUserId)
-          persistActorId(nextUserId)
+          void applyActorSelection(nextUserId)
         }}
         className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-70"
       >
