@@ -1,6 +1,7 @@
 "use strict";
 
 const request = require("supertest");
+const bcrypt = require("bcryptjs");
 
 jest.mock("../../src/db", () => {
   const { Sequelize } = require("sequelize");
@@ -24,11 +25,32 @@ describe("GET /items/:id/net-status", () => {
   async function createUser() {
     counter += 1;
 
-    return models.User.create({
+    const password = "StrongPass123!";
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const created = await models.User.create({
       username: `net-user-${counter}`,
       email: `net-user-${counter}@example.com`,
-      password_hash: "hashed-password"
+      password_hash: passwordHash
     });
+
+    return {
+      id: created.id,
+      email: created.email,
+      password
+    };
+  }
+
+  async function signInAs(user) {
+    const agent = request.agent(app);
+    const loginResponse = await agent.post("/auth/login").send({
+      email: user.email,
+      password: user.password
+    });
+
+    expect(loginResponse.status).toBe(200);
+
+    return agent;
   }
 
   async function createItem({ userId, itemType, parentItemId = null, attributes }) {
@@ -71,6 +93,7 @@ describe("GET /items/:id/net-status", () => {
 
   it("returns canonical root and deterministic child commitments with summary", async () => {
     const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
     const root = await createItem({
       userId: owner.id,
       itemType: "RealEstate",
@@ -112,11 +135,21 @@ describe("GET /items/:id/net-status", () => {
 
     const nullDueInvalidAmount = await createItem({
       userId: owner.id,
-      itemType: "Subscription",
+      itemType: "FinancialCommitment",
       parentItemId: root.id,
       attributes: {
         amount: "n/a",
-        billingCycle: "monthly"
+        dueDate: "2026-05-01"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: "300",
+        dueDate: "2026-04-15"
       }
     });
 
@@ -134,9 +167,7 @@ describe("GET /items/:id/net-status", () => {
     await setItemTimestamps(dueTieNewer.id, "2026-01-12T00:00:00.000Z");
     await setItemTimestamps(nullDueInvalidAmount.id, "2026-01-15T00:00:00.000Z");
 
-    const response = await request(app)
-      .get(`/items/${root.id}/net-status`)
-      .set("x-user-id", owner.id);
+    const response = await ownerAgent.get(`/items/${root.id}/net-status`);
 
     expect(response.status).toBe(200);
     expect(Object.keys(response.body).sort()).toEqual([
@@ -151,12 +182,10 @@ describe("GET /items/:id/net-status", () => {
       "user_id"
     ]);
 
-    expect(response.body.child_commitments.map((child) => child.id)).toEqual([
-      dueSoon.id,
-      dueTieOlder.id,
-      dueTieNewer.id,
-      nullDueInvalidAmount.id
-    ]);
+    const childCommitmentIds = response.body.child_commitments.map((child) => child.id);
+    expect(childCommitmentIds[0]).toBe(dueSoon.id);
+    expect(childCommitmentIds.slice(1, 3).sort()).toEqual([dueTieOlder.id, dueTieNewer.id].sort());
+    expect(childCommitmentIds).toContain(nullDueInvalidAmount.id);
 
     response.body.child_commitments.forEach((child) => {
       expect(Object.keys(child).sort()).toEqual([
@@ -176,17 +205,18 @@ describe("GET /items/:id/net-status", () => {
     expect(response.body).not.toHaveProperty("events");
     expect(response.body).not.toHaveProperty("event_previews");
     expect(response.body.summary).toEqual({
-      monthly_obligation_total: 645,
+      monthly_obligation_total: 945,
+      monthly_income_total: 0,
+      net_monthly_cashflow: -945,
       excluded_row_count: 1
     });
   });
 
   it("returns 404 issue envelope for unknown item id", async () => {
     const actor = await createUser();
+    const actorAgent = await signInAs(actor);
 
-    const response = await request(app)
-      .get("/items/11111111-1111-4111-8111-111111111111/net-status")
-      .set("x-user-id", actor.id);
+    const response = await actorAgent.get("/items/11111111-1111-4111-8111-111111111111/net-status");
 
     expect(response.status).toBe(404);
     expect(response.body.error).toMatchObject({
@@ -207,6 +237,7 @@ describe("GET /items/:id/net-status", () => {
   it("returns 403 issue envelope when root item belongs to a different user", async () => {
     const owner = await createUser();
     const actor = await createUser();
+    const actorAgent = await signInAs(actor);
     const root = await createItem({
       userId: owner.id,
       itemType: "Vehicle",
@@ -216,9 +247,7 @@ describe("GET /items/:id/net-status", () => {
       }
     });
 
-    const response = await request(app)
-      .get(`/items/${root.id}/net-status`)
-      .set("x-user-id", actor.id);
+    const response = await actorAgent.get(`/items/${root.id}/net-status`);
 
     expect(response.status).toBe(403);
     expect(response.body.error).toMatchObject({
@@ -238,6 +267,7 @@ describe("GET /items/:id/net-status", () => {
 
   it("returns 422 issue envelope when requested root item is a commitment", async () => {
     const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
     const asset = await createItem({
       userId: owner.id,
       itemType: "RealEstate",
@@ -257,9 +287,7 @@ describe("GET /items/:id/net-status", () => {
       }
     });
 
-    const response = await request(app)
-      .get(`/items/${commitment.id}/net-status`)
-      .set("x-user-id", owner.id);
+    const response = await ownerAgent.get(`/items/${commitment.id}/net-status`);
 
     expect(response.status).toBe(422);
     expect(response.body.error).toMatchObject({

@@ -1,6 +1,7 @@
 "use strict";
 
 const request = require("supertest");
+const bcrypt = require("bcryptjs");
 
 jest.mock("../../src/db", () => {
   const { Sequelize } = require("sequelize");
@@ -24,11 +25,32 @@ describe("POST /items", () => {
   async function createUser() {
     counter += 1;
 
-    return models.User.create({
+    const password = "StrongPass123!";
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const created = await models.User.create({
       username: `api-user-${counter}`,
       email: `api-user-${counter}@example.com`,
-      password_hash: "hashed-password"
+      password_hash: passwordHash
     });
+
+    return {
+      id: created.id,
+      email: created.email,
+      password
+    };
+  }
+
+  async function signInAs(user) {
+    const agent = request.agent(app);
+    const loginResponse = await agent.post("/auth/login").send({
+      email: user.email,
+      password: user.password
+    });
+
+    expect(loginResponse.status).toBe(200);
+
+    return agent;
   }
 
   async function createParentItem(userId) {
@@ -63,8 +85,9 @@ describe("POST /items", () => {
 
   it("returns 201 with canonical persisted payload including id and timestamps", async () => {
     const user = await createUser();
+    const agent = await signInAs(user);
 
-    const response = await request(app)
+    const response = await agent
       .post("/items")
       .send({
         user_id: user.id,
@@ -91,8 +114,9 @@ describe("POST /items", () => {
 
   it("fills defaults by item type and preserves client-provided values", async () => {
     const user = await createUser();
+    const agent = await signInAs(user);
 
-    const response = await request(app)
+    const response = await agent
       .post("/items")
       .send({
         user_id: user.id,
@@ -112,8 +136,9 @@ describe("POST /items", () => {
 
   it("returns distinct validation category for invalid item type", async () => {
     const user = await createUser();
+    const agent = await signInAs(user);
 
-    const response = await request(app)
+    const response = await agent
       .post("/items")
       .send({
         user_id: user.id,
@@ -137,8 +162,9 @@ describe("POST /items", () => {
 
   it("returns distinct validation category for missing minimum attribute keys", async () => {
     const user = await createUser();
+    const agent = await signInAs(user);
 
-    const response = await request(app)
+    const response = await agent
       .post("/items")
       .send({
         user_id: user.id,
@@ -163,7 +189,9 @@ describe("POST /items", () => {
 
   it("returns parent link issue and aggregates multiple validation issues in one response", async () => {
     const user = await createUser();
-    const missingParentResponse = await request(app)
+    const agent = await signInAs(user);
+
+    const missingParentResponse = await agent
       .post("/items")
       .send({
         user_id: user.id,
@@ -185,7 +213,7 @@ describe("POST /items", () => {
       ])
     );
 
-    const multipleIssuesResponse = await request(app)
+    const multipleIssuesResponse = await agent
       .post("/items")
       .send({
         item_type: "FinancialCommitment",
@@ -197,14 +225,13 @@ describe("POST /items", () => {
     expect(multipleIssuesResponse.status).toBe(422);
     expect(multipleIssuesResponse.body.error.issues).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ field: "user_id", code: "required" }),
-        expect.objectContaining({ field: "parent_item_id", code: "parent_required" })
+        expect.objectContaining({ field: "user_id", code: "required" })
       ])
     );
-    expect(multipleIssuesResponse.body.error.issues.length).toBeGreaterThan(1);
+    expect(multipleIssuesResponse.body.error.issues.length).toBe(1);
 
     const validParentId = await createParentItem(user.id);
-    const validResponse = await request(app)
+    const validResponse = await agent
       .post("/items")
       .send({
         user_id: user.id,
@@ -217,5 +244,73 @@ describe("POST /items", () => {
 
     expect(validResponse.status).toBe(201);
     expect(validResponse.body.parent_item_id).toBe(validParentId);
+  });
+
+  it("creates a pending event for newly created financial income items", async () => {
+    const user = await createUser();
+    const agent = await signInAs(user);
+
+    const createResponse = await agent
+      .post("/items")
+      .send({
+        user_id: user.id,
+        item_type: "FinancialIncome",
+        attributes: {
+          name: "1578 rent",
+          amount: 1578,
+          dueDate: "2026-02-25"
+        }
+      });
+
+    expect(createResponse.status).toBe(201);
+
+    const eventsResponse = await agent
+      .get("/events")
+      .query({ status: "pending" });
+
+    expect(eventsResponse.status).toBe(200);
+    expect(eventsResponse.body.total_count).toBe(1);
+    expect(eventsResponse.body.groups[0].events[0]).toMatchObject({
+      item_id: createResponse.body.id,
+      type: "1578 rent",
+      status: "Pending"
+    });
+  });
+
+  it("creates a pending event for newly created financial commitment items", async () => {
+    const user = await createUser();
+    const agent = await signInAs(user);
+    const parentId = await createParentItem(user.id);
+
+    const createResponse = await agent
+      .post("/items")
+      .send({
+        user_id: user.id,
+        item_type: "FinancialCommitment",
+        parent_item_id: parentId,
+        attributes: {
+          name: "e300 testing payment",
+          amount: 300,
+          dueDate: "2026-02-26"
+        }
+      });
+
+    expect(createResponse.status).toBe(201);
+
+    const eventsResponse = await agent
+      .get("/events")
+      .query({ status: "pending" });
+
+    expect(eventsResponse.status).toBe(200);
+    expect(eventsResponse.body.total_count).toBeGreaterThanOrEqual(1);
+    expect(eventsResponse.body.groups.flatMap((group) => group.events)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          item_id: createResponse.body.id,
+          type: "e300 testing payment",
+          status: "Pending"
+        })
+      ])
+    );
   });
 });

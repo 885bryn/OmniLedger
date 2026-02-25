@@ -1,6 +1,7 @@
 "use strict";
 
 const request = require("supertest");
+const bcrypt = require("bcryptjs");
 
 jest.mock("../../src/db", () => {
   const { Sequelize } = require("sequelize");
@@ -23,11 +24,32 @@ describe("items list and mutate contracts", () => {
 
   async function createUser() {
     userCount += 1;
-    return models.User.create({
+    const password = "StrongPass123!";
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const created = await models.User.create({
       username: `items-user-${userCount}`,
       email: `items-user-${userCount}@example.com`,
-      password_hash: "hashed-password"
+      password_hash: passwordHash
     });
+
+    return {
+      id: created.id,
+      email: created.email,
+      password
+    };
+  }
+
+  async function signInAs(user) {
+    const agent = request.agent(app);
+    const loginResponse = await agent.post("/auth/login").send({
+      email: user.email,
+      password: user.password
+    });
+
+    expect(loginResponse.status).toBe(200);
+
+    return agent;
   }
 
   async function createItem(userId, attributes = {}) {
@@ -38,6 +60,33 @@ describe("items list and mutate contracts", () => {
         address: "20 Test Avenue",
         estimatedValue: 300000,
         ...attributes
+      }
+    });
+  }
+
+  async function createCommitment(userId, parentItemId, amount, dueDate) {
+    return models.Item.create({
+      user_id: userId,
+      item_type: "FinancialCommitment",
+      parent_item_id: parentItemId,
+      attributes: {
+        name: `Commitment ${amount}`,
+        amount,
+        dueDate
+      }
+    });
+  }
+
+  async function createIncome(userId, parentItemId, amount, collectedTotal, dueDate) {
+    return models.Item.create({
+      user_id: userId,
+      item_type: "FinancialIncome",
+      parent_item_id: parentItemId,
+      attributes: {
+        name: `Income ${amount}`,
+        amount,
+        collectedTotal,
+        dueDate
       }
     });
   }
@@ -87,6 +136,7 @@ describe("items list and mutate contracts", () => {
   it("lists items with deterministic default ordering and query controls", async () => {
     const owner = await createUser();
     const outsider = await createUser();
+    const ownerAgent = await signInAs(owner);
 
     const newest = await createItem(owner.id, { address: "Newest" });
     const older = await createItem(owner.id, { address: "Older" });
@@ -97,39 +147,56 @@ describe("items list and mutate contracts", () => {
     await setItemTimestamps(newest.id, "2026-01-01T00:00:00.000Z", "2026-01-10T00:00:00.000Z");
     await setItemTimestamps(dueSoon.id, "2026-01-01T00:00:00.000Z", "2026-01-08T00:00:00.000Z");
 
-    const listed = await request(app)
+    const listed = await ownerAgent
       .get("/items")
-      .set("x-user-id", owner.id);
 
     expect(listed.status).toBe(200);
     expect(listed.body.total_count).toBe(3);
     const firstPass = listed.body.items.map((item) => item.id);
 
-    const listedAgain = await request(app)
+    const listedAgain = await ownerAgent
       .get("/items")
-      .set("x-user-id", owner.id);
 
     expect(listedAgain.status).toBe(200);
     expect(listedAgain.body.items.map((item) => item.id)).toEqual(firstPass);
     expect(new Set(firstPass)).toEqual(new Set([newest.id, dueSoon.id, older.id]));
 
-    const filtered = await request(app)
+    const filtered = await ownerAgent
       .get("/items")
-      .set("x-user-id", owner.id)
       .query({ search: "due", sort: "due_soon", filter: "assets" });
 
     expect(filtered.status).toBe(200);
     expect(filtered.body.total_count).toBe(1);
     expect(filtered.body.items[0].id).toBe(dueSoon.id);
+
+    const commitmentA = await createCommitment(owner.id, newest.id, 200, "2026-04-01");
+    const commitmentB = await createCommitment(owner.id, newest.id, 900, "2026-03-01");
+
+    const amountSorted = await ownerAgent
+      .get("/items")
+      .query({ filter: "commitments", sort: "amount_high_to_low" });
+
+    expect(amountSorted.status).toBe(200);
+    expect(amountSorted.body.items.map((item) => item.id).slice(0, 2)).toEqual([commitmentB.id, commitmentA.id]);
+
+    const incomeA = await createIncome(owner.id, newest.id, 500, 2000, "2026-03-05");
+    const incomeB = await createIncome(owner.id, newest.id, 900, 100, "2026-03-06");
+
+    const incomeSorted = await ownerAgent
+      .get("/items")
+      .query({ filter: "income", sort: "amount_low_to_high" });
+
+    expect(incomeSorted.status).toBe(200);
+    expect(incomeSorted.body.items.map((item) => item.id).slice(0, 2)).toEqual([incomeB.id, incomeA.id]);
   });
 
   it("returns field-level issue envelopes for invalid list and mutate requests", async () => {
     const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
     const item = await createItem(owner.id);
 
-    const invalidList = await request(app)
+    const invalidList = await ownerAgent
       .get("/items")
-      .set("x-user-id", owner.id)
       .query({ filter: "bad-filter" });
 
     expect(invalidList.status).toBe(422);
@@ -147,9 +214,8 @@ describe("items list and mutate contracts", () => {
       ])
     );
 
-    const invalidPatch = await request(app)
+    const invalidPatch = await ownerAgent
       .patch(`/items/${item.id}`)
-      .set("x-user-id", owner.id)
       .send({
         attributes: "not-an-object"
       });
@@ -172,43 +238,38 @@ describe("items list and mutate contracts", () => {
 
   it("applies patch and soft delete while enforcing deleted visibility semantics", async () => {
     const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
     const item = await createItem(owner.id, { address: "Deletable", estimatedValue: 100000 });
 
-    const patched = await request(app)
+    const patched = await ownerAgent
       .patch(`/items/${item.id}`)
-      .set("x-user-id", owner.id)
       .send({ attributes: { estimatedValue: 120000 } });
 
     expect(patched.status).toBe(200);
     expect(patched.body.attributes.estimatedValue).toBe(120000);
 
-    const deleted = await request(app)
+    const deleted = await ownerAgent
       .delete(`/items/${item.id}`)
-      .set("x-user-id", owner.id);
 
     expect(deleted.status).toBe(200);
     expect(deleted.body.is_deleted).toBe(true);
     expect(deleted.body.deleted_at).toEqual(expect.any(String));
 
-    const defaultList = await request(app)
-      .get("/items")
-      .set("x-user-id", owner.id);
+    const defaultList = await ownerAgent.get("/items");
 
     expect(defaultList.status).toBe(200);
     expect(defaultList.body.total_count).toBe(0);
 
-    const includeDeletedList = await request(app)
+    const includeDeletedList = await ownerAgent
       .get("/items")
-      .set("x-user-id", owner.id)
       .query({ include_deleted: "true", filter: "deleted" });
 
     expect(includeDeletedList.status).toBe(200);
     expect(includeDeletedList.body.total_count).toBe(1);
     expect(includeDeletedList.body.items[0].id).toBe(item.id);
 
-    const updateAfterDelete = await request(app)
+    const updateAfterDelete = await ownerAgent
       .patch(`/items/${item.id}`)
-      .set("x-user-id", owner.id)
       .send({ attributes: { estimatedValue: 130000 } });
 
     expect(updateAfterDelete.status).toBe(422);
@@ -217,26 +278,21 @@ describe("items list and mutate contracts", () => {
 
   it("returns item activity timeline with deterministic shape and supports limit validation", async () => {
     const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
     const item = await createItem(owner.id, { address: "Activity House" });
 
-    await request(app)
+    await ownerAgent
       .patch(`/items/${item.id}`)
-      .set("x-user-id", owner.id)
       .send({ attributes: { estimatedValue: 320000 } });
 
     const event = await createEvent(item.id, "2026-08-01T00:00:00.000Z");
-    await request(app)
-      .patch(`/events/${event.id}/complete`)
-      .set("x-user-id", owner.id);
+    await ownerAgent.patch(`/events/${event.id}/complete`);
 
-    await request(app)
-      .delete(`/items/${item.id}`)
-      .set("x-user-id", owner.id);
+    await ownerAgent.delete(`/items/${item.id}`);
 
-    const activity = await request(app)
+    const activity = await ownerAgent
       .get(`/items/${item.id}/activity`)
-      .query({ limit: "2" })
-      .set("x-user-id", owner.id);
+      .query({ limit: "2" });
 
     expect(activity.status).toBe(200);
     expect(activity.body.item_id).toBe(item.id);
@@ -246,6 +302,13 @@ describe("items list and mutate contracts", () => {
         "action",
         "created_at",
         "entity",
+        "entity_id",
+        "entity_type",
+        "event_amount",
+        "event_completed_at",
+        "event_due_date",
+        "event_status",
+        "event_type",
         "id",
         "timestamp",
         "updated_at",
@@ -256,10 +319,9 @@ describe("items list and mutate contracts", () => {
       expect.arrayContaining(["item.deleted", "event.completed"])
     );
 
-    const invalidLimit = await request(app)
+    const invalidLimit = await ownerAgent
       .get(`/items/${item.id}/activity`)
-      .query({ limit: "0" })
-      .set("x-user-id", owner.id);
+      .query({ limit: "0" });
 
     expect(invalidLimit.status).toBe(422);
     expect(invalidLimit.body.error).toMatchObject({
