@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { EventsPage } from '../pages/events/events-page'
 
@@ -67,19 +67,14 @@ function renderEventsPage() {
 
 describe('dashboard/events completion flow', () => {
   const originalFetch = globalThis.fetch
-  const originalConfirm = window.confirm
-
-  beforeEach(() => {
-    window.confirm = vi.fn(() => true)
-  })
 
   afterEach(() => {
+    cleanup()
     globalThis.fetch = originalFetch
-    window.confirm = originalConfirm
     vi.restoreAllMocks()
   })
 
-  it('opens follow-up modal only when completion payload requests prompt_next_date', async () => {
+  it('shows follow-up modal when completion payload has prompt_next_date true', async () => {
     let listCalls = 0
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
@@ -88,6 +83,15 @@ describe('dashboard/events completion flow', () => {
       if (url.includes('/events?status=pending') && method === 'GET') {
         listCalls += 1
         return createResponse({ status: 200, json: buildEventsResponse() })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [{ id: 'item-1', item_type: 'FinancialCommitment', attributes: { name: 'Maple Mortgage' } }],
+          },
+        })
       }
 
       if (url.includes('/events/event-1/complete') && method === 'PATCH') {
@@ -109,22 +113,36 @@ describe('dashboard/events completion flow', () => {
 
     await screen.findByText('Mortgage')
     await userEvent.click(screen.getByRole('button', { name: 'Complete' }))
+    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Complete' }))
 
     expect(await screen.findByText('Schedule the next date')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Not now' })).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }))
+
+    await waitFor(() => {
+      expect(screen.queryByText('Schedule the next date')).toBeNull()
+    })
 
     await waitFor(() => {
       expect(listCalls).toBeGreaterThan(1)
     })
   })
 
-  it('keeps follow-up modal closed when completion payload has prompt_next_date false', async () => {
+  it('keeps modal hidden when completion payload has prompt_next_date false', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
 
       if (url.includes('/events?status=pending') && method === 'GET') {
         return createResponse({ status: 200, json: buildEventsResponse() })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [{ id: 'item-1', item_type: 'FinancialCommitment', attributes: { name: 'Maple Mortgage' } }],
+          },
+        })
       }
 
       if (url.includes('/events/event-1/complete') && method === 'PATCH') {
@@ -146,6 +164,7 @@ describe('dashboard/events completion flow', () => {
 
     await screen.findByText('Mortgage')
     await userEvent.click(screen.getByRole('button', { name: 'Complete' }))
+    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Complete' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Schedule the next date')).toBeNull()
