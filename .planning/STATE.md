@@ -12,7 +12,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 Phase: 8 of 12 (Auth Sessions & Protected Access)
 Plan: 2 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-25 - Completed 08-03 authorization boundary migration
+Last activity: 2026-02-25 - Completed 08-02 frontend auth UX and protected route gating
 
 Progress: [███░░░░░░░] 33%
 
@@ -37,6 +37,7 @@ Progress: [███░░░░░░░] 33%
 - Last 5 plans: 08-01 (4 min), 08-03 (2 min)
 - Trend: Authorization boundary migration landed with faster second-plan execution.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
+| Phase 08 P02 | 2 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -53,6 +54,9 @@ Recent decisions affecting current work:
 - [Phase 08]: Derived internal usernames from email local-part so signup remains email+password-only.
 - [Phase 08]: Added requireAuth middleware as the single API boundary that enforces session identity and hydrates req.actor.
 - [Phase 08]: Removed x-user-id as an authorization source by passing req.actor.userId into protected route domain calls.
+- [Phase 08]: Store returnTo in sessionStorage only after app-relative sanitization and consume it once after successful auth.
+- [Phase 08]: Wrap the protected app shell route tree with RequireAuth, while exposing /login and /register as public routes.
+- [Phase 08]: Use a generic failed-login alert plus inline field errors and cooldown submit lock to satisfy security-safe UX requirements.
 
 ### Pending Todos
 
@@ -65,6 +69,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25 22:55
-Stopped at: Completed 08-03-PLAN.md
-Resume file: .planning/phases/08-auth-sessions-protected-access/08-02-PLAN.md
+Last session: 2026-02-25 22:59
+Stopped at: Completed 08-02-PLAN.md
+Resume file: .planning/phases/08-auth-sessions-protected-access/08-03-PLAN.md
