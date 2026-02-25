@@ -5,19 +5,19 @@
 See: `.planning/PROJECT.md` (updated 2026-02-24)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 4 complete - ready to begin Phase 5 local deployment runtime work.
+**Current focus:** Phase 5 Plan 1 complete - ready for Phase 5 Plan 2 local compose runtime delivery.
 
 ## Current Position
 
-**Current Phase:** 04
-**Current Phase Name:** Event Completion and Audit Traceability
+**Current Phase:** 05
+**Current Phase Name:** Local Deployment Runtime
 **Total Phases:** 5
-**Current Plan:** Not started
+**Current Plan:** 2
 **Total Plans in Phase:** 2
-**Status:** Milestone complete
+**Status:** Ready to execute
 **Last Activity:** 2026-02-25
 
-**Progress:** [██████████] 100%
+**Progress:** [█████████░] 91%
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 03 P02 | 2 min | 3 tasks | 4 files |
 | Phase 04 P01 | 3 min | 3 tasks | 3 files |
 | Phase 04 P02 | 2 min | 3 tasks | 4 files |
+| Phase 05 P01 | 2 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,9 @@ Recent decisions affecting current work:
 - [Phase 04]: Return canonical completion payload for both first-complete and idempotent re-complete paths so transport behavior stays deterministic.
 - [Phase 04]: Expose PATCH /events/:id/complete as a thin transport route that returns completeEvent payload directly.
 - [Phase 04]: Map EventCompletionError categories in shared app middleware to keep issue-envelope semantics consistent across endpoints.
+- [Phase 05]: Bind API listener to 0.0.0.0 by default for LAN/container reachability.
+- [Phase 05]: Use /health readiness checks based on live sequelize.authenticate() connectivity.
+- [Phase 05]: Run startup migrations with sequelize-cli db:migrate --url DATABASE_URL to avoid sqlite-target drift.
 
 ### Roadmap Evolution
 
@@ -93,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T01:49:09.526Z
-**Stopped at:** Phase 5 context gathered
-**Resume file:** .planning/phases/05-local-deployment-runtime/05-CONTEXT.md
+**Last session:** 2026-02-25T02:10:30.227Z
+**Stopped at:** Completed 05-01-PLAN.md
+**Resume file:** None

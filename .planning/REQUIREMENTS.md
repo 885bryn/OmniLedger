@@ -31,7 +31,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Delivery and Runtime
 
-- [ ] **DEPL-01**: User can run API and PostgreSQL together with `docker-compose.yml` for local network hosting.
+- [x] **DEPL-01**: User can run API and PostgreSQL together with `docker-compose.yml` for local network hosting.
 - [x] **DEPL-02**: User can run the API against PostgreSQL using Sequelize models for `Users`, `Items`, `Events`, and `AuditLog`.
 
 ## v2 Requirements
@@ -75,7 +75,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVNT-02 | Phase 4 | Complete |
 | EVNT-03 | Phase 4 | Complete |
 | AUDT-01 | Phase 4 | Complete |
-| DEPL-01 | Phase 5 | Pending |
+| DEPL-01 | Phase 5 | Complete |
 | DEPL-02 | Phase 1 | Complete |
 
 **Coverage:**

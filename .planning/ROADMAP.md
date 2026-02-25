@@ -78,7 +78,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can start API and PostgreSQL together through `docker-compose.yml`.
   2. Services are reachable on the local network after compose startup.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 05-01-PLAN.md - Add API runtime boot primitives (server entrypoint, DB-aware startup retry/migrate, readiness health endpoint).
+- [ ] 05-02-PLAN.md - Deliver Docker Compose stack, env template, and single-path quickstart/troubleshooting docs for local-network runtime.
 
 ## Progress
 
@@ -88,4 +91,13 @@ Plans:
 | 2. Item Creation Workflow | 2/2 | Complete   | 2026-02-24 |
 | 3. Net-Status Retrieval | 2/2 | Complete | 2026-02-25 |
 | 4. Event Completion and Audit Traceability | 2/2 | Complete   | 2026-02-25 |
-| 5. Local Deployment Runtime | 0/TBD | Not started | - |
+| 5. Local Deployment Runtime | 1/2 | In Progress|  |
+
+### Phase 6: 6
+
+**Goal:** [To be planned]
+**Depends on:** Phase 5
+**Plans:** 1/2 plans executed
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 6 to break down)
