@@ -30,4 +30,20 @@ describe("GET /health", () => {
       ready: true
     });
   });
+
+  it("returns unhealthy response when database connectivity fails", async () => {
+    mockAuthenticate.mockRejectedValueOnce(new Error("db unavailable"));
+
+    const response = await request(app).get("/health");
+
+    expect(response.status).toBe(503);
+    expect(response.body).toEqual({
+      status: "unhealthy",
+      ready: false,
+      error: {
+        code: "database_unavailable",
+        message: "Database connectivity check failed."
+      }
+    });
+  });
 });
