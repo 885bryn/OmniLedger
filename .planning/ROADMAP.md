@@ -92,7 +92,7 @@ Plans:
 | 3. Net-Status Retrieval | 2/2 | Complete | 2026-02-25 |
 | 4. Event Completion and Audit Traceability | 2/2 | Complete   | 2026-02-25 |
 | 5. Local Deployment Runtime | 2/2 | Complete | 2026-02-25 |
-| 6. Full Frontend UI Stack | 3/6 | In Progress | |
+| 6. Full Frontend UI Stack | 4/6 | In Progress | |
 
 ### Phase 6: 6
 
@@ -105,6 +105,6 @@ Plans:
 - [x] 06-01-PLAN.md - Implement item/events domain query and mutation services plus deterministic domain regression coverage.
 - [x] 06-02-PLAN.md - Expose expanded items/events/users HTTP contracts with centralized error mapping and API integration tests.
 - [x] 06-03-PLAN.md - Bootstrap frontend workspace/runtime baseline (React + Vite + Tailwind/shadcn-compatible config), frontend entrypoint, and documented build/start commands.
-- [ ] 06-04-PLAN.md - Implement app shell/routing/providers plus explicit `/users`-backed persisted user switcher, `x-user-id` API client plumbing, and bilingual runtime language switching.
+- [x] 06-04-PLAN.md - Implement app shell/routing/providers plus explicit `/users`-backed persisted user switcher, `x-user-id` API client plumbing, and bilingual runtime language switching.
 - [ ] 06-05-PLAN.md - Deliver dashboard and events journeys with due-first grouping, inline completion refresh, and follow-up modal branching.
 - [ ] 06-06-PLAN.md - Deliver items list/detail/create/edit/delete/activity workflows with safeguards and bilingual journey tests.
