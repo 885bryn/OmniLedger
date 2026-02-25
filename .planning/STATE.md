@@ -5,7 +5,7 @@
 See: `.planning/PROJECT.md` (updated 2026-02-24)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 6 Plan 5 complete - ready for Phase 6 Plan 6 item workflows.
+**Current focus:** Phase 6 Plan 6 complete - phase ready for verification and transition.
 
 ## Current Position
 
@@ -14,10 +14,10 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 **Total Phases:** 6
 **Current Plan:** 6
 **Total Plans in Phase:** 6
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 **Last Activity:** 2026-02-25
 
-**Progress:** [█████████░] 94%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 06-6 P03 | 9 min | 1 tasks | 4 files |
 | Phase 06-6 P04 | 2 min | 2 tasks | 11 files |
 | Phase 06-6 P05 | 7 min | 2 tasks | 14 files |
+| Phase 06-6 P06 | 9 min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,9 @@ Recent decisions affecting current work:
 - [Phase 06-6]: Use one deterministic date-ordering utility across dashboard and events pages to keep nearest-due grouping stable.
 - [Phase 06-6]: Invalidate dashboard and events query namespaces after event completion to enforce confirm-then-refresh semantics.
 - [Phase 06-6]: Show follow-up modal only when completion payload includes prompt_next_date true while preserving a clear Not now branch.
+- [Phase 06-6]: Use one items list query surface with debounced search and quick chips so sort/filter/search state stays deterministic and API-aligned.
+- [Phase 06-6]: Drive item edit through a dedicated form page with beforeunload and route-blocking guard to enforce unsaved-change protections across browser and in-app navigation.
+- [Phase 06-6]: Validate FinancialCommitment parent-asset selection before wizard step advancement to prevent invalid payload progression.
 
 ### Roadmap Evolution
 
@@ -118,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T04:54:22.424Z
-**Stopped at:** Completed 06-05-PLAN.md
+**Last session:** 2026-02-25T05:07:24.603Z
+**Stopped at:** Completed 06-06-PLAN.md
 **Resume file:** None
