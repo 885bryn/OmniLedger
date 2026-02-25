@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require("express");
+const { createSessionMiddleware } = require("./auth/session-options");
 const { sequelize } = require("../db");
 const {
   mapItemCreateError,
@@ -13,6 +14,7 @@ const {
 let createItemsRouter = () => express.Router();
 let createEventsRouter = () => express.Router();
 let createUsersRouter = () => express.Router();
+let createAuthRouter = () => express.Router();
 
 try {
   ({ createItemsRouter } = require("./routes/items.routes"));
@@ -44,11 +46,46 @@ try {
   }
 }
 
+try {
+  ({ createAuthRouter } = require("./routes/auth.routes"));
+} catch (error) {
+  const isMissingAuthRouter = error && error.code === "MODULE_NOT_FOUND" && /auth\.routes/.test(error.message);
+
+  if (!isMissingAuthRouter) {
+    throw error;
+  }
+}
+
+function resolveAllowedOrigin() {
+  if (typeof process.env.FRONTEND_ORIGIN === "string" && process.env.FRONTEND_ORIGIN.trim().length > 0) {
+    return process.env.FRONTEND_ORIGIN.trim();
+  }
+
+  return "http://localhost:5173";
+}
+
 function createApp() {
   const app = express();
+  const allowedOrigin = resolveAllowedOrigin();
 
   app.disable("x-powered-by");
+  app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Vary", "Origin");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).end();
+      return;
+    }
+
+    next();
+  });
+  app.use(createSessionMiddleware());
   app.use(express.json());
+  app.use("/auth", createAuthRouter());
   app.use("/", createItemsRouter());
   app.use("/", createEventsRouter());
   app.use("/", createUsersRouter());

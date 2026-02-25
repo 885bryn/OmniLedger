@@ -9,7 +9,11 @@
     "test": "jest --runInBand"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-session-sequelize": "^8.0.5",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "express-session": "^1.19.0",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.5"
