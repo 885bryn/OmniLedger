@@ -8,6 +8,18 @@ HACT is a full-stack household ledger app with a Node/Express/Sequelize API and 
 
 Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
 
+## Current State
+
+- **Shipped version:** v1.0 MVP (2026-02-25)
+- **Release scope:** 7 phases, 19 plans, and full backend + frontend household ledger workflows
+- **Operational note:** Deferred manual verification debt remains for second-device LAN confirmation and selected UX sign-off checks
+
+## Next Milestone Goals
+
+- Complete deferred operational sign-off checks from v1.0 and capture evidence in planning artifacts.
+- Add recurrence checkbox support during FinancialCommitment/FinancialIncome item creation.
+- Continue UX hardening while preserving deterministic backend/frontend contract behavior.
+
 ## Requirements
 
 ### Validated
@@ -58,4 +70,4 @@ Users can see each asset together with its linked obligations and timeline statu
 | Treat event undo as first-class workflow (`/events/:id/undo-complete`) that reverses totals and restores pending state | Prevents accidental completion drift and keeps financial rollups/audit history trustworthy | Adopted in Phase 6 |
 
 ---
-*Last updated: 2026-02-25 after Phase 6*
+*Last updated: 2026-02-25 after v1.0 milestone*

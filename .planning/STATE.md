@@ -5,16 +5,16 @@
 See: `.planning/PROJECT.md` (updated 2026-02-25)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Execute Phase 7 Plan 02 to finish milestone gap-closure evidence.
+**Current focus:** v1.0 archived; preparing next milestone definition.
 
 ## Current Position
 
-**Current Phase:** 07
-**Current Phase Name:** milestone-gap-closure
+**Current Phase:** Complete
+**Current Phase Name:** Milestone archived
 **Total Phases:** 7
-**Current Plan:** 02
-**Total Plans in Phase:** 2
-**Status:** Phase complete — ready for verification
+**Current Plan:** None
+**Total Plans in Phase:** 0
+**Status:** Ready for next milestone
 **Last Activity:** 2026-02-25
 
 **Progress:** [██████████] 100%
@@ -131,6 +131,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T10:19:18.638Z
-**Stopped at:** Completed 07-02-PLAN.md
+**Last session:** 2026-02-25T12:55:00.000Z
+**Stopped at:** Milestone v1.0 archived and tagged; next step is /gsd-new-milestone
 **Resume file:** None
