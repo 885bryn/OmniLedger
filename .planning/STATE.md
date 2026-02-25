@@ -5,24 +5,24 @@
 See: `.planning/PROJECT.md` (updated 2026-02-24)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone complete - ready for milestone closure
+**Current focus:** Phase 4 in progress - complete API wiring for event completion endpoint.
 
 ## Current Position
 
-**Current Phase:** 03
-**Current Phase Name:** Net-Status Retrieval
+**Current Phase:** 04
+**Current Phase Name:** Event Completion and Audit Traceability
 **Total Phases:** 5
-**Current Plan:** Not started
+**Current Plan:** 2 of 2
 **Total Plans in Phase:** 2
-**Status:** Milestone complete
+**Status:** In progress
 **Last Activity:** 2026-02-25
 
-**Progress:** [██████████] 100%
+**Progress:** [█████████░] 89%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 2.8 min
 - Total execution time: 0.2 hours
 
@@ -33,7 +33,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | 1. Domain Model Foundation | 3 | 8 min | 2.7 min |
 | 2. Item Creation Workflow | 2 | 6 min | 3.0 min |
 | 3. Net-Status Retrieval | 2 | 4 min | 2.0 min |
-| 4. Event Completion and Audit Traceability | 0 | 0 min | 0 min |
+| 4. Event Completion and Audit Traceability | 1 | 3 min | 3.0 min |
 | 5. Local Deployment Runtime | 0 | 0 min | 0 min |
 
 **Recent Trend:**
@@ -46,6 +46,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 02 P02 | 3 min | 3 tasks | 7 files |
 | Phase 03 P01 | 2 min | 3 tasks | 3 files |
 | Phase 03 P02 | 2 min | 3 tasks | 4 files |
+| Phase 04 P01 | 3 min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 03]: Allow net-status roots only for RealEstate and Vehicle; return wrong_root_type for commitment-root requests.
 - [Phase 03]: Use x-user-id request header as temporary actor transport at API boundary while keeping ownership logic in domain service.
 - [Phase 03]: Map ItemNetStatusError categories centrally in app middleware so net-status failures share the established issue-envelope format.
+- [Phase 04]: Represent completion target deterministically in AuditLog.entity as event:<event-id> to satisfy audit traceability without schema changes.
+- [Phase 04]: Return canonical completion payload for both first-complete and idempotent re-complete paths so transport behavior stays deterministic.
 
 ### Pending Todos
 
@@ -83,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T01:03:04.682Z
-**Stopped at:** Phase 4 context gathered
-**Resume file:** .planning/phases/04-event-completion-and-audit-traceability/04-CONTEXT.md
+**Last session:** 2026-02-25T01:23:28.301Z
+**Stopped at:** Completed 04-01-PLAN.md
+**Resume file:** None

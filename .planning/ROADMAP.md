@@ -66,7 +66,10 @@ Plans:
   1. User can complete an event via `PATCH /events/:id/complete`, and the event status is persisted as `Completed`.
   2. When a completed event is non-recurring, completion response includes `prompt_next_date: true`.
   3. Completing an event records an `AuditLog` entry with user id, action, and timestamp.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [x] 04-01-PLAN.md - Implement transactional event-completion domain service with idempotent audit writes and prompt signaling rules.
+- [ ] 04-02-PLAN.md - Expose PATCH /events/:id/complete with centralized error mapping and endpoint integration coverage.
 
 ### Phase 5: Local Deployment Runtime
 **Goal**: Users can run the full API stack locally with one Compose workflow.
@@ -84,5 +87,5 @@ Plans:
 | 1. Domain Model Foundation | 3/3 | Complete | 2026-02-24 |
 | 2. Item Creation Workflow | 2/2 | Complete   | 2026-02-24 |
 | 3. Net-Status Retrieval | 2/2 | Complete | 2026-02-25 |
-| 4. Event Completion and Audit Traceability | 0/TBD | Not started | - |
+| 4. Event Completion and Audit Traceability | 1/2 | In Progress|  |
 | 5. Local Deployment Runtime | 0/TBD | Not started | - |
