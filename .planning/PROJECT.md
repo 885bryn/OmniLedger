@@ -14,11 +14,15 @@ Users can see each asset together with its linked obligations and timeline statu
 - **Release scope:** 7 phases, 19 plans, and full backend + frontend household ledger workflows
 - **Operational note:** Deferred manual verification debt remains for second-device LAN confirmation and selected UX sign-off checks
 
-## Next Milestone Goals
+## Current Milestone: v2.0 Auth, Timeline & Data Lifecycle
 
-- Complete deferred operational sign-off checks from v1.0 and capture evidence in planning artifacts.
-- Add recurrence checkbox support during FinancialCommitment/FinancialIncome item creation.
-- Continue UX hardening while preserving deterministic backend/frontend contract behavior.
+**Goal:** Introduce secure multi-user operations, financial parent/occurrence modeling, timeline-driven workflows, and enterprise-grade data lifecycle controls.
+
+**Target features:**
+- Multi-user authentication with role-based access control, per-user data isolation, and admin all-data mode.
+- Financial parent contract model (`FinancialItem`) with child event occurrence model, recurrence projection, and projection instantiation edits.
+- Smart timeline and asset-view refactor for current/upcoming versus historical ledgers.
+- Soft delete, restore/trash workflows, delete intercept for linked records, and 30-day hard cleanup.
 
 ## Requirements
 
@@ -33,8 +37,10 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ### Active
 
-- [ ] Add recurrence checkbox support during cashflow item creation for FinancialCommitment and FinancialIncome.
-- [ ] Run second-device LAN health validation pass for Phase 5 runtime hardening.
+- [ ] Implement authentication, RBAC data scoping, and admin visibility controls.
+- [ ] Refactor financial data model to parent contracts with child occurrences and recurrence/projection logic.
+- [ ] Deliver smart timeline UX and asset financial section split (current/upcoming vs historical).
+- [ ] Implement soft delete/restore lifecycle including delete intercept and 30-day cleanup automation.
 
 ### Out of Scope
 
@@ -45,7 +51,7 @@ Users can see each asset together with its linked obligations and timeline statu
 
 - Product is a greenfield API-first system named Household Asset & Commitment Tracker (HACT).
 - Data model centers on `items` as a unified ledger object with typed metadata in `attributes` JSONB and self-references for linked commitments.
-- Key domain categories include assets (`RealEstate`, `Vehicle`) and obligations (`FinancialCommitment`, `Subscription`) with timeline events and history.
+- Key domain categories include assets (`RealEstate`, `Vehicle`) and obligations/income (`FinancialCommitment`, `FinancialIncome`) with timeline events and history.
 - Critical workflow behavior: completing non-recurring events must return `prompt_next_date: true` so clients can trigger follow-up scheduling UX.
 - Deliverables explicitly requested: Sequelize model files, Express route controllers for specified business logic, and Docker setup.
 
@@ -70,4 +76,4 @@ Users can see each asset together with its linked obligations and timeline statu
 | Treat event undo as first-class workflow (`/events/:id/undo-complete`) that reverses totals and restores pending state | Prevents accidental completion drift and keeps financial rollups/audit history trustworthy | Adopted in Phase 6 |
 
 ---
-*Last updated: 2026-02-25 after v1.0 milestone*
+*Last updated: 2026-02-25 after milestone v2.0 initialization*

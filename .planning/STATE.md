@@ -5,19 +5,19 @@
 See: `.planning/PROJECT.md` (updated 2026-02-25)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** v1.0 archived; preparing next milestone definition.
+**Current focus:** v2.0 Auth, Timeline & Data Lifecycle
 
 ## Current Position
 
-**Current Phase:** Complete
-**Current Phase Name:** Milestone archived
-**Total Phases:** 7
-**Current Plan:** None
+**Current Phase:** Not started (defining requirements)
+**Current Phase Name:** —
+**Total Phases:** 0
+**Current Plan:** —
 **Total Plans in Phase:** 0
-**Status:** Ready for next milestone
-**Last Activity:** 2026-02-25
+**Status:** Defining requirements
+**Last Activity:** 2026-02-25 — Milestone v2.0 started
 
-**Progress:** [██████████] 100%
+**Progress:** [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
