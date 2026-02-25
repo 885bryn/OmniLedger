@@ -14,7 +14,7 @@ This roadmap delivers HACT as a usable backend ledger in dependency order: first
 - [x] **Phase 2: Item Creation Workflow** - Deliver `POST /items` with type-aware default attributes for consistent item onboarding. (completed 2026-02-24)
 - [x] **Phase 3: Net-Status Retrieval** - Deliver nested commitment visibility through `GET /items/:id/net-status`. (completed 2026-02-25)
 - [x] **Phase 4: Event Completion and Audit Traceability** - Complete event lifecycle behavior including completion status, audit writes, and next-date prompting. (completed 2026-02-25)
-- [ ] **Phase 5: Local Deployment Runtime** - Run API and PostgreSQL together via Docker Compose on the local network.
+- [x] **Phase 5: Local Deployment Runtime** - Run API and PostgreSQL together via Docker Compose on the local network. (completed 2026-02-25)
 
 ## Phase Details
 
@@ -80,8 +80,8 @@ Plans:
   2. Services are reachable on the local network after compose startup.
 **Plans**: 2 plans
 Plans:
-- [ ] 05-01-PLAN.md - Add API runtime boot primitives (server entrypoint, DB-aware startup retry/migrate, readiness health endpoint).
-- [ ] 05-02-PLAN.md - Deliver Docker Compose stack, env template, and single-path quickstart/troubleshooting docs for local-network runtime.
+- [x] 05-01-PLAN.md - Add API runtime boot primitives (server entrypoint, DB-aware startup retry/migrate, readiness health endpoint).
+- [x] 05-02-PLAN.md - Deliver Docker Compose stack, env template, and single-path quickstart/troubleshooting docs for local-network runtime.
 
 ## Progress
 
@@ -91,7 +91,7 @@ Plans:
 | 2. Item Creation Workflow | 2/2 | Complete   | 2026-02-24 |
 | 3. Net-Status Retrieval | 2/2 | Complete | 2026-02-25 |
 | 4. Event Completion and Audit Traceability | 2/2 | Complete   | 2026-02-25 |
-| 5. Local Deployment Runtime | 1/2 | In Progress|  |
+| 5. Local Deployment Runtime | 2/2 | Complete | 2026-02-25 |
 
 ### Phase 6: 6
 

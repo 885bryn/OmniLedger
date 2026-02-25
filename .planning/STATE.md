@@ -14,10 +14,10 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 **Total Phases:** 5
 **Current Plan:** 2
 **Total Plans in Phase:** 2
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 **Last Activity:** 2026-02-25
 
-**Progress:** [█████████░] 91%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 04 P01 | 3 min | 3 tasks | 3 files |
 | Phase 04 P02 | 2 min | 3 tasks | 4 files |
 | Phase 05 P01 | 2 min | 3 tasks | 5 files |
+| Phase 05 P02 | 14 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - [Phase 05]: Bind API listener to 0.0.0.0 by default for LAN/container reachability.
 - [Phase 05]: Use /health readiness checks based on live sequelize.authenticate() connectivity.
 - [Phase 05]: Run startup migrations with sequelize-cli db:migrate --url DATABASE_URL to avoid sqlite-target drift.
+- [Phase 05]: Use compose service names api and db with fixed host ports 8080/5433 to keep runtime verification deterministic.
+- [Phase 05]: Run container installs as runtime-only dependencies and install sequelize-cli without saving to avoid sqlite3 build-tool failures while preserving migration-on-boot behavior.
+- [Phase 05]: Document one canonical up/down quickstart flow and exactly three troubleshooting categories to match the runtime contract.
 
 ### Roadmap Evolution
 
@@ -97,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T02:10:30.227Z
-**Stopped at:** Completed 05-01-PLAN.md
+**Last session:** 2026-02-25T02:29:19.408Z
+**Stopped at:** Completed 05-02-PLAN.md
 **Resume file:** None
