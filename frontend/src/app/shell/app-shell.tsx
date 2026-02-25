@@ -1,6 +1,9 @@
 import { type ReactNode, createContext, useContext, useMemo, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { Menu } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from './language-switcher'
+import { UserSwitcher } from './user-switcher'
 
 type SidebarContextValue = {
   open: boolean
@@ -33,13 +36,15 @@ function useSidebar() {
   return context
 }
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/items', label: 'Items' },
-  { to: '/events', label: 'Events' },
-]
-
 function NavContent() {
+  const { t } = useTranslation()
+
+  const navItems = [
+    { to: '/dashboard', label: t('navigation.dashboard') },
+    { to: '/items', label: t('navigation.items') },
+    { to: '/events', label: t('navigation.events') },
+  ]
+
   return (
     <nav className="space-y-1">
       {navItems.map((item) => (
@@ -61,6 +66,7 @@ function NavContent() {
 }
 
 function LayoutFrame() {
+  const { t } = useTranslation()
   const { open, toggle } = useSidebar()
 
   return (
@@ -74,7 +80,7 @@ function LayoutFrame() {
           ].join(' ')}
         >
           <Link to="/dashboard" className="mb-6 block rounded-lg px-3 py-2 text-sm font-semibold uppercase tracking-wide text-primary">
-            HACT Workspace
+            {t('shell.workspace')}
           </Link>
           <NavContent />
         </aside>
@@ -92,11 +98,11 @@ function LayoutFrame() {
               >
                 <Menu className="h-4 w-4" />
               </button>
-              <p className="text-sm font-medium">Household Asset and Commitment Tracker</p>
+              <p className="text-sm font-medium">{t('shell.title')}</p>
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="rounded border border-border px-2 py-1">Language</span>
-              <span className="rounded border border-border px-2 py-1">Actor</span>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <UserSwitcher />
             </div>
           </header>
 
