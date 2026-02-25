@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require("express");
+const { requireAuth } = require("../auth/require-auth");
 const { models } = require("../../db");
 
 function toTransportUser(userInstance) {
@@ -17,6 +18,8 @@ function toTransportUser(userInstance) {
 
 function createUsersRouter() {
   const router = express.Router();
+
+  router.use(requireAuth);
 
   router.get("/users", async (req, res, next) => {
     try {

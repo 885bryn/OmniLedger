@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require("express");
+const { requireAuth } = require("../auth/require-auth");
 const { createItem } = require("../../domain/items/create-item");
 const { getItemNetStatus } = require("../../domain/items/get-item-net-status");
 const { listItems } = require("../../domain/items/list-items");
@@ -20,6 +21,8 @@ function parseBoolean(value) {
 function createItemsRouter() {
   const router = express.Router();
 
+  router.use(requireAuth);
+
   router.post("/items", async (req, res, next) => {
     try {
       const created = await createItem(req.body);
@@ -32,7 +35,7 @@ function createItemsRouter() {
   router.get("/items", async (req, res, next) => {
     try {
       const listed = await listItems({
-        actorUserId: req.header("x-user-id"),
+        actorUserId: req.actor.userId,
         search: req.query.search,
         filter: req.query.filter,
         sort: req.query.sort,
@@ -49,7 +52,7 @@ function createItemsRouter() {
     try {
       const netStatus = await getItemNetStatus({
         itemId: req.params.id,
-        actorUserId: req.header("x-user-id")
+        actorUserId: req.actor.userId
       });
 
       res.status(200).json(netStatus);
@@ -62,7 +65,7 @@ function createItemsRouter() {
     try {
       const updated = await updateItem({
         itemId: req.params.id,
-        actorUserId: req.header("x-user-id"),
+        actorUserId: req.actor.userId,
         attributes: req.body && req.body.attributes
       });
 
@@ -76,7 +79,7 @@ function createItemsRouter() {
     try {
       const deleted = await softDeleteItem({
         itemId: req.params.id,
-        actorUserId: req.header("x-user-id")
+        actorUserId: req.actor.userId
       });
 
       res.status(200).json(deleted);
@@ -89,7 +92,7 @@ function createItemsRouter() {
     try {
       const activity = await getItemActivity({
         itemId: req.params.id,
-        actorUserId: req.header("x-user-id"),
+        actorUserId: req.actor.userId,
         limit: req.query.limit
       });
 

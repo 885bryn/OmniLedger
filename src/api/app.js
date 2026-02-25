@@ -67,12 +67,13 @@ function resolveAllowedOrigin() {
 function createApp() {
   const app = express();
   const allowedOrigin = resolveAllowedOrigin();
+  const allowedHeaders = "Content-Type, Accept";
 
   app.disable("x-powered-by");
   app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+    res.setHeader("Access-Control-Allow-Headers", allowedHeaders);
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Vary", "Origin");
 
