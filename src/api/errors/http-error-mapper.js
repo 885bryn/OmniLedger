@@ -2,7 +2,9 @@
 
 const { ItemCreateValidationError, ITEM_CREATE_ERROR_CATEGORIES } = require("../../domain/items/item-create-errors");
 const { ItemNetStatusError, ITEM_NET_STATUS_ERROR_CATEGORIES } = require("../../domain/items/item-net-status-errors");
+const { ItemQueryError, ITEM_QUERY_ERROR_CATEGORIES } = require("../../domain/items/item-query-errors");
 const { EventCompletionError, EVENT_COMPLETION_ERROR_CATEGORIES } = require("../../domain/events/event-completion-errors");
+const { EventQueryError, EVENT_QUERY_ERROR_CATEGORIES } = require("../../domain/events/event-query-errors");
 
 const CATEGORY_MESSAGES = Object.freeze({
   [ITEM_CREATE_ERROR_CATEGORIES.INVALID_ITEM_TYPE]: "item_type is invalid. Choose one of the supported item types.",
@@ -37,6 +39,36 @@ const EVENT_COMPLETION_CATEGORY_TO_STATUS = Object.freeze({
   [EVENT_COMPLETION_ERROR_CATEGORIES.FORBIDDEN]: 403,
   [EVENT_COMPLETION_ERROR_CATEGORIES.INVALID_STATE]: 422,
   [EVENT_COMPLETION_ERROR_CATEGORIES.INVALID_REQUEST]: 422
+});
+
+const ITEM_QUERY_CATEGORY_MESSAGES = Object.freeze({
+  [ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST]: "Item request is invalid.",
+  [ITEM_QUERY_ERROR_CATEGORIES.INVALID_FILTER]: "One or more item filters are invalid.",
+  [ITEM_QUERY_ERROR_CATEGORIES.INVALID_SORT]: "One or more item sort values are invalid.",
+  [ITEM_QUERY_ERROR_CATEGORIES.NOT_FOUND]: "No item exists for the provided id.",
+  [ITEM_QUERY_ERROR_CATEGORIES.FORBIDDEN]: "Item exists but is not owned by the requesting actor.",
+  [ITEM_QUERY_ERROR_CATEGORIES.INVALID_STATE]: "Item request is invalid for the current item state."
+});
+
+const ITEM_QUERY_CATEGORY_TO_STATUS = Object.freeze({
+  [ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST]: 422,
+  [ITEM_QUERY_ERROR_CATEGORIES.INVALID_FILTER]: 422,
+  [ITEM_QUERY_ERROR_CATEGORIES.INVALID_SORT]: 422,
+  [ITEM_QUERY_ERROR_CATEGORIES.NOT_FOUND]: 404,
+  [ITEM_QUERY_ERROR_CATEGORIES.FORBIDDEN]: 403,
+  [ITEM_QUERY_ERROR_CATEGORIES.INVALID_STATE]: 422
+});
+
+const EVENT_QUERY_CATEGORY_MESSAGES = Object.freeze({
+  [EVENT_QUERY_ERROR_CATEGORIES.INVALID_REQUEST]: "Event request is invalid.",
+  [EVENT_QUERY_ERROR_CATEGORIES.INVALID_FILTER]: "One or more event filters are invalid.",
+  [EVENT_QUERY_ERROR_CATEGORIES.INVALID_RANGE]: "One or more event range parameters are invalid."
+});
+
+const EVENT_QUERY_CATEGORY_TO_STATUS = Object.freeze({
+  [EVENT_QUERY_ERROR_CATEGORIES.INVALID_REQUEST]: 422,
+  [EVENT_QUERY_ERROR_CATEGORIES.INVALID_FILTER]: 422,
+  [EVENT_QUERY_ERROR_CATEGORIES.INVALID_RANGE]: 422
 });
 
 function mapValidationIssue(issue) {
@@ -111,8 +143,52 @@ function mapEventCompletionError(error) {
   };
 }
 
+function mapItemQueryError(error) {
+  if (!(error instanceof ItemQueryError)) {
+    return null;
+  }
+
+  const category = error.category || ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST;
+  const issues = Array.isArray(error.issues) ? error.issues.map(mapValidationIssue) : [];
+
+  return {
+    status: ITEM_QUERY_CATEGORY_TO_STATUS[category] || 422,
+    body: {
+      error: {
+        code: "item_query_failed",
+        category,
+        message: error.message || ITEM_QUERY_CATEGORY_MESSAGES[category] || "Item request failed.",
+        issues
+      }
+    }
+  };
+}
+
+function mapEventQueryError(error) {
+  if (!(error instanceof EventQueryError)) {
+    return null;
+  }
+
+  const category = error.category || EVENT_QUERY_ERROR_CATEGORIES.INVALID_REQUEST;
+  const issues = Array.isArray(error.issues) ? error.issues.map(mapValidationIssue) : [];
+
+  return {
+    status: EVENT_QUERY_CATEGORY_TO_STATUS[category] || 422,
+    body: {
+      error: {
+        code: "event_query_failed",
+        category,
+        message: error.message || EVENT_QUERY_CATEGORY_MESSAGES[category] || "Event query failed.",
+        issues
+      }
+    }
+  };
+}
+
 module.exports = {
   mapItemCreateError,
   mapItemNetStatusError,
-  mapEventCompletionError
+  mapEventCompletionError,
+  mapItemQueryError,
+  mapEventQueryError
 };

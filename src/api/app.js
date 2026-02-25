@@ -5,11 +5,14 @@ const { sequelize } = require("../db");
 const {
   mapItemCreateError,
   mapItemNetStatusError,
-  mapEventCompletionError
+  mapEventCompletionError,
+  mapItemQueryError,
+  mapEventQueryError
 } = require("./errors/http-error-mapper");
 
 let createItemsRouter = () => express.Router();
 let createEventsRouter = () => express.Router();
+let createUsersRouter = () => express.Router();
 
 try {
   ({ createItemsRouter } = require("./routes/items.routes"));
@@ -31,6 +34,16 @@ try {
   }
 }
 
+try {
+  ({ createUsersRouter } = require("./routes/users.routes"));
+} catch (error) {
+  const isMissingUsersRouter = error && error.code === "MODULE_NOT_FOUND" && /users\.routes/.test(error.message);
+
+  if (!isMissingUsersRouter) {
+    throw error;
+  }
+}
+
 function createApp() {
   const app = express();
 
@@ -38,6 +51,7 @@ function createApp() {
   app.use(express.json());
   app.use("/", createItemsRouter());
   app.use("/", createEventsRouter());
+  app.use("/", createUsersRouter());
 
   app.get("/health", async (req, res) => {
     try {
@@ -59,7 +73,12 @@ function createApp() {
   });
 
   app.use((error, req, res, next) => {
-    const mapped = mapItemCreateError(error) || mapItemNetStatusError(error) || mapEventCompletionError(error);
+    const mapped =
+      mapItemCreateError(error) ||
+      mapItemNetStatusError(error) ||
+      mapItemQueryError(error) ||
+      mapEventCompletionError(error) ||
+      mapEventQueryError(error);
 
     if (!mapped) {
       next(error);
