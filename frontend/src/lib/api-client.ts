@@ -57,17 +57,6 @@ export type TransportUser = {
 export const SESSION_EXPIRED_EVENT = 'hact:session-expired'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-const ACTIVE_USER_STORAGE_KEY = 'hact.active-user-id'
-
-let activeActorUserId: string | null = null
-
-export function setActiveActorUserId(userId: string | null) {
-  activeActorUserId = userId
-}
-
-export function getActiveActorUserId() {
-  return activeActorUserId
-}
 
 async function parseJsonBody(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') || ''
@@ -87,13 +76,6 @@ function withHeaders(headers?: HeadersInit) {
 
   if (!requestHeaders.has('Accept')) {
     requestHeaders.set('Accept', 'application/json')
-  }
-
-  const storedActorUserId = typeof window === 'undefined' ? null : window.localStorage.getItem(ACTIVE_USER_STORAGE_KEY)
-  const actorUserId = activeActorUserId || storedActorUserId
-
-  if (actorUserId) {
-    requestHeaders.set('x-user-id', actorUserId)
   }
 
   return requestHeaders
