@@ -17,7 +17,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **ITEM-02**: User can create an item with `attributes` stored as JSONB so type-specific and custom fields can coexist.
 - [x] **ITEM-03**: User can create a `FinancialCommitment` item linked to a parent asset using `parent_item_id`.
 - [x] **ITEM-04**: User can create an item through `POST /items` and receive default attribute keys auto-populated based on item type.
-- [ ] **ITEM-05**: User can request `GET /items/:id/net-status` and receive the item with attributes plus nested linked child commitments.
+- [x] **ITEM-05**: User can request `GET /items/:id/net-status` and receive the item with attributes plus nested linked child commitments.
 
 ### Events and Timeline
 
@@ -70,7 +70,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ITEM-02 | Phase 1 | Complete |
 | ITEM-03 | Phase 1 | Complete |
 | ITEM-04 | Phase 2 | Complete |
-| ITEM-05 | Phase 3 | Pending |
+| ITEM-05 | Phase 3 | Complete |
 | EVNT-01 | Phase 1 | Complete |
 | EVNT-02 | Phase 4 | Pending |
 | EVNT-03 | Phase 4 | Pending |

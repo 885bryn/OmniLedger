@@ -9,13 +9,13 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 
 ## Current Position
 
-**Current Phase:** 02
-**Current Phase Name:** Item Creation Workflow
+**Current Phase:** 03
+**Current Phase Name:** Net-Status Retrieval
 **Total Phases:** 5
-**Current Plan:** Not started
+**Current Plan:** 2
 **Total Plans in Phase:** 2
-**Status:** Milestone complete
-**Last Activity:** 2026-02-24
+**Status:** Phase complete — ready for verification
+**Last Activity:** 2026-02-25
 
 **Progress:** [██████████] 100%
 
@@ -32,7 +32,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 |-------|-------|-------|----------|
 | 1. Domain Model Foundation | 3 | 8 min | 2.7 min |
 | 2. Item Creation Workflow | 2 | 6 min | 3.0 min |
-| 3. Net-Status Retrieval | 0 | 0 min | 0 min |
+| 3. Net-Status Retrieval | 2 | 4 min | 2.0 min |
 | 4. Event Completion and Audit Traceability | 0 | 0 min | 0 min |
 | 5. Local Deployment Runtime | 0 | 0 min | 0 min |
 
@@ -44,6 +44,8 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 01 P03 | 1 min | 3 tasks | 5 files |
 | Phase 02 P01 | 3 min | 3 tasks | 4 files |
 | Phase 02 P02 | 3 min | 3 tasks | 7 files |
+| Phase 03 P01 | 2 min | 3 tasks | 3 files |
+| Phase 03 P02 | 2 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -66,6 +68,10 @@ Recent decisions affecting current work:
 - [Phase 02]: Centralized ItemCreateValidationError mapping at app middleware returns stable HTTP 422 envelopes with field-level issues.
 - [Phase 02]: POST /items returns canonical persisted item fields directly from createItem for deterministic transport payloads.
 - [Phase 02]: API integration tests run against createApp with sqlite-backed mocked db module to validate route plus middleware behavior end-to-end.
+- [Phase 03]: Use in-memory net-status child ordering by due date asc, null due dates last, then created_at asc to keep sqlite and PostgreSQL behavior deterministic.
+- [Phase 03]: Allow net-status roots only for RealEstate and Vehicle; return wrong_root_type for commitment-root requests.
+- [Phase 03]: Use x-user-id request header as temporary actor transport at API boundary while keeping ownership logic in domain service.
+- [Phase 03]: Map ItemNetStatusError categories centrally in app middleware so net-status failures share the established issue-envelope format.
 
 ### Pending Todos
 
@@ -77,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-24T09:54:27.708Z
-**Stopped at:** Phase 3 context gathered
-**Resume file:** .planning/phases/03-net-status-retrieval/03-CONTEXT.md
+**Last session:** 2026-02-25T00:44:50.610Z
+**Stopped at:** Completed 03-02-PLAN.md
+**Resume file:** None

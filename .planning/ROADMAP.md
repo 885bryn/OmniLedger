@@ -12,7 +12,7 @@ This roadmap delivers HACT as a usable backend ledger in dependency order: first
 
 - [x] **Phase 1: Domain Model Foundation** - Establish persistent account, item, event, and audit models with required ledger relationships.
 - [x] **Phase 2: Item Creation Workflow** - Deliver `POST /items` with type-aware default attributes for consistent item onboarding. (completed 2026-02-24)
-- [ ] **Phase 3: Net-Status Retrieval** - Deliver nested commitment visibility through `GET /items/:id/net-status`.
+- [x] **Phase 3: Net-Status Retrieval** - Deliver nested commitment visibility through `GET /items/:id/net-status`. (completed 2026-02-25)
 - [ ] **Phase 4: Event Completion and Audit Traceability** - Complete event lifecycle behavior including completion status, audit writes, and next-date prompting.
 - [ ] **Phase 5: Local Deployment Runtime** - Run API and PostgreSQL together via Docker Compose on the local network.
 
@@ -53,7 +53,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can request `GET /items/:id/net-status` and receive the target item with its current attributes.
   2. Net-status response includes nested linked child commitments associated with the requested item.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [x] 03-01-PLAN.md - Implement net-status domain retrieval with ownership/type guards, deterministic child ordering, and summary aggregation.
+- [x] 03-02-PLAN.md - Expose GET /items/:id/net-status with centralized error mapping and endpoint integration tests.
 
 ### Phase 4: Event Completion and Audit Traceability
 **Goal**: Users can complete events with deterministic follow-up signaling and auditable change history.
@@ -80,6 +83,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Domain Model Foundation | 3/3 | Complete | 2026-02-24 |
 | 2. Item Creation Workflow | 2/2 | Complete   | 2026-02-24 |
-| 3. Net-Status Retrieval | 0/TBD | Not started | - |
+| 3. Net-Status Retrieval | 2/2 | Complete | 2026-02-25 |
 | 4. Event Completion and Audit Traceability | 0/TBD | Not started | - |
 | 5. Local Deployment Runtime | 0/TBD | Not started | - |
