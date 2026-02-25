@@ -1,16 +1,11 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
 import { DashboardPage } from '../pages/dashboard/dashboard-page'
 import { EventsPage } from '../pages/events/events-page'
+import { ItemCreateWizardPage } from '../pages/items/item-create-wizard-page'
+import { ItemDetailPage } from '../pages/items/item-detail-page'
+import { ItemEditPage } from '../pages/items/item-edit-page'
+import { ItemListPage } from '../pages/items/item-list-page'
 import { AppShell } from './shell/app-shell'
-
-function RoutePlaceholder({ title, detail }: { title: string; detail: string }) {
-  return (
-    <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <p className="mt-2 text-sm text-muted-foreground">{detail}</p>
-    </section>
-  )
-}
 
 export const appRouter = createBrowserRouter([
   {
@@ -27,23 +22,23 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: 'items',
-        element: <RoutePlaceholder title="Items" detail="Item list view skeleton for filters, search, and sorting." />,
+        element: <ItemListPage />,
       },
       {
         path: 'items/create',
-        element: <RoutePlaceholder title="Create Item" detail="Wizard entry route for new item creation." />,
+        element: <Navigate to="/items/create/wizard" replace />,
       },
       {
         path: 'items/create/wizard',
-        element: <RoutePlaceholder title="Create Item Wizard" detail="Step-by-step item and commitment workflow route." />,
+        element: <ItemCreateWizardPage />,
       },
       {
         path: 'items/:itemId',
-        element: <RoutePlaceholder title="Item Detail" detail="Net-status detail page with tabs and activity feed." />,
+        element: <ItemDetailPage />,
       },
       {
         path: 'items/:itemId/edit',
-        element: <RoutePlaceholder title="Edit Item" detail="Form-driven item edit page route." />,
+        element: <ItemEditPage />,
       },
       {
         path: 'events',
