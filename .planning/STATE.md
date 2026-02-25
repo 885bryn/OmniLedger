@@ -115,6 +115,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - [2026-02-25] Run Phase 5 second-device LAN health test (`.planning/todos/pending/2026-02-25-run-phase-5-second-device-lan-health-test.md`)
+- [2026-02-25] Add recurrence checkbox for cashflow items (`.planning/todos/pending/2026-02-25-add-recurrence-checkbox-for-cashflow-items.md`)
 
 ### Blockers/Concerns
 
@@ -122,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T05:07:24.603Z
-**Stopped at:** Completed 06-06-PLAN.md
+**Last session:** 2026-02-25T08:25:26.326Z
+**Stopped at:** Session resumed via resume-project; awaiting next routed action
 **Resume file:** None
