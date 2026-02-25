@@ -1,4 +1,6 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
+import { DashboardPage } from '../pages/dashboard/dashboard-page'
+import { EventsPage } from '../pages/events/events-page'
 import { AppShell } from './shell/app-shell'
 
 function RoutePlaceholder({ title, detail }: { title: string; detail: string }) {
@@ -21,7 +23,7 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: 'dashboard',
-        element: <RoutePlaceholder title="Dashboard" detail="Summary cards and due-first activity panels will live here." />,
+        element: <DashboardPage />,
       },
       {
         path: 'items',
@@ -45,7 +47,7 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: 'events',
-        element: <RoutePlaceholder title="Events" detail="Grouped due-date event timeline and completion actions." />,
+        element: <EventsPage />,
       },
       {
         path: '*',

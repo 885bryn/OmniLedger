@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "vitest run --passWithNoTests",
+    "test": "node ./scripts/run-vitest.mjs",
     "test:watch": "vitest",
     "lint": "eslint .",
     "preview": "vite preview",
