@@ -15,6 +15,8 @@ This roadmap delivers HACT as a usable backend ledger in dependency order: first
 - [x] **Phase 3: Net-Status Retrieval** - Deliver nested commitment visibility through `GET /items/:id/net-status`. (completed 2026-02-25)
 - [x] **Phase 4: Event Completion and Audit Traceability** - Complete event lifecycle behavior including completion status, audit writes, and next-date prompting. (completed 2026-02-25)
 - [x] **Phase 5: Local Deployment Runtime** - Run API and PostgreSQL together via Docker Compose on the local network. (completed 2026-02-25)
+- [x] **Phase 6: Full Frontend UI Stack** - Deliver responsive bilingual dashboard/events/items journeys wired to the HACT API. (completed 2026-02-25)
+- [ ] **Phase 7: Milestone Gap Closure** - Close v1.0 audit gaps across actor-switch integration, prompt-next-date UX wiring, and verification evidence completion.
 
 ## Phase Details
 
@@ -24,7 +26,7 @@ This roadmap delivers HACT as a usable backend ledger in dependency order: first
 **Requirements**: ACCT-01, ITEM-01, ITEM-02, ITEM-03, EVNT-01, DEPL-02
 **Success Criteria** (what must be TRUE):
   1. User account records can be created and stored with UUID id, username, email, and password hash.
-  2. Users can persist items of types `RealEstate`, `Vehicle`, `FinancialCommitment`, and `Subscription` with JSONB `attributes`.
+  2. Users can persist items of types `RealEstate`, `Vehicle`, `FinancialCommitment`, and `FinancialIncome` with JSONB `attributes`.
   3. Users can link `FinancialCommitment` items to parent assets via `parent_item_id` and later retrieve that relationship from stored data.
   4. Users can persist item timeline events including type, due date, amount, status, and recurrence flag.
   5. API runtime uses Sequelize models for `Users`, `Items`, `Events`, and `AuditLog` against PostgreSQL.
@@ -93,6 +95,7 @@ Plans:
 | 4. Event Completion and Audit Traceability | 2/2 | Complete   | 2026-02-25 |
 | 5. Local Deployment Runtime | 2/2 | Complete | 2026-02-25 |
 | 6. Full Frontend UI Stack | 6/6 | Complete | 2026-02-25 |
+| 7. Milestone Gap Closure | 0/2 | Not started | - |
 
 ### Phase 6: 6
 
@@ -108,3 +111,15 @@ Plans:
 - [x] 06-04-PLAN.md - Implement app shell/routing/providers plus explicit `/users`-backed persisted user switcher, `x-user-id` API client plumbing, and bilingual runtime language switching.
 - [x] 06-05-PLAN.md - Deliver dashboard and events journeys with due-first grouping, inline completion refresh, and follow-up modal branching.
 - [x] 06-06-PLAN.md - Deliver items list/detail/create/edit/delete/activity workflows with safeguards and bilingual journey tests.
+
+### Phase 7: Milestone Gap Closure
+
+**Goal:** Close all v1.0 milestone audit blockers by fixing cross-user cache refresh behavior, restoring prompt-next-date completion UX handling, and completing missing verification evidence.
+**Depends on:** Phase 6
+**Requirements:** EVNT-03
+**Gap Closure:** Closes gaps from `.planning/v1.0-MILESTONE-AUDIT.md`
+**Plans:** 2 plans
+
+Plans:
+- [ ] 07-01-PLAN.md - Fix actor-switch cache invalidation and prompt-next-date completion wiring across dashboard/events/items workflows.
+- [ ] 07-02-PLAN.md - Backfill missing Phase 01 verification artifact and close remaining human-verification evidence for phases 5-6.

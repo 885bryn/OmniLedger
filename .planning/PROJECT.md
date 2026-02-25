@@ -1,8 +1,8 @@
-# Household Asset & Commitment Tracker (HACT) API
+# Household Asset & Commitment Tracker (HACT)
 
 ## What This Is
 
-HACT is a backend API for tracking household assets and related financial commitments in one connected ledger. It models owned assets (like real estate and vehicles), recurring and one-time commitments linked to those assets, and timeline events such as payments and maintenance. It is built for users who want a single operational record of what they own, what they owe, and what needs action next.
+HACT is a full-stack household ledger app with a Node/Express/Sequelize API and a React web UI. It models owned assets (real estate and vehicles), linked commitments and income rows (recurring or one-time), and timeline events such as payments and maintenance. Users can switch actors, review dashboard/event queues, manage items end-to-end, and complete or undo event actions with audit history.
 
 ## Core Value
 
@@ -13,17 +13,19 @@ Users can see each asset together with its linked obligations and timeline statu
 ### Validated
 
 - ✓ Item creation endpoint supports `POST /items` with type-aware defaults and actionable validation feedback (ITEM-04) — Phase 2
+- ✓ Node.js + Express + Sequelize + PostgreSQL API for household asset and commitment tracking is implemented and locally runnable — Phases 1-5
+- ✓ Users, assets/items, events, and audit history are modeled with UUID keys and required relationships, including parent-child linkage — Phase 1
+- ✓ Core net-status retrieval, event completion, and audit logging workflows are implemented with deterministic API contracts — Phases 3-4
+- ✓ Local-network deployment via Docker Compose for API + PostgreSQL is implemented and documented — Phase 5
+- ✓ Responsive bilingual frontend for dashboard/events/items journeys is implemented and wired to live API contracts — Phase 6
 
 ### Active
 
-- [ ] Implement a Node.js + Express + Sequelize + PostgreSQL API for household asset and commitment tracking.
-- [ ] Model users, assets/items, events, and audit history with UUID keys and required relationships, including parent-child item linkage.
-- [ ] Implement core endpoints for net-status retrieval with nested child commitments, and event completion with audit logging and frontend prompt hinting.
-- [ ] Provide local-network development deployment using Docker Compose for API + PostgreSQL.
+- [ ] Add recurrence checkbox support during cashflow item creation for FinancialCommitment and FinancialIncome.
+- [ ] Run second-device LAN health validation pass for Phase 5 runtime hardening.
 
 ### Out of Scope
 
-- Frontend UI or mobile app — current deliverable is API and infrastructure only.
 - Authentication/session implementation details beyond user schema — not specified in this initialization scope.
 - Production cloud deployment and CI/CD — current deployment requirement is local docker-compose hosting.
 
@@ -52,6 +54,8 @@ Users can see each asset together with its linked obligations and timeline statu
 | Return `prompt_next_date: true` on completed non-recurring events | Encodes frontend interaction hint in API response for smooth follow-up workflow | — Pending |
 | Use domain-level item creation defaults and validation taxonomy, then map to centralized HTTP 422 envelopes | Keeps business invariants transport-agnostic and provides deterministic client correction loops | Adopted in Phase 2 |
 | Return canonical persisted item fields directly from create service and `POST /items` | Preserves stable API contract without derived relation payload drift | Adopted in Phase 2 |
+| Build a responsive bilingual React shell around the API using a `/users`-driven actor context | Enables end-to-end household workflows while preserving deterministic API contracts and temporary `x-user-id` transport | Adopted in Phase 6 |
+| Treat event undo as first-class workflow (`/events/:id/undo-complete`) that reverses totals and restores pending state | Prevents accidental completion drift and keeps financial rollups/audit history trustworthy | Adopted in Phase 6 |
 
 ---
-*Last updated: 2026-02-24 after Phase 2*
+*Last updated: 2026-02-25 after Phase 6*
