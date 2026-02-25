@@ -10,11 +10,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 8 of 12 (Auth Sessions & Protected Access)
-Plan: 4 of 6 in current phase
+Plan: 5 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-25 - Completed 08-06 session-auth migration for remaining API integration suites
+Last activity: 2026-02-25 - Completed 08-05 frontend session-expiry redirect UX and regression coverage
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -39,6 +39,7 @@ Progress: [███████░░░] 67%
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
+| Phase 08 P05 | 4 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -60,6 +61,8 @@ Recent decisions affecting current work:
 - [Phase 08]: Use a generic failed-login alert plus inline field errors and cooldown submit lock to satisfy security-safe UX requirements.
 - [Phase 08]: Standardized migrated API suites on /auth/login + supertest.agent so session cookies are the sole identity transport in integration tests.
 - [Phase 08]: Hashed fixture user passwords with bcrypt in migrated suites so login-based session setup mirrors production credential verification.
+- [Phase 08]: Frontend now emits a single hact:session-expired event for protected API 401 responses.
+- [Phase 08]: Session-expired notice state is persisted in sessionStorage so login always shows expiry feedback during forced re-auth.
 
 ### Pending Todos
 
@@ -72,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25 23:07
-Stopped at: Completed 08-06-PLAN.md
+Last session: 2026-02-25 23:10
+Stopped at: Completed 08-05-PLAN.md
 Resume file: .planning/phases/08-auth-sessions-protected-access/08-04-PLAN.md
