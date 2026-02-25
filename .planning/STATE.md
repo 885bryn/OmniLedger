@@ -12,12 +12,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 **Current Phase:** 06
 **Current Phase Name:** 6
 **Total Phases:** 6
-**Current Plan:** 02
+**Current Plan:** 3
 **Total Plans in Phase:** 6
-**Status:** In progress
+**Status:** Ready to execute
 **Last Activity:** 2026-02-25
 
-**Progress:** [███████░░░] 71%
+**Progress:** [████████░░] 76%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 05 P01 | 2 min | 3 tasks | 5 files |
 | Phase 05 P02 | 14 min | 3 tasks | 5 files |
 | Phase 06 P01 | 8 min | 2 tasks | 12 files |
+| Phase 06 P02 | 5 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,8 @@ Recent decisions affecting current work:
 - [Phase 05]: Document one canonical up/down quickstart flow and exactly three troubleshooting categories to match the runtime contract.
 - [Phase 06]: Use attributes-based soft delete markers (_deleted_at/_deleted_by) to preserve schema stability while keeping persistence semantics.
 - [Phase 06]: Standardize event list domain output as due-date grouped sections with deterministic due_date/updated_at/id ordering before route mapping.
+- [Phase 06]: Standardize new item/event route failures under item_query_failed and event_query_failed envelopes with category-level issues for frontend rendering.
+- [Phase 06]: Expose GET /users as deterministic username-sorted actor source while keeping x-user-id request semantics unchanged.
 
 ### Roadmap Evolution
 
@@ -104,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T03:36:51.675Z
-**Stopped at:** Completed 06-01-PLAN.md
+**Last session:** 2026-02-25T03:45:41.892Z
+**Stopped at:** Completed 06-02-PLAN.md
 **Resume file:** None
