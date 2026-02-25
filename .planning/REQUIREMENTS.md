@@ -69,39 +69,39 @@
 
 ## Traceability
 
-Traceability will be populated during roadmap creation.
+Traceability for milestone v2.0 is mapped to Phases 8-12.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| AUTH-04 | TBD | Pending |
-| AUTH-05 | TBD | Pending |
-| AUTH-06 | TBD | Pending |
-| AUTH-07 | TBD | Pending |
-| AUTH-08 | TBD | Pending |
-| FIN-01 | TBD | Pending |
-| FIN-02 | TBD | Pending |
-| FIN-03 | TBD | Pending |
-| FIN-04 | TBD | Pending |
-| FIN-05 | TBD | Pending |
-| FIN-06 | TBD | Pending |
-| TIME-01 | TBD | Pending |
-| TIME-02 | TBD | Pending |
-| TIME-03 | TBD | Pending |
-| TIME-04 | TBD | Pending |
-| LIFE-01 | TBD | Pending |
-| LIFE-02 | TBD | Pending |
-| LIFE-03 | TBD | Pending |
-| LIFE-04 | TBD | Pending |
-| LIFE-05 | TBD | Pending |
+| AUTH-01 | Phase 8 | Pending |
+| AUTH-02 | Phase 8 | Pending |
+| AUTH-03 | Phase 8 | Pending |
+| AUTH-04 | Phase 9 | Pending |
+| AUTH-05 | Phase 9 | Pending |
+| AUTH-06 | Phase 9 | Pending |
+| AUTH-07 | Phase 9 | Pending |
+| AUTH-08 | Phase 9 | Pending |
+| FIN-01 | Phase 10 | Pending |
+| FIN-02 | Phase 10 | Pending |
+| FIN-03 | Phase 10 | Pending |
+| FIN-04 | Phase 10 | Pending |
+| FIN-05 | Phase 11 | Pending |
+| FIN-06 | Phase 10 | Pending |
+| TIME-01 | Phase 11 | Pending |
+| TIME-02 | Phase 11 | Pending |
+| TIME-03 | Phase 11 | Pending |
+| TIME-04 | Phase 9 | Pending |
+| LIFE-01 | Phase 12 | Pending |
+| LIFE-02 | Phase 12 | Pending |
+| LIFE-03 | Phase 12 | Pending |
+| LIFE-04 | Phase 12 | Pending |
+| LIFE-05 | Phase 12 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-25*
-*Last updated: 2026-02-25 after milestone v2.0 definition*
+*Last updated: 2026-02-25 after milestone v2.0 roadmap mapping*
