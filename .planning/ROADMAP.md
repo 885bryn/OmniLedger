@@ -69,7 +69,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 04-01-PLAN.md - Implement transactional event-completion domain service with idempotent audit writes and prompt signaling rules.
-- [ ] 04-02-PLAN.md - Expose PATCH /events/:id/complete with centralized error mapping and endpoint integration coverage.
+- [x] 04-02-PLAN.md - Expose PATCH /events/:id/complete with centralized error mapping and endpoint integration coverage.
 
 ### Phase 5: Local Deployment Runtime
 **Goal**: Users can run the full API stack locally with one Compose workflow.

@@ -5,7 +5,7 @@
 See: `.planning/PROJECT.md` (updated 2026-02-24)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 4 in progress - complete API wiring for event completion endpoint.
+**Current focus:** Phase 4 complete - ready to begin Phase 5 local deployment runtime work.
 
 ## Current Position
 
