@@ -17,12 +17,47 @@
     "loading": "Loading users...",
     "noUsers": "No users"
   },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Use your HACT account to continue.",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "Enter your password",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "topError": "Sign-in failed. Check your credentials and try again.",
+      "inlineError": "Email and password are required for sign-in.",
+      "cooldown": "Too many attempts. Try again in {{seconds}}s.",
+      "registerPrompt": "Need an account?",
+      "registerAction": "Create one"
+    },
+    "register": {
+      "title": "Create account",
+      "subtitle": "Register with email and password.",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "Create a strong password",
+      "submit": "Create account",
+      "submitting": "Creating account...",
+      "topError": "Registration failed. Please review your details and try again.",
+      "loginPrompt": "Already have an account?",
+      "loginAction": "Sign in"
+    }
+  },
   "dashboard": {
     "loadError": "Dashboard data could not be loaded. Please refresh and try again.",
     "dueEvents": "Due events",
     "overdue": "Overdue",
     "dueInWeek": "Due in 7 days",
     "upcomingAmount": "Upcoming amount",
+    "upcomingRange": "Across {{range}}",
+    "upcomingRangeMissing": "No due dates available",
+    "assetsTitle": "Portfolio snapshot",
+    "assetsEmpty": "No assets yet. Add a property or vehicle to build your portfolio view.",
+    "viewAllItems": "View all items",
     "noDueEventsTitle": "No due events yet",
     "noDueEventsDescription": "Add your first asset or commitment to unlock due-first planning on this dashboard.",
     "addItem": "Add an item",
@@ -45,7 +80,9 @@
       "pending": "Completing...",
       "completed": "Completed",
       "failed": "Completion failed. Try again.",
-      "confirm": "Complete this event now?"
+      "confirmTitle": "Confirm completion",
+      "confirm": "Complete this event now?",
+      "cancel": "Cancel"
     },
     "followUp": {
       "title": "Schedule the next date",
@@ -69,25 +106,41 @@
       "searchLabel": "Search",
       "searchPlaceholder": "Search by type or attribute",
       "sortLabel": "Sort",
-      "chips": {
-        "all": "All",
-        "assets": "Assets",
-        "commitments": "Commitments",
-        "active": "Active",
-        "deleted": "Deleted"
+        "chips": {
+          "all": "All",
+          "assets": "Assets",
+          "commitments": "Commitments",
+          "income": "Income",
+          "active": "Active",
+          "deleted": "Deleted"
+        },
+        "sortOptions": {
+          "recently_updated": "Recently updated",
+          "oldest_updated": "Oldest updated",
+          "due_soon": "Due soon",
+          "alphabetical": "Alphabetical",
+          "amount_high_to_low": "Amount high to low",
+          "amount_low_to_high": "Amount low to high"
+        }
       },
-      "sortOptions": {
-        "recently_updated": "Recently updated",
-        "oldest_updated": "Oldest updated",
-        "due_soon": "Due soon"
-      }
-    },
     "detail": {
       "loadError": "Item details could not be loaded.",
       "summaryMonthly": "Monthly obligation",
+      "summaryIncome": "Monthly income",
+      "summaryNet": "Net cashflow",
       "summaryLinked": "Linked commitments",
       "summaryExcluded": "Excluded rows",
+      "keyDetails": "Key details",
       "noCommitments": "No linked commitments yet.",
+      "linkedItemsTitle": "Connections",
+      "linkedParentLabel": "Linked to:",
+      "noLinkedParent": "This commitment currently stands on its own and is not linked to a parent item.",
+      "relatedCommitments": "Related commitments",
+      "addLinkedCommitment": "Add linked commitment",
+      "addLinkedIncome": "Add linked income",
+      "showTechnical": "Show technical details",
+      "hideTechnical": "Hide technical details",
+      "technicalTitle": "Technical JSON",
       "tabs": {
         "overview": "Overview",
         "commitments": "Commitments",
@@ -99,12 +152,22 @@
     "edit": {
       "title": "Edit item",
       "loadError": "This item could not be loaded for editing.",
-      "attributesLabel": "Attributes JSON",
-      "invalidJson": "Attributes must be valid JSON object.",
+      "confirmSaveTitle": "Save changes",
+      "confirmSave": "Save these changes now?",
       "saveError": "Changes could not be saved.",
       "saveAction": "Save changes",
       "saving": "Saving...",
-      "cancelAction": "Cancel"
+      "cancelAction": "Cancel",
+      "showTechnical": "Show technical details",
+      "hideTechnical": "Hide technical details",
+      "technicalSnapshot": "Technical JSON",
+      "customFieldsTitle": "Custom fields",
+      "customFieldNamePlaceholder": "Field name",
+      "customFieldValuePlaceholder": "Field value",
+      "addCustomField": "Add field",
+      "removeField": "Remove",
+      "customFieldNameRequired": "Enter a custom field name.",
+      "customFieldExists": "A field with that name already exists."
     },
     "wizard": {
       "title": "Create item wizard",
@@ -117,9 +180,21 @@
       "dueDateLabel": "Due date",
       "billingCycleLabel": "Billing cycle",
       "parentLabel": "Parent asset",
+      "parentOptionalLabel": "Parent asset (optional)",
       "parentPlaceholder": "Select an asset",
       "parentRequired": "Financial commitments require a parent asset.",
       "reviewLabel": "Review payload",
+      "showTechnicalReview": "Show technical payload",
+      "hideTechnicalReview": "Hide technical payload",
+      "requiredMissing": "Please complete required fields before continuing.",
+      "fieldRequired": "This field is required.",
+      "customFieldsTitle": "Custom fields",
+      "customFieldNamePlaceholder": "Field name",
+      "customFieldValuePlaceholder": "Field value",
+      "addCustomField": "Add field",
+      "removeCustomField": "Remove",
+      "customFieldNameRequired": "Enter a custom field name.",
+      "customFieldExists": "A field with that name already exists.",
       "nextAction": "Next",
       "backAction": "Back",
       "createAction": "Create item",
@@ -133,14 +208,57 @@
       "description": "Delete {{itemLabel}}? This action is soft-delete and will refresh your list.",
       "cancel": "Cancel",
       "confirm": "Delete",
-      "pending": "Deleting..."
+      "pending": "Deleting...",
+      "failed": "Delete failed. Please try again."
     },
     "activity": {
       "loadError": "Activity could not be loaded.",
-      "empty": "No activity recorded yet."
+      "empty": "No activity recorded yet.",
+      "undoAction": "Undo completion",
+      "undoPending": "Undoing...",
+      "undoError": "Could not undo this event completion.",
+      "unknownEventType": "Event",
+      "eventMeta": "{{type}} - {{amount}} - due {{dueDate}} - {{at}}",
+      "itemMeta": "Item change - {{at}}",
+      "actions": {
+        "eventCompleted": "Event completed",
+        "eventCompletionUndone": "Event completion undone",
+        "itemDeleted": "Item deleted",
+        "itemUpdated": "Item updated"
+      }
+    },
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "address": "Address",
+      "city": "City",
+      "province": "Province",
+      "postalCode": "Postal code",
+      "vin": "VIN",
+      "make": "Make",
+      "model": "Model",
+      "year": "Year",
+      "monthlyRent": "Monthly rent",
+      "estimatedValue": "Estimated value",
+      "lender": "Lender",
+      "interestRate": "Interest rate",
+      "originalPrincipal": "Original principal",
+      "remainingBalance": "Remaining balance",
+      "nextPaymentAmount": "Next payment amount",
+      "collectedTotal": "Collected total",
+      "lastCollectedAmount": "Last collected amount",
+      "lastCollectedDate": "Last collected date",
+      "amount": "Amount",
+      "dueDate": "Due date",
+      "billingCycle": "Billing cycle",
+      "parentAsset": "Parent asset",
+      "occupancy": "Occupancy"
     },
     "form": {
-      "unsavedWarning": "You have unsaved changes. Leave this page?"
+      "unsavedTitle": "Unsaved changes",
+      "unsavedWarning": "You have unsaved changes. Leave this page?",
+      "leaveAction": "Leave page",
+      "stayAction": "Stay here"
     }
   }
 }

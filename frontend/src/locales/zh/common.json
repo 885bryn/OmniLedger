@@ -17,12 +17,47 @@
     "loading": "正在加载用户...",
     "noUsers": "暂无用户"
   },
+  "auth": {
+    "login": {
+      "title": "登录",
+      "subtitle": "使用你的 HACT 账号继续。",
+      "emailLabel": "邮箱",
+      "passwordLabel": "密码",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "输入你的密码",
+      "submit": "登录",
+      "submitting": "登录中...",
+      "topError": "登录失败。请检查凭据后重试。",
+      "inlineError": "登录需要填写邮箱和密码。",
+      "cooldown": "尝试次数过多，请在 {{seconds}} 秒后重试。",
+      "registerPrompt": "还没有账号？",
+      "registerAction": "立即注册"
+    },
+    "register": {
+      "title": "创建账号",
+      "subtitle": "使用邮箱和密码完成注册。",
+      "emailLabel": "邮箱",
+      "passwordLabel": "密码",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "设置一个强密码",
+      "submit": "创建账号",
+      "submitting": "创建中...",
+      "topError": "注册失败，请检查信息后重试。",
+      "loginPrompt": "已经有账号？",
+      "loginAction": "去登录"
+    }
+  },
   "dashboard": {
     "loadError": "无法加载仪表盘数据，请刷新后重试。",
     "dueEvents": "待处理事件",
     "overdue": "逾期",
     "dueInWeek": "7 天内到期",
     "upcomingAmount": "即将到期金额",
+    "upcomingRange": "覆盖时间 {{range}}",
+    "upcomingRangeMissing": "暂无可用到期日期",
+    "assetsTitle": "资产概览",
+    "assetsEmpty": "暂无资产。请先添加房产或车辆以建立资产视图。",
+    "viewAllItems": "查看全部资产",
     "noDueEventsTitle": "暂无待处理事件",
     "noDueEventsDescription": "先添加资产或承诺，即可在仪表盘开启到期优先视图。",
     "addItem": "添加资产",
@@ -45,7 +80,9 @@
       "pending": "处理中...",
       "completed": "已完成",
       "failed": "完成失败，请重试。",
-      "confirm": "现在确认完成此事件吗？"
+      "confirmTitle": "确认完成",
+      "confirm": "现在确认完成此事件吗？",
+      "cancel": "取消"
     },
     "followUp": {
       "title": "安排下一次日期",
@@ -69,25 +106,41 @@
       "searchLabel": "搜索",
       "searchPlaceholder": "按类型或属性搜索",
       "sortLabel": "排序",
-      "chips": {
-        "all": "全部",
-        "assets": "资产",
-        "commitments": "承诺",
-        "active": "有效",
-        "deleted": "已删除"
+        "chips": {
+          "all": "全部",
+          "assets": "资产",
+          "commitments": "承诺",
+          "income": "收入",
+          "active": "有效",
+          "deleted": "已删除"
+        },
+        "sortOptions": {
+          "recently_updated": "最近更新",
+          "oldest_updated": "最早更新",
+          "due_soon": "即将到期",
+          "alphabetical": "按字母顺序",
+          "amount_high_to_low": "金额从高到低",
+          "amount_low_to_high": "金额从低到高"
+        }
       },
-      "sortOptions": {
-        "recently_updated": "最近更新",
-        "oldest_updated": "最早更新",
-        "due_soon": "即将到期"
-      }
-    },
     "detail": {
       "loadError": "无法加载资产详情。",
       "summaryMonthly": "每月承诺总额",
+      "summaryIncome": "每月收入",
+      "summaryNet": "净现金流",
       "summaryLinked": "关联承诺",
       "summaryExcluded": "排除行",
+      "keyDetails": "关键详情",
       "noCommitments": "暂无关联承诺。",
+      "linkedItemsTitle": "关联关系",
+      "linkedParentLabel": "关联到：",
+      "noLinkedParent": "该承诺当前为独立项目，未关联父级资产。",
+      "relatedCommitments": "相关承诺",
+      "addLinkedCommitment": "添加关联承诺",
+      "addLinkedIncome": "添加关联收入",
+      "showTechnical": "显示技术详情",
+      "hideTechnical": "隐藏技术详情",
+      "technicalTitle": "技术 JSON",
       "tabs": {
         "overview": "概览",
         "commitments": "承诺",
@@ -99,12 +152,22 @@
     "edit": {
       "title": "编辑资产",
       "loadError": "无法加载该资产用于编辑。",
-      "attributesLabel": "属性 JSON",
-      "invalidJson": "属性必须是有效的 JSON 对象。",
+      "confirmSaveTitle": "保存修改",
+      "confirmSave": "确认现在保存这些修改吗？",
       "saveError": "无法保存修改。",
       "saveAction": "保存修改",
       "saving": "保存中...",
-      "cancelAction": "取消"
+      "cancelAction": "取消",
+      "showTechnical": "显示技术详情",
+      "hideTechnical": "隐藏技术详情",
+      "technicalSnapshot": "技术 JSON",
+      "customFieldsTitle": "自定义字段",
+      "customFieldNamePlaceholder": "字段名",
+      "customFieldValuePlaceholder": "字段值",
+      "addCustomField": "添加字段",
+      "removeField": "移除",
+      "customFieldNameRequired": "请输入自定义字段名称。",
+      "customFieldExists": "该字段名称已存在。"
     },
     "wizard": {
       "title": "创建资产向导",
@@ -117,9 +180,21 @@
       "dueDateLabel": "到期日期",
       "billingCycleLabel": "计费周期",
       "parentLabel": "父级资产",
+      "parentOptionalLabel": "父级资产（可选）",
       "parentPlaceholder": "选择资产",
       "parentRequired": "财务承诺必须选择父级资产。",
       "reviewLabel": "检查请求内容",
+      "showTechnicalReview": "显示技术请求内容",
+      "hideTechnicalReview": "隐藏技术请求内容",
+      "requiredMissing": "请先填写必填字段再继续。",
+      "fieldRequired": "此字段为必填项。",
+      "customFieldsTitle": "自定义字段",
+      "customFieldNamePlaceholder": "字段名",
+      "customFieldValuePlaceholder": "字段值",
+      "addCustomField": "添加字段",
+      "removeCustomField": "移除",
+      "customFieldNameRequired": "请输入自定义字段名称。",
+      "customFieldExists": "该字段名称已存在。",
       "nextAction": "下一步",
       "backAction": "上一步",
       "createAction": "创建资产",
@@ -133,14 +208,57 @@
       "description": "确认删除 {{itemLabel}} 吗？该操作为软删除并会刷新列表。",
       "cancel": "取消",
       "confirm": "删除",
-      "pending": "删除中..."
+      "pending": "删除中...",
+      "failed": "删除失败，请重试。"
     },
     "activity": {
       "loadError": "无法加载动态。",
-      "empty": "暂无动态记录。"
+      "empty": "暂无动态记录。",
+      "undoAction": "撤销完成",
+      "undoPending": "撤销中...",
+      "undoError": "无法撤销该事件完成状态。",
+      "unknownEventType": "事件",
+      "eventMeta": "{{type}} - {{amount}} - 到期 {{dueDate}} - {{at}}",
+      "itemMeta": "资产变更 - {{at}}",
+      "actions": {
+        "eventCompleted": "事件已完成",
+        "eventCompletionUndone": "已撤销事件完成",
+        "itemDeleted": "资产已删除",
+        "itemUpdated": "资产已更新"
+      }
+    },
+    "fields": {
+      "name": "名称",
+      "description": "说明",
+      "address": "地址",
+      "city": "城市",
+      "province": "省份",
+      "postalCode": "邮编",
+      "vin": "车架号",
+      "make": "品牌",
+      "model": "型号",
+      "year": "年份",
+      "monthlyRent": "月租",
+      "estimatedValue": "估值",
+      "lender": "贷款机构",
+      "interestRate": "利率",
+      "originalPrincipal": "初始本金",
+      "remainingBalance": "剩余本金",
+      "nextPaymentAmount": "下期应付",
+      "collectedTotal": "累计收款",
+      "lastCollectedAmount": "最近收款金额",
+      "lastCollectedDate": "最近收款日期",
+      "amount": "金额",
+      "dueDate": "到期日期",
+      "billingCycle": "计费周期",
+      "parentAsset": "父级资产",
+      "occupancy": "入住状态"
     },
     "form": {
-      "unsavedWarning": "你有未保存的修改，确定离开此页面吗？"
+      "unsavedTitle": "有未保存修改",
+      "unsavedWarning": "你有未保存的修改，确定离开此页面吗？",
+      "leaveAction": "离开页面",
+      "stayAction": "继续编辑"
     }
   }
 }
