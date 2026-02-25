@@ -1,7 +1,9 @@
-import { type ReactNode, createContext, useContext, useMemo, useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { type ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../../auth/auth-context'
+import { SessionExpiredBanner } from '../../features/auth/session-expired-banner'
 import { LanguageSwitcher } from './language-switcher'
 import { UserSwitcher } from './user-switcher'
 
@@ -68,6 +70,19 @@ function NavContent() {
 function LayoutFrame() {
   const { t } = useTranslation()
   const { open, toggle } = useSidebar()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { clearSessionExpired, sessionExpired, sessionExpiredReturnTo } = useAuth()
+
+  useEffect(() => {
+    if (!sessionExpired) {
+      return
+    }
+
+    const query = sessionExpiredReturnTo ? `?returnTo=${encodeURIComponent(sessionExpiredReturnTo)}` : ''
+    navigate(`/login${query}`, { replace: true })
+    clearSessionExpired()
+  }, [clearSessionExpired, navigate, sessionExpired, sessionExpiredReturnTo])
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8fafc,_#e2e8f0)] text-foreground">
@@ -107,7 +122,10 @@ function LayoutFrame() {
           </header>
 
           <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
-            <Outlet />
+            {sessionExpired ? <SessionExpiredBanner /> : null}
+            <div key={location.pathname} className="page-transition">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>

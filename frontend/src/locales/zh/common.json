@@ -45,6 +45,10 @@
       "topError": "注册失败，请检查信息后重试。",
       "loginPrompt": "已经有账号？",
       "loginAction": "去登录"
+    },
+    "sessionExpired": {
+      "title": "会话已过期",
+      "body": "你的会话已结束，正在跳转到登录页，登录后可继续之前的操作。"
     }
   },
   "dashboard": {

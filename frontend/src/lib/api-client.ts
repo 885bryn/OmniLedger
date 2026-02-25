@@ -54,6 +54,8 @@ export type TransportUser = {
   updated_at?: string
 }
 
+export const SESSION_EXPIRED_EVENT = 'hact:session-expired'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const ACTIVE_USER_STORAGE_KEY = 'hact.active-user-id'
 
@@ -133,6 +135,16 @@ export async function apiRequest<TResponse>(path: string, init: ApiRequestInit =
   const responseBody = await parseJsonBody(response)
 
   if (!response.ok) {
+    if (response.status === 401 && !path.startsWith('/auth/')) {
+      window.dispatchEvent(
+        new CustomEvent(SESSION_EXPIRED_EVENT, {
+          detail: {
+            path,
+          },
+        }),
+      )
+    }
+
     const envelope = (responseBody as EnvelopeError | null)?.error
 
     throw new ApiClientError({

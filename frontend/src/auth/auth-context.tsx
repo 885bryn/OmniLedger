@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { ApiClientError, apiRequest } from '../lib/api-client'
+import { ApiClientError, SESSION_EXPIRED_EVENT, apiRequest } from '../lib/api-client'
 
 const DEFAULT_AUTH_REDIRECT = '/dashboard'
 const RETURN_TO_STORAGE_KEY = 'hact.auth.return-to'
@@ -30,11 +30,14 @@ type RegisterInput = {
 type AuthContextValue = {
   session: SessionPayload['user']
   loading: boolean
+  sessionExpired: boolean
+  sessionExpiredReturnTo: string | null
   login: (input: LoginInput) => Promise<{ redirectTo: string }>
   register: (input: RegisterInput) => Promise<{ redirectTo: string }>
   logout: () => Promise<void>
   storeReturnTo: (value: string | null | undefined) => string | null
   consumeReturnTo: (preferred?: string | null) => string
+  clearSessionExpired: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -83,6 +86,11 @@ function readStoredReturnTo() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionPayload['user']>(null)
   const [loading, setLoading] = useState(true)
+  const [sessionExpiredReturnTo, setSessionExpiredReturnTo] = useState<string | null>(null)
+
+  const clearSessionExpired = useCallback(() => {
+    setSessionExpiredReturnTo(null)
+  }, [])
 
   const refreshSession = useCallback(async () => {
     try {
@@ -98,6 +106,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refreshSession()
   }, [refreshSession])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    function onSessionExpired() {
+      if (window.location.pathname === '/login' || window.location.pathname === '/register') {
+        return
+      }
+
+      setSessionExpiredReturnTo((current) => {
+        if (current) {
+          return current
+        }
+
+        const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`
+        const sanitized = isSafeReturnTo(returnTo) ? returnTo : DEFAULT_AUTH_REDIRECT
+        persistReturnTo(sanitized)
+        return sanitized
+      })
+
+      setSession(null)
+    }
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired)
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired)
+    }
+  }, [])
 
   const storeReturnTo = useCallback((value: string | null | undefined) => {
     const sanitized = isSafeReturnTo(value) ? value : null
@@ -128,9 +166,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       setSession(payload.user)
+      clearSessionExpired()
       return { redirectTo: consumeReturnTo(returnTo) }
     },
-    [consumeReturnTo],
+    [clearSessionExpired, consumeReturnTo],
   )
 
   const register = useCallback(
@@ -144,9 +183,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       setSession(payload.user)
+      clearSessionExpired()
       return { redirectTo: consumeReturnTo(returnTo) }
     },
-    [consumeReturnTo],
+    [clearSessionExpired, consumeReturnTo],
   )
 
   const logout = useCallback(async () => {
@@ -160,21 +200,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } finally {
       persistReturnTo(null)
+      clearSessionExpired()
       setSession(null)
     }
-  }, [])
+  }, [clearSessionExpired])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
       loading,
+      sessionExpired: Boolean(sessionExpiredReturnTo),
+      sessionExpiredReturnTo,
       login,
       register,
       logout,
       storeReturnTo,
       consumeReturnTo,
+      clearSessionExpired,
     }),
-    [consumeReturnTo, loading, login, logout, register, session, storeReturnTo],
+    [clearSessionExpired, consumeReturnTo, loading, login, logout, register, session, sessionExpiredReturnTo, storeReturnTo],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -45,6 +45,10 @@
       "topError": "Registration failed. Please review your details and try again.",
       "loginPrompt": "Already have an account?",
       "loginAction": "Sign in"
+    },
+    "sessionExpired": {
+      "title": "Session expired",
+      "body": "Your session ended. Redirecting to sign in so you can continue where you left off."
     }
   },
   "dashboard": {
