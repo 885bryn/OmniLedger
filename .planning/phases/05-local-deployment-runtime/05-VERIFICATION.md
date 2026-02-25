@@ -1,20 +1,22 @@
 ---
 phase: 05-local-deployment-runtime
-verified: 2026-02-25T02:34:10Z
+verified: 2026-02-25T12:34:00Z
 status: human_needed
 score: 6/6 must-haves verified
 human_verification:
   - test: "Compose startup and LAN reachability from a second device"
     expected: "`docker compose up -d --build` brings both services healthy; `http://<HOST_LAN_IP>:8080/health` returns 200 from another LAN client"
     why_human: "Cross-device LAN routing/firewall behavior cannot be fully confirmed from static code checks alone"
+    status: deferred
+    observed: "Deferred in this run by explicit checkpoint scope decision: \"ignore all except for en/zh\"."
 ---
 
 # Phase 5: Local Deployment Runtime Verification Report
 
 **Phase Goal:** Users can run the full API stack locally with one Compose workflow.
-**Verified:** 2026-02-25T02:34:10Z
+**Verified:** 2026-02-25T12:34:00Z
 **Status:** human_needed
-**Re-verification:** No - initial verification
+**Re-verification:** Yes - checkpoint continuation with scoped manual evidence
 
 ## Goal Achievement
 
@@ -79,12 +81,14 @@ Requirement/accounting checks:
 **Test:** On host machine, run `docker compose up -d --build`, wait for healthy status in `docker compose ps`, then from a second LAN device open `http://<HOST_LAN_IP>:8080/health`.
 **Expected:** Both `api` and `db` show healthy; LAN client receives HTTP 200 with `{ "status": "ok", "ready": true }`.
 **Why human:** Cross-device network path, host firewall rules, and LAN routing are environment-specific and cannot be fully proven via static inspection.
+**Current outcome (2026-02-25):** Host-side automation is healthy (`docker compose ps` shows `api`/`db` healthy), but second-device LAN curl evidence was intentionally deferred in this run per checkpoint response: "ignore all except for en/zh".
+**Status:** Deferred - still required before phase can be marked `passed`.
 
 ### Gaps Summary
 
-No implementation gaps found in code/configuration for must-haves. Automated checks passed, with one remaining human validation item for cross-device LAN behavior.
+No implementation gaps found in code/configuration for must-haves. Automated checks passed, with one remaining deferred human validation item for cross-device LAN behavior.
 
 ---
 
-_Verified: 2026-02-25T02:34:10Z_
+_Verified: 2026-02-25T12:34:00Z_
 _Verifier: Claude (gsd-verifier)_

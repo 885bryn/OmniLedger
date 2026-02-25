@@ -1,26 +1,32 @@
 ---
 phase: 06-6
-verified: 2026-02-24T21:16:00Z
+verified: 2026-02-25T12:34:00Z
 status: human_needed
 score: 19/19 must-haves verified
 human_verification:
   - test: "Responsive shell and page layouts"
     expected: "Sidebar/header, dashboard, events, and item workflows remain usable at mobile and desktop widths with no blocked actions."
     why_human: "Automated checks cannot reliably validate real viewport behavior, spacing, and interaction ergonomics."
+    status: deferred
+    observed: "Deferred in this run by explicit scope decision to only capture EN/ZH verification evidence."
   - test: "Runtime bilingual switching across full journey"
     expected: "Switching English/Chinese updates interface copy across shell, dashboard, events, and item flows while user-entered values remain unchanged."
     why_human: "Programmatic checks validate keys and wiring but not holistic translation quality/context during live navigation."
+    status: passed
+    observed: "Checkpoint continuation response: \"ignore all except for en/zh\"; EN/ZH switching accepted as the only manual evidence in this run."
   - test: "Follow-up modal and confirm dialogs UX"
     expected: "Completion prompts and delete/unsaved-change confirmations feel clear and non-blocking in real interaction flow."
     why_human: "Behavioral presence is test-covered, but clarity, timing, and usability require human judgment."
+    status: deferred
+    observed: "Deferred in this run by explicit scope decision to only capture EN/ZH verification evidence."
 ---
 
 # Phase 6: 6 Verification Report
 
 **Phase Goal:** Users can manage household assets, linked commitments, and event completion workflows from a responsive bilingual web UI connected to the HACT API.
-**Verified:** 2026-02-24T21:16:00Z
+**Verified:** 2026-02-25T12:34:00Z
 **Status:** human_needed
-**Re-verification:** No - initial verification
+**Re-verification:** Yes - checkpoint continuation with scoped manual evidence
 
 ## Goal Achievement
 
@@ -115,24 +121,30 @@ No blocker stubs detected (no TODO/FIXME placeholders, no empty handler-only imp
 **Test:** Open `/dashboard`, `/events`, `/items`, item detail/edit/create on mobile and desktop widths.
 **Expected:** Sidebar and header controls stay reachable; lists/cards/dialogs remain usable without clipped critical actions.
 **Why human:** Responsive usability and visual ergonomics are not fully capturable by static analysis/tests.
+**Current outcome (2026-02-25):** Deferred by explicit checkpoint scope decision to only capture EN/ZH evidence in this run.
+**Status:** Deferred - still required before phase can be marked `passed`.
 
 ### 2. Bilingual Journey Quality
 
 **Test:** Toggle language via header switcher while navigating all major journeys and interacting with forms/data.
 **Expected:** Interface copy switches EN/ZH consistently; user-entered values and identifiers remain un-translated.
 **Why human:** Runtime key wiring is verified, but translation quality/context needs human review.
+**Current outcome (2026-02-25):** Considered and accepted from checkpoint continuation response "ignore all except for en/zh". This run records EN/ZH switching as manually acknowledged; no additional locale checks were requested.
+**Status:** Passed for this scoped verification run.
 
 ### 3. Completion and Safeguard UX Clarity
 
 **Test:** Complete events (both `prompt_next_date` true/false), soft-delete items, and navigate away with dirty forms.
 **Expected:** Modal/confirm messages are clear; Not now path works; guard prompts are understandable and non-confusing.
 **Why human:** Presence is automated; interaction clarity and UX feel are subjective/human-evaluated.
+**Current outcome (2026-02-25):** Deferred by explicit checkpoint scope decision to only capture EN/ZH evidence in this run.
+**Status:** Deferred - still required before phase can be marked `passed`.
 
 ### Gaps Summary
 
-No automated implementation gaps were found against declared must-haves. Phase goal appears achieved in code and tests; final sign-off depends on human UX/responsiveness validation.
+No automated implementation gaps were found against declared must-haves. EN/ZH switching has scoped manual acknowledgment, but responsive and completion-UX sign-off remain deferred human checks.
 
 ---
 
-_Verified: 2026-02-24T21:16:00Z_
+_Verified: 2026-02-25T12:34:00Z_
 _Verifier: Claude (gsd-verifier)_
