@@ -31,7 +31,7 @@ v2.0 delivers secure multi-user operation, contract-and-occurrence financial mod
   1. User can register and sign in with valid credentials, and invalid credential attempts are safely rejected.
   2. User can access protected frontend and API routes only while authenticated; unauthenticated access is blocked.
   3. Authorization no longer accepts client-selected `x-user-id` identity and derives actor identity from authenticated session context.
-**Plans**: TBD
+**Plans**: 6
 
 ### Phase 9: RBAC Scope & Admin Safety Mode
 **Goal**: Users operate within enforced ownership scope while admins can intentionally and safely enter all-data mode.
@@ -82,7 +82,7 @@ v2.0 delivers secure multi-user operation, contract-and-occurrence financial mod
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Auth Sessions & Protected Access | 0/TBD | Not started | - |
+| 8. Auth Sessions & Protected Access | 1/6 | In Progress | - |
 | 9. RBAC Scope & Admin Safety Mode | 0/TBD | Not started | - |
 | 10. Financial Contract-Occurrence Foundation | 0/TBD | Not started | - |
 | 11. Timeline Projection & Asset Ledger Views | 0/TBD | Not started | - |

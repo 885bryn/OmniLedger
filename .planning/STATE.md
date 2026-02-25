@@ -10,32 +10,32 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 8 of 12 (Auth Sessions & Protected Access)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-25 - Phase 8 context gathered
+Plan: 1 of 6 in current phase
+Status: In progress
+Last activity: 2026-02-25 - Completed 08-01 auth session foundation
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 17%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
-- Average duration: TBD for v2.0
-- Total execution time: TBD for v2.0
+- Total plans completed: 20
+- Average duration: 4 min (v2.0)
+- Total execution time: 4 min (v2.0)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Auth Sessions & Protected Access | 0 | 0 min | 0 min |
+| 8. Auth Sessions & Protected Access | 1 | 4 min | 4 min |
 | 9. RBAC Scope & Admin Safety Mode | 0 | 0 min | 0 min |
 | 10. Financial Contract-Occurrence Foundation | 0 | 0 min | 0 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: None in v2.0 yet
-- Trend: N/A
+- Last 5 plans: 08-01 (4 min)
+- Trend: Baseline established for Phase 8 execution.
 
 ## Accumulated Context
 
@@ -47,6 +47,9 @@ Recent decisions affecting current work:
 - v2.0 phase numbering continues from v1.0 and starts at Phase 8.
 - v2.0 roadmap uses dependency-first order: auth -> RBAC -> contracts/occurrences -> timeline -> lifecycle.
 - Every v2.0 requirement is mapped to exactly one phase with observable success criteria.
+- [Phase 08]: Adopted express-session with connect-session-sequelize for durable, server-managed auth state in Phase 8.
+- [Phase 08]: Kept invalid-credential responses generic and uniform to avoid account existence leakage.
+- [Phase 08]: Derived internal usernames from email local-part so signup remains email+password-only.
 
 ### Pending Todos
 
@@ -59,6 +62,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25 13:38
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-auth-sessions-protected-access/08-CONTEXT.md
+Last session: 2026-02-25 22:50
+Stopped at: Completed 08-01-PLAN.md
+Resume file: .planning/phases/08-auth-sessions-protected-access/08-02-PLAN.md

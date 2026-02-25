@@ -7,7 +7,7 @@
 
 ### Authentication & RBAC
 
-- [ ] **AUTH-01**: User can register and sign in with secure credential handling.
+- [x] **AUTH-01**: User can register and sign in with secure credential handling.
 - [ ] **AUTH-02**: Authenticated session is required for protected API and frontend routes.
 - [ ] **AUTH-03**: API no longer accepts actor identity via client-selected `x-user-id` shim for authorization.
 - [ ] **AUTH-04**: Each user has role `user` (default) or `admin` (elevated), enforced server-side.
@@ -73,7 +73,7 @@ Traceability for milestone v2.0 is mapped to Phases 8-12.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 8 | Pending |
+| AUTH-01 | Phase 8 | Complete |
 | AUTH-02 | Phase 8 | Pending |
 | AUTH-03 | Phase 8 | Pending |
 | AUTH-04 | Phase 9 | Pending |
