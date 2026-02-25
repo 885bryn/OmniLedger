@@ -5,19 +5,19 @@
 See: `.planning/PROJECT.md` (updated 2026-02-24)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 5 Plan 1 complete - ready for Phase 5 Plan 2 local compose runtime delivery.
+**Current focus:** Phase 6 Plan 1 complete - ready for Phase 6 Plan 2 API contract wiring.
 
 ## Current Position
 
 **Current Phase:** 06
 **Current Phase Name:** 6
-**Total Phases:** 5
-**Current Plan:** Not started
-**Total Plans in Phase:** 2
-**Status:** Ready to plan
+**Total Phases:** 6
+**Current Plan:** 02
+**Total Plans in Phase:** 6
+**Status:** In progress
 **Last Activity:** 2026-02-25
 
-**Progress:** [██████████] 100%
+**Progress:** [███████░░░] 71%
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-24)
 | Phase 04 P02 | 2 min | 3 tasks | 4 files |
 | Phase 05 P01 | 2 min | 3 tasks | 5 files |
 | Phase 05 P02 | 14 min | 3 tasks | 5 files |
+| Phase 06 P01 | 8 min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,8 @@ Recent decisions affecting current work:
 - [Phase 05]: Use compose service names api and db with fixed host ports 8080/5433 to keep runtime verification deterministic.
 - [Phase 05]: Run container installs as runtime-only dependencies and install sequelize-cli without saving to avoid sqlite3 build-tool failures while preserving migration-on-boot behavior.
 - [Phase 05]: Document one canonical up/down quickstart flow and exactly three troubleshooting categories to match the runtime contract.
+- [Phase 06]: Use attributes-based soft delete markers (_deleted_at/_deleted_by) to preserve schema stability while keeping persistence semantics.
+- [Phase 06]: Standardize event list domain output as due-date grouped sections with deterministic due_date/updated_at/id ordering before route mapping.
 
 ### Roadmap Evolution
 
@@ -101,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-25T02:56:42.566Z
-**Stopped at:** Phase 6 context gathered
-**Resume file:** .planning/phases/06-6/06-CONTEXT.md
+**Last session:** 2026-02-25T03:36:51.675Z
+**Stopped at:** Completed 06-01-PLAN.md
+**Resume file:** None

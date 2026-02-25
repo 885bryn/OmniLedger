@@ -92,12 +92,19 @@ Plans:
 | 3. Net-Status Retrieval | 2/2 | Complete | 2026-02-25 |
 | 4. Event Completion and Audit Traceability | 2/2 | Complete   | 2026-02-25 |
 | 5. Local Deployment Runtime | 2/2 | Complete | 2026-02-25 |
+| 6. Full Frontend UI Stack | 1/6 | In Progress | |
 
 ### Phase 6: 6
 
-**Goal:** [To be planned]
+**Goal:** Users can manage household assets, linked commitments, and event completion workflows from a responsive bilingual web UI connected to the HACT API.
 **Depends on:** Phase 5
-**Plans:** 1/2 plans executed
+**Requirements:** None listed for this inserted UX phase
+**Plans:** 6 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 6 to break down)
+- [x] 06-01-PLAN.md - Implement item/events domain query and mutation services plus deterministic domain regression coverage.
+- [ ] 06-02-PLAN.md - Expose expanded items/events/users HTTP contracts with centralized error mapping and API integration tests.
+- [ ] 06-03-PLAN.md - Bootstrap frontend workspace/runtime baseline (React + Vite + Tailwind/shadcn-compatible config), frontend entrypoint, and documented build/start commands.
+- [ ] 06-04-PLAN.md - Implement app shell/routing/providers plus explicit `/users`-backed persisted user switcher, `x-user-id` API client plumbing, and bilingual runtime language switching.
+- [ ] 06-05-PLAN.md - Deliver dashboard and events journeys with due-first grouping, inline completion refresh, and follow-up modal branching.
+- [ ] 06-06-PLAN.md - Deliver items list/detail/create/edit/delete/activity workflows with safeguards and bilingual journey tests.
