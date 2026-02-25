@@ -5,9 +5,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
-import { setActiveActorUserId } from '../lib/api-client'
 import { ItemCreateWizardPage } from '../pages/items/item-create-wizard-page'
 import { ItemEditPage } from '../pages/items/item-edit-page'
 import { ItemListPage } from '../pages/items/item-list-page'
@@ -15,6 +14,27 @@ import { ItemListPage } from '../pages/items/item-list-page'
 type MockPayload = {
   status: number
   json: unknown
+}
+
+function getHeaderValue(headers: HeadersInit | undefined, name: string) {
+  if (!headers) {
+    return null
+  }
+
+  const target = name.toLowerCase()
+
+  if (headers instanceof Headers) {
+    return headers.get(name)
+  }
+
+  if (Array.isArray(headers)) {
+    const pair = headers.find(([key]) => key.toLowerCase() === target)
+    return pair?.[1] ?? null
+  }
+
+  const match = Object.entries(headers).find(([key]) => key.toLowerCase() === target)
+  const value = match?.[1]
+  return typeof value === 'string' ? value : null
 }
 
 function createResponse(payload: MockPayload) {
@@ -74,23 +94,15 @@ function renderEditRoute(initialPath = '/items/item-1/edit') {
 
 describe('items workflows', () => {
   const originalFetch = globalThis.fetch
-  const originalConfirm = window.confirm
-
-  beforeEach(() => {
-    setActiveActorUserId('user-1')
-    window.confirm = vi.fn(() => true)
-  })
 
   afterEach(() => {
     cleanup()
     globalThis.fetch = originalFetch
-    window.confirm = originalConfirm
-    setActiveActorUserId(null)
     vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
-  it('loads list with default sort, supports filter chips, and debounced search', async () => {
+  it('loads list with session credentials, supports filter chips, and debounced search', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -120,8 +132,15 @@ describe('items workflows', () => {
     renderWithMemoryRouter(<ItemListPage />)
 
     await screen.findByText('Maple Street')
+
+    const listCall = fetchMock.mock.calls.find(([input, init]) => String(input).includes('/items?') && (init?.method ?? 'GET') === 'GET')
+    const listInit = listCall?.[1]
+
+    expect(listInit?.credentials).toBe('include')
+    expect(getHeaderValue(listInit?.headers, 'x-user-id')).toBeNull()
+
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('sort=recently_updated'), expect.anything())
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('filter=all'), expect.anything())
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('filter=assets'), expect.anything())
 
     await userEvent.type(screen.getByPlaceholderText('Search by type or attribute'), 'mortgage')
 
@@ -136,7 +155,7 @@ describe('items workflows', () => {
     })
   })
 
-  it('requires parent asset selection for commitment wizard flow', async () => {
+  it('creates a commitment using session identity without actor header injection', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -159,7 +178,17 @@ describe('items workflows', () => {
       }
 
       if (url.endsWith('/items') && method === 'POST') {
-        return createResponse({ status: 201, json: { id: 'created-item' } })
+        return createResponse({
+          status: 201,
+          json: {
+            id: 'created-item',
+            item_type: 'FinancialCommitment',
+          },
+        })
+      }
+
+      if (url.includes('/items/created-item') && method === 'PATCH') {
+        return createResponse({ status: 200, json: { id: 'created-item' } })
       }
 
       throw new Error(`Unhandled request: ${method} ${url}`)
@@ -172,12 +201,27 @@ describe('items workflows', () => {
     await userEvent.selectOptions(screen.getByLabelText('Item type'), 'FinancialCommitment')
     await userEvent.click(screen.getByRole('button', { name: 'Next' }))
 
-    await userEvent.type(screen.getByLabelText('Amount'), '1200')
-    await userEvent.type(screen.getByLabelText('Due date'), '2026-03-01')
+    await userEvent.type(screen.getByRole('textbox', { name: /Name/i }), 'Loan')
+    await userEvent.type(screen.getAllByRole('spinbutton')[0], '1200')
+    await userEvent.type(screen.getByLabelText(/Due date/i), '2026-03-01')
     await userEvent.click(screen.getByRole('button', { name: 'Next' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create item' }))
 
-    expect(await screen.findByText('Financial commitments require a parent asset.')).toBeTruthy()
-    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining('/items'), expect.objectContaining({ method: 'POST' }))
+    await screen.findByText('detail route')
+
+    const createCall = fetchMock.mock.calls.find(([input, init]) => String(input).endsWith('/items') && (init?.method ?? 'GET') === 'POST')
+    const createInit = createCall?.[1]
+
+    expect(createInit?.credentials).toBe('include')
+    expect(getHeaderValue(createInit?.headers, 'x-user-id')).toBeNull()
+
+    const createBody = JSON.parse(String(createInit?.body ?? '{}')) as {
+      user_id?: string
+      item_type?: string
+    }
+
+    expect(createBody.user_id).toBeUndefined()
+    expect(createBody.item_type).toBe('FinancialCommitment')
   })
 
   it('shows edit error feedback when update API returns issue envelope', async () => {
@@ -222,7 +266,10 @@ describe('items workflows', () => {
     renderEditRoute()
 
     await screen.findByText('Edit item')
+    await userEvent.clear(screen.getByRole('spinbutton', { name: /Estimated value/i }))
+    await userEvent.type(screen.getByRole('spinbutton', { name: /Estimated value/i }), '9500')
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await userEvent.click(screen.getAllByRole('button', { name: 'Save changes' })[1])
 
     expect(await screen.findByText('Cannot update a soft-deleted item.')).toBeTruthy()
   })
@@ -296,13 +343,12 @@ describe('items workflows', () => {
     })
 
     globalThis.fetch = fetchMock as typeof fetch
-    window.confirm = vi.fn(() => false)
 
     renderEditRoute()
 
     await screen.findByText('Edit item')
-    const textarea = screen.getByLabelText('Attributes JSON')
-    fireEvent.change(textarea, { target: { value: '{"vin":"UPDATED"}' } })
+    const estimatedValueInput = screen.getByLabelText('Estimated value')
+    fireEvent.change(estimatedValueInput, { target: { value: '12345' } })
     const cancelLink = screen
       .getAllByRole('link', { name: 'Cancel' })
       .find((node) => node.getAttribute('href') === '/items/item-1')
@@ -313,6 +359,7 @@ describe('items workflows', () => {
 
     await userEvent.click(cancelLink)
 
-    expect(window.confirm).toHaveBeenCalledWith('You have unsaved changes. Leave this page?')
+    expect(await screen.findByText('You have unsaved changes. Leave this page?')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Stay here' })).toBeTruthy()
   })
 })
