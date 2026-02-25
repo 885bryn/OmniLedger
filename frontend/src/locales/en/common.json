@@ -1,7 +1,10 @@
 {
   "shell": {
     "title": "Household Asset and Commitment Tracker",
-    "workspace": "HACT Workspace"
+    "workspace": "HACT Workspace",
+    "identityLabel": "Signed in as",
+    "logoutAction": "Log out",
+    "loggingOut": "Logging out..."
   },
   "navigation": {
     "dashboard": "Dashboard",

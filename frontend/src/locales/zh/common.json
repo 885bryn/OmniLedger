@@ -1,7 +1,10 @@
 {
   "shell": {
     "title": "家庭资产与承诺追踪器",
-    "workspace": "HACT 工作区"
+    "workspace": "HACT 工作区",
+    "identityLabel": "当前会话",
+    "logoutAction": "退出登录",
+    "loggingOut": "退出中..."
   },
   "navigation": {
     "dashboard": "仪表盘",
