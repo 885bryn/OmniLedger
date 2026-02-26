@@ -10,11 +10,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
-Plan: 6 of 12 (next: 09-04)
+Plan: 8 of 12 (next: 09-04)
 Status: In progress
-Last activity: 2026-02-26 - Completed 09-06 frontend admin lens controls with hard reset/refetch coverage
+Last activity: 2026-02-26 - Completed 09-09 activity attribution API transport and timeline tuple rendering
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Progress: [█████░░░░░] 50%
 | Phase 09 P03 | 7 min | 2 tasks | 9 files |
 | Phase 09 P05 | 4 min | 2 tasks | 7 files |
 | Phase 09 P06 | 2 min | 2 tasks | 9 files |
+| Phase 09 P09 | 1 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,8 @@ Recent decisions affecting current work:
 - [Phase 09]: Audit write paths now persist actor+lens attribution from enforced scope context, defaulting owner-mode lens to actor user.
 - [Phase 09]: Hydrate admin scope from /auth/session and keep lens mutation writes explicit through /auth/admin-scope.
 - [Phase 09]: Clear actor-sensitive query cache roots on lens change and immediately invalidate active roots to force scoped refetch.
+- [Phase 09]: Expose lens_attribution_state in item activity responses so legacy rows render deterministic fallback semantics.
+- [Phase 09]: Render activity attribution uniformly as Actor: X | Lens: Y across timeline rows, including restore-category rows.
 
 ### Pending Todos
 
@@ -103,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 03:51
-Stopped at: Completed 09-06-PLAN.md
+Last session: 2026-02-26 04:01
+Stopped at: Completed 09-09-PLAN.md
 Resume file: None
