@@ -10,37 +10,38 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
-Plan: Not started
-Status: Context gathered
-Last activity: 2026-02-25 - Captured Phase 9 implementation context decisions
+Plan: 2 of 12 (next: 09-02)
+Status: In progress
+Last activity: 2026-02-26 - Completed 09-01 role model and scope-context baseline
 
-Progress: [██████████] 100%
+Progress: [█░░░░░░░░░] 8%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
+- Total plans completed: 22
 - Average duration: 3 min (v2.0)
-- Total execution time: 6 min (v2.0)
+- Total execution time: 9 min (v2.0)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
-| 9. RBAC Scope & Admin Safety Mode | 0 | 0 min | 0 min |
+| 9. RBAC Scope & Admin Safety Mode | 1 | 3 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 0 | 0 min | 0 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 08-01 (4 min), 08-03 (2 min)
-- Trend: Authorization boundary migration landed with faster second-plan execution.
+- Last 5 plans: 09-01 (3 min), 08-03 (2 min), 08-02 (2 min), 08-06 (5 min), 08-05 (4 min)
+- Trend: Phase 9 started with fast role/session foundation and no blockers.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
 | Phase 08 P05 | 4 min | 2 tasks | 8 files |
 | Phase 08 P04 | 5 min | 3 tasks | 10 files |
+| Phase 09 P01 | 3 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,9 @@ Recent decisions affecting current work:
 - [Phase 08]: Removed frontend x-user-id injection and standardized session-cookie identity transport.
 - [Phase 08]: Replaced shell actor switcher with authenticated identity plus explicit logout control.
 - [Phase 08]: Updated frontend regressions to enforce credentialed requests and logout-driven cache reset.
+- [Phase 09]: Configured admin identity uses HACT_ADMIN_EMAIL (fallback ADMIN_EMAIL) and role is persisted server-side as user/admin.
+- [Phase 09]: Auth register/login/session responses now resolve role from trusted DB session-user data instead of request payload hints.
+- [Phase 09]: requireAuth now hydrates req.actor plus role-aware req.scope contract for downstream RBAC branching while preserving req.actor.userId compatibility.
 
 ### Pending Todos
 
@@ -79,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25 16:25
-Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-rbac-scope-admin-safety-mode/09-CONTEXT.md
+Last session: 2026-02-26 03:19
+Stopped at: Completed 09-01-PLAN.md
+Resume file: None
