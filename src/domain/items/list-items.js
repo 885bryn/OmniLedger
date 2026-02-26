@@ -2,6 +2,7 @@
 
 const { models } = require("../../db");
 const { ItemQueryError, ITEM_QUERY_ERROR_CATEGORIES } = require("./item-query-errors");
+const { resolveOwnerFilter } = require("../../api/auth/scope-context");
 
 const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
@@ -36,22 +37,18 @@ function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function resolveOwnerUserId(payload) {
-  const scope = isPlainObject(payload.scope) ? payload.scope : {};
-  const scopeActorUserId = normalizeString(scope.actorUserId);
-  return scopeActorUserId || normalizeString(payload.actorUserId);
-}
-
 function normalizeInput(input) {
   const payload = isPlainObject(input) ? input : {};
-  const ownerUserId = resolveOwnerUserId(payload);
+  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const ownerFilter = resolveOwnerFilter(scope);
+  const hasActor = normalizeString(scope.actorUserId).length > 0 || normalizeString(payload.actorUserId).length > 0;
   const search = normalizeString(payload.search).toLowerCase();
   const filter = normalizeString(payload.filter) || "all";
   const sort = normalizeString(payload.sort) || "recently_updated";
   const includeDeleted = Boolean(payload.includeDeleted);
   const issues = [];
 
-  if (!ownerUserId) {
+  if (!hasActor) {
     issues.push({
       field: "scope.actorUserId",
       code: "required",
@@ -87,7 +84,7 @@ function normalizeInput(input) {
   }
 
   return {
-    ownerUserId,
+    ownerFilter,
     search,
     filter,
     sort,
@@ -310,10 +307,14 @@ function applySort(items, sort) {
 
 async function listItems(input) {
   const query = normalizeInput(input);
+
+  const where = {};
+  if (query.ownerFilter) {
+    where.user_id = query.ownerFilter;
+  }
+
   const rows = await models.Item.findAll({
-    where: {
-      user_id: query.ownerUserId
-    }
+    where
   });
 
   const canonicalItems = rows.map(toCanonicalItem);

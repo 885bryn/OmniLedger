@@ -3,6 +3,7 @@
 const { models } = require("../../db");
 const { EventQueryError, EVENT_QUERY_ERROR_CATEGORIES } = require("./event-query-errors");
 const { syncItemEvent } = require("../items/item-event-sync");
+const { resolveOwnerFilter } = require("../../api/auth/scope-context");
 
 const STATUS_FILTERS = Object.freeze(["all", "pending", "completed"]);
 const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome"]);
@@ -34,12 +35,13 @@ function getDueDate(attributes) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-async function ensurePendingEventsForActor(actorUserId) {
-  const items = await models.Item.findAll({
-    where: {
-      user_id: actorUserId
-    }
-  });
+async function ensurePendingEventsForScope(ownerFilter) {
+  const where = {};
+  if (ownerFilter) {
+    where.user_id = ownerFilter;
+  }
+
+  const items = await models.Item.findAll({ where });
 
   for (const item of items) {
     if (!CASHFLOW_ITEM_TYPES.has(item.item_type)) {
@@ -67,12 +69,6 @@ function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function resolveOwnerUserId(payload) {
-  const scope = isPlainObject(payload.scope) ? payload.scope : {};
-  const scopeActorUserId = normalizeString(scope.actorUserId);
-  return scopeActorUserId || normalizeString(payload.actorUserId);
-}
-
 function toTime(value, fallback = Number.POSITIVE_INFINITY) {
   if (!value) {
     return fallback;
@@ -84,13 +80,15 @@ function toTime(value, fallback = Number.POSITIVE_INFINITY) {
 
 function normalizeInput(input) {
   const payload = isPlainObject(input) ? input : {};
-  const ownerUserId = resolveOwnerUserId(payload);
+  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const ownerFilter = resolveOwnerFilter(scope);
+  const hasActor = normalizeString(scope.actorUserId).length > 0 || normalizeString(payload.actorUserId).length > 0;
   const status = normalizeString(payload.status).toLowerCase() || "pending";
   const dueFrom = payload.dueFrom ? new Date(payload.dueFrom) : null;
   const dueTo = payload.dueTo ? new Date(payload.dueTo) : null;
   const issues = [];
 
-  if (!ownerUserId) {
+  if (!hasActor) {
     issues.push({
       field: "scope.actorUserId",
       code: "required",
@@ -144,7 +142,7 @@ function normalizeInput(input) {
   }
 
   return {
-    ownerUserId,
+    ownerFilter,
     status,
     dueFrom,
     dueTo
@@ -241,7 +239,13 @@ function groupEvents(events) {
 
 async function listEvents(input) {
   const query = normalizeInput(input);
-  await ensurePendingEventsForActor(query.ownerUserId);
+  await ensurePendingEventsForScope(query.ownerFilter);
+
+  const itemWhere = {};
+  if (query.ownerFilter) {
+    itemWhere.user_id = query.ownerFilter;
+  }
+
   const rows = await models.Event.findAll({
     include: [
       {
@@ -249,9 +253,7 @@ async function listEvents(input) {
         as: "item",
         attributes: ["id", "user_id"],
         required: true,
-        where: {
-          user_id: query.ownerUserId
-        }
+        where: itemWhere
       }
     ]
   });
