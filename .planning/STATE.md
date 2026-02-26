@@ -5,23 +5,23 @@
 See: `.planning/PROJECT.md` (updated 2026-02-25)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 9 - RBAC Scope & Admin Safety Mode (v2.0)
+**Current focus:** Phase 10 - Financial Contract-Occurrence Foundation (v2.0)
 
 ## Current Position
 
-Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
-Plan: 13 of 13 (next: phase complete)
-Status: Phase complete
-Last activity: 2026-02-26 - Completed 09-13 admin banner scope synchronization and stale-lens regression lock
+Phase: 10 of 12 (Financial Contract-Occurrence Foundation)
+Plan: 1 of 4 (next: 10-02-PLAN.md)
+Status: In progress
+Last activity: 2026-02-26 - Completed 10-01 FinancialItem contract foundation and atomic one-time create path
 
-Progress: [██████████] 100%
+Progress: [███░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29
+- Total plans completed: 30
 - Average duration: 3 min (v2.0)
-- Total execution time: 29 min (v2.0)
+- Total execution time: 35 min (v2.0)
 
 **By Phase:**
 
@@ -29,13 +29,13 @@ Progress: [██████████] 100%
 |-------|-------|-------|----------|
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
 | 9. RBAC Scope & Admin Safety Mode | 8 | 23 min | 3 min |
-| 10. Financial Contract-Occurrence Foundation | 0 | 0 min | 0 min |
+| 10. Financial Contract-Occurrence Foundation | 1 | 6 min | 6 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 09-13 (1 min), 09-12 (1 min), 09-10 (5 min), 09-07 (4 min), 09-04 (4 min)
-- Trend: Admin banner lens attribution now follows live admin scope context; Phase 9 verification gap is closed.
+- Last 5 plans: 10-01 (6 min), 09-13 (1 min), 09-12 (1 min), 09-10 (5 min), 09-07 (4 min)
+- Trend: FinancialItem parent contract baseline is now explicit with transactional one-time parent+occurrence creation in place.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
@@ -54,6 +54,7 @@ Progress: [██████████] 100%
 | Phase 09 P10 | 5 min | 1 tasks | 10 files |
 | Phase 09-rbac-scope-admin-safety-mode P12 | 1 min | 2 tasks | 4 files |
 | Phase 09 P13 | 1 min | 2 tasks | 2 files |
+| Phase 10 P01 | 6 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,9 @@ Recent decisions affecting current work:
 - [Phase 09-rbac-scope-admin-safety-mode]: Assert safety messages in regressions through i18n keys so copy remains locale-safe.
 - [Phase 09]: Use AdminScopeContext mode/lens as banner source-of-truth while retaining actor identity from AuthContext session.
 - [Phase 09]: Model stale auth-session lag in tests and assert immediate Lens: All users output from active admin scope state.
+- [Phase 10]: Persist FinancialItem parent contract fields (title/type/frequency/default_amount/status) explicitly on Items rather than JSON-only inference.
+- [Phase 10]: Require `confirm_unlinked_asset=true` when `linked_asset_item_id` is omitted to allow intentional unlinked financial saves.
+- [Phase 10]: Restrict automatic first-occurrence materialization to `FinancialItem` records with `frequency=one_time` and keep parent+event writes in one transaction.
 
 ### Pending Todos
 
@@ -122,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 00:24
-Stopped at: Phase 10 context gathered
-Resume file: .planning/phases/10-financial-contract-occurrence-foundation/10-CONTEXT.md
+Last session: 2026-02-26 21:03
+Stopped at: Completed 10-01-PLAN.md
+Resume file: None

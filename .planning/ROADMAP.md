@@ -61,7 +61,12 @@ Plans:
   2. User can view and manage child `Event` occurrences linked to the parent contract with due date, amount, status, and owner scope.
   3. Creating a one-time financial record results in both parent contract and first occurrence being present immediately.
   4. Recurring contracts follow stored recurrence rules without pre-generating long-horizon rows, and closed contracts stop generating new projected occurrences.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] 10-01-PLAN.md - Add explicit FinancialItem parent contract schema and transactional one-time parent+occurrence create path. (completed 2026-02-26)
+- [ ] 10-02-PLAN.md - Implement owner-scoped occurrence projection/read model with close-status gating and projected exception materialization.
+- [ ] 10-03-PLAN.md - Replace wizard with single guided Financial item form and terminology/subtype UX unification.
+- [ ] 10-04-PLAN.md - Deliver upcoming/history occurrence management UI with inline status actions and recurrence state visibility.
 
 ### Phase 11: Timeline Projection & Asset Ledger Views
 **Goal**: Users can trust a unified, deterministic timeline and clearly separated current versus historical asset ledgers.
@@ -92,6 +97,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 8. Auth Sessions & Protected Access | 6/6 | Complete    | 2026-02-25 |
 | 9. RBAC Scope & Admin Safety Mode | 13/13 | Complete | 2026-02-26 |
-| 10. Financial Contract-Occurrence Foundation | 0/TBD | Not started | - |
+| 10. Financial Contract-Occurrence Foundation | 1/4 | In Progress|  |
 | 11. Timeline Projection & Asset Ledger Views | 0/TBD | Not started | - |
 | 12. Deletion Lifecycle & Retention Controls | 0/TBD | Not started | - |
