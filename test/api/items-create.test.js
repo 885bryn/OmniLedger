@@ -85,12 +85,13 @@ describe("POST /items", () => {
 
   it("returns 201 with canonical persisted payload including id and timestamps", async () => {
     const user = await createUser();
+    const outsider = await createUser();
     const agent = await signInAs(user);
 
     const response = await agent
       .post("/items")
       .send({
-        user_id: user.id,
+        user_id: outsider.id,
         item_type: "RealEstate",
         attributes: {
           address: "22 Oak St"
@@ -110,6 +111,8 @@ describe("POST /items", () => {
     expect(response.body.id).toEqual(expect.any(String));
     expect(response.body.created_at).toEqual(expect.any(String));
     expect(response.body.updated_at).toEqual(expect.any(String));
+    expect(response.body.user_id).toBe(user.id);
+    expect(response.body.user_id).not.toBe(outsider.id);
   });
 
   it("fills defaults by item type and preserves client-provided values", async () => {
@@ -189,7 +192,9 @@ describe("POST /items", () => {
 
   it("returns parent link issue and aggregates multiple validation issues in one response", async () => {
     const user = await createUser();
+    const outsider = await createUser();
     const agent = await signInAs(user);
+    const foreignParentId = await createParentItem(outsider.id);
 
     const missingParentResponse = await agent
       .post("/items")
@@ -213,22 +218,41 @@ describe("POST /items", () => {
       ])
     );
 
-    const multipleIssuesResponse = await agent
+    const foreignParentResponse = await agent
       .post("/items")
       .send({
+        user_id: outsider.id,
         item_type: "FinancialCommitment",
+        parent_item_id: foreignParentId,
         attributes: {
-          amount: 200
+          amount: 300,
+          name: "Cross-owner loan",
+          dueDate: "2026-03-01"
         }
       });
 
-    expect(multipleIssuesResponse.status).toBe(422);
-    expect(multipleIssuesResponse.body.error.issues).toEqual(
+    expect(foreignParentResponse.status).toBe(422);
+    expect(foreignParentResponse.body.error.issues).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ field: "user_id", code: "required" })
+        expect.objectContaining({
+          field: "parent_item_id",
+          code: "parent_owner_mismatch",
+          category: "parent_link_failure"
+        })
       ])
     );
-    expect(multipleIssuesResponse.body.error.issues.length).toBe(1);
+
+    const scopeOwnedWithoutUserId = await agent
+      .post("/items")
+      .send({
+        item_type: "RealEstate",
+        attributes: {
+          address: "Scope Derived Address"
+        }
+      });
+
+    expect(scopeOwnedWithoutUserId.status).toBe(201);
+    expect(scopeOwnedWithoutUserId.body.user_id).toBe(user.id);
 
     const validParentId = await createParentItem(user.id);
     const validResponse = await agent

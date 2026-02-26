@@ -190,6 +190,29 @@ describe("items list and mutate contracts", () => {
     expect(incomeSorted.body.items.map((item) => item.id).slice(0, 2)).toEqual([incomeB.id, incomeA.id]);
   });
 
+  it("keeps list scope locked to authenticated owner when foreign owner queries are supplied", async () => {
+    const owner = await createUser();
+    const outsider = await createUser();
+    const ownerAgent = await signInAs(owner);
+
+    const ownerItem = await createItem(owner.id, { address: "Owner Scoped Home" });
+    const outsiderItem = await createItem(outsider.id, { address: "Foreign Home" });
+
+    const response = await ownerAgent
+      .get("/items")
+      .query({
+        user_id: outsider.id,
+        actorUserId: outsider.id,
+        owner: outsider.id,
+        search: "home"
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.total_count).toBe(1);
+    expect(response.body.items.map((item) => item.id)).toEqual([ownerItem.id]);
+    expect(response.body.items.map((item) => item.id)).not.toContain(outsiderItem.id);
+  });
+
   it("returns field-level issue envelopes for invalid list and mutate requests", async () => {
     const owner = await createUser();
     const ownerAgent = await signInAs(owner);
@@ -238,15 +261,22 @@ describe("items list and mutate contracts", () => {
 
   it("applies patch and soft delete while enforcing deleted visibility semantics", async () => {
     const owner = await createUser();
+    const outsider = await createUser();
     const ownerAgent = await signInAs(owner);
     const item = await createItem(owner.id, { address: "Deletable", estimatedValue: 100000 });
 
     const patched = await ownerAgent
       .patch(`/items/${item.id}`)
-      .send({ attributes: { estimatedValue: 120000 } });
+      .send({
+        user_id: outsider.id,
+        owner: outsider.id,
+        attributes: { estimatedValue: 120000 }
+      });
 
     expect(patched.status).toBe(200);
     expect(patched.body.attributes.estimatedValue).toBe(120000);
+    expect(patched.body.user_id).toBe(owner.id);
+    expect(patched.body.user_id).not.toBe(outsider.id);
 
     const deleted = await ownerAgent
       .delete(`/items/${item.id}`)
