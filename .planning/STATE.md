@@ -5,14 +5,14 @@
 See: `.planning/PROJECT.md` (updated 2026-02-25)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 8 - Auth Sessions & Protected Access (v2.0)
+**Current focus:** Phase 9 - RBAC Scope & Admin Safety Mode (v2.0)
 
 ## Current Position
 
-Phase: 8 of 12 (Auth Sessions & Protected Access)
-Plan: 6 of 6 in current phase
-Status: Complete
-Last activity: 2026-02-25 - Completed 08-04 frontend session identity migration and regression coverage
+Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
+Plan: Not started
+Status: Context gathered
+Last activity: 2026-02-25 - Captured Phase 9 implementation context decisions
 
 Progress: [██████████] 100%
 
@@ -79,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25 23:19
-Stopped at: Completed 08-04-PLAN.md
-Resume file: None
+Last session: 2026-02-25 16:25
+Stopped at: Phase 9 context gathered
+Resume file: .planning/phases/09-rbac-scope-admin-safety-mode/09-CONTEXT.md
