@@ -185,30 +185,78 @@ describe("PATCH /events/:id/complete", () => {
     expect(response.body).not.toHaveProperty("prompt_next_date");
   });
 
-  it("returns 403 issue envelope for foreign-owned event without prompt metadata", async () => {
+  it("returns 404 for foreign-owned event and ignores payload owner overrides", async () => {
     const owner = await createUser();
     const outsider = await createUser();
     const outsiderAgent = await signInAs(outsider);
     const item = await createItem({ userId: owner.id });
     const event = await createEvent({ itemId: item.id });
 
-    const response = await outsiderAgent.patch(`/events/${event.id}/complete`);
+    const response = await outsiderAgent
+      .patch(`/events/${event.id}/complete`)
+      .send({
+        user_id: owner.id,
+        actorUserId: owner.id,
+        scope: {
+          actorUserId: owner.id
+        }
+      });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(404);
     expect(response.body.error).toMatchObject({
       code: "event_completion_failed",
-      category: "forbidden"
+      category: "not_found"
     });
     expect(response.body.error.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           field: "event_id",
-          code: "forbidden",
-          category: "forbidden"
+          code: "not_found",
+          category: "not_found"
         })
       ])
     );
     expect(response.body).not.toHaveProperty("prompt_next_date");
+  });
+
+  it("returns 404 for foreign-owned undo completion and keeps event completed", async () => {
+    const owner = await createUser();
+    const outsider = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const outsiderAgent = await signInAs(outsider);
+    const item = await createItem({ userId: owner.id });
+    const event = await createEvent({ itemId: item.id });
+
+    const completed = await ownerAgent.patch(`/events/${event.id}/complete`);
+    expect(completed.status).toBe(200);
+
+    const forbiddenUndo = await outsiderAgent
+      .patch(`/events/${event.id}/undo-complete`)
+      .send({
+        user_id: owner.id,
+        actorUserId: owner.id,
+        scope: {
+          actorUserId: owner.id
+        }
+      });
+
+    expect(forbiddenUndo.status).toBe(404);
+    expect(forbiddenUndo.body.error).toMatchObject({
+      code: "event_completion_failed",
+      category: "not_found"
+    });
+    expect(forbiddenUndo.body.error.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "event_id",
+          code: "not_found",
+          category: "not_found"
+        })
+      ])
+    );
+
+    const refreshed = await models.Event.findByPk(event.id);
+    expect(refreshed.status).toBe("Completed");
   });
 
   it("remains idempotent on repeated completion and does not duplicate audit rows", async () => {
