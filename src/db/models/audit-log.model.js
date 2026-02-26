@@ -26,6 +26,20 @@ class AuditLog extends Model {
             isUUID: 4
           }
         },
+        actor_user_id: {
+          type: DataTypes.UUID,
+          allowNull: false,
+          validate: {
+            isUUID: 4
+          }
+        },
+        lens_user_id: {
+          type: DataTypes.UUID,
+          allowNull: true,
+          validate: {
+            isUUID: 4
+          }
+        },
         action: {
           type: DataTypes.STRING,
           allowNull: false,
@@ -58,7 +72,18 @@ class AuditLog extends Model {
         modelName: "AuditLog",
         tableName: "AuditLog",
         underscored: true,
-        timestamps: true
+        timestamps: true,
+        hooks: {
+          beforeValidate(instance) {
+            if (!instance.actor_user_id && instance.user_id) {
+              instance.actor_user_id = instance.user_id;
+            }
+
+            if (instance.lens_user_id === undefined && instance.actor_user_id) {
+              instance.lens_user_id = instance.actor_user_id;
+            }
+          }
+        }
       }
     );
 
@@ -69,6 +94,16 @@ class AuditLog extends Model {
     AuditLog.belongsTo(models.User, {
       as: "user",
       foreignKey: "user_id"
+    });
+
+    AuditLog.belongsTo(models.User, {
+      as: "actorUser",
+      foreignKey: "actor_user_id"
+    });
+
+    AuditLog.belongsTo(models.User, {
+      as: "lensUser",
+      foreignKey: "lens_user_id"
     });
   }
 }
