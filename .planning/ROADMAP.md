@@ -97,6 +97,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 8. Auth Sessions & Protected Access | 6/6 | Complete    | 2026-02-25 |
 | 9. RBAC Scope & Admin Safety Mode | 13/13 | Complete | 2026-02-26 |
-| 10. Financial Contract-Occurrence Foundation | 4/4 | Complete   | 2026-02-26 |
+| 10. Financial Contract-Occurrence Foundation | 5/5 | Complete   | 2026-02-26 |
 | 11. Timeline Projection & Asset Ledger Views | 0/TBD | Not started | - |
 | 12. Deletion Lifecycle & Retention Controls | 0/TBD | Not started | - |

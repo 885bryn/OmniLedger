@@ -10,18 +10,18 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 10 of 12 (Financial Contract-Occurrence Foundation)
-Plan: 4 of 4 (next: none)
+Plan: 5 of 5 (next: none)
 Status: Phase complete
-Last activity: 2026-02-26 - Completed 10-04 occurrence management UI grouping, inline status actions, and recurrence context visibility
+Last activity: 2026-02-26 - Completed 10-05 UAT visibility regression closure across item lists, asset commitments, and events lifecycle
 
 Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 31
+- Total plans completed: 32
 - Average duration: 4 min (v2.0)
-- Total execution time: 43 min (v2.0)
+- Total execution time: 45 min (v2.0)
 
 **By Phase:**
 
@@ -29,13 +29,13 @@ Progress: [██████████] 100%
 |-------|-------|-------|----------|
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
 | 9. RBAC Scope & Admin Safety Mode | 8 | 23 min | 3 min |
-| 10. Financial Contract-Occurrence Foundation | 3 | 19 min | 6 min |
+| 10. Financial Contract-Occurrence Foundation | 4 | 21 min | 5 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 10-03 (8 min), 10-02 (5 min), 10-01 (6 min), 09-13 (1 min), 09-12 (1 min)
-- Trend: Financial item create UX now matches the parent-contract model with explicit subtype labeling and unlinked-save confirmation safeguards.
+- Last 5 plans: 10-05 (2 min), 10-04 (6 min), 10-03 (8 min), 10-02 (5 min), 10-01 (6 min)
+- Trend: Financial item visibility now stays consistent across Items, asset detail commitments, and post-completion event lifecycle refreshes.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
@@ -58,6 +58,7 @@ Progress: [██████████] 100%
 | Phase 10 P02 | 5 min | 2 tasks | 5 files |
 | Phase 10 P03 | 8 min | 2 tasks | 8 files |
 | Phase 10 P04 | 6 min | 2 tasks | 7 files |
+| Phase 10 P05 | 2 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,9 @@ Recent decisions affecting current work:
 - [Phase 10]: Events page now queries status=all and splits Current/Upcoming from History in one surface.
 - [Phase 10]: Inline row controls use status-first Complete/Undo transitions with confirmation as the default-safe edit model.
 - [Phase 10]: Recurrence messaging uses localized frequency text with next-date/closed fallbacks across events and item detail.
+- [Phase 10]: List filters now classify FinancialItem rows by subtype so commitments/income views include canonical contracts.
+- [Phase 10]: Net-status child lookup now includes both parent_item_id and linked_asset_item_id with existing owner/soft-delete guards.
+- [Phase 10]: Event lifecycle merge now prefers persisted rows over projections for the same item/date key to preserve completed visibility.
 
 ### Pending Todos
 
@@ -138,6 +142,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 21:46
-Stopped at: Completed 10-04-PLAN.md
+Last session: 2026-02-26 22:27
+Stopped at: Completed 10-05-PLAN.md
 Resume file: None
