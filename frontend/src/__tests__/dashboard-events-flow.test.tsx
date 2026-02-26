@@ -186,6 +186,10 @@ describe('dashboard/events completion flow', () => {
     await waitFor(() => {
       expect(listCalls).toBeGreaterThan(1)
     })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Complete' })).toBeNull()
+    })
   })
 
   it('keeps modal hidden when completion payload has prompt_next_date false', async () => {

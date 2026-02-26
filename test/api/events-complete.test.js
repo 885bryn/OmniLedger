@@ -471,6 +471,37 @@ describe("PATCH /events/:id/complete", () => {
     expect(audits).toHaveLength(1);
   });
 
+  it("keeps completed projected occurrences visible in status=all event reads", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const recurring = await createFinancialItem({
+      userId: owner.id,
+      title: "Visibility regression guard",
+      frequency: "monthly",
+      status: "Active",
+      dueDate: "2026-02-03",
+      defaultAmount: 73.25
+    });
+
+    const projectedId = `projected-${recurring.id}-2026-03-03`;
+    const completion = await ownerAgent.patch(`/events/${projectedId}/complete`);
+
+    expect(completion.status).toBe(200);
+    expect(completion.body.status).toBe("Completed");
+    expect(completion.body.item_id).toBe(recurring.id);
+
+    const refreshed = await ownerAgent.get("/events").query({ status: "all" });
+
+    expect(refreshed.status).toBe(200);
+    const flattened = refreshed.body.groups.flatMap((group) => group.events);
+    const completedRow = flattened.find((event) => event.item_id === recurring.id && event.status === "Completed");
+
+    expect(completedRow).toBeTruthy();
+    expect(completedRow.id).toBe(completion.body.id);
+    expect(completedRow.id).not.toBe(projectedId);
+    expect(completedRow.due_date).toContain("2026-03-03");
+  });
+
   it("returns 404 when completing projected occurrence for foreign owner", async () => {
     const owner = await createUser();
     const outsider = await createUser();

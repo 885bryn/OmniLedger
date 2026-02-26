@@ -228,6 +228,39 @@ function compareEventsDescending(left, right) {
   return left.id.localeCompare(right.id);
 }
 
+function eventDateKey(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function mergePersistedAndProjectedEvents(persistedEvents, projectedEvents) {
+  const byKey = new Map();
+
+  (Array.isArray(projectedEvents) ? projectedEvents : []).forEach((event) => {
+    const dueKey = eventDateKey(event.due_date);
+    if (!dueKey) {
+      return;
+    }
+
+    byKey.set(`${event.item_id}:${dueKey}`, event);
+  });
+
+  (Array.isArray(persistedEvents) ? persistedEvents : []).forEach((event) => {
+    const dueKey = eventDateKey(event.due_date);
+    if (!dueKey) {
+      return;
+    }
+
+    byKey.set(`${event.item_id}:${dueKey}`, event);
+  });
+
+  return Array.from(byKey.values());
+}
+
 function sortUpcomingThenHistory(events, now) {
   const reference = now instanceof Date ? now : new Date(now);
   const todayStart = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate())).getTime();
@@ -327,7 +360,7 @@ async function listEvents(input) {
     });
   });
 
-  const allEvents = [...persistedEvents, ...projectedEvents];
+  const allEvents = mergePersistedAndProjectedEvents(persistedEvents, projectedEvents);
   const filtered = sortUpcomingThenHistory(filterByRange(filterByStatus(allEvents, query.status), query.dueFrom, query.dueTo), query.now);
 
   return {
