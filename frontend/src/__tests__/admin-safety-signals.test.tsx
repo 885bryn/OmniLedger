@@ -11,9 +11,14 @@ import { UserSwitcher } from '../app/shell/user-switcher'
 import { CompleteEventRowAction } from '../features/events/complete-event-row-action'
 import { ItemSoftDeleteDialog } from '../features/items/item-soft-delete-dialog'
 import { ToastProvider } from '../features/ui/toast-provider'
-import '../lib/i18n'
+import i18n from '../lib/i18n'
 import { actorSensitiveQueryRoots } from '../lib/query-keys'
 import { ItemEditPage } from '../pages/items/item-edit-page'
+
+const safetyCopy = {
+  policyDenied: i18n.t('safety.policyDenied'),
+  invalidLens: i18n.t('safety.invalidLens'),
+}
 
 const setAllUsersMock = vi.fn(async () => undefined)
 const setLensUserMock = vi.fn(async () => undefined)
@@ -357,7 +362,7 @@ describe('admin safety signals', () => {
     const completeButtons = screen.getAllByRole('button', { name: 'Complete' })
     await userEvent.click(completeButtons[completeButtons.length - 1])
 
-    const policySignals = await screen.findAllByText('Write blocked by policy. You can only access your own records.')
+    const policySignals = await screen.findAllByText(safetyCopy.policyDenied)
     expect(policySignals).toHaveLength(2)
     expect(screen.getAllByTestId('safety-toast')).toHaveLength(1)
   })
@@ -381,7 +386,7 @@ describe('admin safety signals', () => {
     await userEvent.click(screen.getByRole('button', { name: /complete/i }))
 
     expect(screen.queryByRole('dialog')).toBeNull()
-    expect(screen.getAllByText('Write blocked. Select a valid Lens user before trying again.')).toHaveLength(2)
+    expect(screen.getAllByText(safetyCopy.invalidLens)).toHaveLength(2)
     expect(screen.getAllByTestId('safety-toast')).toHaveLength(1)
     expect(globalThis.fetch).not.toHaveBeenCalled()
   })
