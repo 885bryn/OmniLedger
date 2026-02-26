@@ -48,7 +48,7 @@ Plans:
 - [ ] 09-02-PLAN.md - Enforce owner-only read/write boundaries with 404-style foreign access denials.
 - [ ] 09-03-PLAN.md - Implement server-enforced admin mode/lens APIs and unified scope-filter routing.
 - [ ] 09-04-PLAN.md - Add persistent shell safety banner and explicit admin-mode exit confirmation.
-- [ ] 09-05-PLAN.md - Expand audit history to actor+lens attribution including restore-category visibility coverage.
+- [x] 09-05-PLAN.md - Expand audit history to actor+lens attribution including restore-category visibility coverage. (completed 2026-02-26)
 - [ ] 09-06-PLAN.md - Build frontend admin lens controls with hard reset and refetch across read surfaces.
 - [ ] 09-07-PLAN.md - Add mutation attribution chips plus dual inline and toast policy-denial safety feedback.
 
@@ -91,7 +91,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 8. Auth Sessions & Protected Access | 6/6 | Complete    | 2026-02-25 |
-| 9. RBAC Scope & Admin Safety Mode | 3/12 | In Progress | - |
+| 9. RBAC Scope & Admin Safety Mode | 6/12 | In Progress | - |
 | 10. Financial Contract-Occurrence Foundation | 0/TBD | Not started | - |
 | 11. Timeline Projection & Asset Ledger Views | 0/TBD | Not started | - |
 | 12. Deletion Lifecycle & Retention Controls | 0/TBD | Not started | - |

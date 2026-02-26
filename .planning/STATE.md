@@ -10,25 +10,25 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
-Plan: 4 of 12 (next: 09-04)
+Plan: 6 of 12 (next: 09-04)
 Status: In progress
-Last activity: 2026-02-26 - Completed 09-03 admin scope mode/lens session enforcement and list resolver normalization
+Last activity: 2026-02-26 - Completed 09-05 audit actor+lens attribution persistence and regression coverage
 
-Progress: [███░░░░░░░] 25%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24
+- Total plans completed: 25
 - Average duration: 3 min (v2.0)
-- Total execution time: 14 min (v2.0)
+- Total execution time: 18 min (v2.0)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
-| 9. RBAC Scope & Admin Safety Mode | 3 | 8 min | 3 min |
+| 9. RBAC Scope & Admin Safety Mode | 4 | 12 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 0 | 0 min | 0 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
@@ -46,6 +46,8 @@ Progress: [███░░░░░░░] 25%
 | Phase 09 P11 | 2 min | 2 tasks | 3 files |
 | Phase 09 P08 | 4 min | 2 tasks | 9 files |
 | Phase 09 P03 | 7 min | 2 tasks | 9 files |
+| Phase 09 P05 | 4 min | 2 tasks | 7 files |
+| Phase 09 P06 | 2 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -85,6 +87,10 @@ Recent decisions affecting current work:
 - [Phase 09]: Persist admin scope mode+lens in server session and expose scope metadata in auth/session payloads.
 - [Phase 09]: Restrict /auth/admin-scope updates to admins and validate owner lens targets against existing users.
 - [Phase 09]: Use resolveOwnerFilter(scope) as the single owner-filter contract for item/event list reads.
+- [Phase 09]: Kept user_id in AuditLog while adding actor_user_id and lens_user_id to preserve historical compatibility.
+- [Phase 09]: Audit write paths now persist actor+lens attribution from enforced scope context, defaulting owner-mode lens to actor user.
+- [Phase 09]: Hydrate admin scope from /auth/session and keep lens mutation writes explicit through /auth/admin-scope.
+- [Phase 09]: Clear actor-sensitive query cache roots on lens change and immediately invalidate active roots to force scoped refetch.
 
 ### Pending Todos
 
@@ -97,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 03:37
-Stopped at: Completed 09-03-PLAN.md
+Last session: 2026-02-26 03:51
+Stopped at: Completed 09-05-PLAN.md
 Resume file: None
