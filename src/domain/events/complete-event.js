@@ -60,14 +60,14 @@ function throwNotFound(eventId) {
 
 function throwForbidden(eventId, actorUserId) {
   throw new EventCompletionError({
-    message: "Event completion is forbidden for this actor.",
-    category: EVENT_COMPLETION_ERROR_CATEGORIES.FORBIDDEN,
+    message: "You can only access your own records.",
+    category: EVENT_COMPLETION_ERROR_CATEGORIES.NOT_FOUND,
     issues: [
       {
         field: "event_id",
-        code: "forbidden",
-        category: EVENT_COMPLETION_ERROR_CATEGORIES.FORBIDDEN,
-        message: "Event exists but is not owned by the requesting actor.",
+        code: "not_found",
+        category: EVENT_COMPLETION_ERROR_CATEGORIES.NOT_FOUND,
+        message: "You can only access your own records.",
         meta: { eventId, actorUserId }
       }
     ]

@@ -103,14 +103,14 @@ function throwNotFound(itemId) {
 
 function throwForbidden(itemId, actorUserId) {
   throw new ItemQueryError({
-    message: "Item delete forbidden for this actor.",
-    category: ITEM_QUERY_ERROR_CATEGORIES.FORBIDDEN,
+    message: "You can only access your own records.",
+    category: ITEM_QUERY_ERROR_CATEGORIES.NOT_FOUND,
     issues: [
       {
         field: "item_id",
-        code: "forbidden",
-        category: ITEM_QUERY_ERROR_CATEGORIES.FORBIDDEN,
-        message: "Item exists but is not owned by the requesting actor.",
+        code: "not_found",
+        category: ITEM_QUERY_ERROR_CATEGORIES.NOT_FOUND,
+        message: "You can only access your own records.",
         meta: { itemId, actorUserId }
       }
     ]

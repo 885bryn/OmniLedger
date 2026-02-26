@@ -14,7 +14,26 @@ const CANONICAL_ITEM_FIELDS = Object.freeze([
 ]);
 
 const ROOT_ITEM_TYPES = new Set(["RealEstate", "Vehicle"]);
-const COMMITMENT_ITEM_TYPES = new Set(["FinancialCommitment", "Subscription"]);
+const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome"]);
+
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && Array.isArray(value) === false;
+}
+
+function getDeletedAt(item) {
+  const attributes = isPlainObject(item.attributes) ? item.attributes : {};
+  const deletedAt = attributes._deleted_at;
+
+  if (typeof deletedAt !== "string") {
+    return null;
+  }
+
+  return Number.isNaN(new Date(deletedAt).getTime()) ? null : deletedAt;
+}
+
+function isSoftDeleted(item) {
+  return Boolean(getDeletedAt(item));
+}
 
 function toCanonicalItem(itemInstance) {
   const raw = itemInstance.get({ plain: true });
@@ -86,28 +105,49 @@ function sortChildCommitments(items) {
 }
 
 function toValidAmount(value) {
-  if (typeof value !== "number") {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function resolveSummaryAmount(attributes) {
+  if (!isPlainObject(attributes)) {
     return null;
   }
 
-  return Number.isFinite(value) ? value : null;
+  return toValidAmount(attributes.amount ?? attributes.nextPaymentAmount);
 }
 
 function buildSummary(childCommitments) {
   return childCommitments.reduce(
     (summary, child) => {
-      const amount = toValidAmount(child.attributes && child.attributes.amount);
+      const amount = resolveSummaryAmount(child.attributes);
 
       if (amount === null) {
         summary.excluded_row_count += 1;
         return summary;
       }
 
-      summary.monthly_obligation_total += amount;
+      if (child.item_type === "FinancialIncome") {
+        summary.monthly_income_total += amount;
+      } else {
+        summary.monthly_obligation_total += amount;
+      }
+
+      summary.net_monthly_cashflow = summary.monthly_income_total - summary.monthly_obligation_total;
       return summary;
     },
     {
       monthly_obligation_total: 0,
+      monthly_income_total: 0,
+      net_monthly_cashflow: 0,
       excluded_row_count: 0
     }
   );
@@ -131,14 +171,14 @@ function throwNotFound(itemId) {
 
 function throwForbidden(itemId, actorUserId) {
   throw new ItemNetStatusError({
-    message: "Net-status access forbidden for this item.",
-    category: ITEM_NET_STATUS_ERROR_CATEGORIES.FORBIDDEN,
+    message: "You can only access your own records.",
+    category: ITEM_NET_STATUS_ERROR_CATEGORIES.NOT_FOUND,
     issues: [
       {
         field: "item_id",
-        code: "forbidden",
-        category: ITEM_NET_STATUS_ERROR_CATEGORIES.FORBIDDEN,
-        message: "Item exists but is not owned by the requesting actor.",
+        code: "not_found",
+        category: ITEM_NET_STATUS_ERROR_CATEGORIES.NOT_FOUND,
+        message: "You can only access your own records.",
         meta: { itemId, actorUserId }
       }
     ]
@@ -175,19 +215,25 @@ async function getItemNetStatus({ itemId, actorUserId }) {
     throwForbidden(itemId, actorUserId);
   }
 
+  if (isSoftDeleted(rootItem)) {
+    throwNotFound(itemId);
+  }
+
   if (!ROOT_ITEM_TYPES.has(rootItem.item_type)) {
     throwWrongRootType(rootItem.item_type);
   }
 
   const childRows = await models.Item.findAll({
     where: {
-      parent_item_id: rootItem.id
+      parent_item_id: rootItem.id,
+      user_id: rootItem.user_id
     }
   });
 
   const canonicalChildren = childRows
     .map(toCanonicalItem)
-    .filter((child) => COMMITMENT_ITEM_TYPES.has(child.item_type));
+    .filter((child) => CASHFLOW_ITEM_TYPES.has(child.item_type))
+    .filter((child) => !isSoftDeleted(child));
 
   const childCommitments = sortChildCommitments(canonicalChildren);
   const summary = buildSummary(childCommitments);

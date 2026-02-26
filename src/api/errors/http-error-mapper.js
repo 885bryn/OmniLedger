@@ -71,12 +71,32 @@ const EVENT_QUERY_CATEGORY_TO_STATUS = Object.freeze({
   [EVENT_QUERY_ERROR_CATEGORIES.INVALID_RANGE]: 422
 });
 
+const OWNERSHIP_DENIAL_MESSAGE = "You can only access your own records.";
+
 function mapValidationIssue(issue) {
   return {
     field: issue.field || "unknown",
     code: issue.code || "validation_error",
     category: issue.category || ITEM_CREATE_ERROR_CATEGORIES.INVALID_PAYLOAD,
     message: issue.message || "Invalid value."
+  };
+}
+
+function normalizeIssue(issue, category, fallbackCode) {
+  return {
+    field: issue.field || "unknown",
+    code: issue.code || fallbackCode,
+    category,
+    message: issue.message || "Invalid value."
+  };
+}
+
+function normalizeOwnershipIssue(issue) {
+  return {
+    field: issue.field || "unknown",
+    code: "not_found",
+    category: "not_found",
+    message: OWNERSHIP_DENIAL_MESSAGE
   };
 }
 
@@ -107,15 +127,22 @@ function mapItemNetStatusError(error) {
   }
 
   const category = error.category || ITEM_NET_STATUS_ERROR_CATEGORIES.INVALID_REQUEST;
-  const issues = Array.isArray(error.issues) ? error.issues.map(mapValidationIssue) : [];
+  const isOwnershipDenied = category === ITEM_NET_STATUS_ERROR_CATEGORIES.FORBIDDEN;
+  const responseCategory = isOwnershipDenied ? ITEM_NET_STATUS_ERROR_CATEGORIES.NOT_FOUND : category;
+  const status = isOwnershipDenied ? 404 : NET_STATUS_CATEGORY_TO_STATUS[category] || 422;
+  const issues = Array.isArray(error.issues)
+    ? error.issues.map((issue) => (isOwnershipDenied ? normalizeOwnershipIssue(issue) : normalizeIssue(issue, responseCategory, "validation_error")))
+    : [];
 
   return {
-    status: NET_STATUS_CATEGORY_TO_STATUS[category] || 422,
+    status,
     body: {
       error: {
         code: "item_net_status_failed",
-        category,
-        message: error.message || NET_STATUS_CATEGORY_MESSAGES[category] || "Item net-status request failed.",
+        category: responseCategory,
+        message: isOwnershipDenied
+          ? OWNERSHIP_DENIAL_MESSAGE
+          : error.message || NET_STATUS_CATEGORY_MESSAGES[responseCategory] || "Item net-status request failed.",
         issues
       }
     }
@@ -128,15 +155,22 @@ function mapEventCompletionError(error) {
   }
 
   const category = error.category || EVENT_COMPLETION_ERROR_CATEGORIES.INVALID_REQUEST;
-  const issues = Array.isArray(error.issues) ? error.issues.map(mapValidationIssue) : [];
+  const isOwnershipDenied = category === EVENT_COMPLETION_ERROR_CATEGORIES.FORBIDDEN;
+  const responseCategory = isOwnershipDenied ? EVENT_COMPLETION_ERROR_CATEGORIES.NOT_FOUND : category;
+  const status = isOwnershipDenied ? 404 : EVENT_COMPLETION_CATEGORY_TO_STATUS[category] || 422;
+  const issues = Array.isArray(error.issues)
+    ? error.issues.map((issue) => (isOwnershipDenied ? normalizeOwnershipIssue(issue) : normalizeIssue(issue, responseCategory, "validation_error")))
+    : [];
 
   return {
-    status: EVENT_COMPLETION_CATEGORY_TO_STATUS[category] || 422,
+    status,
     body: {
       error: {
         code: "event_completion_failed",
-        category,
-        message: error.message || EVENT_COMPLETION_CATEGORY_MESSAGES[category] || "Event completion request failed.",
+        category: responseCategory,
+        message: isOwnershipDenied
+          ? OWNERSHIP_DENIAL_MESSAGE
+          : error.message || EVENT_COMPLETION_CATEGORY_MESSAGES[responseCategory] || "Event completion request failed.",
         issues
       }
     }
@@ -149,15 +183,22 @@ function mapItemQueryError(error) {
   }
 
   const category = error.category || ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST;
-  const issues = Array.isArray(error.issues) ? error.issues.map(mapValidationIssue) : [];
+  const isOwnershipDenied = category === ITEM_QUERY_ERROR_CATEGORIES.FORBIDDEN;
+  const responseCategory = isOwnershipDenied ? ITEM_QUERY_ERROR_CATEGORIES.NOT_FOUND : category;
+  const status = isOwnershipDenied ? 404 : ITEM_QUERY_CATEGORY_TO_STATUS[category] || 422;
+  const issues = Array.isArray(error.issues)
+    ? error.issues.map((issue) => (isOwnershipDenied ? normalizeOwnershipIssue(issue) : normalizeIssue(issue, responseCategory, "validation_error")))
+    : [];
 
   return {
-    status: ITEM_QUERY_CATEGORY_TO_STATUS[category] || 422,
+    status,
     body: {
       error: {
         code: "item_query_failed",
-        category,
-        message: error.message || ITEM_QUERY_CATEGORY_MESSAGES[category] || "Item request failed.",
+        category: responseCategory,
+        message: isOwnershipDenied
+          ? OWNERSHIP_DENIAL_MESSAGE
+          : error.message || ITEM_QUERY_CATEGORY_MESSAGES[responseCategory] || "Item request failed.",
         issues
       }
     }
