@@ -10,11 +10,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
-Plan: 8 of 12 (next: 09-04)
+Plan: 9 of 12 (next: 09-07)
 Status: In progress
-Last activity: 2026-02-26 - Completed 09-09 activity attribution API transport and timeline tuple rendering
+Last activity: 2026-02-26 - Completed 09-04 admin safety banner and explicit admin-exit confirmation gating
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [███████░░░] 67%
 | Phase 09 P05 | 4 min | 2 tasks | 7 files |
 | Phase 09 P06 | 2 min | 2 tasks | 9 files |
 | Phase 09 P09 | 1 min | 2 tasks | 6 files |
+| Phase 09 P04 | 4 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Recent decisions affecting current work:
 - [Phase 09]: Clear actor-sensitive query cache roots on lens change and immediately invalidate active roots to force scoped refetch.
 - [Phase 09]: Expose lens_attribution_state in item activity responses so legacy rows render deterministic fallback semantics.
 - [Phase 09]: Render activity attribution uniformly as Actor: X | Lens: Y across timeline rows, including restore-category rows.
+- [Phase 09]: Show admin safety context only while mode=all to avoid warning fatigue outside elevated scope.
+- [Phase 09]: Require a blocking confirmation dialog before any all-data to owner-lens transition is applied.
 
 ### Pending Todos
 
@@ -107,5 +110,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26 04:01
-Stopped at: Completed 09-09-PLAN.md
+Stopped at: Completed 09-04-PLAN.md
 Resume file: None
