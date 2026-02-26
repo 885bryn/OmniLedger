@@ -10,11 +10,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 10 of 12 (Financial Contract-Occurrence Foundation)
-Plan: 3 of 4 (next: 10-04-PLAN.md)
-Status: In progress
-Last activity: 2026-02-26 - Completed 10-03 guided Financial item create UX, warning confirmation flow, and terminology unification
+Plan: 4 of 4 (next: none)
+Status: Phase complete
+Last activity: 2026-02-26 - Completed 10-04 occurrence management UI grouping, inline status actions, and recurrence context visibility
 
-Progress: [███████░░░] 75%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [███████░░░] 75%
 | Phase 10 P01 | 6 min | 2 tasks | 10 files |
 | Phase 10 P02 | 5 min | 2 tasks | 5 files |
 | Phase 10 P03 | 8 min | 2 tasks | 8 files |
+| Phase 10 P04 | 6 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,9 @@ Recent decisions affecting current work:
 - [Phase 10]: Preserved legacy /items/create/wizard redirects with query params intact so subtype and parent prefill context survives on /items/create.
 - [Phase 10]: Financial item create now requires explicit warning confirmation for unlinked saves instead of blocking or silently allowing.
 - [Phase 10]: List and detail surfaces standardize parent label as Financial item while rendering Commitment or Income subtype badges.
+- [Phase 10]: Events page now queries status=all and splits Current/Upcoming from History in one surface.
+- [Phase 10]: Inline row controls use status-first Complete/Undo transitions with confirmation as the default-safe edit model.
+- [Phase 10]: Recurrence messaging uses localized frequency text with next-date/closed fallbacks across events and item detail.
 
 ### Pending Todos
 
@@ -134,6 +138,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 21:26
-Stopped at: Completed 10-03-PLAN.md
+Last session: 2026-02-26 21:46
+Stopped at: Completed 10-04-PLAN.md
 Resume file: None

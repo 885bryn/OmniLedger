@@ -17,7 +17,7 @@ v2.0 delivers secure multi-user operation, contract-and-occurrence financial mod
 
 - [x] **Phase 8: Auth Sessions & Protected Access** - Replace actor shim with secure sign-in and gated access. (completed 2026-02-25)
 - [x] **Phase 9: RBAC Scope & Admin Safety Mode** - Enforce ownership boundaries with explicit admin all-data controls. (completed 2026-02-26)
-- [ ] **Phase 10: Financial Contract-Occurrence Foundation** - Establish parent contracts and child occurrence persistence rules.
+- [x] **Phase 10: Financial Contract-Occurrence Foundation** - Establish parent contracts and child occurrence persistence rules. (completed 2026-02-26)
 - [ ] **Phase 11: Timeline Projection & Asset Ledger Views** - Deliver projected-versus-persisted timeline and split asset ledger UX.
 - [ ] **Phase 12: Deletion Lifecycle & Retention Controls** - Ship trash/restore/delete-intercept flows and 30-day hard purge.
 
@@ -65,8 +65,8 @@ Plans:
 Plans:
 - [x] 10-01-PLAN.md - Add explicit FinancialItem parent contract schema and transactional one-time parent+occurrence create path. (completed 2026-02-26)
 - [x] 10-02-PLAN.md - Implement owner-scoped occurrence projection/read model with close-status gating and projected exception materialization. (completed 2026-02-26)
-- [ ] 10-03-PLAN.md - Replace wizard with single guided Financial item form and terminology/subtype UX unification.
-- [ ] 10-04-PLAN.md - Deliver upcoming/history occurrence management UI with inline status actions and recurrence state visibility.
+- [x] 10-03-PLAN.md - Replace wizard with single guided Financial item form and terminology/subtype UX unification. (completed 2026-02-26)
+- [x] 10-04-PLAN.md - Deliver upcoming/history occurrence management UI with inline status actions and recurrence state visibility. (completed 2026-02-26)
 
 ### Phase 11: Timeline Projection & Asset Ledger Views
 **Goal**: Users can trust a unified, deterministic timeline and clearly separated current versus historical asset ledgers.
@@ -97,6 +97,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 8. Auth Sessions & Protected Access | 6/6 | Complete    | 2026-02-25 |
 | 9. RBAC Scope & Admin Safety Mode | 13/13 | Complete | 2026-02-26 |
-| 10. Financial Contract-Occurrence Foundation | 3/4 | In Progress|  |
+| 10. Financial Contract-Occurrence Foundation | 4/4 | Complete   | 2026-02-26 |
 | 11. Timeline Projection & Asset Ledger Views | 0/TBD | Not started | - |
 | 12. Deletion Lifecycle & Retention Controls | 0/TBD | Not started | - |
