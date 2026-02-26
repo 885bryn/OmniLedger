@@ -12,7 +12,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
 Plan: 4 of 12 (next: 09-03)
 Status: In progress
-Last activity: 2026-02-26 - Completed 09-11 owner-scope regression locking for create/list/mutate/event flows
+Last activity: 2026-02-26 - Completed 09-08 ownership-denial contract normalization for item/event direct-access paths
 
 Progress: [███░░░░░░░] 25%
 
@@ -44,6 +44,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 09 P01 | 3 min | 2 tasks | 6 files |
 | Phase 09 P02 | 3 min | 1 tasks | 9 files |
 | Phase 09 P11 | 2 min | 2 tasks | 3 files |
+| Phase 09 P08 | 4 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 09]: create-item validates parent_item_id owner match against resolved scope owner to prevent cross-owner links.
 - [Phase 09]: Create/list/event regressions now inject foreign owner hints and assert authenticated scope remains authoritative.
 - [Phase 09]: Foreign event complete and undo attempts are regression-locked to 404 not_found denial behavior under AUTH-05.
+- [Phase 09]: Mapped ownership-denial categories to shared 404/not_found envelopes at the API mapper boundary to keep contracts consistent and non-leaky.
+- [Phase 09]: Standardized foreign direct-access denial copy to plain policy language while preserving not_found semantics across item and event pathways.
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 03:32
-Stopped at: Completed 09-11-PLAN.md
+Last session: 2026-02-26 03:34
+Stopped at: Completed 09-08-PLAN.md
 Resume file: None
