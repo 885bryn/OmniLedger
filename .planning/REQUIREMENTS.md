@@ -19,11 +19,11 @@
 ### Financial Contract & Occurrence Model
 
 - [x] **FIN-01**: User can create a parent `FinancialItem` with `title`, `type`, `frequency`, `default_amount`, `status`, owner, and linked asset.
-- [ ] **FIN-02**: User can track child `Event` occurrences with `financial_item_id`, `due_date`, `actual_amount`, `status`, and owner scope.
+- [x] **FIN-02**: User can track child `Event` occurrences with `financial_item_id`, `due_date`, `actual_amount`, `status`, and owner scope.
 - [x] **FIN-03**: One-time financial creation creates parent and one child occurrence in a single backend transaction.
-- [ ] **FIN-04**: Recurring contracts store recurrence rules on parent items and do not pre-generate long-horizon rows.
+- [x] **FIN-04**: Recurring contracts store recurrence rules on parent items and do not pre-generate long-horizon rows.
 - [ ] **FIN-05**: Editing a projected future occurrence instantiates a stored exception occurrence for that date.
-- [ ] **FIN-06**: Closing a parent contract prevents new projected occurrences from being generated.
+- [x] **FIN-06**: Closing a parent contract prevents new projected occurrences from being generated.
 
 ### Timeline & Asset UX
 
@@ -82,11 +82,11 @@ Traceability for milestone v2.0 is mapped to Phases 8-12.
 | AUTH-07 | Phase 9 | Complete |
 | AUTH-08 | Phase 9 | Complete |
 | FIN-01 | Phase 10 | Complete |
-| FIN-02 | Phase 10 | Pending |
+| FIN-02 | Phase 10 | Complete |
 | FIN-03 | Phase 10 | Complete |
-| FIN-04 | Phase 10 | Pending |
+| FIN-04 | Phase 10 | Complete |
 | FIN-05 | Phase 11 | Pending |
-| FIN-06 | Phase 10 | Pending |
+| FIN-06 | Phase 10 | Complete |
 | TIME-01 | Phase 11 | Pending |
 | TIME-02 | Phase 11 | Pending |
 | TIME-03 | Phase 11 | Pending |

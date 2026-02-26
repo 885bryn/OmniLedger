@@ -10,11 +10,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 10 of 12 (Financial Contract-Occurrence Foundation)
-Plan: 1 of 4 (next: 10-02-PLAN.md)
+Plan: 2 of 4 (next: 10-03-PLAN.md)
 Status: In progress
-Last activity: 2026-02-26 - Completed 10-01 FinancialItem contract foundation and atomic one-time create path
+Last activity: 2026-02-26 - Completed 10-02 owner-scoped occurrence projection and projected exception materialization baseline
 
-Progress: [███░░░░░░░] 25%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 09-rbac-scope-admin-safety-mode P12 | 1 min | 2 tasks | 4 files |
 | Phase 09 P13 | 1 min | 2 tasks | 2 files |
 | Phase 10 P01 | 6 min | 2 tasks | 10 files |
+| Phase 10 P02 | 5 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,9 @@ Recent decisions affecting current work:
 - [Phase 10]: Persist FinancialItem parent contract fields (title/type/frequency/default_amount/status) explicitly on Items rather than JSON-only inference.
 - [Phase 10]: Require `confirm_unlinked_asset=true` when `linked_asset_item_id` is omitted to allow intentional unlinked financial saves.
 - [Phase 10]: Restrict automatic first-occurrence materialization to `FinancialItem` records with `frequency=one_time` and keep parent+event writes in one transaction.
+- [Phase 10]: Used deterministic projected event ids (projected-{itemId}-{YYYY-MM-DD}) so projected rows can be acted on before persistence.
+- [Phase 10]: Bound recurring read projection to three upcoming occurrences per active FinancialItem to avoid long-horizon generation.
+- [Phase 10]: Materialized projected completion targets by item/date with dedupe lookup to prevent duplicate exception rows on retries.
 
 ### Pending Todos
 
@@ -126,6 +130,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 21:03
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-02-26 21:16
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
