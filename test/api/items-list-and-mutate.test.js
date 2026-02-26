@@ -213,6 +213,52 @@ describe("items list and mutate contracts", () => {
     expect(response.body.items.map((item) => item.id)).not.toContain(outsiderItem.id);
   });
 
+  it("returns 404 not_found for foreign-owned item mutations and activity access", async () => {
+    const owner = await createUser();
+    const outsider = await createUser();
+    const outsiderAgent = await signInAs(outsider);
+    const ownerItem = await createItem(owner.id, { address: "Foreign Access Target", estimatedValue: 420000 });
+
+    const patched = await outsiderAgent
+      .patch(`/items/${ownerItem.id}`)
+      .send({ attributes: { estimatedValue: 430000 } });
+
+    expect(patched.status).toBe(404);
+    expect(patched.status).not.toBe(403);
+    expect(patched.body.error).toMatchObject({
+      code: "item_query_failed",
+      category: "not_found",
+      message: "You can only access your own records."
+    });
+    expect(patched.body.error.category).not.toBe("forbidden");
+
+    const activity = await outsiderAgent.get(`/items/${ownerItem.id}/activity`);
+
+    expect(activity.status).toBe(404);
+    expect(activity.status).not.toBe(403);
+    expect(activity.body.error).toMatchObject({
+      code: "item_query_failed",
+      category: "not_found",
+      message: "You can only access your own records."
+    });
+    expect(activity.body.error.category).not.toBe("forbidden");
+
+    const deleted = await outsiderAgent.delete(`/items/${ownerItem.id}`);
+
+    expect(deleted.status).toBe(404);
+    expect(deleted.status).not.toBe(403);
+    expect(deleted.body.error).toMatchObject({
+      code: "item_query_failed",
+      category: "not_found",
+      message: "You can only access your own records."
+    });
+    expect(deleted.body.error.category).not.toBe("forbidden");
+
+    const persisted = await models.Item.findByPk(ownerItem.id);
+    expect(persisted.attributes.estimatedValue).toBe(420000);
+    expect(persisted.attributes._deleted_at).toBeUndefined();
+  });
+
   it("returns field-level issue envelopes for invalid list and mutate requests", async () => {
     const owner = await createUser();
     const ownerAgent = await signInAs(owner);

@@ -234,7 +234,7 @@ describe("GET /items/:id/net-status", () => {
     );
   });
 
-  it("returns 403 issue envelope when root item belongs to a different user", async () => {
+  it("returns 404 not_found envelope when root item belongs to a different user", async () => {
     const owner = await createUser();
     const actor = await createUser();
     const actorAgent = await signInAs(actor);
@@ -249,17 +249,20 @@ describe("GET /items/:id/net-status", () => {
 
     const response = await actorAgent.get(`/items/${root.id}/net-status`);
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(404);
+    expect(response.status).not.toBe(403);
     expect(response.body.error).toMatchObject({
       code: "item_net_status_failed",
-      category: "forbidden"
+      category: "not_found",
+      message: "You can only access your own records."
     });
+    expect(response.body.error.category).not.toBe("forbidden");
     expect(response.body.error.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           field: "item_id",
-          code: "forbidden",
-          category: "forbidden"
+          code: "not_found",
+          category: "not_found"
         })
       ])
     );

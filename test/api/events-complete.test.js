@@ -241,10 +241,13 @@ describe("PATCH /events/:id/complete", () => {
       });
 
     expect(forbiddenUndo.status).toBe(404);
+    expect(forbiddenUndo.status).not.toBe(403);
     expect(forbiddenUndo.body.error).toMatchObject({
       code: "event_completion_failed",
-      category: "not_found"
+      category: "not_found",
+      message: "You can only access your own records."
     });
+    expect(forbiddenUndo.body.error.category).not.toBe("forbidden");
     expect(forbiddenUndo.body.error.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
