@@ -276,6 +276,28 @@ describe("items list and mutate contracts", () => {
     expect(updateAfterDelete.body.error.category).toBe("invalid_state");
   });
 
+  it("derives item ownership from authenticated scope and ignores payload user_id", async () => {
+    const owner = await createUser();
+    const outsider = await createUser();
+    const ownerAgent = await signInAs(owner);
+
+    const created = await ownerAgent.post("/items").send({
+      user_id: outsider.id,
+      item_type: "RealEstate",
+      attributes: {
+        address: "Scope Owned Home",
+        estimatedValue: 456000
+      }
+    });
+
+    expect(created.status).toBe(201);
+    expect(created.body.user_id).toBe(owner.id);
+    expect(created.body.user_id).not.toBe(outsider.id);
+
+    const persisted = await models.Item.findByPk(created.body.id);
+    expect(persisted.user_id).toBe(owner.id);
+  });
+
   it("returns item activity timeline with deterministic shape and supports limit validation", async () => {
     const owner = await createUser();
     const ownerAgent = await signInAs(owner);

@@ -5,6 +5,7 @@ const { ITEM_TYPES } = require("../../db/models/item.model");
 const { defaultAttributesByType } = require("./default-attributes");
 const { minimumAttributeKeys } = require("./minimum-attribute-keys");
 const { ItemCreateValidationError, ITEM_CREATE_ERROR_CATEGORIES } = require("./item-create-errors");
+const { syncItemEvent } = require("./item-event-sync");
 
 const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
@@ -74,9 +75,12 @@ function toCanonicalItem(itemInstance) {
 
 function normalizeInput(input) {
   const payload = isPlainObject(input) ? input : {};
+  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const scopeActorUserId = typeof scope.actorUserId === "string" ? scope.actorUserId.trim() : "";
+  const ownerUserId = scopeActorUserId || (typeof payload.user_id === "string" ? payload.user_id.trim() : "");
   const issues = [];
 
-  if (typeof payload.user_id !== "string" || payload.user_id.trim() === "") {
+  if (ownerUserId === "") {
     issues.push({
       field: "user_id",
       code: "required",
@@ -129,15 +133,6 @@ function normalizeInput(input) {
         meta: { missingKeys }
       });
     }
-
-    if (payload.item_type === "FinancialCommitment" && (payload.parent_item_id === undefined || payload.parent_item_id === null || payload.parent_item_id === "")) {
-      issues.push({
-        field: "parent_item_id",
-        code: "parent_required",
-        category: ITEM_CREATE_ERROR_CATEGORIES.PARENT_LINK_FAILURE,
-        message: "FinancialCommitment requires parent_item_id."
-      });
-    }
   }
 
   if (issues.length > 0) {
@@ -145,7 +140,7 @@ function normalizeInput(input) {
   }
 
   return {
-    user_id: payload.user_id,
+    user_id: ownerUserId,
     item_type: payload.item_type,
     attributes: mergedAttributes,
     parent_item_id: payload.parent_item_id || null
@@ -201,9 +196,25 @@ async function createItem(input) {
             ]
           });
         }
+
+        if (parent.user_id !== payload.user_id) {
+          throw new ItemCreateValidationError({
+            message: "Item create validation failed: parent link is invalid.",
+            category: ITEM_CREATE_ERROR_CATEGORIES.PARENT_LINK_FAILURE,
+            issues: [
+              {
+                field: "parent_item_id",
+                code: "parent_owner_mismatch",
+                category: ITEM_CREATE_ERROR_CATEGORIES.PARENT_LINK_FAILURE,
+                message: "parent_item_id does not reference an existing item."
+              }
+            ]
+          });
+        }
       }
 
       const created = await models.Item.create(payload, { transaction });
+      await syncItemEvent({ item: created, models, transaction });
       return toCanonicalItem(created);
     });
   } catch (error) {

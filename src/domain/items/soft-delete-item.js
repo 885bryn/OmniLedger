@@ -33,6 +33,12 @@ function toCanonicalItem(itemInstance) {
 
 function normalizeInput(input) {
   const payload = isPlainObject(input) ? input : {};
+  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const ownerUserId = typeof scope.actorUserId === "string" && scope.actorUserId.trim() !== ""
+    ? scope.actorUserId.trim()
+    : typeof payload.actorUserId === "string"
+      ? payload.actorUserId.trim()
+      : "";
   const issues = [];
 
   if (typeof payload.itemId !== "string" || payload.itemId.trim() === "") {
@@ -44,12 +50,12 @@ function normalizeInput(input) {
     });
   }
 
-  if (typeof payload.actorUserId !== "string" || payload.actorUserId.trim() === "") {
+  if (ownerUserId === "") {
     issues.push({
-      field: "actorUserId",
+      field: "scope.actorUserId",
       code: "required",
       category: ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
-      message: "actorUserId is required."
+      message: "scope.actorUserId is required."
     });
   }
 
@@ -63,7 +69,7 @@ function normalizeInput(input) {
 
   return {
     itemId: payload.itemId,
-    actorUserId: payload.actorUserId,
+    actorUserId: ownerUserId,
     now: payload.now instanceof Date ? payload.now : payload.now ? new Date(payload.now) : new Date()
   };
 }

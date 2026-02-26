@@ -25,7 +25,13 @@ function createItemsRouter() {
 
   router.post("/items", async (req, res, next) => {
     try {
-      const created = await createItem(req.body);
+      const payload = req.body && typeof req.body === "object" ? req.body : {};
+      const { user_id: _ignoredUserId, ...safePayload } = payload;
+
+      const created = await createItem({
+        ...safePayload,
+        scope: req.scope
+      });
       res.status(201).json(created);
     } catch (error) {
       next(error);
@@ -35,7 +41,7 @@ function createItemsRouter() {
   router.get("/items", async (req, res, next) => {
     try {
       const listed = await listItems({
-        actorUserId: req.actor.userId,
+        scope: req.scope,
         search: req.query.search,
         filter: req.query.filter,
         sort: req.query.sort,
@@ -65,7 +71,7 @@ function createItemsRouter() {
     try {
       const updated = await updateItem({
         itemId: req.params.id,
-        actorUserId: req.actor.userId,
+        scope: req.scope,
         attributes: req.body && req.body.attributes
       });
 
@@ -79,7 +85,7 @@ function createItemsRouter() {
     try {
       const deleted = await softDeleteItem({
         itemId: req.params.id,
-        actorUserId: req.actor.userId
+        scope: req.scope
       });
 
       res.status(200).json(deleted);

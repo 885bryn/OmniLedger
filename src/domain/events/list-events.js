@@ -2,8 +2,62 @@
 
 const { models } = require("../../db");
 const { EventQueryError, EVENT_QUERY_ERROR_CATEGORIES } = require("./event-query-errors");
+const { syncItemEvent } = require("../items/item-event-sync");
 
 const STATUS_FILTERS = Object.freeze(["all", "pending", "completed"]);
+const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome"]);
+
+function getDeletedAt(attributes) {
+  if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) {
+    return null;
+  }
+
+  if (typeof attributes._deleted_at !== "string") {
+    return null;
+  }
+
+  const parsed = new Date(attributes._deleted_at).getTime();
+  return Number.isNaN(parsed) ? null : attributes._deleted_at;
+}
+
+function getDueDate(attributes) {
+  if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) {
+    return null;
+  }
+
+  const raw = attributes.dueDate || attributes.due_date;
+  if (typeof raw !== "string" || raw.trim() === "") {
+    return null;
+  }
+
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+async function ensurePendingEventsForActor(actorUserId) {
+  const items = await models.Item.findAll({
+    where: {
+      user_id: actorUserId
+    }
+  });
+
+  for (const item of items) {
+    if (!CASHFLOW_ITEM_TYPES.has(item.item_type)) {
+      continue;
+    }
+
+    if (getDeletedAt(item.attributes)) {
+      continue;
+    }
+
+    const dueDate = getDueDate(item.attributes);
+    if (!dueDate) {
+      continue;
+    }
+
+    await syncItemEvent({ item, models });
+  }
+}
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
@@ -11,6 +65,12 @@ function isPlainObject(value) {
 
 function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function resolveOwnerUserId(payload) {
+  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const scopeActorUserId = normalizeString(scope.actorUserId);
+  return scopeActorUserId || normalizeString(payload.actorUserId);
 }
 
 function toTime(value, fallback = Number.POSITIVE_INFINITY) {
@@ -24,18 +84,18 @@ function toTime(value, fallback = Number.POSITIVE_INFINITY) {
 
 function normalizeInput(input) {
   const payload = isPlainObject(input) ? input : {};
-  const actorUserId = normalizeString(payload.actorUserId);
+  const ownerUserId = resolveOwnerUserId(payload);
   const status = normalizeString(payload.status).toLowerCase() || "pending";
   const dueFrom = payload.dueFrom ? new Date(payload.dueFrom) : null;
   const dueTo = payload.dueTo ? new Date(payload.dueTo) : null;
   const issues = [];
 
-  if (!actorUserId) {
+  if (!ownerUserId) {
     issues.push({
-      field: "actorUserId",
+      field: "scope.actorUserId",
       code: "required",
       category: EVENT_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
-      message: "actorUserId is required."
+      message: "scope.actorUserId is required."
     });
   }
 
@@ -84,7 +144,7 @@ function normalizeInput(input) {
   }
 
   return {
-    actorUserId,
+    ownerUserId,
     status,
     dueFrom,
     dueTo
@@ -181,6 +241,7 @@ function groupEvents(events) {
 
 async function listEvents(input) {
   const query = normalizeInput(input);
+  await ensurePendingEventsForActor(query.ownerUserId);
   const rows = await models.Event.findAll({
     include: [
       {
@@ -189,7 +250,7 @@ async function listEvents(input) {
         attributes: ["id", "user_id"],
         required: true,
         where: {
-          user_id: query.actorUserId
+          user_id: query.ownerUserId
         }
       }
     ]

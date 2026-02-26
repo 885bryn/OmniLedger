@@ -13,10 +13,11 @@ const CANONICAL_ITEM_FIELDS = Object.freeze([
   "updated_at"
 ]);
 
-const FILTERS = Object.freeze(["all", "assets", "commitments", "active", "deleted"]);
-const SORTS = Object.freeze(["recently_updated", "oldest_updated", "due_soon"]);
+const FILTERS = Object.freeze(["all", "assets", "commitments", "income", "active", "deleted"]);
+const SORTS = Object.freeze(["recently_updated", "oldest_updated", "due_soon", "alphabetical", "amount_high_to_low", "amount_low_to_high"]);
 const ASSET_TYPES = new Set(["RealEstate", "Vehicle"]);
-const COMMITMENT_TYPES = new Set(["FinancialCommitment", "Subscription"]);
+const COMMITMENT_TYPES = new Set(["FinancialCommitment"]);
+const INCOME_TYPES = new Set(["FinancialIncome"]);
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
@@ -35,21 +36,27 @@ function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function resolveOwnerUserId(payload) {
+  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const scopeActorUserId = normalizeString(scope.actorUserId);
+  return scopeActorUserId || normalizeString(payload.actorUserId);
+}
+
 function normalizeInput(input) {
   const payload = isPlainObject(input) ? input : {};
-  const actorUserId = normalizeString(payload.actorUserId);
+  const ownerUserId = resolveOwnerUserId(payload);
   const search = normalizeString(payload.search).toLowerCase();
   const filter = normalizeString(payload.filter) || "all";
   const sort = normalizeString(payload.sort) || "recently_updated";
   const includeDeleted = Boolean(payload.includeDeleted);
   const issues = [];
 
-  if (!actorUserId) {
+  if (!ownerUserId) {
     issues.push({
-      field: "actorUserId",
+      field: "scope.actorUserId",
       code: "required",
       category: ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
-      message: "actorUserId is required."
+      message: "scope.actorUserId is required."
     });
   }
 
@@ -80,7 +87,7 @@ function normalizeInput(input) {
   }
 
   return {
-    actorUserId,
+    ownerUserId,
     search,
     filter,
     sort,
@@ -151,6 +158,10 @@ function applyFilter(items, filter) {
     return items.filter((item) => COMMITMENT_TYPES.has(item.item_type));
   }
 
+  if (filter === "income") {
+    return items.filter((item) => INCOME_TYPES.has(item.item_type));
+  }
+
   if (filter === "active") {
     return items.filter((item) => !isSoftDeleted(item));
   }
@@ -204,7 +215,88 @@ function compareByDueSoon(left, right) {
   return compareByRecentlyUpdated(left, right);
 }
 
+function amountKey(item) {
+  if (!isPlainObject(item.attributes)) {
+    return null;
+  }
+
+  const attrs = item.attributes;
+  let candidate = null;
+
+  if (item.item_type === "FinancialCommitment") {
+    const hasRemainingBalance = Number.isFinite(Number(attrs.remainingBalance));
+    const hasOriginalPrincipal = Number.isFinite(Number(attrs.originalPrincipal));
+
+    if (hasRemainingBalance) {
+      candidate = attrs.remainingBalance;
+    } else if (hasOriginalPrincipal) {
+      candidate = attrs.originalPrincipal;
+    } else {
+      candidate = attrs.nextPaymentAmount ?? attrs.amount;
+    }
+  } else if (item.item_type === "FinancialIncome") {
+    candidate = attrs.collectedTotal ?? attrs.amount;
+  } else {
+    candidate = attrs.nextPaymentAmount ?? attrs.amount;
+  }
+
+  const parsed = Number(candidate);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function compareByAlphabetical(left, right) {
+  const leftName = normalizeForSearch(left.attributes && left.attributes.name) || normalizeForSearch(left.item_type);
+  const rightName = normalizeForSearch(right.attributes && right.attributes.name) || normalizeForSearch(right.item_type);
+  const nameDiff = leftName.localeCompare(rightName);
+
+  if (nameDiff !== 0) {
+    return nameDiff;
+  }
+
+  return compareByRecentlyUpdated(left, right);
+}
+
+function compareByAmountHighToLow(left, right) {
+  const leftAmount = amountKey(left);
+  const rightAmount = amountKey(right);
+
+  if (leftAmount === null && rightAmount === null) {
+    return compareByRecentlyUpdated(left, right);
+  }
+
+  if (leftAmount === null) {
+    return 1;
+  }
+
+  if (rightAmount === null) {
+    return -1;
+  }
+
+  const amountDiff = rightAmount - leftAmount;
+  if (amountDiff !== 0) {
+    return amountDiff;
+  }
+
+  return compareByRecentlyUpdated(left, right);
+}
+
+function compareByAmountLowToHigh(left, right) {
+  return compareByAmountHighToLow(right, left);
+}
+
 function applySort(items, sort) {
+  if (sort === "amount_high_to_low") {
+    return [...items].sort(compareByAmountHighToLow);
+  }
+
+  if (sort === "amount_low_to_high") {
+    return [...items].sort(compareByAmountLowToHigh);
+  }
+
+  if (sort === "alphabetical") {
+    return [...items].sort(compareByAlphabetical);
+  }
+
   if (sort === "due_soon") {
     return [...items].sort(compareByDueSoon);
   }
@@ -220,7 +312,7 @@ async function listItems(input) {
   const query = normalizeInput(input);
   const rows = await models.Item.findAll({
     where: {
-      user_id: query.actorUserId
+      user_id: query.ownerUserId
     }
   });
 

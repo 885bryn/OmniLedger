@@ -13,7 +13,7 @@ function createEventsRouter() {
   router.get("/events", async (req, res, next) => {
     try {
       const listed = await listEvents({
-        actorUserId: req.actor.userId,
+        scope: req.scope,
         status: req.query.status,
         dueFrom: req.query.due_from,
         dueTo: req.query.due_to
@@ -29,7 +29,7 @@ function createEventsRouter() {
     try {
       const completed = await completeEvent({
         eventId: req.params.id,
-        actorUserId: req.actor.userId
+        scope: req.scope
       });
 
       res.status(200).json(completed);
@@ -42,7 +42,7 @@ function createEventsRouter() {
     try {
       const undone = await undoEventCompletion({
         eventId: req.params.id,
-        actorUserId: req.actor.userId
+        scope: req.scope
       });
 
       res.status(200).json(undone);
