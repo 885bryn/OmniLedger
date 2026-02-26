@@ -3,7 +3,10 @@
 const { DataTypes, Model } = require("sequelize");
 const { minimumAttributeKeys } = require("../../domain/items/minimum-attribute-keys");
 
-const ITEM_TYPES = Object.freeze(["RealEstate", "Vehicle", "FinancialCommitment", "Subscription"]);
+const ITEM_TYPES = Object.freeze(["RealEstate", "Vehicle", "FinancialCommitment", "FinancialIncome", "FinancialItem"]);
+const FINANCIAL_SUBTYPES = Object.freeze(["Commitment", "Income"]);
+const FINANCIAL_FREQUENCIES = Object.freeze(["one_time", "weekly", "monthly", "yearly"]);
+const FINANCIAL_STATUSES = Object.freeze(["Active", "Closed"]);
 
 function isIsoDateLike(value) {
   return Number.isNaN(new Date(value).getTime()) === false;
@@ -72,12 +75,58 @@ class Item extends Model {
           allowNull: true,
           validate: {
             isParentWhenCommitment(value) {
-              if (this.item_type === "FinancialCommitment" && !value) {
-                throw new Error("FinancialCommitment requires parent_item_id");
-              }
-
               if (value && typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value) === false) {
                 throw new Error("parent_item_id must be a valid UUID");
+              }
+            }
+          }
+        },
+        title: {
+          type: DataTypes.STRING,
+          allowNull: true,
+          validate: {
+            notEmptyIfPresent(value) {
+              if (value !== null && value !== undefined && String(value).trim() === "") {
+                throw new Error("title cannot be empty");
+              }
+            }
+          }
+        },
+        type: {
+          type: DataTypes.ENUM(...FINANCIAL_SUBTYPES),
+          allowNull: true,
+          validate: {
+            isIn: [FINANCIAL_SUBTYPES]
+          }
+        },
+        frequency: {
+          type: DataTypes.ENUM(...FINANCIAL_FREQUENCIES),
+          allowNull: true,
+          validate: {
+            isIn: [FINANCIAL_FREQUENCIES]
+          }
+        },
+        default_amount: {
+          type: DataTypes.DECIMAL(12, 2),
+          allowNull: true,
+          validate: {
+            min: 0
+          }
+        },
+        status: {
+          type: DataTypes.ENUM(...FINANCIAL_STATUSES),
+          allowNull: true,
+          validate: {
+            isIn: [FINANCIAL_STATUSES]
+          }
+        },
+        linked_asset_item_id: {
+          type: DataTypes.UUID,
+          allowNull: true,
+          validate: {
+            isUuidIfPresent(value) {
+              if (value && typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value) === false) {
+                throw new Error("linked_asset_item_id must be a valid UUID");
               }
             }
           }
@@ -88,7 +137,34 @@ class Item extends Model {
         modelName: "Item",
         tableName: "Items",
         underscored: true,
-        timestamps: true
+        timestamps: true,
+        validate: {
+          financialContractRequiredFields() {
+            if (this.item_type !== "FinancialItem") {
+              return;
+            }
+
+            if (!this.title || String(this.title).trim() === "") {
+              throw new Error("title is required for FinancialItem");
+            }
+
+            if (!this.type) {
+              throw new Error("type is required for FinancialItem");
+            }
+
+            if (!this.frequency) {
+              throw new Error("frequency is required for FinancialItem");
+            }
+
+            if (this.default_amount === null || this.default_amount === undefined || Number(this.default_amount) < 0) {
+              throw new Error("default_amount is required for FinancialItem");
+            }
+
+            if (!this.status) {
+              throw new Error("status is required for FinancialItem");
+            }
+          }
+        }
       }
     );
 
@@ -112,6 +188,13 @@ class Item extends Model {
       as: "childCommitments",
       foreignKey: "parent_item_id",
       onDelete: "RESTRICT",
+      onUpdate: "CASCADE"
+    });
+
+    Item.belongsTo(Item, {
+      as: "linkedAssetItem",
+      foreignKey: "linked_asset_item_id",
+      onDelete: "SET NULL",
       onUpdate: "CASCADE"
     });
   }
