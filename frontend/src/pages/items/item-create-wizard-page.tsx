@@ -26,7 +26,7 @@ type FinancialItemResponse = ItemRow & {
   title?: string | null
 }
 
-type FormField = 'title' | 'type' | 'frequency' | 'default_amount' | 'status' | 'dueDate'
+type FormField = 'title' | 'type' | 'frequency' | 'default_amount' | 'status' | 'dueDate' | 'linked_asset_item_id'
 
 type FormValues = {
   linked_asset_item_id: string
@@ -90,6 +90,9 @@ function mapIssueField(field: string): FormField | null {
   if (field === 'attributes') {
     return 'dueDate'
   }
+  if (field === 'confirm_unlinked_asset' || field === 'linked_asset_item_id') {
+    return 'linked_asset_item_id'
+  }
   return null
 }
 
@@ -118,6 +121,7 @@ export function ItemCreateWizardPage() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FormField, string>>>({})
   const [summaryErrors, setSummaryErrors] = useState<string[]>([])
   const [showTechnicalReview, setShowTechnicalReview] = useState(false)
+  const [showUnlinkedAssetDialog, setShowUnlinkedAssetDialog] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [suppressUnsavedGuard, setSuppressUnsavedGuard] = useState(false)
   const isCommitment = values.type === 'Commitment'
@@ -163,7 +167,7 @@ export function ItemCreateWizardPage() {
           default_amount: toNumber(values.default_amount),
           status: values.status,
           linked_asset_item_id: values.linked_asset_item_id || null,
-          confirm_unlinked_asset: true,
+          confirm_unlinked_asset: Boolean(values.linked_asset_item_id),
           attributes: buildAttributes(values),
         },
         null,
@@ -173,7 +177,7 @@ export function ItemCreateWizardPage() {
   )
 
   const createMutation = useMutation({
-    mutationFn: async (payload: FormValues) => {
+    mutationFn: async ({ payload, confirmUnlinkedAsset }: { payload: FormValues; confirmUnlinkedAsset: boolean }) => {
       const created = await apiRequest<FinancialItemResponse>('/items', {
         method: 'POST',
         body: {
@@ -184,7 +188,7 @@ export function ItemCreateWizardPage() {
           default_amount: Number(payload.default_amount),
           status: payload.status,
           linked_asset_item_id: payload.linked_asset_item_id || null,
-          confirm_unlinked_asset: true,
+          confirm_unlinked_asset: confirmUnlinkedAsset,
           attributes: buildAttributes(payload),
         },
       })
@@ -267,7 +271,7 @@ export function ItemCreateWizardPage() {
     setSummaryErrors(collectIssueMessages(error.issues))
   }
 
-  function submitForm() {
+  function submitForm(confirmUnlinkedAsset: boolean) {
     const nextFieldErrors = validate(values)
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
@@ -275,9 +279,14 @@ export function ItemCreateWizardPage() {
       return
     }
 
+    if (!values.linked_asset_item_id && !confirmUnlinkedAsset) {
+      setShowUnlinkedAssetDialog(true)
+      return
+    }
+
     setSuppressUnsavedGuard(true)
     setSummaryErrors([])
-    createMutation.mutate(values, {
+    createMutation.mutate({ payload: values, confirmUnlinkedAsset }, {
       onError: (error) => {
         if (error instanceof ApiClientError) {
           applyApiIssues(error)
@@ -297,7 +306,7 @@ export function ItemCreateWizardPage() {
       <form
         onSubmit={(event) => {
           event.preventDefault()
-          submitForm()
+          submitForm(false)
         }}
         className="animate-fade-up space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
       >
@@ -373,7 +382,11 @@ export function ItemCreateWizardPage() {
 
           <label className="space-y-1">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.wizard.parentOptionalLabel')}</span>
-            <select value={values.linked_asset_item_id} onChange={(event) => updateField('linked_asset_item_id', event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            <select
+              value={values.linked_asset_item_id}
+              onChange={(event) => updateField('linked_asset_item_id', event.target.value)}
+              className={`w-full rounded-lg border bg-background px-3 py-2 text-sm ${fieldErrors.linked_asset_item_id ? 'border-destructive ring-1 ring-destructive/30' : 'border-border'}`}
+            >
               <option value="">{t('items.wizard.parentPlaceholder')}</option>
               {(assetsQuery.data?.items ?? []).map((asset) => (
                 <option key={asset.id} value={asset.id}>
@@ -382,6 +395,7 @@ export function ItemCreateWizardPage() {
               ))}
             </select>
             {isCommitment ? <p className="text-xs text-muted-foreground">{t('items.wizard.parentOptionalLabel')}</p> : null}
+            {fieldErrors.linked_asset_item_id ? <p className="text-xs text-destructive">{fieldErrors.linked_asset_item_id}</p> : null}
           </label>
         </div>
 
@@ -419,6 +433,20 @@ export function ItemCreateWizardPage() {
           </Link>
         </div>
       </form>
+
+      <ConfirmationDialog
+        open={showUnlinkedAssetDialog}
+        title={t('items.wizard.unlinkedWarningTitle')}
+        description={t('items.wizard.unlinkedWarningDescription')}
+        confirmLabel={t('items.wizard.unlinkedConfirmAction')}
+        cancelLabel={t('items.wizard.unlinkedCancelAction')}
+        pending={createMutation.isPending}
+        onCancel={() => setShowUnlinkedAssetDialog(false)}
+        onConfirm={() => {
+          setShowUnlinkedAssetDialog(false)
+          submitForm(true)
+        }}
+      />
 
       <ConfirmationDialog
         open={unsavedGuard.open}

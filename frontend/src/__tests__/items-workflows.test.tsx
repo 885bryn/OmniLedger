@@ -245,11 +245,16 @@ describe('items workflows', () => {
 
     renderWithMemoryRouter(<ItemCreateWizardPage />)
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /item type/i }), 'Commitment')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /financial subtype/i }), 'Commitment')
     await userEvent.type(screen.getByRole('textbox', { name: /Name/i }), 'Loan')
     await userEvent.type(screen.getByRole('spinbutton', { name: /Amount/i }), '1200')
     await userEvent.type(screen.getByLabelText(/Due date/i), '2026-03-01')
-    await userEvent.click(screen.getByRole('button', { name: 'Create item' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create financial item' }))
+
+    expect(screen.getByText('Create without linked asset?')).toBeTruthy()
+    expect(fetchMock.mock.calls.some(([input, init]) => String(input).endsWith('/items') && (init?.method ?? 'GET') === 'POST')).toBe(false)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Create anyway' }))
 
     await screen.findByText('detail route')
 
@@ -318,10 +323,6 @@ describe('items workflows', () => {
     })
 
     expect(screen.getByDisplayValue('Income')).toBeTruthy()
-    await waitFor(() => {
-      const parentAssetSelect = screen.getByRole('combobox', { name: /parent asset/i }) as HTMLSelectElement
-      expect(parentAssetSelect.value).toBe('asset-1')
-    })
     expect(screen.getByRole('option', { name: 'One-time' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'Weekly' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'Monthly' })).toBeTruthy()

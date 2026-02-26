@@ -105,7 +105,7 @@
   "items": {
     "title": "资产",
     "subtitle": "当前工作集中共有 {{total}} 条资产",
-    "createAction": "创建资产",
+    "createAction": "创建财务项目",
     "loadError": "无法加载资产，请刷新后重试。",
     "empty": "暂无资产。请先创建资产或承诺。",
     "emptyFiltered": "当前筛选条件下没有匹配项。",
@@ -139,16 +139,16 @@
       "summaryMonthly": "每月承诺总额",
       "summaryIncome": "每月收入",
       "summaryNet": "净现金流",
-      "summaryLinked": "关联承诺",
+      "summaryLinked": "关联财务项目",
       "summaryExcluded": "排除行",
       "keyDetails": "关键详情",
-      "noCommitments": "暂无关联承诺。",
+      "noCommitments": "暂无关联财务项目。",
       "linkedItemsTitle": "关联关系",
       "linkedParentLabel": "关联到：",
       "noLinkedParent": "该承诺当前为独立项目，未关联父级资产。",
-      "relatedCommitments": "相关承诺",
-      "addLinkedCommitment": "添加关联承诺",
-      "addLinkedIncome": "添加关联收入",
+      "relatedCommitments": "相关财务项目",
+      "addLinkedCommitment": "添加关联财务项目（支出）",
+      "addLinkedIncome": "添加关联财务项目（收入）",
       "showTechnical": "显示技术详情",
       "hideTechnical": "隐藏技术详情",
       "technicalTitle": "技术 JSON",
@@ -157,7 +157,7 @@
         "commitments": "承诺",
         "activity": "动态"
       },
-      "commitmentFallbackTitle": "承诺详情",
+      "commitmentFallbackTitle": "财务项目详情",
       "commitmentFallbackBody": "该类型不提供净状态卡片，但可继续使用动态与编辑流程。"
     },
     "edit": {
@@ -181,9 +181,9 @@
       "customFieldExists": "该字段名称已存在。"
     },
     "wizard": {
-      "title": "创建资产向导",
+      "title": "创建财务项目",
       "stepLabel": "第 {{step}} 步，共 3 步",
-      "typeLabel": "资产类型",
+      "typeLabel": "财务子类型",
       "addressLabel": "地址",
       "vinLabel": "车架号",
       "estimatedValueLabel": "估值",
@@ -208,11 +208,15 @@
       "customFieldExists": "该字段名称已存在。",
       "nextAction": "下一步",
       "backAction": "上一步",
-      "createAction": "创建资产",
+      "createAction": "创建财务项目",
       "creating": "创建中...",
       "cancelAction": "取消",
       "actorMissing": "创建前请先选择当前用户。",
-      "createError": "无法创建资产。"
+      "createError": "无法创建财务项目。",
+      "unlinkedWarningTitle": "在未关联资产时创建？",
+      "unlinkedWarningDescription": "该财务项目未关联任何资产。你可以继续，但请确认这是有意为之。",
+      "unlinkedConfirmAction": "仍要创建",
+      "unlinkedCancelAction": "返回修改"
     },
     "deleteDialog": {
       "title": "删除资产",

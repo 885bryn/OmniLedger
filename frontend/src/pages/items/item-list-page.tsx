@@ -6,13 +6,16 @@ import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { ItemFilters, type ItemFilterValue, type ItemSortValue } from '../../features/items/item-filters'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
-import { getItemDisplayName } from '../../lib/item-display'
+import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel } from '../../lib/item-display'
 import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type ItemRow = {
   id: string
   user_id?: string
   item_type: string
+  title?: string | null
+  type?: string | null
+  default_amount?: number | null
   attributes: Record<string, unknown>
   parent_item_id?: string | null
   updated_at: string
@@ -56,11 +59,11 @@ function formatCurrency(value: number) {
 }
 
 function getFinancialAmount(item: ItemRow) {
-  if (!['FinancialCommitment', 'FinancialIncome'].includes(item.item_type)) {
+  if (!['FinancialItem', 'FinancialCommitment', 'FinancialIncome'].includes(item.item_type)) {
     return null
   }
 
-  const candidate = item.attributes?.nextPaymentAmount ?? item.attributes?.amount
+  const candidate = item.default_amount ?? item.attributes?.nextPaymentAmount ?? item.attributes?.amount
   const parsed = Number(candidate)
   return Number.isFinite(parsed) ? parsed : null
 }
@@ -163,7 +166,7 @@ export function ItemListPage() {
           <h1 className="text-xl font-semibold">{t('items.title')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t('items.subtitle', { total: totalCount })}</p>
         </div>
-        <Link to="/items/create/wizard" className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+        <Link to="/items/create" className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
           {t('items.createAction')}
         </Link>
       </header>
@@ -200,6 +203,7 @@ export function ItemListPage() {
         <section className="space-y-2">
           {items.map((item) => {
             const financialAmount = getFinancialAmount(item)
+            const subtype = getFinancialSubtype(item)
 
             return (
               <article key={item.id} className="hover-lift animate-fade-up flow-card flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
@@ -207,9 +211,12 @@ export function ItemListPage() {
                   <Link to={`/items/${item.id}`} state={{ from: location.pathname + location.search }} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
                     {getItemDisplayName(item)}
                   </Link>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {item.item_type} - {t('items.updatedLabel', { date: formatDate(item.updated_at) })}
-                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span>{getItemTypeLabel(item)}</span>
+                    {subtype ? <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground">{subtype}</span> : null}
+                    <span>-</span>
+                    <span>{t('items.updatedLabel', { date: formatDate(item.updated_at) })}</span>
+                  </div>
                   {financialAmount !== null ? <p className="mt-1 text-xs font-medium text-foreground/80">{formatCurrency(financialAmount)}</p> : null}
                 </div>
                 <div className="flex flex-wrap gap-2">

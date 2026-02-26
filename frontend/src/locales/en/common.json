@@ -105,7 +105,7 @@
   "items": {
     "title": "Items",
     "subtitle": "{{total}} items in your working set",
-    "createAction": "Create item",
+    "createAction": "Create financial item",
     "loadError": "Items could not be loaded. Please refresh and try again.",
     "empty": "No items yet. Create an asset or commitment to begin.",
     "emptyFiltered": "No items match the active filters.",
@@ -139,16 +139,16 @@
       "summaryMonthly": "Monthly obligation",
       "summaryIncome": "Monthly income",
       "summaryNet": "Net cashflow",
-      "summaryLinked": "Linked commitments",
+      "summaryLinked": "Linked financial items",
       "summaryExcluded": "Excluded rows",
       "keyDetails": "Key details",
-      "noCommitments": "No linked commitments yet.",
+      "noCommitments": "No linked financial items yet.",
       "linkedItemsTitle": "Connections",
       "linkedParentLabel": "Linked to:",
       "noLinkedParent": "This commitment currently stands on its own and is not linked to a parent item.",
-      "relatedCommitments": "Related commitments",
-      "addLinkedCommitment": "Add linked commitment",
-      "addLinkedIncome": "Add linked income",
+      "relatedCommitments": "Related financial items",
+      "addLinkedCommitment": "Add linked financial item (Commitment)",
+      "addLinkedIncome": "Add linked financial item (Income)",
       "showTechnical": "Show technical details",
       "hideTechnical": "Hide technical details",
       "technicalTitle": "Technical JSON",
@@ -157,7 +157,7 @@
         "commitments": "Commitments",
         "activity": "Activity"
       },
-      "commitmentFallbackTitle": "Commitment detail",
+      "commitmentFallbackTitle": "Financial item detail",
       "commitmentFallbackBody": "This item type does not have net-status cards, but activity and edit workflows are available."
     },
     "edit": {
@@ -181,9 +181,9 @@
       "customFieldExists": "A field with that name already exists."
     },
     "wizard": {
-      "title": "Create item wizard",
+      "title": "Create financial item",
       "stepLabel": "Step {{step}} of 3",
-      "typeLabel": "Item type",
+      "typeLabel": "Financial subtype",
       "addressLabel": "Address",
       "vinLabel": "VIN",
       "estimatedValueLabel": "Estimated value",
@@ -208,11 +208,15 @@
       "customFieldExists": "A field with that name already exists.",
       "nextAction": "Next",
       "backAction": "Back",
-      "createAction": "Create item",
+      "createAction": "Create financial item",
       "creating": "Creating...",
       "cancelAction": "Cancel",
       "actorMissing": "Select an active user before creating an item.",
-      "createError": "Item could not be created."
+      "createError": "Financial item could not be created.",
+      "unlinkedWarningTitle": "Create without linked asset?",
+      "unlinkedWarningDescription": "This financial item has no linked asset. You can continue, but confirm this intentional unlinked save.",
+      "unlinkedConfirmAction": "Create anyway",
+      "unlinkedCancelAction": "Go back"
     },
     "deleteDialog": {
       "title": "Delete item",

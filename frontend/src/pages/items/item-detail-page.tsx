@@ -5,13 +5,16 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ItemActivityTimeline } from '../../features/audit/item-activity-timeline'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
-import { getItemDisplayName } from '../../lib/item-display'
+import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel } from '../../lib/item-display'
 import { queryKeys } from '../../lib/query-keys'
 
 type ItemRow = {
   id: string
   user_id?: string
   item_type: string
+  title?: string | null
+  type?: string | null
+  default_amount?: number | null
   attributes: Record<string, unknown>
   parent_item_id?: string | null
   updated_at: string
@@ -134,7 +137,7 @@ function deriveSummaryFromCommitments(commitments: ItemRow[]) {
       const amount = Number((attrs.amount ?? attrs.nextPaymentAmount) ?? 0)
       const normalizedAmount = Number.isFinite(amount) ? amount : 0
 
-      if (commitment.item_type === 'FinancialIncome') {
+      if (getFinancialSubtype(commitment) === 'Income') {
         summary.monthly_income_total += normalizedAmount
       } else {
         summary.monthly_obligation_total += normalizedAmount
@@ -254,6 +257,7 @@ export function ItemDetailPage() {
   const lookupItem = lookupRows.find((item) => item.id === itemId) ?? null
   const detail = netStatusQuery.data ?? lookupItem
   const tabs: DetailTab[] = ['overview', 'commitments', 'activity']
+  const subtype = detail ? getFinancialSubtype(detail) : null
 
   const commitments = useMemo<ItemRow[]>(() => {
     if (!isNetStatusItem(detail)) {
@@ -321,8 +325,11 @@ export function ItemDetailPage() {
     <section className="space-y-4">
       <header className="animate-fade-up flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div>
-          <h1 className="text-xl font-semibold">{detail ? getItemDisplayName(detail) : ''}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{detail?.item_type ?? t('items.detail.commitmentFallbackTitle')}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-semibold">{detail ? getItemDisplayName(detail) : ''}</h1>
+            {subtype ? <span className="rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium text-foreground">{subtype}</span> : null}
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">{detail ? getItemTypeLabel(detail) : t('items.detail.commitmentFallbackTitle')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -479,13 +486,13 @@ export function ItemDetailPage() {
           {!wrongRootType ? (
             <div className="mb-3 flex flex-wrap justify-end gap-2">
               <Link
-                to={`/items/create/wizard?item_type=FinancialCommitment&parent_item_id=${itemId}`}
+                to={`/items/create?item_type=Commitment&parent_item_id=${itemId}`}
                 className="hover-lift rounded-lg border border-border px-3 py-2 text-xs font-medium"
               >
                 {t('items.detail.addLinkedCommitment')}
               </Link>
               <Link
-                to={`/items/create/wizard?item_type=FinancialIncome&parent_item_id=${itemId}`}
+                to={`/items/create?item_type=Income&parent_item_id=${itemId}`}
                 className="hover-lift rounded-lg border border-border px-3 py-2 text-xs font-medium"
               >
                 {t('items.detail.addLinkedIncome')}
@@ -504,6 +511,11 @@ export function ItemDetailPage() {
                       {getItemDisplayName(commitment)}
                     </Link>
                   </p>
+                  {getFinancialSubtype(commitment) ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground">{getFinancialSubtype(commitment)}</span>
+                    </p>
+                  ) : null}
                   {typeof commitment.attributes?.description === 'string' ? <p className="mt-1 text-xs text-muted-foreground">{commitment.attributes.description}</p> : null}
 
                   <dl className="mt-2 grid gap-2 sm:grid-cols-2">
