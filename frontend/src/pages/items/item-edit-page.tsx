@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../../features/admin-scope/target-user-chip'
 import { ConfirmationDialog } from '../../features/ui/confirmation-dialog'
+import { useToast } from '../../features/ui/toast-provider'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
 import { getItemDisplayName } from '../../lib/item-display'
 import { useUnsavedChangesGuard } from '../../features/items/use-unsaved-changes-guard'
@@ -45,6 +46,7 @@ export function ItemEditPage() {
   const { t } = useTranslation()
   const { session } = useAuth()
   const { isAdmin, mode, lensUserId, users } = useAdminScope()
+  const { pushSafetyToast } = useToast()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const params = useParams<{ itemId: string }>()
@@ -57,6 +59,18 @@ export function ItemEditPage() {
   const [newFieldValue, setNewFieldValue] = useState('')
   const [fieldError, setFieldError] = useState<string | null>(null)
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false)
+  const hasInvalidLensSelection = isAdmin && mode === 'owner' && (!lensUserId || !users.some((user) => user.id === lensUserId))
+
+  function blockWhenLensInvalid() {
+    if (!hasInvalidLensSelection) {
+      return false
+    }
+
+    const message = t('safety.invalidLens')
+    setFieldError(message)
+    pushSafetyToast('invalid_lens')
+    return true
+  }
 
   const itemQuery = useQuery({
     queryKey: queryKeys.items.list({ scope: 'edit', itemId }),
@@ -98,6 +112,9 @@ export function ItemEditPage() {
         body: { attributes: payload },
       })
     },
+    onMutate: () => {
+      setFieldError(null)
+    },
     onSuccess: async (updated) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.items.all }),
@@ -112,6 +129,19 @@ export function ItemEditPage() {
       unsavedGuard.allowNextNavigation()
       navigate(`/items/${itemId}`)
     },
+    onError: (error) => {
+      if (error instanceof ApiClientError) {
+        if (error.safetyToastCode === 'policy_denied') {
+          setFieldError(t('safety.policyDenied'))
+          return
+        }
+
+        setFieldError(`${t('items.edit.saveError')} (${error.message})`)
+        return
+      }
+
+      setFieldError(t('items.edit.saveError'))
+    },
   })
 
   const editableEntries = useMemo(
@@ -123,6 +153,10 @@ export function ItemEditPage() {
   )
 
   const errorText = useMemo(() => {
+    if (fieldError) {
+      return fieldError
+    }
+
     if (updateMutation.error instanceof ApiClientError) {
       return updateMutation.error.message
     }
@@ -131,7 +165,7 @@ export function ItemEditPage() {
       return t('items.edit.saveError')
     }
 
-    return fieldError
+    return null
   }, [fieldError, t, updateMutation.error, updateMutation.isError])
 
   function addCustomField() {
@@ -180,6 +214,11 @@ export function ItemEditPage() {
       <form
         onSubmit={(event) => {
           event.preventDefault()
+
+          if (blockWhenLensInvalid()) {
+            return
+          }
+
           setSaveConfirmOpen(true)
         }}
         className="animate-fade-up space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
@@ -315,6 +354,11 @@ export function ItemEditPage() {
         pending={updateMutation.isPending}
         onCancel={() => setSaveConfirmOpen(false)}
         onConfirm={() => {
+          if (blockWhenLensInvalid()) {
+            setSaveConfirmOpen(false)
+            return
+          }
+
           updateMutation.mutate()
         }}
       />

@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../admin-scope/target-user-chip'
+import { isOwnershipPolicyMessage } from '../../lib/api-client'
+import { useToast } from '../ui/toast-provider'
 
 type ItemSoftDeleteDialogProps = {
   open: boolean
@@ -17,6 +20,9 @@ export function ItemSoftDeleteDialog({ open, itemLabel, pending = false, errorTe
   const { t } = useTranslation()
   const { session } = useAuth()
   const { isAdmin, mode, lensUserId, users } = useAdminScope()
+  const { pushSafetyToast } = useToast()
+  const [localErrorText, setLocalErrorText] = useState<string | null>(null)
+  const hasInvalidLensSelection = isAdmin && mode === 'owner' && (!lensUserId || !users.some((user) => user.id === lensUserId))
 
   const attribution = resolveTargetUserAttribution({
     isAdmin,
@@ -26,6 +32,15 @@ export function ItemSoftDeleteDialog({ open, itemLabel, pending = false, errorTe
     actorUsername: session?.username,
     actorEmail: session?.email,
   })
+
+  useEffect(() => {
+    if (open) {
+      setLocalErrorText(null)
+    }
+  }, [open])
+
+  const normalizedExternalError = isOwnershipPolicyMessage(errorText) ? t('safety.policyDenied') : errorText
+  const displayErrorText = localErrorText ?? normalizedExternalError
 
   if (!open) {
     return null
@@ -37,11 +52,14 @@ export function ItemSoftDeleteDialog({ open, itemLabel, pending = false, errorTe
         <h2 className="text-lg font-semibold leading-tight">{t('items.deleteDialog.title')}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{t('items.deleteDialog.description', { itemLabel })}</p>
         {attribution ? <TargetUserChip actorLabel={attribution.actorLabel} lensLabel={attribution.lensLabel} className="mt-3" /> : null}
-        {errorText ? <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{errorText}</p> : null}
+        {displayErrorText ? <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{displayErrorText}</p> : null}
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={() => {
+              setLocalErrorText(null)
+              onCancel()
+            }}
             disabled={pending}
             className="rounded-lg border border-border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -49,7 +67,17 @@ export function ItemSoftDeleteDialog({ open, itemLabel, pending = false, errorTe
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={() => {
+              if (hasInvalidLensSelection) {
+                const message = t('safety.invalidLens')
+                setLocalErrorText(message)
+                pushSafetyToast('invalid_lens')
+                return
+              }
+
+              setLocalErrorText(null)
+              onConfirm()
+            }}
             disabled={pending}
             className="rounded-lg bg-destructive px-3 py-2 text-sm font-medium text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >

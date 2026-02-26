@@ -15,6 +15,10 @@
     "english": "English",
     "chinese": "中文"
   },
+  "safety": {
+    "policyDenied": "Write blocked by policy. You can only access your own records.",
+    "invalidLens": "Write blocked. Select a valid Lens user before trying again."
+  },
   "userSwitcher": {
     "actorLabel": "Actor",
     "loading": "Loading users...",

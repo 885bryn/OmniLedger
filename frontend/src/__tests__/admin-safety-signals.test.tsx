@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
+import type { ComponentProps } from 'react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -9,6 +10,7 @@ import { AppShell } from '../app/shell/app-shell'
 import { UserSwitcher } from '../app/shell/user-switcher'
 import { CompleteEventRowAction } from '../features/events/complete-event-row-action'
 import { ItemSoftDeleteDialog } from '../features/items/item-soft-delete-dialog'
+import { ToastProvider } from '../features/ui/toast-provider'
 import '../lib/i18n'
 import { actorSensitiveQueryRoots } from '../lib/query-keys'
 import { ItemEditPage } from '../pages/items/item-edit-page'
@@ -126,9 +128,11 @@ function renderEventAction() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <CompleteEventRowAction eventId="event-1" itemId="item-1" />
-      </MemoryRouter>
+      <ToastProvider>
+        <MemoryRouter>
+          <CompleteEventRowAction eventId="event-1" itemId="item-1" />
+        </MemoryRouter>
+      </ToastProvider>
     </QueryClientProvider>,
   )
 }
@@ -151,8 +155,20 @@ function renderItemEditPage(initialPath = '/items/item-1/edit') {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </QueryClientProvider>,
+  )
+}
+
+function renderSoftDeleteDialog(props: Omit<ComponentProps<typeof ItemSoftDeleteDialog>, 'open'> & { open?: boolean }) {
+  return render(
+    <ToastProvider>
+      <MemoryRouter>
+        <ItemSoftDeleteDialog open={props.open ?? true} itemLabel={props.itemLabel} pending={props.pending} errorText={props.errorText} onCancel={props.onCancel} onConfirm={props.onConfirm} />
+      </MemoryRouter>
+    </ToastProvider>,
   )
 }
 
@@ -300,13 +316,74 @@ describe('admin safety signals', () => {
   })
 
   it('shows actor and lens attribution in item soft-delete confirmation', () => {
-    render(
-      <MemoryRouter>
-        <ItemSoftDeleteDialog open={true} itemLabel="Pine Avenue" onCancel={() => undefined} onConfirm={() => undefined} />
-      </MemoryRouter>,
-    )
+    renderSoftDeleteDialog({ itemLabel: 'Pine Avenue', onCancel: () => undefined, onConfirm: () => undefined })
 
     expect(screen.getByText('Actor: admin-alpha | Lens: All users')).toBeTruthy()
+  })
+
+  it('emits one inline and one toast safety signal for policy-denied event completion', async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/events/event-1/complete')) {
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: 'event_completion_failed',
+              category: 'not_found',
+              message: 'You can only access your own records.',
+              issues: [
+                {
+                  field: 'eventId',
+                  code: 'not_found',
+                  category: 'not_found',
+                  message: 'You can only access your own records.',
+                },
+              ],
+            },
+          }),
+          {
+            status: 404,
+            headers: { 'content-type': 'application/json' },
+          },
+        )
+      }
+
+      throw new Error(`Unhandled request: ${url}`)
+    }) as typeof fetch
+
+    renderEventAction()
+
+    await userEvent.click(screen.getByRole('button', { name: /complete/i }))
+    const completeButtons = screen.getAllByRole('button', { name: 'Complete' })
+    await userEvent.click(completeButtons[completeButtons.length - 1])
+
+    const policySignals = await screen.findAllByText('Write blocked by policy. You can only access your own records.')
+    expect(policySignals).toHaveLength(2)
+    expect(screen.getAllByTestId('safety-toast')).toHaveLength(1)
+  })
+
+  it('blocks writes when admin lens target is invalid until reselected', async () => {
+    adminScopeState.mode = 'owner'
+    adminScopeState.lensUserId = 'missing-user'
+    authState.sessionScope = {
+      actorUserId: 'admin-1',
+      actorRole: 'admin',
+      mode: 'owner',
+      lensUserId: 'missing-user',
+    }
+
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error('fetch should not be called for invalid lens blocked writes')
+    }) as typeof fetch
+
+    renderEventAction()
+
+    await userEvent.click(screen.getByRole('button', { name: /complete/i }))
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByText('Write blocked. Select a valid Lens user before trying again.')).toBeTruthy()
+    expect(screen.getAllByTestId('safety-toast')).toHaveLength(1)
+    expect(globalThis.fetch).not.toHaveBeenCalled()
   })
 
   it('shows actor and lens attribution on item edit save surfaces', async () => {
@@ -380,11 +457,7 @@ describe('admin safety signals', () => {
     expect(screen.queryByTestId('target-user-chip')).toBeNull()
     cleanup()
 
-    render(
-      <MemoryRouter>
-        <ItemSoftDeleteDialog open={true} itemLabel="Pine Avenue" onCancel={() => undefined} onConfirm={() => undefined} />
-      </MemoryRouter>,
-    )
+    renderSoftDeleteDialog({ itemLabel: 'Pine Avenue', onCancel: () => undefined, onConfirm: () => undefined })
     expect(screen.queryByTestId('target-user-chip')).toBeNull()
     cleanup()
 

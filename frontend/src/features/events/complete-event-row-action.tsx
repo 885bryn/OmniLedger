@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../admin-scope/target-user-chip'
 import { ConfirmationDialog } from '../ui/confirmation-dialog'
+import { useToast } from '../ui/toast-provider'
 import { FollowUpModal } from './follow-up-modal'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
 import { queryKeys } from '../../lib/query-keys'
@@ -25,11 +26,24 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
   const navigate = useNavigate()
   const { session } = useAuth()
   const { isAdmin, mode, lensUserId, users } = useAdminScope()
+  const { pushSafetyToast } = useToast()
   const queryClient = useQueryClient()
   const [showSuccess, setShowSuccess] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [showFollowUp, setShowFollowUp] = useState(false)
   const [failureText, setFailureText] = useState<string | null>(null)
+  const hasInvalidLensSelection = isAdmin && mode === 'owner' && (!lensUserId || !users.some((user) => user.id === lensUserId))
+
+  function blockWhenLensInvalid() {
+    if (!hasInvalidLensSelection) {
+      return false
+    }
+
+    const message = t('safety.invalidLens')
+    setFailureText(message)
+    pushSafetyToast('invalid_lens')
+    return true
+  }
 
   const attribution = resolveTargetUserAttribution({
     isAdmin,
@@ -57,6 +71,11 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
     },
     onError: (error) => {
       if (error instanceof ApiClientError) {
+        if (error.safetyToastCode === 'policy_denied') {
+          setFailureText(t('safety.policyDenied'))
+          return
+        }
+
         setFailureText(`${t('events.completeAction.failed')} (${error.message})`)
         return
       }
@@ -72,6 +91,10 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
         type="button"
         disabled={completionMutation.isPending}
         onClick={() => {
+          if (blockWhenLensInvalid()) {
+            return
+          }
+
           setConfirmOpen(true)
         }}
         className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-60"
@@ -96,6 +119,11 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
         pending={completionMutation.isPending}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
+          if (blockWhenLensInvalid()) {
+            setConfirmOpen(false)
+            return
+          }
+
           completionMutation.mutate()
           setConfirmOpen(false)
         }}

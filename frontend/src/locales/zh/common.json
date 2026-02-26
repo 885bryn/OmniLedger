@@ -15,6 +15,10 @@
     "english": "English",
     "chinese": "中文"
   },
+  "safety": {
+    "policyDenied": "写入已被策略阻止。你只能访问自己的记录。",
+    "invalidLens": "写入已被阻止。请先选择有效的 Lens 用户后再重试。"
+  },
   "userSwitcher": {
     "actorLabel": "用户",
     "loading": "正在加载用户...",

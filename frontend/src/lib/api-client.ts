@@ -5,11 +5,63 @@ export type ApiIssue = {
   message: string
 }
 
+export type SafetyToastCode = 'policy_denied' | 'invalid_lens'
+
+const OWNERSHIP_POLICY_MESSAGE = 'You can only access your own records.'
+
+export const API_SAFETY_TOAST_EVENT = 'hact:safety-toast'
+
+const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+function emitSafetyToast(code: SafetyToastCode) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.dispatchEvent(
+    new CustomEvent(API_SAFETY_TOAST_EVENT, {
+      detail: {
+        code,
+      },
+    }),
+  )
+}
+
+function hasOwnershipPolicyMessage(message: string | undefined) {
+  return typeof message === 'string' && message.includes(OWNERSHIP_POLICY_MESSAGE)
+}
+
+function resolveSafetyToastCode(params: {
+  method: string
+  message?: string
+  issues?: ApiIssue[]
+}): SafetyToastCode | undefined {
+  if (!WRITE_METHODS.has(params.method)) {
+    return undefined
+  }
+
+  if (hasOwnershipPolicyMessage(params.message)) {
+    return 'policy_denied'
+  }
+
+  const hasOwnershipIssue = (params.issues ?? []).some((issue) => hasOwnershipPolicyMessage(issue.message))
+  if (hasOwnershipIssue) {
+    return 'policy_denied'
+  }
+
+  return undefined
+}
+
+export function isOwnershipPolicyMessage(message: string | null | undefined) {
+  return hasOwnershipPolicyMessage(message ?? undefined)
+}
+
 export class ApiClientError extends Error {
   status: number
   code: string
   category?: string
   issues: ApiIssue[]
+  safetyToastCode?: SafetyToastCode
   cooldown?: {
     retry_after_seconds?: number
   } | null
@@ -20,6 +72,7 @@ export class ApiClientError extends Error {
     message: string
     category?: string
     issues?: ApiIssue[]
+    safetyToastCode?: SafetyToastCode
     cooldown?: {
       retry_after_seconds?: number
     } | null
@@ -30,6 +83,7 @@ export class ApiClientError extends Error {
     this.code = params.code
     this.category = params.category
     this.issues = params.issues ?? []
+    this.safetyToastCode = params.safetyToastCode
     this.cooldown = params.cooldown
   }
 }
@@ -151,6 +205,16 @@ export async function apiRequest<TResponse>(path: string, init: ApiRequestInit =
     }
 
     const envelope = (responseBody as EnvelopeError | null)?.error
+    const method = (init.method ?? 'GET').toUpperCase()
+    const safetyToastCode = resolveSafetyToastCode({
+      method,
+      message: envelope?.message,
+      issues: envelope?.issues,
+    })
+
+    if (safetyToastCode) {
+      emitSafetyToast(safetyToastCode)
+    }
 
     throw new ApiClientError({
       status: response.status,
@@ -158,6 +222,7 @@ export async function apiRequest<TResponse>(path: string, init: ApiRequestInit =
       category: envelope?.category,
       message: envelope?.message || `Request failed with status ${response.status}`,
       issues: envelope?.issues,
+      safetyToastCode,
       cooldown: envelope?.cooldown,
     })
   }
