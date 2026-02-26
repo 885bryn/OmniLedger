@@ -58,8 +58,8 @@ describe("listItems domain service", () => {
     });
     const deletedItem = await models.Item.create({
       user_id: owner.id,
-      item_type: "Subscription",
-      attributes: { amount: 50, billingCycle: "monthly", _deleted_at: "2026-01-01T00:00:00.000Z" }
+      item_type: "FinancialCommitment",
+      attributes: { amount: 50, dueDate: "2026-08-01", _deleted_at: "2026-01-01T00:00:00.000Z" }
     });
 
     await models.Item.update({ updated_at: "2026-01-01T00:00:00.000Z" }, { where: { id: oldItem.id }, silent: true });
@@ -82,7 +82,7 @@ describe("listItems domain service", () => {
     ).rejects.toBeInstanceOf(ItemQueryError);
   });
 
-  it("supports debounced-search-compatible filtering and due_soon sorting", async () => {
+  it("supports commitment/income filtering plus due and amount sorts", async () => {
     const owner = await createUser();
     const rootAsset = await models.Item.create({
       user_id: owner.id,
@@ -111,12 +111,70 @@ describe("listItems domain service", () => {
         dueDate: "2026-04-10"
       }
     });
+    const income = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialIncome",
+      parent_item_id: rootAsset.id,
+      attributes: {
+        name: "Rent A",
+        amount: 1000,
+        collectedTotal: 1200,
+        dueDate: "2026-04-01"
+      }
+    });
+    const oneTimeCommitment = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialCommitment",
+      parent_item_id: rootAsset.id,
+      attributes: {
+        name: "One-time fee",
+        amount: 350,
+        dueDate: "2026-07-01"
+      }
+    });
+    const recurringFinancialCommitment = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      title: "HOA recurring",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 610,
+      status: "Active",
+      linked_asset_item_id: rootAsset.id,
+      attributes: {
+        dueDate: "2026-08-05"
+      }
+    });
+    const recurringFinancialIncome = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      title: "Parking income",
+      type: "Income",
+      frequency: "monthly",
+      default_amount: 1400,
+      status: "Active",
+      linked_asset_item_id: rootAsset.id,
+      attributes: {
+        dueDate: "2026-04-02"
+      }
+    });
+    const loanLowInstallmentHighBalance = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialCommitment",
+      parent_item_id: rootAsset.id,
+      attributes: {
+        name: "Loan A",
+        amount: 50,
+        remainingBalance: 5000,
+        dueDate: "2026-05-01"
+      }
+    });
     await models.Item.create({
       user_id: owner.id,
-      item_type: "Subscription",
+      item_type: "FinancialCommitment",
       attributes: {
         amount: 50,
-        billingCycle: "monthly"
+        dueDate: "2026-09-01"
       }
     });
 
@@ -127,6 +185,53 @@ describe("listItems domain service", () => {
       sort: "due_soon"
     });
 
-    expect(result.items.map((item) => item.id)).toEqual([soonDue.id, lateDue.id]);
+    expect(result.items[0].id).toBe(soonDue.id);
+
+    const incomeFiltered = await listItems({
+      actorUserId: owner.id,
+      filter: "income",
+      sort: "alphabetical"
+    });
+    expect(incomeFiltered.items.map((item) => item.id)).toEqual([recurringFinancialIncome.id, income.id]);
+
+    const amountSorted = await listItems({
+      actorUserId: owner.id,
+      filter: "commitments",
+      sort: "amount_high_to_low"
+    });
+    expect(amountSorted.items.map((item) => item.id).slice(0, 4)).toEqual([
+      loanLowInstallmentHighBalance.id,
+      recurringFinancialCommitment.id,
+      oneTimeCommitment.id,
+      lateDue.id
+    ]);
+
+    const incomeAmountSorted = await listItems({
+      actorUserId: owner.id,
+      filter: "income",
+      sort: "amount_high_to_low"
+    });
+    expect(incomeAmountSorted.items.map((item) => item.id).slice(0, 2)).toEqual([
+      recurringFinancialIncome.id,
+      income.id
+    ]);
+
+    const recurringContract = amountSorted.items.find((item) => item.id === recurringFinancialCommitment.id);
+    expect(Object.keys(recurringContract).sort()).toEqual([
+      "attributes",
+      "created_at",
+      "default_amount",
+      "frequency",
+      "id",
+      "item_type",
+      "linked_asset_item_id",
+      "parent_item_id",
+      "status",
+      "title",
+      "type",
+      "updated_at",
+      "user_id"
+    ]);
+    expect(Number(recurringContract.default_amount)).toBe(610);
   });
 });

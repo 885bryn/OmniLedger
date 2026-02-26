@@ -118,23 +118,47 @@ describe("getItemNetStatus domain service", () => {
       }
     });
 
+    const oneTimeStringAmount = await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: "300",
+        dueDate: "2026-05-15"
+      }
+    });
+
+    const linkedRecurringCommitment = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      title: "HOA",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 88,
+      status: "Active",
+      linked_asset_item_id: root.id,
+      attributes: {
+        dueDate: "2026-05-20"
+      }
+    });
+
     const nullDueOlder = await createItem({
       userId: owner.id,
-      itemType: "Subscription",
+      itemType: "FinancialCommitment",
       parentItemId: root.id,
       attributes: {
         amount: 50,
-        billingCycle: "monthly"
+        dueDate: "2026-06-01"
       }
     });
 
     const nullDueNewerInvalid = await createItem({
       userId: owner.id,
-      itemType: "Subscription",
+      itemType: "FinancialCommitment",
       parentItemId: root.id,
       attributes: {
         amount: "n/a",
-        billingCycle: "monthly"
+        dueDate: "2026-06-15"
       }
     });
 
@@ -162,37 +186,51 @@ describe("getItemNetStatus domain service", () => {
       "attributes",
       "child_commitments",
       "created_at",
+      "default_amount",
+      "frequency",
       "id",
       "item_type",
+      "linked_asset_item_id",
       "parent_item_id",
+      "status",
       "summary",
+      "title",
+      "type",
       "updated_at",
       "user_id"
     ]);
 
-    expect(result.child_commitments.map((child) => child.id)).toEqual([
-      dueSoon.id,
-      dueTieOlder.id,
-      dueTieNewer.id,
-      invalidAmountDue.id,
-      nullDueOlder.id,
-      nullDueNewerInvalid.id
-    ]);
+    const childIds = result.child_commitments.map((child) => child.id);
+    expect(childIds[0]).toBe(dueSoon.id);
+    expect(childIds.slice(1, 3).sort()).toEqual([dueTieOlder.id, dueTieNewer.id].sort());
+    expect(childIds[3]).toBe(invalidAmountDue.id);
+    expect(childIds[4]).toBe(oneTimeStringAmount.id);
+    expect(childIds[5]).toBe(linkedRecurringCommitment.id);
+    expect(childIds[6]).toBe(nullDueOlder.id);
+    expect(childIds[7]).toBe(nullDueNewerInvalid.id);
 
     result.child_commitments.forEach((child) => {
       expect(Object.keys(child).sort()).toEqual([
         "attributes",
         "created_at",
+        "default_amount",
+        "frequency",
         "id",
         "item_type",
+        "linked_asset_item_id",
         "parent_item_id",
+        "status",
+        "title",
+        "type",
         "updated_at",
         "user_id"
       ]);
     });
 
     expect(result.summary).toEqual({
-      monthly_obligation_total: 675,
+      monthly_obligation_total: 1063,
+      monthly_income_total: 0,
+      net_monthly_cashflow: -1063,
       excluded_row_count: 2
     });
   });
@@ -290,5 +328,97 @@ describe("getItemNetStatus domain service", () => {
         actorUserId: owner.id
       })
     ).rejects.toBeInstanceOf(ItemNetStatusError);
+  });
+
+  it("excludes soft-deleted child commitments from the net-status payload", async () => {
+    const owner = await createUser();
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "RealEstate",
+      attributes: {
+        address: "1578 Rochester Ave",
+        estimatedValue: 500000
+      }
+    });
+
+    const activeChild = await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        name: "1578 rent",
+        amount: 1578,
+        dueDate: "2026-02-25"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        name: "old rent",
+        amount: 1200,
+        dueDate: "2026-02-20",
+        _deleted_at: "2026-02-24T00:00:00.000Z"
+      }
+    });
+
+    const result = await getItemNetStatus({
+      itemId: root.id,
+      actorUserId: owner.id
+    });
+
+    expect(result.child_commitments).toHaveLength(1);
+    expect(result.child_commitments[0].id).toBe(activeChild.id);
+    expect(result.summary).toMatchObject({
+      monthly_income_total: 1578,
+      net_monthly_cashflow: 1578
+    });
+  });
+
+  it("excludes child commitments owned by a different user", async () => {
+    const owner = await createUser();
+    const outsider = await createUser();
+
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "Vehicle",
+      attributes: {
+        vin: "VIN-E300",
+        estimatedValue: 50000
+      }
+    });
+
+    const ownedChild = await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        name: "e300 testing payment",
+        amount: 300,
+        dueDate: "2026-02-26"
+      }
+    });
+
+    await createItem({
+      userId: outsider.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        name: "foreign commitment",
+        amount: 999,
+        dueDate: "2026-02-25"
+      }
+    });
+
+    const result = await getItemNetStatus({
+      itemId: root.id,
+      actorUserId: owner.id
+    });
+
+    expect(result.child_commitments).toHaveLength(1);
+    expect(result.child_commitments[0].id).toBe(ownedChild.id);
+    expect(result.summary.monthly_obligation_total).toBe(300);
   });
 });

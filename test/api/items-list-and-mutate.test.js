@@ -91,6 +91,22 @@ describe("items list and mutate contracts", () => {
     });
   }
 
+  async function createFinancialItem({ userId, linkedAssetItemId, type, title, defaultAmount, dueDate }) {
+    return models.Item.create({
+      user_id: userId,
+      item_type: "FinancialItem",
+      title,
+      type,
+      frequency: "monthly",
+      default_amount: defaultAmount,
+      status: "Active",
+      linked_asset_item_id: linkedAssetItemId,
+      attributes: {
+        dueDate
+      }
+    });
+  }
+
   async function setItemTimestamps(itemId, createdAt, updatedAt) {
     await models.Item.update(
       {
@@ -171,23 +187,48 @@ describe("items list and mutate contracts", () => {
 
     const commitmentA = await createCommitment(owner.id, newest.id, 200, "2026-04-01");
     const commitmentB = await createCommitment(owner.id, newest.id, 900, "2026-03-01");
+    const recurringCommitment = await createFinancialItem({
+      userId: owner.id,
+      linkedAssetItemId: newest.id,
+      type: "Commitment",
+      title: "HOA Contract",
+      defaultAmount: 650,
+      dueDate: "2026-03-15"
+    });
 
     const amountSorted = await ownerAgent
       .get("/items")
       .query({ filter: "commitments", sort: "amount_high_to_low" });
 
     expect(amountSorted.status).toBe(200);
-    expect(amountSorted.body.items.map((item) => item.id).slice(0, 2)).toEqual([commitmentB.id, commitmentA.id]);
+    expect(amountSorted.body.items.map((item) => item.id).slice(0, 3)).toEqual([commitmentB.id, recurringCommitment.id, commitmentA.id]);
 
     const incomeA = await createIncome(owner.id, newest.id, 500, 2000, "2026-03-05");
     const incomeB = await createIncome(owner.id, newest.id, 900, 100, "2026-03-06");
+    const recurringIncome = await createFinancialItem({
+      userId: owner.id,
+      linkedAssetItemId: newest.id,
+      type: "Income",
+      title: "Solar rebate",
+      defaultAmount: 1500,
+      dueDate: "2026-03-07"
+    });
 
     const incomeSorted = await ownerAgent
       .get("/items")
       .query({ filter: "income", sort: "amount_low_to_high" });
 
     expect(incomeSorted.status).toBe(200);
-    expect(incomeSorted.body.items.map((item) => item.id).slice(0, 2)).toEqual([incomeB.id, incomeA.id]);
+    expect(incomeSorted.body.items.map((item) => item.id).slice(0, 3)).toEqual([incomeB.id, recurringIncome.id, incomeA.id]);
+    const recurringIncomeRow = incomeSorted.body.items.find((item) => item.id === recurringIncome.id);
+    expect(recurringIncomeRow).toMatchObject({
+      item_type: "FinancialItem",
+      title: "Solar rebate",
+      type: "Income",
+      frequency: "monthly",
+      status: "Active",
+      linked_asset_item_id: newest.id
+    });
   });
 
   it("keeps list scope locked to authenticated owner when foreign owner queries are supplied", async () => {

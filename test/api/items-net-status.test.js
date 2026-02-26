@@ -153,6 +153,20 @@ describe("GET /items/:id/net-status", () => {
       }
     });
 
+    const linkedRecurringCommitment = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      title: "HOA Contract",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 88,
+      status: "Active",
+      linked_asset_item_id: root.id,
+      attributes: {
+        dueDate: "2026-04-20"
+      }
+    });
+
     await createItem({
       userId: owner.id,
       itemType: "Vehicle",
@@ -174,10 +188,16 @@ describe("GET /items/:id/net-status", () => {
       "attributes",
       "child_commitments",
       "created_at",
+      "default_amount",
+      "frequency",
       "id",
       "item_type",
+      "linked_asset_item_id",
       "parent_item_id",
+      "status",
       "summary",
+      "title",
+      "type",
       "updated_at",
       "user_id"
     ]);
@@ -186,14 +206,21 @@ describe("GET /items/:id/net-status", () => {
     expect(childCommitmentIds[0]).toBe(dueSoon.id);
     expect(childCommitmentIds.slice(1, 3).sort()).toEqual([dueTieOlder.id, dueTieNewer.id].sort());
     expect(childCommitmentIds).toContain(nullDueInvalidAmount.id);
+    expect(childCommitmentIds).toContain(linkedRecurringCommitment.id);
 
     response.body.child_commitments.forEach((child) => {
       expect(Object.keys(child).sort()).toEqual([
         "attributes",
         "created_at",
+        "default_amount",
+        "frequency",
         "id",
         "item_type",
+        "linked_asset_item_id",
         "parent_item_id",
+        "status",
+        "title",
+        "type",
         "updated_at",
         "user_id"
       ]);
@@ -205,9 +232,9 @@ describe("GET /items/:id/net-status", () => {
     expect(response.body).not.toHaveProperty("events");
     expect(response.body).not.toHaveProperty("event_previews");
     expect(response.body.summary).toEqual({
-      monthly_obligation_total: 945,
+      monthly_obligation_total: 1033,
       monthly_income_total: 0,
-      net_monthly_cashflow: -945,
+      net_monthly_cashflow: -1033,
       excluded_row_count: 1
     });
   });

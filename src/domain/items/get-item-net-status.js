@@ -1,5 +1,6 @@
 "use strict";
 
+const { Op } = require("sequelize");
 const { models } = require("../../db");
 const { ItemNetStatusError, ITEM_NET_STATUS_ERROR_CATEGORIES } = require("./item-net-status-errors");
 
@@ -7,6 +8,12 @@ const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
   "user_id",
   "item_type",
+  "title",
+  "type",
+  "frequency",
+  "default_amount",
+  "status",
+  "linked_asset_item_id",
   "attributes",
   "parent_item_id",
   "created_at",
@@ -14,7 +21,7 @@ const CANONICAL_ITEM_FIELDS = Object.freeze([
 ]);
 
 const ROOT_ITEM_TYPES = new Set(["RealEstate", "Vehicle"]);
-const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome"]);
+const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome", "FinancialItem"]);
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
@@ -117,18 +124,26 @@ function toValidAmount(value) {
   return null;
 }
 
-function resolveSummaryAmount(attributes) {
+function resolveSummaryAmount(item) {
+  const attributes = item.attributes;
+
   if (!isPlainObject(attributes)) {
-    return null;
+    const fallback = toValidAmount(item.default_amount);
+    return fallback;
   }
 
-  return toValidAmount(attributes.amount ?? attributes.nextPaymentAmount);
+  const amount = toValidAmount(attributes.amount ?? attributes.nextPaymentAmount);
+  if (amount !== null) {
+    return amount;
+  }
+
+  return toValidAmount(item.default_amount);
 }
 
 function buildSummary(childCommitments) {
   return childCommitments.reduce(
     (summary, child) => {
-      const amount = resolveSummaryAmount(child.attributes);
+      const amount = resolveSummaryAmount(child);
 
       if (amount === null) {
         summary.excluded_row_count += 1;
@@ -225,7 +240,7 @@ async function getItemNetStatus({ itemId, actorUserId }) {
 
   const childRows = await models.Item.findAll({
     where: {
-      parent_item_id: rootItem.id,
+      [Op.or]: [{ parent_item_id: rootItem.id }, { linked_asset_item_id: rootItem.id }],
       user_id: rootItem.user_id
     }
   });

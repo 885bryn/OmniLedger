@@ -1,3 +1,5 @@
 ## Deferred Items
 
 - 2026-02-26: `npm --prefix frontend run build` fails in pre-existing files `frontend/src/pages/dashboard/dashboard-page.tsx` and `frontend/src/pages/events/events-page.tsx` with `URLSearchParams` type errors unrelated to 10-03 task files.
+- 2026-02-26: `npm test -- test/domain/items/list-items.test.js test/domain/items/get-item-net-status.test.js test/api/items-list-and-mutate.test.js test/api/items-net-status.test.js` still fails in pre-existing expectation `test/domain/items/get-item-net-status.test.js` (`throws forbidden category when actor does not own root item`) because runtime now intentionally returns `not_found` denial contract.
+- 2026-02-26: `npm test -- test/domain/items/list-items.test.js test/domain/items/get-item-net-status.test.js test/api/items-list-and-mutate.test.js test/api/items-net-status.test.js` still fails in pre-existing expectation `test/api/items-list-and-mutate.test.js` activity shape assertion that omits already-shipped attribution fields (`actor_user_id`, `lens_user_id`, `lens_attribution_state`).

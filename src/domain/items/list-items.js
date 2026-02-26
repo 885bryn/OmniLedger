@@ -8,6 +8,12 @@ const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
   "user_id",
   "item_type",
+  "title",
+  "type",
+  "frequency",
+  "default_amount",
+  "status",
+  "linked_asset_item_id",
   "attributes",
   "parent_item_id",
   "created_at",
@@ -19,6 +25,7 @@ const SORTS = Object.freeze(["recently_updated", "oldest_updated", "due_soon", "
 const ASSET_TYPES = new Set(["RealEstate", "Vehicle"]);
 const COMMITMENT_TYPES = new Set(["FinancialCommitment"]);
 const INCOME_TYPES = new Set(["FinancialIncome"]);
+const FINANCIAL_ITEM_TYPE = "FinancialItem";
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
@@ -136,10 +143,18 @@ function matchesSearch(item, search) {
   const attrs = isPlainObject(item.attributes) ? item.attributes : {};
   const haystacks = [
     normalizeForSearch(item.item_type),
+    normalizeForSearch(item.title),
+    normalizeForSearch(item.type),
+    normalizeForSearch(item.frequency),
+    normalizeForSearch(item.status),
     ...Object.values(attrs).map((value) => normalizeForSearch(String(value || "")))
   ];
 
   return haystacks.some((value) => value.includes(search));
+}
+
+function isFinancialItemSubtype(item, subtype) {
+  return item.item_type === FINANCIAL_ITEM_TYPE && normalizeString(item.type).toLowerCase() === subtype.toLowerCase();
 }
 
 function applyFilter(items, filter) {
@@ -152,11 +167,11 @@ function applyFilter(items, filter) {
   }
 
   if (filter === "commitments") {
-    return items.filter((item) => COMMITMENT_TYPES.has(item.item_type));
+    return items.filter((item) => COMMITMENT_TYPES.has(item.item_type) || isFinancialItemSubtype(item, "Commitment"));
   }
 
   if (filter === "income") {
-    return items.filter((item) => INCOME_TYPES.has(item.item_type));
+    return items.filter((item) => INCOME_TYPES.has(item.item_type) || isFinancialItemSubtype(item, "Income"));
   }
 
   if (filter === "active") {
@@ -233,6 +248,8 @@ function amountKey(item) {
     }
   } else if (item.item_type === "FinancialIncome") {
     candidate = attrs.collectedTotal ?? attrs.amount;
+  } else if (item.item_type === FINANCIAL_ITEM_TYPE) {
+    candidate = attrs.nextPaymentAmount ?? attrs.amount ?? item.default_amount;
   } else {
     candidate = attrs.nextPaymentAmount ?? attrs.amount;
   }
@@ -242,8 +259,8 @@ function amountKey(item) {
 }
 
 function compareByAlphabetical(left, right) {
-  const leftName = normalizeForSearch(left.attributes && left.attributes.name) || normalizeForSearch(left.item_type);
-  const rightName = normalizeForSearch(right.attributes && right.attributes.name) || normalizeForSearch(right.item_type);
+  const leftName = normalizeForSearch(left.attributes && left.attributes.name) || normalizeForSearch(left.title) || normalizeForSearch(left.item_type);
+  const rightName = normalizeForSearch(right.attributes && right.attributes.name) || normalizeForSearch(right.title) || normalizeForSearch(right.item_type);
   const nameDiff = leftName.localeCompare(rightName);
 
   if (nameDiff !== 0) {
