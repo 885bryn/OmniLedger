@@ -7,11 +7,15 @@ import { MemoryRouter, RouterProvider, createMemoryRouter } from 'react-router-d
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppShell } from '../app/shell/app-shell'
 import { UserSwitcher } from '../app/shell/user-switcher'
+import { CompleteEventRowAction } from '../features/events/complete-event-row-action'
+import { ItemSoftDeleteDialog } from '../features/items/item-soft-delete-dialog'
 import '../lib/i18n'
 import { actorSensitiveQueryRoots } from '../lib/query-keys'
+import { ItemEditPage } from '../pages/items/item-edit-page'
 
 const setAllUsersMock = vi.fn(async () => undefined)
 const setLensUserMock = vi.fn(async () => undefined)
+const originalFetch = globalThis.fetch
 
 let authState: {
   session: {
@@ -112,6 +116,46 @@ function renderSwitcher(queryClient: QueryClient) {
   )
 }
 
+function renderEventAction() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <CompleteEventRowAction eventId="event-1" itemId="item-1" />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
+
+function renderItemEditPage(initialPath = '/items/item-1/edit') {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+
+  const router = createMemoryRouter(
+    [
+      { path: '/items/:itemId/edit', element: <ItemEditPage /> },
+      { path: '/items/:itemId', element: <p>detail page</p> },
+    ],
+    { initialEntries: [initialPath] },
+  )
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  )
+}
+
 describe('admin safety signals', () => {
   beforeEach(() => {
     authState = {
@@ -145,6 +189,7 @@ describe('admin safety signals', () => {
 
   afterEach(() => {
     cleanup()
+    globalThis.fetch = originalFetch
     setAllUsersMock.mockReset()
     setLensUserMock.mockReset()
     vi.restoreAllMocks()
@@ -226,5 +271,65 @@ describe('admin safety signals', () => {
 
     expect(setLensUserMock).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('shows actor and lens attribution on complete action button and confirmation dialog', async () => {
+    renderEventAction()
+
+    expect(screen.getByText('Actor: admin-alpha | Lens: All users')).toBeTruthy()
+
+    await userEvent.click(screen.getByRole('button', { name: /complete/i }))
+
+    const chips = screen.getAllByText('Actor: admin-alpha | Lens: All users')
+    expect(chips.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('shows actor and lens attribution in item soft-delete confirmation', () => {
+    render(
+      <MemoryRouter>
+        <ItemSoftDeleteDialog open={true} itemLabel="Pine Avenue" onCancel={() => undefined} onConfirm={() => undefined} />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Actor: admin-alpha | Lens: All users')).toBeTruthy()
+  })
+
+  it('shows actor and lens attribution on item edit save surfaces', async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items?include_deleted=true') && method === 'GET') {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'Vehicle',
+                attributes: { vin: 'ABC123', estimatedValue: 9000 },
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        )
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    }) as typeof fetch
+
+    renderItemEditPage()
+
+    await screen.findByText('Edit item')
+    expect(screen.getByText('Actor: admin-alpha | Lens: All users')).toBeTruthy()
+
+    await userEvent.clear(screen.getByRole('spinbutton', { name: /Estimated value/i }))
+    await userEvent.type(screen.getByRole('spinbutton', { name: /Estimated value/i }), '9500')
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    const chips = screen.getAllByText('Actor: admin-alpha | Lens: All users')
+    expect(chips.length).toBeGreaterThanOrEqual(2)
   })
 })

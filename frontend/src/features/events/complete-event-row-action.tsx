@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../auth/auth-context'
+import { useAdminScope } from '../admin-scope/admin-scope-context'
+import { TargetUserChip, resolveTargetUserAttribution } from '../admin-scope/target-user-chip'
 import { ConfirmationDialog } from '../ui/confirmation-dialog'
 import { FollowUpModal } from './follow-up-modal'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
@@ -20,11 +23,22 @@ type CompleteEventRowActionProps = {
 export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActionProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { session } = useAuth()
+  const { isAdmin, mode, lensUserId, users } = useAdminScope()
   const queryClient = useQueryClient()
   const [showSuccess, setShowSuccess] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [showFollowUp, setShowFollowUp] = useState(false)
   const [failureText, setFailureText] = useState<string | null>(null)
+
+  const attribution = resolveTargetUserAttribution({
+    isAdmin,
+    mode,
+    lensUserId,
+    users,
+    actorUsername: session?.username,
+    actorEmail: session?.email,
+  })
 
   const completionMutation = useMutation({
     mutationFn: async () => apiRequest<CompletionPayload>(`/events/${eventId}/complete`, { method: 'PATCH' }),
@@ -53,6 +67,7 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
 
   return (
     <div className="flex items-center gap-2">
+      {attribution ? <TargetUserChip actorLabel={attribution.actorLabel} lensLabel={attribution.lensLabel} /> : null}
       <button
         type="button"
         disabled={completionMutation.isPending}
@@ -70,7 +85,12 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
       <ConfirmationDialog
         open={confirmOpen}
         title={t('events.completeAction.confirmTitle')}
-        description={t('events.completeAction.confirm')}
+        description={
+          <span className="space-y-2">
+            <span className="block">{t('events.completeAction.confirm')}</span>
+            {attribution ? <TargetUserChip actorLabel={attribution.actorLabel} lensLabel={attribution.lensLabel} /> : null}
+          </span>
+        }
         confirmLabel={completionMutation.isPending ? t('events.completeAction.pending') : t('events.completeAction.button')}
         cancelLabel={t('events.completeAction.cancel')}
         pending={completionMutation.isPending}
