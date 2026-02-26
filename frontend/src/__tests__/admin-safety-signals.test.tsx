@@ -381,7 +381,7 @@ describe('admin safety signals', () => {
     await userEvent.click(screen.getByRole('button', { name: /complete/i }))
 
     expect(screen.queryByRole('dialog')).toBeNull()
-    expect(screen.getByText('Write blocked. Select a valid Lens user before trying again.')).toBeTruthy()
+    expect(screen.getAllByText('Write blocked. Select a valid Lens user before trying again.')).toHaveLength(2)
     expect(screen.getAllByTestId('safety-toast')).toHaveLength(1)
     expect(globalThis.fetch).not.toHaveBeenCalled()
   })

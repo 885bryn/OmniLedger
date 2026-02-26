@@ -103,7 +103,7 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
       </button>
 
       {showSuccess ? <p className="text-xs font-medium text-emerald-600">{t('events.completeAction.completed')}</p> : null}
-      {completionMutation.isError ? <p className="text-xs font-medium text-destructive">{failureText ?? t('events.completeAction.failed')}</p> : null}
+      {failureText ? <p className="text-xs font-medium text-destructive">{failureText}</p> : null}
 
       <ConfirmationDialog
         open={confirmOpen}
