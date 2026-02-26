@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../auth/auth-context'
+import { AdminSafetyBanner } from '../../features/admin-scope/admin-safety-banner'
 import { SessionExpiredBanner } from '../../features/auth/session-expired-banner'
 import { LanguageSwitcher } from './language-switcher'
 import { UserSwitcher } from './user-switcher'
@@ -109,6 +110,8 @@ function LayoutFrame() {
               <UserSwitcher />
             </div>
           </header>
+
+          <AdminSafetyBanner />
 
           <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
             {sessionExpired ? <SessionExpiredBanner /> : null}
