@@ -10,11 +10,20 @@ type SessionPayload = {
     id: string
     username: string
     email: string
+    role?: 'user' | 'admin'
   } | null
   session: {
     authenticated: boolean
+    scope?: {
+      actorUserId: string | null
+      actorRole: 'user' | 'admin'
+      mode: 'owner' | 'all'
+      lensUserId: string | null
+    } | null
   }
 }
+
+export type SessionScope = NonNullable<SessionPayload['session']['scope']>
 
 type LoginInput = {
   email: string
@@ -30,6 +39,7 @@ type RegisterInput = {
 
 type AuthContextValue = {
   session: SessionPayload['user']
+  sessionScope: SessionScope | null
   loading: boolean
   sessionExpired: boolean
   sessionExpiredReturnTo: string | null
@@ -100,6 +110,7 @@ function persistSessionExpiredNotice(value: boolean) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionPayload['user']>(null)
+  const [sessionScope, setSessionScope] = useState<SessionScope | null>(null)
   const [loading, setLoading] = useState(true)
   const [sessionExpiredReturnTo, setSessionExpiredReturnTo] = useState<string | null>(null)
 
@@ -109,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const completeSessionExpiredRedirect = useCallback(() => {
     setSession(null)
+    setSessionScope(null)
     setSessionExpiredReturnTo(null)
   }, [])
 
@@ -116,8 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await apiRequest<SessionPayload>('/auth/session')
       setSession(response.session.authenticated ? response.user : null)
+      setSessionScope(response.session.authenticated ? response.session.scope ?? null : null)
     } catch {
       setSession(null)
+      setSessionScope(null)
     } finally {
       setLoading(false)
     }
@@ -150,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       setSession(null)
+      setSessionScope(null)
 
     }
 
@@ -188,6 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       setSession(payload.user)
+      setSessionScope(payload.session.scope ?? null)
       clearSessionExpired()
       persistSessionExpiredNotice(false)
       return { redirectTo: consumeReturnTo(returnTo) }
@@ -206,6 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       setSession(payload.user)
+      setSessionScope(payload.session.scope ?? null)
       clearSessionExpired()
       persistSessionExpiredNotice(false)
       return { redirectTo: consumeReturnTo(returnTo) }
@@ -227,12 +244,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearSessionExpired()
       persistSessionExpiredNotice(false)
       setSession(null)
+      setSessionScope(null)
     }
   }, [clearSessionExpired])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
+      sessionScope,
       loading,
       sessionExpired: Boolean(sessionExpiredReturnTo),
       sessionExpiredReturnTo,
@@ -244,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       completeSessionExpiredRedirect,
       clearSessionExpired,
     }),
-    [clearSessionExpired, completeSessionExpiredRedirect, consumeReturnTo, loading, login, logout, register, session, sessionExpiredReturnTo, storeReturnTo],
+    [clearSessionExpired, completeSessionExpiredRedirect, consumeReturnTo, loading, login, logout, register, session, sessionExpiredReturnTo, sessionScope, storeReturnTo],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
