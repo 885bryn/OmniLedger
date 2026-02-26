@@ -72,7 +72,7 @@ Each task was committed atomically:
 1. **Task 1: Add client admin-scope context and shell controls wired to server mode/lens APIs** - `b7f0392` (feat)
 2. **Task 2: Enforce hard reset + refetch with lens-aware query keys across dashboard/events/items pages** - `5dd46ad` (feat)
 
-**Plan metadata:** pending (recorded in final docs commit)
+**Plan metadata:** `462f8bf` (docs)
 
 ## Files Created/Modified
 - `frontend/src/features/admin-scope/admin-scope-context.tsx` - Client admin scope provider + mutation hooks.
