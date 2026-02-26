@@ -227,11 +227,18 @@
       "unknownEventType": "Event",
       "eventMeta": "{{type}} - {{amount}} - due {{dueDate}} - {{at}}",
       "itemMeta": "Item change - {{at}}",
+      "attribution": {
+        "tuple": "Actor: {{actor}} | Lens: {{lens}}",
+        "legacyLens": "Legacy row (lens unavailable)",
+        "unknownActor": "Unknown actor"
+      },
       "actions": {
         "eventCompleted": "Event completed",
         "eventCompletionUndone": "Event completion undone",
         "itemDeleted": "Item deleted",
-        "itemUpdated": "Item updated"
+        "itemUpdated": "Item updated",
+        "itemCreated": "Item created",
+        "itemRestored": "Item restored"
       }
     },
     "fields": {

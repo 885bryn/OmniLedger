@@ -227,11 +227,18 @@
       "unknownEventType": "事件",
       "eventMeta": "{{type}} - {{amount}} - 到期 {{dueDate}} - {{at}}",
       "itemMeta": "资产变更 - {{at}}",
+      "attribution": {
+        "tuple": "执行者: {{actor}} | 镜像: {{lens}}",
+        "legacyLens": "历史记录（无镜像信息）",
+        "unknownActor": "未知执行者"
+      },
       "actions": {
         "eventCompleted": "事件已完成",
         "eventCompletionUndone": "已撤销事件完成",
         "itemDeleted": "资产已删除",
-        "itemUpdated": "资产已更新"
+        "itemUpdated": "资产已更新",
+        "itemCreated": "资产已创建",
+        "itemRestored": "资产已恢复"
       }
     },
     "fields": {
