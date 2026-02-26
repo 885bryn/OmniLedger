@@ -284,6 +284,21 @@ describe('admin safety signals', () => {
     expect(chips.length).toBeGreaterThanOrEqual(2)
   })
 
+  it('uses selected lens label when admin is scoped to one user', () => {
+    adminScopeState.mode = 'owner'
+    adminScopeState.lensUserId = 'user-2'
+    authState.sessionScope = {
+      actorUserId: 'admin-1',
+      actorRole: 'admin',
+      mode: 'owner',
+      lensUserId: 'user-2',
+    }
+
+    renderEventAction()
+
+    expect(screen.getByText('Actor: admin-alpha | Lens: beta')).toBeTruthy()
+  })
+
   it('shows actor and lens attribution in item soft-delete confirmation', () => {
     render(
       <MemoryRouter>
@@ -331,5 +346,75 @@ describe('admin safety signals', () => {
 
     const chips = screen.getAllByText('Actor: admin-alpha | Lens: All users')
     expect(chips.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('hides mutation attribution chips for standard user surfaces', async () => {
+    authState = {
+      session: {
+        id: 'user-1',
+        username: 'alpha',
+        email: 'alpha@example.com',
+        role: 'user',
+      },
+      sessionScope: {
+        actorUserId: 'user-1',
+        actorRole: 'user',
+        mode: 'owner',
+        lensUserId: 'user-1',
+      },
+    }
+
+    adminScopeState = {
+      isAdmin: false,
+      mode: 'owner',
+      lensUserId: 'user-1',
+      users: [
+        { id: 'user-1', username: 'alpha', email: 'alpha@example.com' },
+      ],
+      isLoadingUsers: false,
+      isUpdatingScope: false,
+      updateError: null,
+    }
+
+    renderEventAction()
+    expect(screen.queryByTestId('target-user-chip')).toBeNull()
+    cleanup()
+
+    render(
+      <MemoryRouter>
+        <ItemSoftDeleteDialog open={true} itemLabel="Pine Avenue" onCancel={() => undefined} onConfirm={() => undefined} />
+      </MemoryRouter>,
+    )
+    expect(screen.queryByTestId('target-user-chip')).toBeNull()
+    cleanup()
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items?include_deleted=true') && method === 'GET') {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'Vehicle',
+                attributes: { vin: 'ABC123', estimatedValue: 9000 },
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        )
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    }) as typeof fetch
+
+    renderItemEditPage()
+    await screen.findByText('Edit item')
+    expect(screen.queryByTestId('target-user-chip')).toBeNull()
   })
 })
