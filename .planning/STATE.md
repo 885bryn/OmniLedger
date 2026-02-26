@@ -10,9 +10,9 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
-Plan: 4 of 12 (next: 09-03)
+Plan: 4 of 12 (next: 09-04)
 Status: In progress
-Last activity: 2026-02-26 - Completed 09-08 ownership-denial contract normalization for item/event direct-access paths
+Last activity: 2026-02-26 - Completed 09-03 admin scope mode/lens session enforcement and list resolver normalization
 
 Progress: [███░░░░░░░] 25%
 
@@ -45,6 +45,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 09 P02 | 3 min | 1 tasks | 9 files |
 | Phase 09 P11 | 2 min | 2 tasks | 3 files |
 | Phase 09 P08 | 4 min | 2 tasks | 9 files |
+| Phase 09 P03 | 7 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,9 @@ Recent decisions affecting current work:
 - [Phase 09]: Foreign event complete and undo attempts are regression-locked to 404 not_found denial behavior under AUTH-05.
 - [Phase 09]: Mapped ownership-denial categories to shared 404/not_found envelopes at the API mapper boundary to keep contracts consistent and non-leaky.
 - [Phase 09]: Standardized foreign direct-access denial copy to plain policy language while preserving not_found semantics across item and event pathways.
+- [Phase 09]: Persist admin scope mode+lens in server session and expose scope metadata in auth/session payloads.
+- [Phase 09]: Restrict /auth/admin-scope updates to admins and validate owner lens targets against existing users.
+- [Phase 09]: Use resolveOwnerFilter(scope) as the single owner-filter contract for item/event list reads.
 
 ### Pending Todos
 
@@ -93,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 03:34
-Stopped at: Completed 09-08-PLAN.md
+Last session: 2026-02-26 03:37
+Stopped at: Completed 09-03-PLAN.md
 Resume file: None
