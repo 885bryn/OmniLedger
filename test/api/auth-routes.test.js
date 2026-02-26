@@ -72,16 +72,28 @@ describe("auth routes", () => {
     expect(registerResponse.body.user).toMatchObject({
       email: "phase8-register@example.com"
     });
-    expect(registerResponse.body.session).toEqual({
-      authenticated: true
-    });
+    expect(registerResponse.body.session).toEqual(
+      expect.objectContaining({
+        authenticated: true,
+        scope: expect.objectContaining({
+          actorRole: "user",
+          mode: "owner"
+        })
+      })
+    );
 
     const sessionResponse = await agent.get("/auth/session");
 
     expect(sessionResponse.status).toBe(200);
-    expect(sessionResponse.body.session).toEqual({
-      authenticated: true
-    });
+    expect(sessionResponse.body.session).toEqual(
+      expect.objectContaining({
+        authenticated: true,
+        scope: expect.objectContaining({
+          actorRole: "user",
+          mode: "owner"
+        })
+      })
+    );
     expect(sessionResponse.body.user.email).toBe("phase8-register@example.com");
   });
 
@@ -94,17 +106,41 @@ describe("auth routes", () => {
     });
 
     expect(loginResponse.status).toBe(200);
-    expect(loginResponse.body.session).toEqual({ authenticated: true });
+    expect(loginResponse.body.session).toEqual(
+      expect.objectContaining({
+        authenticated: true,
+        scope: expect.objectContaining({
+          actorRole: "user",
+          mode: "owner"
+        })
+      })
+    );
     expect(loginResponse.body.user.id).toBe(user.id);
 
     const firstSession = await agent.get("/auth/session");
     expect(firstSession.status).toBe(200);
-    expect(firstSession.body.session).toEqual({ authenticated: true });
+    expect(firstSession.body.session).toEqual(
+      expect.objectContaining({
+        authenticated: true,
+        scope: expect.objectContaining({
+          actorRole: "user",
+          mode: "owner"
+        })
+      })
+    );
     expect(firstSession.body.user.id).toBe(user.id);
 
     const secondSession = await agent.get("/auth/session");
     expect(secondSession.status).toBe(200);
-    expect(secondSession.body.session).toEqual({ authenticated: true });
+    expect(secondSession.body.session).toEqual(
+      expect.objectContaining({
+        authenticated: true,
+        scope: expect.objectContaining({
+          actorRole: "user",
+          mode: "owner"
+        })
+      })
+    );
     expect(secondSession.body.user.id).toBe(user.id);
   });
 
@@ -164,7 +200,8 @@ describe("auth routes", () => {
     expect(response.body).toEqual({
       user: null,
       session: {
-        authenticated: false
+        authenticated: false,
+        scope: null
       }
     });
   });
@@ -195,13 +232,22 @@ describe("auth routes", () => {
     expect(sessionAfterLogout.body).toEqual({
       user: null,
       session: {
-        authenticated: false
+        authenticated: false,
+        scope: null
       }
     });
 
     const otherDeviceSession = await deviceB.get("/auth/session");
     expect(otherDeviceSession.status).toBe(200);
-    expect(otherDeviceSession.body.session).toEqual({ authenticated: true });
+    expect(otherDeviceSession.body.session).toEqual(
+      expect.objectContaining({
+        authenticated: true,
+        scope: expect.objectContaining({
+          actorRole: "user",
+          mode: "owner"
+        })
+      })
+    );
     expect(otherDeviceSession.body.user.id).toBe(user.id);
   });
 });

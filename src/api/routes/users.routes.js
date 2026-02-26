@@ -23,7 +23,12 @@ function createUsersRouter() {
 
   router.get("/users", async (req, res, next) => {
     try {
+      const where = req.scope && req.scope.actorRole === "admin"
+        ? undefined
+        : { id: req.scope.actorUserId };
+
       const rows = await models.User.findAll({
+        where,
         order: [
           ["username_normalized", "ASC"],
           ["created_at", "ASC"],

@@ -37,6 +37,38 @@ async function resolveActor(userId) {
   };
 }
 
+function normalizeSessionScope(scope) {
+  if (!scope || typeof scope !== "object" || Array.isArray(scope)) {
+    return {
+      mode: "all",
+      lensUserId: null
+    };
+  }
+
+  return {
+    mode: scope.mode,
+    lensUserId: typeof scope.lensUserId === "string" ? scope.lensUserId.trim() : null
+  };
+}
+
+function saveSession(req) {
+  return new Promise((resolve, reject) => {
+    if (!req.session || typeof req.session.save !== "function") {
+      resolve();
+      return;
+    }
+
+    req.session.save((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 async function requireAuth(req, res, next) {
   try {
     const sessionUserId = resolveSessionUserId(req);
@@ -68,9 +100,25 @@ async function requireAuth(req, res, next) {
       role: actor.role
     };
 
+    const sessionScope = normalizeSessionScope(req.session.adminScope);
+    if (actor.role === "admin" && sessionScope.mode === "owner" && sessionScope.lensUserId) {
+      const lensUser = await models.User.findByPk(sessionScope.lensUserId, {
+        attributes: ["id"]
+      });
+
+      if (!lensUser) {
+        req.session.adminScope = {
+          mode: "all",
+          lensUserId: null
+        };
+        await saveSession(req);
+      }
+    }
+
     req.scope = buildScopeContext({
       actorUserId: actor.userId,
-      actorRole: actor.role
+      actorRole: actor.role,
+      sessionScope: req.session.adminScope
     });
 
     next();

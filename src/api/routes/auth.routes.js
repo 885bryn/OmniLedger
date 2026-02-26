@@ -5,9 +5,14 @@ const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const { models } = require("../../db");
 const { registerUser, RegisterUserError } = require("../../domain/auth/register-user");
 const { authenticateUser } = require("../../domain/auth/authenticate-user");
+const {
+  ROLE_ADMIN,
+  SCOPE_MODE_ALL,
+  SCOPE_MODE_OWNER,
+  buildScopeContext
+} = require("../auth/scope-context");
 
 const ROLE_USER = "user";
-const ROLE_ADMIN = "admin";
 
 const INVALID_CREDENTIALS_BODY = Object.freeze({
   error: {
@@ -128,7 +133,88 @@ async function setAuthenticatedSession(req, userId) {
   await regenerateSession(req);
   req.session.userId = userId;
   req.session.authenticatedAt = new Date().toISOString();
+  req.session.adminScope = {
+    mode: SCOPE_MODE_ALL,
+    lensUserId: null
+  };
   await saveSession(req);
+}
+
+function toSessionScopeState(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {
+      mode: SCOPE_MODE_ALL,
+      lensUserId: null
+    };
+  }
+
+  const mode = value.mode === SCOPE_MODE_OWNER ? SCOPE_MODE_OWNER : SCOPE_MODE_ALL;
+  const lensUserId = typeof value.lensUserId === "string" && value.lensUserId.trim() ? value.lensUserId.trim() : null;
+
+  if (mode === SCOPE_MODE_ALL) {
+    return {
+      mode,
+      lensUserId: null
+    };
+  }
+
+  return {
+    mode,
+    lensUserId
+  };
+}
+
+async function resolveSessionScope(req, user) {
+  if (!user || user.role !== ROLE_ADMIN) {
+    return {
+      mode: SCOPE_MODE_OWNER,
+      lensUserId: user ? user.id : null
+    };
+  }
+
+  const sessionScope = toSessionScopeState(req.session && req.session.adminScope);
+  if (sessionScope.mode === SCOPE_MODE_OWNER && sessionScope.lensUserId) {
+    const lensUser = await models.User.findByPk(sessionScope.lensUserId, {
+      attributes: ["id"]
+    });
+
+    if (!lensUser) {
+      req.session.adminScope = {
+        mode: SCOPE_MODE_ALL,
+        lensUserId: null
+      };
+      await saveSession(req);
+
+      return {
+        mode: SCOPE_MODE_ALL,
+        lensUserId: null
+      };
+    }
+  }
+
+  if (sessionScope.mode === SCOPE_MODE_OWNER && !sessionScope.lensUserId) {
+    req.session.adminScope = {
+      mode: SCOPE_MODE_ALL,
+      lensUserId: null
+    };
+    await saveSession(req);
+
+    return {
+      mode: SCOPE_MODE_ALL,
+      lensUserId: null
+    };
+  }
+
+  return sessionScope;
+}
+
+async function resolveAuthScope(req, user) {
+  const sessionScope = await resolveSessionScope(req, user);
+  return buildScopeContext({
+    actorUserId: user && user.id,
+    actorRole: user && user.role,
+    sessionScope
+  });
 }
 
 async function resolveSessionUser(req) {
@@ -164,12 +250,28 @@ async function resolveSessionUser(req) {
   };
 }
 
-function toAuthenticatedResponse(user) {
+function toAuthenticatedResponse(user, scope) {
   return {
     user,
     session: {
-      authenticated: true
+      authenticated: true,
+      scope
     }
+  };
+}
+
+function normalizeAdminScopeUpdateInput(input) {
+  const payload = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  const mode = payload.mode === SCOPE_MODE_OWNER ? SCOPE_MODE_OWNER : payload.mode === SCOPE_MODE_ALL ? SCOPE_MODE_ALL : "";
+  const lensUserId = typeof payload.lens_user_id === "string"
+    ? payload.lens_user_id.trim()
+    : typeof payload.lensUserId === "string"
+      ? payload.lensUserId.trim()
+      : "";
+
+  return {
+    mode,
+    lensUserId
   };
 }
 
@@ -182,8 +284,9 @@ function createAuthRouter() {
       const user = await registerUser(req.body || {});
       await setAuthenticatedSession(req, user.id);
       const sessionUser = await resolveSessionUser(req);
+      const scope = await resolveAuthScope(req, sessionUser);
 
-      res.status(201).json(toAuthenticatedResponse(sessionUser));
+      res.status(201).json(toAuthenticatedResponse(sessionUser, scope));
     } catch (error) {
       if (error instanceof RegisterUserError) {
         res.status(422).json({
@@ -210,8 +313,9 @@ function createAuthRouter() {
 
       await setAuthenticatedSession(req, result.user.id);
       const sessionUser = await resolveSessionUser(req);
+      const scope = await resolveAuthScope(req, sessionUser);
 
-      res.status(200).json(toAuthenticatedResponse(sessionUser));
+      res.status(200).json(toAuthenticatedResponse(sessionUser, scope));
     } catch (error) {
       next(error);
     }
@@ -234,12 +338,109 @@ function createAuthRouter() {
   router.get("/session", async (req, res, next) => {
     try {
       const user = await resolveSessionUser(req);
+
+      if (!user) {
+        res.status(200).json({
+          user,
+          session: {
+            authenticated: false,
+            scope: null
+          }
+        });
+        return;
+      }
+
+      const scope = await resolveAuthScope(req, user);
+
       res.status(200).json({
         user,
         session: {
-          authenticated: Boolean(user)
+          authenticated: true,
+          scope
         }
       });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.patch("/admin-scope", async (req, res, next) => {
+    try {
+      const user = await resolveSessionUser(req);
+      if (!user) {
+        res.status(401).json({
+          error: {
+            code: "authentication_required",
+            message: "Authentication required."
+          }
+        });
+        return;
+      }
+
+      if (user.role !== ROLE_ADMIN) {
+        res.status(403).json({
+          error: {
+            code: "admin_scope_forbidden",
+            message: "Only admin can update admin scope."
+          }
+        });
+        return;
+      }
+
+      const input = normalizeAdminScopeUpdateInput(req.body);
+      if (!input.mode) {
+        res.status(422).json({
+          error: {
+            code: "invalid_admin_scope",
+            message: "mode must be one of: all, owner."
+          }
+        });
+        return;
+      }
+
+      if (input.mode === SCOPE_MODE_ALL) {
+        req.session.adminScope = {
+          mode: SCOPE_MODE_ALL,
+          lensUserId: null
+        };
+        await saveSession(req);
+        const scope = await resolveAuthScope(req, user);
+        res.status(200).json(toAuthenticatedResponse(user, scope));
+        return;
+      }
+
+      if (!input.lensUserId) {
+        res.status(422).json({
+          error: {
+            code: "invalid_admin_scope",
+            message: "lens_user_id is required when mode is owner."
+          }
+        });
+        return;
+      }
+
+      const lensUser = await models.User.findByPk(input.lensUserId, {
+        attributes: ["id"]
+      });
+
+      if (!lensUser) {
+        res.status(422).json({
+          error: {
+            code: "invalid_admin_scope",
+            message: "lens_user_id must reference an existing user."
+          }
+        });
+        return;
+      }
+
+      req.session.adminScope = {
+        mode: SCOPE_MODE_OWNER,
+        lensUserId: input.lensUserId
+      };
+      await saveSession(req);
+
+      const scope = await resolveAuthScope(req, user);
+      res.status(200).json(toAuthenticatedResponse(user, scope));
     } catch (error) {
       next(error);
     }

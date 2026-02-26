@@ -20,6 +20,7 @@ const { createApp } = require("../../src/api/app");
 
 describe("GET /users", () => {
   const app = createApp();
+  const originalAdminEmail = process.env.HACT_ADMIN_EMAIL;
   let userCounter = 0;
 
   async function createUser(overrides = {}) {
@@ -58,6 +59,7 @@ describe("GET /users", () => {
   });
 
   beforeEach(async () => {
+    delete process.env.HACT_ADMIN_EMAIL;
     await sequelize.query("PRAGMA foreign_keys = OFF");
     await models.AuditLog.destroy({ where: {}, force: true });
     await models.Event.destroy({ where: {}, force: true });
@@ -67,6 +69,12 @@ describe("GET /users", () => {
   });
 
   afterAll(async () => {
+    if (typeof originalAdminEmail === "string") {
+      process.env.HACT_ADMIN_EMAIL = originalAdminEmail;
+    } else {
+      delete process.env.HACT_ADMIN_EMAIL;
+    }
+
     await sequelize.close();
   });
 
@@ -84,6 +92,7 @@ describe("GET /users", () => {
   }
 
   it("returns deterministic actor options payload for local user switching", async () => {
+    process.env.HACT_ADMIN_EMAIL = "admin-users@example.com";
     const beta = await models.User.create({
       username: "beta",
       email: "beta@example.com",
@@ -104,7 +113,7 @@ describe("GET /users", () => {
     await setUserCreatedAt(charlie.id, "2026-01-05T00:00:00.000Z");
     await setUserCreatedAt(beta.id, "2026-01-02T00:00:00.000Z");
 
-    const authUser = await createUser({ username: "ZuluAuth", email: "zulu-auth@example.com" });
+    const authUser = await createUser({ username: "ZuluAuth", email: "admin-users@example.com" });
     const agent = await signInAs(authUser);
 
     const response = await agent.get("/users");
@@ -128,18 +137,16 @@ describe("GET /users", () => {
     );
   });
 
-  it("returns empty contract shape when no users exist", async () => {
+  it("returns owner-only user payload for non-admin actors", async () => {
     const authUser = await createUser();
+    await createUser({ username: "Another", email: "another@example.com" });
     const agent = await signInAs(authUser);
-
-    await models.User.destroy({ where: { id: authUser.id }, force: true });
 
     const response = await agent.get("/users");
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      users: [],
-      total_count: 0
-    });
+    expect(response.body.total_count).toBe(1);
+    expect(response.body.users).toHaveLength(1);
+    expect(response.body.users[0].id).toBe(authUser.id);
   });
 });
