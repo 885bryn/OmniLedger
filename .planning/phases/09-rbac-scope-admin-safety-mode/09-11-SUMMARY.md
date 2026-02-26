@@ -62,7 +62,7 @@ Each task was committed atomically:
 1. **Task 1: Add create/list regression assertions for scope-only ownership derivation** - `cee08c3` (test)
 2. **Task 2: Extend event mutation regression checks for foreign-owner bypass prevention** - `0dc9a95` (test)
 
-**Plan metadata:** Pending
+**Plan metadata:** `58871aa` (docs)
 
 ## Files Created/Modified
 - `test/api/items-create.test.js` - adds scope-owner persistence checks and cross-owner parent-link rejection assertions.
