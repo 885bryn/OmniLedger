@@ -14,6 +14,8 @@ type ItemRow = {
   item_type: string
   title?: string | null
   type?: string | null
+  frequency?: string | null
+  status?: string | null
   default_amount?: number | null
   attributes: Record<string, unknown>
   parent_item_id?: string | null
@@ -115,6 +117,38 @@ function formatCurrency(value: number) {
 function toNumberOrZero(value: unknown) {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : 0
+}
+
+function formatDateLabel(value: string) {
+  const parsed = Date.parse(value)
+  if (Number.isNaN(parsed)) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(parsed)
+}
+
+function recurrenceFrequencyLabel(frequency: string | null | undefined, t: (key: string) => string) {
+  switch (frequency) {
+    case 'weekly':
+      return t('items.detail.recurrence.weekly')
+    case 'biweekly':
+      return t('items.detail.recurrence.biweekly')
+    case 'monthly':
+      return t('items.detail.recurrence.monthly')
+    case 'quarterly':
+      return t('items.detail.recurrence.quarterly')
+    case 'yearly':
+      return t('items.detail.recurrence.yearly')
+    case 'one_time':
+      return t('items.detail.recurrence.oneTime')
+    default:
+      return t('items.detail.recurrence.custom')
+  }
 }
 
 function getDeletedAtFromAttributes(attributes: Record<string, unknown> | undefined) {
@@ -281,6 +315,28 @@ export function ItemDetailPage() {
     return deriveSummaryFromCommitments(commitments)
   }, [commitments, detail])
   const rootAttributes = isRecord(detail?.attributes) ? detail.attributes : {}
+  const recurrenceSummary = useMemo(() => {
+    if (!detail || detail.item_type !== 'FinancialItem') {
+      return null
+    }
+
+    if (detail.status === 'Closed') {
+      return t('items.detail.recurrence.closed')
+    }
+
+    const frequencyLabel = recurrenceFrequencyLabel(detail.frequency, t)
+    const nextDueRaw = [rootAttributes.nextDueDate, rootAttributes.dueDate].find((value) => typeof value === 'string' && value.length > 0)
+
+    if (typeof nextDueRaw === 'string') {
+      return t('items.detail.recurrence.summary', {
+        frequency: frequencyLabel,
+        date: formatDateLabel(nextDueRaw),
+      })
+    }
+
+    return t('items.detail.recurrence.summaryNoDate', { frequency: frequencyLabel })
+  }, [detail, rootAttributes.dueDate, rootAttributes.nextDueDate, t])
+
   const parentItem = useMemo(() => {
     if (!detail?.parent_item_id) {
       return null
@@ -330,6 +386,7 @@ export function ItemDetailPage() {
             {subtype ? <span className="rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium text-foreground">{subtype}</span> : null}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{detail ? getItemTypeLabel(detail) : t('items.detail.commitmentFallbackTitle')}</p>
+          {recurrenceSummary ? <p className="mt-1 text-xs text-muted-foreground">{recurrenceSummary}</p> : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <button

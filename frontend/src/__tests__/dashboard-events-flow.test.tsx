@@ -33,19 +33,19 @@ function createResponse(payload: FetchMockResponse) {
   })
 }
 
-function buildEventsResponse() {
+function buildEventsResponse(currentEvent: { id: string; status: string }) {
   return {
     groups: [
       {
         due_date: '2026-02-26',
         events: [
           {
-            id: 'event-1',
+            id: currentEvent.id,
             item_id: 'item-1',
             type: 'Mortgage',
             amount: 1400,
             due_date: '2026-02-26',
-            status: 'Pending',
+            status: currentEvent.status,
             updated_at: '2026-02-25T00:00:00.000Z',
           },
         ],
@@ -111,7 +111,13 @@ describe('dashboard/events completion flow', () => {
 
       if (url.includes('/events?status=all') && method === 'GET') {
         listCalls += 1
-        return createResponse({ status: 200, json: buildEventsResponse() })
+        return createResponse({
+          status: 200,
+          json:
+            listCalls === 1
+              ? buildEventsResponse({ id: 'event-1', status: 'Pending' })
+              : buildEventsResponse({ id: 'event-1', status: 'Completed' }),
+        })
       }
 
       if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
@@ -170,6 +176,9 @@ describe('dashboard/events completion flow', () => {
     expect(await screen.findByText('Schedule the next date')).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Not now' }))
 
+    expect((await screen.findAllByRole('button', { name: 'Undo' })).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Completed').length).toBeGreaterThan(0)
+
     await waitFor(() => {
       expect(screen.queryByText('Schedule the next date')).toBeNull()
     })
@@ -185,7 +194,7 @@ describe('dashboard/events completion flow', () => {
       const method = init?.method ?? 'GET'
 
       if (url.includes('/events?status=all') && method === 'GET') {
-        return createResponse({ status: 200, json: buildEventsResponse() })
+        return createResponse({ status: 200, json: buildEventsResponse({ id: 'event-1', status: 'Pending' }) })
       }
 
       if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
@@ -248,7 +257,7 @@ describe('dashboard/events completion flow', () => {
       const method = init?.method ?? 'GET'
 
       if (url.includes('/events?status=all') && method === 'GET') {
-        return createResponse({ status: 200, json: buildEventsResponse() })
+        return createResponse({ status: 200, json: buildEventsResponse({ id: 'event-1', status: 'Pending' }) })
       }
 
       if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
@@ -312,7 +321,7 @@ describe('dashboard/events completion flow', () => {
       const method = init?.method ?? 'GET'
 
       if (url.includes('/events?status=all') && method === 'GET') {
-        return createResponse({ status: 200, json: buildEventsResponse() })
+        return createResponse({ status: 200, json: buildEventsResponse({ id: 'event-1', status: 'Pending' }) })
       }
 
       if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {

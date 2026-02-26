@@ -3,7 +3,7 @@ export type LensScope = {
   lensUserId: string | null
 }
 
-export function lensScopeToParams(scope: LensScope) {
+export function lensScopeToParams(scope: LensScope): Record<string, string> {
   if (scope.mode === 'owner' && scope.lensUserId) {
     return {
       scope_mode: 'owner',
@@ -16,7 +16,7 @@ export function lensScopeToParams(scope: LensScope) {
   }
 }
 
-export function eventListParams(scope: LensScope, status: 'all' | 'pending' | 'completed' = 'all') {
+export function eventListParams(scope: LensScope, status: 'all' | 'pending' | 'completed' = 'all'): Record<string, string> {
   return {
     status,
     ...lensScopeToParams(scope),

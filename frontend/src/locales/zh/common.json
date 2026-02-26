@@ -172,6 +172,18 @@
       "showTechnical": "显示技术详情",
       "hideTechnical": "隐藏技术详情",
       "technicalTitle": "技术 JSON",
+      "recurrence": {
+        "oneTime": "一次性",
+        "weekly": "每周",
+        "biweekly": "每两周",
+        "monthly": "每月",
+        "quarterly": "每季度",
+        "yearly": "每年",
+        "custom": "周期性",
+        "closed": "合同已关闭，不再生成未来投影",
+        "summary": "{{frequency}}，下次在 {{date}}",
+        "summaryNoDate": "{{frequency}}，暂无下一次日期"
+      },
       "tabs": {
         "overview": "概览",
         "commitments": "承诺",

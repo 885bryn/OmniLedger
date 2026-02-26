@@ -172,6 +172,18 @@
       "showTechnical": "Show technical details",
       "hideTechnical": "Hide technical details",
       "technicalTitle": "Technical JSON",
+      "recurrence": {
+        "oneTime": "One-time",
+        "weekly": "Weekly",
+        "biweekly": "Every 2 weeks",
+        "monthly": "Monthly",
+        "quarterly": "Quarterly",
+        "yearly": "Yearly",
+        "custom": "Recurring",
+        "closed": "Closed contract, no future projections",
+        "summary": "{{frequency}}, next on {{date}}",
+        "summaryNoDate": "{{frequency}}, no upcoming date"
+      },
       "tabs": {
         "overview": "Overview",
         "commitments": "Commitments",
