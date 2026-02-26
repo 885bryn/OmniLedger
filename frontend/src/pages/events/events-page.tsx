@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
+import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
-import { queryKeys } from '../../lib/query-keys'
+import { getItemDisplayName } from '../../lib/item-display'
+import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type EventRow = {
   id: string
@@ -25,6 +27,17 @@ type EventGroup = {
 type EventsResponse = {
   groups: EventGroup[]
   total_count: number
+}
+
+type ItemRow = {
+  id: string
+  item_type: string
+  attributes: Record<string, unknown>
+  updated_at?: string
+}
+
+type ItemsResponse = {
+  items: ItemRow[]
 }
 
 function formatDueLabel(value: string) {
@@ -50,6 +63,21 @@ function formatCurrency(value: number | null) {
     currency: 'USD',
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+function toGroupedEvents(events: EventRow[]): EventGroup[] {
+  const groups = new Map<string, EventRow[]>()
+
+  events.forEach((event) => {
+    const key = new Date(event.due_date).toISOString().slice(0, 10)
+    const current = groups.get(key) ?? []
+    current.push(event)
+    groups.set(key, current)
+  })
+
+  return Array.from(groups.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([due_date, groupedEvents]) => ({ due_date, events: groupedEvents.sort(compareByNearestDue) }))
 }
 
 function EventsSkeleton() {
@@ -90,28 +118,48 @@ function EventsEmptyState() {
 
 export function EventsPage() {
   const { t } = useTranslation()
+  const location = useLocation()
+  const { mode, lensUserId } = useAdminScope()
+
+  const lensScope = useMemo(
+    () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
+    [lensUserId, mode],
+  )
+  const lensParams = useMemo(() => lensScopeToParams(lensScope), [lensScope])
 
   const eventsQuery = useQuery({
-    queryKey: queryKeys.events.list({ status: 'pending' }),
-    queryFn: async () => apiRequest<EventsResponse>('/events?status=pending'),
+    queryKey: queryKeys.events.list({ status: 'pending', ...lensParams }),
+    queryFn: async () => {
+      const params = new URLSearchParams({ status: 'pending', ...lensParams })
+      return apiRequest<EventsResponse>(`/events?${params.toString()}`)
+    },
+  })
+
+  const itemsQuery = useQuery({
+    queryKey: queryKeys.items.list({ scope: 'events-item-lookup', filter: 'all', sort: 'recently_updated', ...lensParams }),
+    queryFn: async () => {
+      const params = new URLSearchParams({ filter: 'all', sort: 'recently_updated', ...lensParams })
+      return apiRequest<ItemsResponse>(`/items?${params.toString()}`)
+    },
   })
 
   const groups = useMemo(() => {
     const source = eventsQuery.data?.groups ?? []
+    const merged = source.flatMap((group) => group.events)
 
-    return [...source]
-      .sort(compareGroupsByNearestDue)
-      .map((group) => ({
-        ...group,
-        events: [...group.events].sort(compareByNearestDue),
-      }))
+    return toGroupedEvents(merged).sort(compareGroupsByNearestDue)
   }, [eventsQuery.data])
 
-  if (eventsQuery.isLoading) {
+  const itemNameById = useMemo(() => {
+    const rows = itemsQuery.data?.items ?? []
+    return new Map(rows.map((item) => [item.id, getItemDisplayName(item)]))
+  }, [itemsQuery.data?.items])
+
+  if (eventsQuery.isLoading || itemsQuery.isLoading) {
     return <EventsSkeleton />
   }
 
-  if (eventsQuery.isError) {
+  if (eventsQuery.isError || itemsQuery.isError) {
     return (
         <section className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
         {t('events.loadError')}
@@ -125,24 +173,28 @@ export function EventsPage() {
 
   return (
     <section className="space-y-4">
-      <header className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <header className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t('events.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t('events.subtitle')}</p>
       </header>
 
       {groups.map((group) => (
-        <section key={group.due_date} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <section key={group.due_date} className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-foreground">{formatDueLabel(group.due_date)}</h2>
           <ul className="mt-3 space-y-2">
             {group.events.map((event) => (
-              <li key={event.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3 md:flex-row md:items-center md:justify-between">
+              <li key={event.id} className="hover-lift flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-medium">{event.type}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{t('events.itemLabel', { itemId: event.item_id })}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
+                      {itemNameById.get(event.item_id) ?? t('events.itemLabel', { itemId: event.item_id })}
+                    </Link>
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-sm font-medium">{formatCurrency(event.amount) ?? t('events.amountPending')}</div>
-                  <CompleteEventRowAction eventId={event.id} />
+                  <CompleteEventRowAction eventId={event.id} itemId={event.item_id} />
                 </div>
               </li>
             ))}

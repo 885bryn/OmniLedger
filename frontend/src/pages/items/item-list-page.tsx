@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
+import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { ItemFilters, type ItemFilterValue, type ItemSortValue } from '../../features/items/item-filters'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
 import { getItemDisplayName } from '../../lib/item-display'
-import { queryKeys } from '../../lib/query-keys'
+import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type ItemRow = {
   id: string
@@ -68,6 +69,7 @@ export function ItemListPage() {
   const { t } = useTranslation()
   const location = useLocation()
   const queryClient = useQueryClient()
+  const { mode, lensUserId } = useAdminScope()
 
   const [searchInput, setSearchInput] = useState('')
   const [filter, setFilter] = useState<ItemFilterValue>('assets')
@@ -75,9 +77,14 @@ export function ItemListPage() {
   const [deleteTarget, setDeleteTarget] = useState<ItemRow | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const debouncedSearch = useDebouncedValue(searchInput, 350)
+  const lensScope = useMemo(
+    () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
+    [lensUserId, mode],
+  )
+  const lensParams = useMemo(() => lensScopeToParams(lensScope), [lensScope])
 
   const listQuery = useQuery({
-    queryKey: queryKeys.items.list({ search: debouncedSearch, filter, sort }),
+    queryKey: queryKeys.items.list({ search: debouncedSearch, filter, sort, ...lensParams }),
     queryFn: async () => {
       const params = new URLSearchParams()
       if (debouncedSearch) {
@@ -85,6 +92,7 @@ export function ItemListPage() {
       }
       params.set('filter', filter)
       params.set('sort', sort)
+      Object.entries(lensParams).forEach(([key, value]) => params.set(key, value))
 
       return apiRequest<ItemsResponse>(`/items?${params.toString()}`)
     },

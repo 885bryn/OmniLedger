@@ -1,19 +1,27 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
+import { actorSensitiveQueryRoots } from '../../lib/query-keys'
 
 export function UserSwitcher() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const { session, logout } = useAuth()
   const { isAdmin, mode, lensUserId, users, isLoadingUsers, isUpdatingScope, updateError, setAllUsers, setLensUser } = useAdminScope()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const identity = session?.username || session?.email || '—'
+
+  const hardResetAndRefetch = async () => {
+    queryClient.clear()
+    await Promise.all(actorSensitiveQueryRoots.map((root) => queryClient.invalidateQueries({ queryKey: root, refetchType: 'active' })))
+    navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true })
+  }
 
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground">
@@ -32,10 +40,12 @@ export function UserSwitcher() {
             onChange={async (event) => {
               if (event.target.value === 'all') {
                 await setAllUsers()
+                await hardResetAndRefetch()
                 return
               }
 
               await setLensUser(event.target.value)
+              await hardResetAndRefetch()
             }}
           >
             <option value="all">All users</option>

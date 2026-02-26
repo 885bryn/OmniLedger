@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { UserSwitcher } from '../app/shell/user-switcher'
+import { actorSensitiveQueryRoots } from '../lib/query-keys'
 
 const logoutMock = vi.fn(async () => undefined)
 const setAllUsersMock = vi.fn(async () => undefined)
@@ -46,15 +47,7 @@ vi.mock('../features/admin-scope/admin-scope-context', () => ({
   }),
 }))
 
-function renderSwitcher() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  })
-
+function renderSwitcher(queryClient: QueryClient) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
@@ -95,7 +88,15 @@ describe('admin lens controls', () => {
   })
 
   it('keeps lens controls hidden for non-admin sessions', () => {
-    renderSwitcher()
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    renderSwitcher(queryClient)
 
     expect(screen.getByText('Signed in as')).toBeTruthy()
     expect(screen.queryByRole('combobox', { name: 'Admin lens' })).toBeNull()
@@ -116,20 +117,35 @@ describe('admin lens controls', () => {
       updateError: null,
     }
 
-    renderSwitcher()
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+    const clearSpy = vi.spyOn(queryClient, 'clear')
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    renderSwitcher(queryClient)
 
     const select = screen.getByRole('combobox', { name: 'Admin lens' })
     expect(select).toBeTruthy()
 
     await userEvent.selectOptions(select, 'user-2')
     expect(setLensUserMock).toHaveBeenCalledWith('user-2')
+    expect(clearSpy).toHaveBeenCalledTimes(1)
+    actorSensitiveQueryRoots.forEach((root) => {
+      expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: root, refetchType: 'active' }))
+    })
 
     adminScopeState.mode = 'owner'
     adminScopeState.lensUserId = 'user-2'
     cleanup()
-    renderSwitcher()
+    renderSwitcher(queryClient)
 
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Admin lens' }), 'all')
     expect(setAllUsersMock).toHaveBeenCalledTimes(1)
+    expect(clearSpy).toHaveBeenCalledTimes(2)
   })
 })

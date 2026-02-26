@@ -1,9 +1,28 @@
+export type LensScope = {
+  mode: 'all' | 'owner'
+  lensUserId: string | null
+}
+
+export function lensScopeToParams(scope: LensScope) {
+  if (scope.mode === 'owner' && scope.lensUserId) {
+    return {
+      scope_mode: 'owner',
+      lens_user_id: scope.lensUserId,
+    }
+  }
+
+  return {
+    scope_mode: 'all',
+  }
+}
+
 export const queryKeys = {
   users: {
     all: ['users'] as const,
   },
   dashboard: {
     all: ['dashboard'] as const,
+    lens: (scope: LensScope) => ['dashboard', 'lens', scope.mode, scope.lensUserId ?? 'all'] as const,
   },
   items: {
     all: ['items'] as const,
