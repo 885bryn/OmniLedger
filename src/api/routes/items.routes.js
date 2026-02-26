@@ -27,9 +27,12 @@ function createItemsRouter() {
     try {
       const payload = req.body && typeof req.body === "object" ? req.body : {};
       const { user_id: _ignoredUserId, ...safePayload } = payload;
+      const confirmUnlinkedAsset =
+        safePayload.confirm_unlinked_asset === true || parseBoolean(String(safePayload.confirm_unlinked_asset || ""));
 
       const created = await createItem({
         ...safePayload,
+        confirm_unlinked_asset: confirmUnlinkedAsset,
         scope: req.scope
       });
       res.status(201).json(created);

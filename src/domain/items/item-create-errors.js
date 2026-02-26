@@ -4,6 +4,7 @@ const ITEM_CREATE_ERROR_CATEGORIES = Object.freeze({
   INVALID_ITEM_TYPE: "invalid_item_type",
   MISSING_MINIMUM_ATTRIBUTES: "missing_minimum_attributes",
   PARENT_LINK_FAILURE: "parent_link_failure",
+  FINANCIAL_CONTRACT_INVALID: "financial_contract_invalid",
   INVALID_PAYLOAD: "invalid_payload"
 });
 

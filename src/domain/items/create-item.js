@@ -7,12 +7,24 @@ const { minimumAttributeKeys } = require("./minimum-attribute-keys");
 const { ItemCreateValidationError, ITEM_CREATE_ERROR_CATEGORIES } = require("./item-create-errors");
 const { syncItemEvent } = require("./item-event-sync");
 
+const FINANCIAL_ITEM_TYPE = "FinancialItem";
+const FINANCIAL_SUBTYPES = Object.freeze(["Commitment", "Income"]);
+const FINANCIAL_FREQUENCIES = Object.freeze(["one_time", "weekly", "monthly", "yearly"]);
+const FINANCIAL_STATUSES = Object.freeze(["Active", "Closed"]);
+const ASSET_ITEM_TYPES = new Set(["RealEstate", "Vehicle"]);
+
 const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
   "user_id",
   "item_type",
   "attributes",
   "parent_item_id",
+  "title",
+  "type",
+  "frequency",
+  "default_amount",
+  "status",
+  "linked_asset_item_id",
   "created_at",
   "updated_at"
 ]);
@@ -52,6 +64,14 @@ function buildValidationError(issues) {
     });
   }
 
+  if (categories.includes(ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID)) {
+    return new ItemCreateValidationError({
+      message: "Item create validation failed: financial contract fields are invalid.",
+      category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+      issues
+    });
+  }
+
   return new ItemCreateValidationError({
     message: "Item create validation failed.",
     category: ITEM_CREATE_ERROR_CATEGORIES.INVALID_PAYLOAD,
@@ -79,6 +99,13 @@ function normalizeInput(input) {
   const scopeActorUserId = typeof scope.actorUserId === "string" ? scope.actorUserId.trim() : "";
   const ownerUserId = scopeActorUserId || (typeof payload.user_id === "string" ? payload.user_id.trim() : "");
   const issues = [];
+  const title = typeof payload.title === "string" ? payload.title.trim() : "";
+  const subtype = typeof payload.type === "string" ? payload.type.trim() : "";
+  const frequency = typeof payload.frequency === "string" ? payload.frequency.trim().toLowerCase() : "";
+  const status = typeof payload.status === "string" ? payload.status.trim() : "";
+  const defaultAmount = payload.default_amount;
+  const linkedAssetItemId = payload.linked_asset_item_id;
+  const confirmUnlinkedAsset = payload.confirm_unlinked_asset === true;
 
   if (ownerUserId === "") {
     issues.push({
@@ -116,6 +143,15 @@ function normalizeInput(input) {
     });
   }
 
+  if (linkedAssetItemId !== undefined && linkedAssetItemId !== null && isUuidLike(linkedAssetItemId) === false) {
+    issues.push({
+      field: "linked_asset_item_id",
+      code: "invalid_linked_asset_item_id",
+      category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+      message: "linked_asset_item_id must be a valid UUID."
+    });
+  }
+
   const defaults = defaultAttributesByType[payload.item_type] || {};
   const attributes = isPlainObject(payload.attributes) ? payload.attributes : {};
   const mergedAttributes = { ...defaults, ...attributes };
@@ -135,6 +171,62 @@ function normalizeInput(input) {
     }
   }
 
+  if (payload.item_type === FINANCIAL_ITEM_TYPE) {
+    if (title === "") {
+      issues.push({
+        field: "title",
+        code: "required",
+        category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+        message: "title is required for FinancialItem."
+      });
+    }
+
+    if (FINANCIAL_SUBTYPES.includes(subtype) === false) {
+      issues.push({
+        field: "type",
+        code: "invalid_financial_subtype",
+        category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+        message: `type must be one of: ${FINANCIAL_SUBTYPES.join(", ")}.`
+      });
+    }
+
+    if (FINANCIAL_FREQUENCIES.includes(frequency) === false) {
+      issues.push({
+        field: "frequency",
+        code: "invalid_financial_frequency",
+        category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+        message: `frequency must be one of: ${FINANCIAL_FREQUENCIES.join(", ")}.`
+      });
+    }
+
+    if (FINANCIAL_STATUSES.includes(status) === false) {
+      issues.push({
+        field: "status",
+        code: "invalid_financial_status",
+        category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+        message: `status must be one of: ${FINANCIAL_STATUSES.join(", ")}.`
+      });
+    }
+
+    if (!Number.isFinite(Number(defaultAmount)) || Number(defaultAmount) < 0) {
+      issues.push({
+        field: "default_amount",
+        code: "invalid_default_amount",
+        category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+        message: "default_amount must be a non-negative number."
+      });
+    }
+
+    if (!linkedAssetItemId && !confirmUnlinkedAsset) {
+      issues.push({
+        field: "confirm_unlinked_asset",
+        code: "linked_asset_confirmation_required",
+        category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+        message: "confirm_unlinked_asset must be true when linked_asset_item_id is omitted."
+      });
+    }
+  }
+
   if (issues.length > 0) {
     throw buildValidationError(issues);
   }
@@ -145,6 +237,13 @@ function normalizeInput(input) {
     item_type: payload.item_type,
     attributes: mergedAttributes,
     parent_item_id: payload.parent_item_id || null,
+    title: title || null,
+    type: subtype || null,
+    frequency: frequency || null,
+    default_amount: defaultAmount === undefined || defaultAmount === null ? null : Number(defaultAmount),
+    status: status || null,
+    linked_asset_item_id: linkedAssetItemId || null,
+    confirm_unlinked_asset: confirmUnlinkedAsset,
     now: payload.now instanceof Date ? payload.now : payload.now ? new Date(payload.now) : new Date()
   };
 }
@@ -180,6 +279,8 @@ function mapSequelizeValidationError(error) {
       category = ITEM_CREATE_ERROR_CATEGORIES.PARENT_LINK_FAILURE;
     } else if (issue.path === "attributes" && /minimum keys/i.test(issue.message)) {
       category = ITEM_CREATE_ERROR_CATEGORIES.MISSING_MINIMUM_ATTRIBUTES;
+    } else if (["title", "type", "frequency", "default_amount", "status", "linked_asset_item_id"].includes(issue.path)) {
+      category = ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID;
     }
 
     return {
@@ -232,8 +333,57 @@ async function createItem(input) {
         }
       }
 
+      if (payload.item_type === FINANCIAL_ITEM_TYPE && payload.linked_asset_item_id) {
+        const linkedAssetItem = await models.Item.findByPk(payload.linked_asset_item_id, { transaction });
+
+        if (!linkedAssetItem) {
+          throw new ItemCreateValidationError({
+            message: "Item create validation failed: linked asset is invalid.",
+            category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+            issues: [
+              {
+                field: "linked_asset_item_id",
+                code: "linked_asset_not_found",
+                category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+                message: "linked_asset_item_id does not reference an existing asset item."
+              }
+            ]
+          });
+        }
+
+        if (linkedAssetItem.user_id !== payload.user_id) {
+          throw new ItemCreateValidationError({
+            message: "Item create validation failed: linked asset is invalid.",
+            category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+            issues: [
+              {
+                field: "linked_asset_item_id",
+                code: "linked_asset_owner_mismatch",
+                category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+                message: "linked_asset_item_id does not reference an existing asset item."
+              }
+            ]
+          });
+        }
+
+        if (!ASSET_ITEM_TYPES.has(linkedAssetItem.item_type)) {
+          throw new ItemCreateValidationError({
+            message: "Item create validation failed: linked asset is invalid.",
+            category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+            issues: [
+              {
+                field: "linked_asset_item_id",
+                code: "linked_asset_wrong_type",
+                category: ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID,
+                message: "linked_asset_item_id must reference an asset item."
+              }
+            ]
+          });
+        }
+      }
+
       const created = await models.Item.create(payload, { transaction });
-      await syncItemEvent({ item: created, models, transaction });
+      await syncItemEvent({ item: created, models, transaction, mode: "create" });
 
       const attribution = resolveAuditAttribution(payload);
       await models.AuditLog.create(

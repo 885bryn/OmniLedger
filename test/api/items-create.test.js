@@ -67,6 +67,22 @@ describe("POST /items", () => {
     return created.id;
   }
 
+  function buildFinancialItemPayload(overrides = {}) {
+    return {
+      item_type: "FinancialItem",
+      title: "Mortgage",
+      type: "Commitment",
+      frequency: "one_time",
+      default_amount: 1500,
+      status: "Active",
+      confirm_unlinked_asset: true,
+      attributes: {
+        dueDate: "2026-03-01"
+      },
+      ...overrides
+    };
+  }
+
   beforeAll(async () => {
     await sequelize.query("PRAGMA foreign_keys = ON");
     await sequelize.sync({ force: true });
@@ -102,9 +118,15 @@ describe("POST /items", () => {
     expect(Object.keys(response.body).sort()).toEqual([
       "attributes",
       "created_at",
+      "default_amount",
+      "frequency",
       "id",
       "item_type",
+      "linked_asset_item_id",
       "parent_item_id",
+      "status",
+      "title",
+      "type",
       "updated_at",
       "user_id"
     ]);
@@ -336,5 +358,83 @@ describe("POST /items", () => {
         })
       ])
     );
+  });
+
+  it("requires FinancialItem contract fields and missing unlinked confirmation", async () => {
+    const user = await createUser();
+    const agent = await signInAs(user);
+
+    const response = await agent
+      .post("/items")
+      .send({
+        item_type: "FinancialItem",
+        attributes: {
+          dueDate: "2026-03-01"
+        }
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.category).toBe("financial_contract_invalid");
+    expect(response.body.error.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "title", code: "required" }),
+        expect.objectContaining({ field: "type", code: "invalid_financial_subtype" }),
+        expect.objectContaining({ field: "frequency", code: "invalid_financial_frequency" }),
+        expect.objectContaining({ field: "default_amount", code: "invalid_default_amount" }),
+        expect.objectContaining({ field: "status", code: "invalid_financial_status" }),
+        expect.objectContaining({ field: "confirm_unlinked_asset", code: "linked_asset_confirmation_required" })
+      ])
+    );
+  });
+
+  it("creates one-time FinancialItem parent and first occurrence atomically", async () => {
+    const user = await createUser();
+    const agent = await signInAs(user);
+
+    const response = await agent.post("/items").send(buildFinancialItemPayload());
+
+    expect(response.status).toBe(201);
+    expect(response.body.item_type).toBe("FinancialItem");
+    expect(response.body.title).toBe("Mortgage");
+    expect(response.body.type).toBe("Commitment");
+    expect(response.body.frequency).toBe("one_time");
+    expect(Number(response.body.default_amount)).toBe(1500);
+
+    const createdItem = await models.Item.findByPk(response.body.id);
+    const createdEvents = await models.Event.findAll({ where: { item_id: response.body.id } });
+
+    expect(createdItem).not.toBeNull();
+    expect(createdEvents).toHaveLength(1);
+    expect(createdEvents[0].status).toBe("Pending");
+    expect(createdEvents[0].event_type).toBe("Mortgage");
+  });
+
+  it("rejects invalid linked asset reference and rolls back one-time create", async () => {
+    const user = await createUser();
+    const agent = await signInAs(user);
+    const beforeCount = await models.Item.count({ where: { item_type: "FinancialItem", user_id: user.id } });
+
+    const response = await agent
+      .post("/items")
+      .send(
+        buildFinancialItemPayload({
+          linked_asset_item_id: "11111111-1111-4111-8111-111111111111",
+          confirm_unlinked_asset: false
+        })
+      );
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.category).toBe("financial_contract_invalid");
+    expect(response.body.error.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "linked_asset_item_id",
+          code: "linked_asset_not_found"
+        })
+      ])
+    );
+
+    const afterCount = await models.Item.count({ where: { item_type: "FinancialItem", user_id: user.id } });
+    expect(afterCount).toBe(beforeCount);
   });
 });

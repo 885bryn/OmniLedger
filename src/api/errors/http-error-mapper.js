@@ -10,6 +10,7 @@ const CATEGORY_MESSAGES = Object.freeze({
   [ITEM_CREATE_ERROR_CATEGORIES.INVALID_ITEM_TYPE]: "item_type is invalid. Choose one of the supported item types.",
   [ITEM_CREATE_ERROR_CATEGORIES.MISSING_MINIMUM_ATTRIBUTES]: "Some required attributes are missing for this item type.",
   [ITEM_CREATE_ERROR_CATEGORIES.PARENT_LINK_FAILURE]: "parent_item_id is invalid for this create request.",
+  [ITEM_CREATE_ERROR_CATEGORIES.FINANCIAL_CONTRACT_INVALID]: "Financial item contract fields are invalid for this create request.",
   [ITEM_CREATE_ERROR_CATEGORIES.INVALID_PAYLOAD]: "Request payload is invalid."
 });
 
