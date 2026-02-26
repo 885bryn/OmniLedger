@@ -11,7 +11,7 @@
 - [x] **AUTH-02**: Authenticated session is required for protected API and frontend routes.
 - [x] **AUTH-03**: API no longer accepts actor identity via client-selected `x-user-id` shim for authorization.
 - [x] **AUTH-04**: Each user has role `user` (default) or `admin` (elevated), enforced server-side.
-- [ ] **AUTH-05**: Standard users can only read and mutate records they own.
+- [x] **AUTH-05**: Standard users can only read and mutate records they own.
 - [ ] **AUTH-06**: Admin user can intentionally switch to all-data mode and bypass owner scope.
 - [ ] **AUTH-07**: System records acting user for create, complete, restore, and delete actions in audit-visible history.
 - [ ] **AUTH-08**: Admin mode displays persistent safeguards, including visible mode state and action attribution context.
@@ -77,7 +77,7 @@ Traceability for milestone v2.0 is mapped to Phases 8-12.
 | AUTH-02 | Phase 8 | Complete |
 | AUTH-03 | Phase 8 | Complete |
 | AUTH-04 | Phase 9 | Complete |
-| AUTH-05 | Phase 9 | Pending |
+| AUTH-05 | Phase 9 | Complete |
 | AUTH-06 | Phase 9 | Pending |
 | AUTH-07 | Phase 9 | Pending |
 | AUTH-08 | Phase 9 | Pending |
