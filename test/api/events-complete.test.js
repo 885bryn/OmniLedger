@@ -77,6 +77,28 @@ describe("PATCH /events/:id/complete", () => {
     });
   }
 
+  async function createFinancialItem({
+    userId,
+    title = "Recurring financial item",
+    frequency = "monthly",
+    status = "Active",
+    dueDate = "2026-02-15",
+    defaultAmount = 180.5
+  }) {
+    return models.Item.create({
+      user_id: userId,
+      item_type: "FinancialItem",
+      title,
+      type: "Commitment",
+      frequency,
+      default_amount: defaultAmount,
+      status,
+      attributes: {
+        dueDate
+      }
+    });
+  }
+
   async function createEvent({ itemId, recurring = false, dueDate = "2026-07-01T00:00:00.000Z", amount = "1200.50" }) {
     return models.Event.create({
       item_id: itemId,
@@ -407,5 +429,70 @@ describe("PATCH /events/:id/complete", () => {
       }
     });
     expect(undoAudit).toBeTruthy();
+  });
+
+  it("materializes projected recurring occurrences before completion and dedupes retries", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const recurring = await createFinancialItem({
+      userId: owner.id,
+      title: "Water bill",
+      frequency: "monthly",
+      status: "Active",
+      dueDate: "2026-02-03",
+      defaultAmount: 42.75
+    });
+
+    const projectedId = `projected-${recurring.id}-2026-03-03`;
+
+    const first = await ownerAgent.patch(`/events/${projectedId}/complete`);
+    const second = await ownerAgent.patch(`/events/${projectedId}/complete`);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(first.body.status).toBe("Completed");
+    expect(first.body.item_id).toBe(recurring.id);
+    expect(second.body.id).toBe(first.body.id);
+
+    const persistedForDate = await models.Event.findAll({
+      where: {
+        item_id: recurring.id,
+        due_date: "2026-03-03T00:00:00.000Z"
+      }
+    });
+    expect(persistedForDate).toHaveLength(1);
+
+    const audits = await models.AuditLog.findAll({
+      where: {
+        action: "event.completed",
+        entity: `event:${first.body.id}`
+      }
+    });
+    expect(audits).toHaveLength(1);
+  });
+
+  it("returns 404 when completing projected occurrence for foreign owner", async () => {
+    const owner = await createUser();
+    const outsider = await createUser();
+    const outsiderAgent = await signInAs(outsider);
+    const recurring = await createFinancialItem({
+      userId: owner.id,
+      title: "Foreign recurring",
+      frequency: "monthly",
+      status: "Active",
+      dueDate: "2026-02-05",
+      defaultAmount: 75
+    });
+
+    const response = await outsiderAgent.patch(`/events/projected-${recurring.id}-2026-03-05/complete`);
+
+    expect(response.status).toBe(404);
+    expect(response.body.error).toMatchObject({
+      code: "event_completion_failed",
+      category: "not_found"
+    });
+
+    const materializedRows = await models.Event.findAll({ where: { item_id: recurring.id } });
+    expect(materializedRows).toHaveLength(0);
   });
 });

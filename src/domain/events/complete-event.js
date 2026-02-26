@@ -3,7 +3,7 @@
 const { sequelize, models } = require("../../db");
 const { Op } = require("sequelize");
 const { EventCompletionError, EVENT_COMPLETION_ERROR_CATEGORIES } = require("./event-completion-errors");
-const { syncItemEvent } = require("../items/item-event-sync");
+const { syncItemEvent, materializeItemEventForDate } = require("../items/item-event-sync");
 const { minimumAttributeKeys } = require("../items/minimum-attribute-keys");
 
 const COMPLETED_STATUS = "Completed";
@@ -269,6 +269,39 @@ async function applyUndoCompletionSideEffects(paymentItem, event, transaction) {
 }
 
 async function resolveTargetEvent({ eventId, actorUserId, transaction }) {
+  if (typeof eventId === "string") {
+    const projectedMatch = /^projected-([0-9a-f-]{36})-(\d{4}-\d{2}-\d{2})$/i.exec(eventId);
+    if (projectedMatch) {
+      const [, itemId, dueDate] = projectedMatch;
+      const item = await models.Item.findByPk(itemId, { transaction });
+
+      if (!item) {
+        throwNotFound(eventId);
+      }
+
+      if (item.user_id !== actorUserId) {
+        throwForbidden(eventId, actorUserId);
+      }
+
+      if (item.item_type !== "FinancialItem" || item.status === "Closed" || item.frequency === "one_time") {
+        throwNotFound(eventId);
+      }
+
+      const materialized = await materializeItemEventForDate({
+        item,
+        dueDate,
+        models,
+        transaction
+      });
+
+      if (!materialized) {
+        throwNotFound(eventId);
+      }
+
+      return materialized;
+    }
+  }
+
   if (typeof eventId === "string" && eventId.startsWith("derived-")) {
     const itemId = eventId.slice("derived-".length);
 
@@ -374,7 +407,7 @@ async function undoEventCompletion({ eventId, scope, actorUserId, now = new Date
   const undoneAt = now instanceof Date ? now : new Date(now);
 
   return sequelize.transaction(async (transaction) => {
-    const event = await models.Event.findByPk(eventId, { transaction });
+    const event = await resolveTargetEvent({ eventId, actorUserId: ownerUserId, transaction });
 
     if (!event) {
       throwNotFound(eventId);
