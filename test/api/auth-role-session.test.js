@@ -18,6 +18,7 @@ jest.mock("../../src/db", () => {
 
 const { sequelize, models } = require("../../src/db");
 const { createApp } = require("../../src/api/app");
+const { requireAuth } = require("../../src/api/auth/require-auth");
 
 process.env.SESSION_SECRET = "test-session-secret";
 process.env.FRONTEND_ORIGIN = "http://localhost:5173";
@@ -141,5 +142,55 @@ describe("auth role-aware session behavior", () => {
     const sessionResponse = await agent.get("/auth/session");
     expect(sessionResponse.status).toBe(200);
     expect(sessionResponse.body.user.role).toBe("admin");
+  });
+
+  it("hydrates req.actor and req.scope with role-aware defaults", async () => {
+    const standardUser = await createUser({ email: "scope-user@example.com", role: "user" });
+    const adminUser = await createUser({ email: "scope-admin@example.com", role: "admin" });
+
+    const userReq = {
+      session: {
+        userId: standardUser.id
+      }
+    };
+    const adminReq = {
+      session: {
+        userId: adminUser.id
+      }
+    };
+    const userRes = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+    const adminRes = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+    const userNext = jest.fn();
+    const adminNext = jest.fn();
+
+    await requireAuth(userReq, userRes, userNext);
+    await requireAuth(adminReq, adminRes, adminNext);
+
+    expect(userNext).toHaveBeenCalledTimes(1);
+    expect(adminNext).toHaveBeenCalledTimes(1);
+    expect(userRes.status).not.toHaveBeenCalled();
+    expect(adminRes.status).not.toHaveBeenCalled();
+
+    expect(userReq.actor).toEqual({
+      userId: standardUser.id,
+      role: "user"
+    });
+    expect(userReq.scope).toEqual({
+      actorUserId: standardUser.id,
+      actorRole: "user",
+      mode: "owner",
+      lensUserId: standardUser.id
+    });
+
+    expect(adminReq.actor).toEqual({
+      userId: adminUser.id,
+      role: "admin"
+    });
+    expect(adminReq.scope).toEqual({
+      actorUserId: adminUser.id,
+      actorRole: "admin",
+      mode: "all",
+      lensUserId: null
+    });
   });
 });
