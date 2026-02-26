@@ -98,6 +98,19 @@ function normalizeActorUserId(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function resolveAuditAttribution({ scope, fallbackUserId }) {
+  const normalizedScope = isPlainObject(scope) ? scope : {};
+  const actorUserId = normalizeActorUserId(normalizedScope.actorUserId) || normalizeActorUserId(fallbackUserId);
+  const mode = normalizedScope.mode === "all" ? "all" : "owner";
+  const scopedLensUserId = normalizeActorUserId(normalizedScope.lensUserId) || null;
+  const lensUserId = scopedLensUserId || (mode === "owner" ? actorUserId : null);
+
+  return {
+    actorUserId,
+    lensUserId
+  };
+}
+
 function resolveOwnerUserId(input) {
   const payload = isPlainObject(input) ? input : {};
   const scope = isPlainObject(payload.scope) ? payload.scope : {};
@@ -302,6 +315,7 @@ async function completeEvent({ eventId, scope, actorUserId, now = new Date() }) 
   if (!ownerUserId) {
     throwInvalidState(eventId);
   }
+  const attribution = resolveAuditAttribution({ scope, fallbackUserId: ownerUserId });
   const completedAt = now instanceof Date ? now : new Date(now);
 
   return sequelize.transaction(async (transaction) => {
@@ -337,7 +351,9 @@ async function completeEvent({ eventId, scope, actorUserId, now = new Date() }) 
 
     await models.AuditLog.create(
       {
-        user_id: ownerUserId,
+        user_id: attribution.actorUserId,
+        actor_user_id: attribution.actorUserId,
+        lens_user_id: attribution.lensUserId,
         action: AUDIT_ACTION,
         entity: `event:${event.id}`,
         timestamp: completedAt
@@ -354,6 +370,7 @@ async function undoEventCompletion({ eventId, scope, actorUserId, now = new Date
   if (!ownerUserId) {
     throwInvalidState(eventId);
   }
+  const attribution = resolveAuditAttribution({ scope, fallbackUserId: ownerUserId });
   const undoneAt = now instanceof Date ? now : new Date(now);
 
   return sequelize.transaction(async (transaction) => {
@@ -390,7 +407,9 @@ async function undoEventCompletion({ eventId, scope, actorUserId, now = new Date
 
     await models.AuditLog.create(
       {
-        user_id: ownerUserId,
+        user_id: attribution.actorUserId,
+        actor_user_id: attribution.actorUserId,
+        lens_user_id: attribution.lensUserId,
         action: UNDO_AUDIT_ACTION,
         entity: `event:${event.id}`,
         timestamp: undoneAt

@@ -69,8 +69,26 @@ function normalizeInput(input) {
 
   return {
     itemId: payload.itemId,
+    scope,
     actorUserId: ownerUserId,
     now: payload.now instanceof Date ? payload.now : payload.now ? new Date(payload.now) : new Date()
+  };
+}
+
+function normalizeString(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function resolveAuditAttribution(payload) {
+  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const actorUserId = normalizeString(scope.actorUserId) || normalizeString(payload.actorUserId);
+  const mode = scope.mode === "all" ? "all" : "owner";
+  const scopedLensUserId = normalizeString(scope.lensUserId) || null;
+  const lensUserId = scopedLensUserId || (mode === "owner" ? actorUserId : null);
+
+  return {
+    actorUserId,
+    lensUserId
   };
 }
 
@@ -148,9 +166,13 @@ async function softDeleteItem(input) {
     };
     await item.save({ transaction });
 
+    const attribution = resolveAuditAttribution(payload);
+
     await models.AuditLog.create(
       {
-        user_id: payload.actorUserId,
+        user_id: attribution.actorUserId,
+        actor_user_id: attribution.actorUserId,
+        lens_user_id: attribution.lensUserId,
         action: "item.deleted",
         entity: `item:${item.id}`,
         timestamp: payload.now

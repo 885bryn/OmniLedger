@@ -140,10 +140,29 @@ function normalizeInput(input) {
   }
 
   return {
+    scope,
     user_id: ownerUserId,
     item_type: payload.item_type,
     attributes: mergedAttributes,
-    parent_item_id: payload.parent_item_id || null
+    parent_item_id: payload.parent_item_id || null,
+    now: payload.now instanceof Date ? payload.now : payload.now ? new Date(payload.now) : new Date()
+  };
+}
+
+function normalizeString(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function resolveAuditAttribution(payload) {
+  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const actorUserId = normalizeString(scope.actorUserId) || normalizeString(payload.user_id);
+  const mode = scope.mode === "all" ? "all" : "owner";
+  const scopedLensUserId = normalizeString(scope.lensUserId) || null;
+  const lensUserId = scopedLensUserId || (mode === "owner" ? actorUserId : null);
+
+  return {
+    actorUserId,
+    lensUserId
   };
 }
 
@@ -215,6 +234,20 @@ async function createItem(input) {
 
       const created = await models.Item.create(payload, { transaction });
       await syncItemEvent({ item: created, models, transaction });
+
+      const attribution = resolveAuditAttribution(payload);
+      await models.AuditLog.create(
+        {
+          user_id: attribution.actorUserId,
+          actor_user_id: attribution.actorUserId,
+          lens_user_id: attribution.lensUserId,
+          action: "item.created",
+          entity: `item:${created.id}`,
+          timestamp: payload.now
+        },
+        { transaction }
+      );
+
       return toCanonicalItem(created);
     });
   } catch (error) {
