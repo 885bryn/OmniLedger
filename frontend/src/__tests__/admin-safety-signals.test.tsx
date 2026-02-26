@@ -231,6 +231,22 @@ describe('admin safety signals', () => {
     expect(screen.getByText('Admin mode active - Actor: admin-alpha | Lens: All users')).toBeTruthy()
   })
 
+  it('renders all-users lens from admin scope even when auth scope is temporarily stale', () => {
+    authState.sessionScope = {
+      actorUserId: 'admin-1',
+      actorRole: 'admin',
+      mode: 'owner',
+      lensUserId: 'user-1',
+    }
+
+    adminScopeState.mode = 'all'
+    adminScopeState.lensUserId = null
+
+    renderShell('/dashboard')
+
+    expect(screen.getByText('Admin mode active - Actor: admin-alpha | Lens: All users')).toBeTruthy()
+  })
+
   it('hides the admin safety banner outside admin all-data mode', () => {
     adminScopeState.mode = 'owner'
     authState.sessionScope = {
