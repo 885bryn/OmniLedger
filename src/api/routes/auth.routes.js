@@ -6,6 +6,9 @@ const { models } = require("../../db");
 const { registerUser, RegisterUserError } = require("../../domain/auth/register-user");
 const { authenticateUser } = require("../../domain/auth/authenticate-user");
 
+const ROLE_USER = "user";
+const ROLE_ADMIN = "admin";
+
 const INVALID_CREDENTIALS_BODY = Object.freeze({
   error: {
     code: "invalid_credentials",
@@ -16,6 +19,27 @@ const INVALID_CREDENTIALS_BODY = Object.freeze({
 
 function normalizeEmail(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function getConfiguredAdminEmail() {
+  const candidates = [process.env.HACT_ADMIN_EMAIL, process.env.ADMIN_EMAIL];
+
+  for (const value of candidates) {
+    const normalized = normalizeEmail(value);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return "";
+}
+
+function resolveExpectedRole(rawUser, configuredAdminEmail) {
+  if (!configuredAdminEmail) {
+    return rawUser.role || ROLE_USER;
+  }
+
+  return rawUser.email_normalized === configuredAdminEmail ? ROLE_ADMIN : ROLE_USER;
 }
 
 function getRetryAfterSeconds(rateLimitInfo, fallbackMs) {
@@ -113,7 +137,7 @@ async function resolveSessionUser(req) {
   }
 
   const user = await models.User.findByPk(req.session.userId, {
-    attributes: ["id", "username", "email", "created_at", "updated_at"]
+    attributes: ["id", "username", "email", "email_normalized", "role", "created_at", "updated_at"]
   });
 
   if (!user) {
@@ -122,12 +146,30 @@ async function resolveSessionUser(req) {
   }
 
   const raw = user.get({ plain: true });
+  const configuredAdminEmail = getConfiguredAdminEmail();
+  const expectedRole = resolveExpectedRole(raw, configuredAdminEmail);
+
+  if (raw.role !== expectedRole) {
+    await user.update({ role: expectedRole }, { fields: ["role"] });
+    raw.role = expectedRole;
+  }
+
   return {
     id: raw.id,
     username: raw.username,
     email: raw.email,
+    role: raw.role,
     created_at: raw.created_at || raw.createdAt,
     updated_at: raw.updated_at || raw.updatedAt
+  };
+}
+
+function toAuthenticatedResponse(user) {
+  return {
+    user,
+    session: {
+      authenticated: true
+    }
   };
 }
 
@@ -139,12 +181,9 @@ function createAuthRouter() {
     try {
       const user = await registerUser(req.body || {});
       await setAuthenticatedSession(req, user.id);
-      res.status(201).json({
-        user,
-        session: {
-          authenticated: true
-        }
-      });
+      const sessionUser = await resolveSessionUser(req);
+
+      res.status(201).json(toAuthenticatedResponse(sessionUser));
     } catch (error) {
       if (error instanceof RegisterUserError) {
         res.status(422).json({
@@ -170,12 +209,9 @@ function createAuthRouter() {
       }
 
       await setAuthenticatedSession(req, result.user.id);
-      res.status(200).json({
-        user: result.user,
-        session: {
-          authenticated: true
-        }
-      });
+      const sessionUser = await resolveSessionUser(req);
+
+      res.status(200).json(toAuthenticatedResponse(sessionUser));
     } catch (error) {
       next(error);
     }

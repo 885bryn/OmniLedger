@@ -55,6 +55,14 @@ class User extends Model {
             notEmpty: true,
             len: [8, 255]
           }
+        },
+        role: {
+          type: DataTypes.ENUM("user", "admin"),
+          allowNull: false,
+          defaultValue: "user",
+          validate: {
+            isIn: [["user", "admin"]]
+          }
         }
       },
       {
