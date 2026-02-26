@@ -4,9 +4,34 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
-import { RouterProvider, createMemoryRouter } from 'react-router-dom'
+import { Navigate, RouterProvider, createMemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
+
+vi.mock('../auth/auth-context', () => ({
+  useAuth: () => ({
+    session: {
+      username: 'Tester',
+      email: 'tester@example.com',
+    },
+  }),
+}))
+
+vi.mock('../features/admin-scope/admin-scope-context', () => ({
+  useAdminScope: () => ({
+    isAdmin: false,
+    mode: 'owner',
+    lensUserId: null,
+    users: [],
+  }),
+}))
+
+vi.mock('../features/ui/toast-provider', () => ({
+  useToast: () => ({
+    pushSafetyToast: vi.fn(),
+  }),
+}))
+
 import { ItemCreateWizardPage } from '../pages/items/item-create-wizard-page'
 import { ItemEditPage } from '../pages/items/item-edit-page'
 import { ItemListPage } from '../pages/items/item-list-page'
@@ -65,6 +90,32 @@ function renderWithMemoryRouter(ui: ReactNode) {
       { path: '/items/:itemId/edit', element: <div>edit route</div> },
     ],
     { initialEntries: ['/'] },
+  )
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  )
+}
+
+function renderCreateRoute(initialPath: string) {
+  function LegacyCreateWizardRedirect() {
+    const location = useLocation()
+    return <Navigate to={`/items/create${location.search}`} replace />
+  }
+
+  const queryClient = createTestQueryClient()
+  const router = createMemoryRouter(
+    [
+      { path: '/items/create', element: <ItemCreateWizardPage /> },
+      {
+        path: '/items/create/wizard',
+        element: <LegacyCreateWizardRedirect />,
+      },
+      { path: '/items/:itemId', element: <div>detail route</div> },
+    ],
+    { initialEntries: [initialPath] },
   )
 
   return render(
@@ -155,7 +206,7 @@ describe('items workflows', () => {
     })
   })
 
-  it('creates a commitment using session identity without actor header injection', async () => {
+  it('creates a financial item using session identity without actor header injection', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -182,13 +233,9 @@ describe('items workflows', () => {
           status: 201,
           json: {
             id: 'created-item',
-            item_type: 'FinancialCommitment',
+            item_type: 'FinancialItem',
           },
         })
-      }
-
-      if (url.includes('/items/created-item') && method === 'PATCH') {
-        return createResponse({ status: 200, json: { id: 'created-item' } })
       }
 
       throw new Error(`Unhandled request: ${method} ${url}`)
@@ -198,13 +245,10 @@ describe('items workflows', () => {
 
     renderWithMemoryRouter(<ItemCreateWizardPage />)
 
-    await userEvent.selectOptions(screen.getByLabelText('Item type'), 'FinancialCommitment')
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }))
-
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /item type/i }), 'Commitment')
     await userEvent.type(screen.getByRole('textbox', { name: /Name/i }), 'Loan')
-    await userEvent.type(screen.getAllByRole('spinbutton')[0], '1200')
+    await userEvent.type(screen.getByRole('spinbutton', { name: /Amount/i }), '1200')
     await userEvent.type(screen.getByLabelText(/Due date/i), '2026-03-01')
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }))
     await userEvent.click(screen.getByRole('button', { name: 'Create item' }))
 
     await screen.findByText('detail route')
@@ -218,10 +262,70 @@ describe('items workflows', () => {
     const createBody = JSON.parse(String(createInit?.body ?? '{}')) as {
       user_id?: string
       item_type?: string
+      type?: string
+      frequency?: string
+      confirm_unlinked_asset?: boolean
     }
 
     expect(createBody.user_id).toBeUndefined()
-    expect(createBody.item_type).toBe('FinancialCommitment')
+    expect(createBody.item_type).toBe('FinancialItem')
+    expect(createBody.type).toBe('Commitment')
+    expect(createBody.frequency).toBe('monthly')
+    expect(createBody.confirm_unlinked_asset).toBe(true)
+  })
+
+  it('keeps legacy wizard route functional and uses the guided single form', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items?filter=assets') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'asset-1',
+                item_type: 'RealEstate',
+                attributes: { address: 'Pine Avenue' },
+                updated_at: '2026-02-24T00:00:00.000Z',
+              },
+            ],
+            total_count: 1,
+          },
+        })
+      }
+
+      if (url.endsWith('/items') && method === 'POST') {
+        return createResponse({
+          status: 201,
+          json: {
+            id: 'created-item',
+            item_type: 'FinancialItem',
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderCreateRoute('/items/create/wizard?item_type=FinancialIncome&parent_item_id=asset-1')
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Step \d+ of \d+/i)).toBeNull()
+    })
+
+    expect(screen.getByDisplayValue('Income')).toBeTruthy()
+    await waitFor(() => {
+      const parentAssetSelect = screen.getByRole('combobox', { name: /parent asset/i }) as HTMLSelectElement
+      expect(parentAssetSelect.value).toBe('asset-1')
+    })
+    expect(screen.getByRole('option', { name: 'One-time' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Weekly' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Monthly' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Yearly' })).toBeTruthy()
   })
 
   it('shows edit error feedback when update API returns issue envelope', async () => {
@@ -271,7 +375,7 @@ describe('items workflows', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await userEvent.click(screen.getAllByRole('button', { name: 'Save changes' })[1])
 
-    expect(await screen.findByText('Cannot update a soft-deleted item.')).toBeTruthy()
+    expect(await screen.findByText(/Cannot update a soft-deleted item\./)).toBeTruthy()
   })
 
   it('soft-delete confirms then refreshes list data', async () => {

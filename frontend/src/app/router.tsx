@@ -1,4 +1,4 @@
-import { Navigate, createBrowserRouter } from 'react-router-dom'
+import { Navigate, createBrowserRouter, useLocation } from 'react-router-dom'
 import { RequireAuth } from '../auth/require-auth'
 import { LoginPage } from '../pages/auth/login-page'
 import { RegisterPage } from '../pages/auth/register-page'
@@ -9,6 +9,11 @@ import { ItemDetailPage } from '../pages/items/item-detail-page'
 import { ItemEditPage } from '../pages/items/item-edit-page'
 import { ItemListPage } from '../pages/items/item-list-page'
 import { AppShell } from './shell/app-shell'
+
+function LegacyCreateWizardRedirect() {
+  const location = useLocation()
+  return <Navigate to={`/items/create${location.search}`} replace />
+}
 
 export const appRouter = createBrowserRouter([
   {
@@ -41,11 +46,11 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: 'items/create',
-        element: <Navigate to="/items/create/wizard" replace />,
+        element: <ItemCreateWizardPage />,
       },
       {
         path: 'items/create/wizard',
-        element: <ItemCreateWizardPage />,
+        element: <LegacyCreateWizardRedirect />,
       },
       {
         path: 'items/:itemId',
