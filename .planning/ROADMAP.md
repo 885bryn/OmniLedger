@@ -64,7 +64,7 @@ Plans:
 **Plans**: 4 plans
 Plans:
 - [x] 10-01-PLAN.md - Add explicit FinancialItem parent contract schema and transactional one-time parent+occurrence create path. (completed 2026-02-26)
-- [ ] 10-02-PLAN.md - Implement owner-scoped occurrence projection/read model with close-status gating and projected exception materialization.
+- [x] 10-02-PLAN.md - Implement owner-scoped occurrence projection/read model with close-status gating and projected exception materialization. (completed 2026-02-26)
 - [ ] 10-03-PLAN.md - Replace wizard with single guided Financial item form and terminology/subtype UX unification.
 - [ ] 10-04-PLAN.md - Deliver upcoming/history occurrence management UI with inline status actions and recurrence state visibility.
 
