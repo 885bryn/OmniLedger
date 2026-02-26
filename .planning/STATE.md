@@ -10,25 +10,25 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
-Plan: 9 of 12 (next: 09-07)
+Plan: 10 of 12 (next: 09-10)
 Status: In progress
-Last activity: 2026-02-26 - Completed 09-04 admin safety banner and explicit admin-exit confirmation gating
+Last activity: 2026-02-26 - Completed 09-07 admin mutation attribution chips and regression visibility locking
 
-Progress: [████████░░] 75%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
+- Total plans completed: 26
 - Average duration: 3 min (v2.0)
-- Total execution time: 18 min (v2.0)
+- Total execution time: 22 min (v2.0)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
-| 9. RBAC Scope & Admin Safety Mode | 4 | 12 min | 3 min |
+| 9. RBAC Scope & Admin Safety Mode | 5 | 16 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 0 | 0 min | 0 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
@@ -50,6 +50,7 @@ Progress: [████████░░] 75%
 | Phase 09 P06 | 2 min | 2 tasks | 9 files |
 | Phase 09 P09 | 1 min | 2 tasks | 6 files |
 | Phase 09 P04 | 4 min | 2 tasks | 5 files |
+| Phase 09 P07 | 4 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,8 @@ Recent decisions affecting current work:
 - [Phase 09]: Render activity attribution uniformly as Actor: X | Lens: Y across timeline rows, including restore-category rows.
 - [Phase 09]: Show admin safety context only while mode=all to avoid warning fatigue outside elevated scope.
 - [Phase 09]: Require a blocking confirmation dialog before any all-data to owner-lens transition is applied.
+- [Phase 09]: Centralized Actor/Lens label resolution in a shared admin-scope chip utility to keep mutation attribution copy consistent.
+- [Phase 09]: Rendered attribution in both inline action zones and confirmation dialogs so context is visible before commit on every targeted mutation surface.
 
 ### Pending Todos
 
@@ -109,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 04:01
-Stopped at: Completed 09-04-PLAN.md
+Last session: 2026-02-26 04:10
+Stopped at: Completed 09-07-PLAN.md
 Resume file: None
