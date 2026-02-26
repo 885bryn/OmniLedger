@@ -54,6 +54,29 @@ export type TransportUser = {
   updated_at?: string
 }
 
+export type TransportItemActivityRow = {
+  id: string
+  user_id: string
+  actor_user_id: string | null
+  lens_user_id: string | null
+  lens_attribution_state: 'attributed' | 'legacy_missing'
+  action: string
+  entity: string
+  entity_type: string | null
+  entity_id: string | null
+  timestamp: string
+  event_type: string | null
+  event_status: string | null
+  event_due_date: string | null
+  event_amount: string | null
+  event_completed_at: string | null
+}
+
+export type TransportItemActivityResponse = {
+  item_id: string
+  activity: TransportItemActivityRow[]
+}
+
 export const SESSION_EXPIRED_EVENT = 'hact:session-expired'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'

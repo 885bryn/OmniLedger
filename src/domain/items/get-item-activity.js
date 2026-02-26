@@ -108,10 +108,15 @@ function mapActivity(row, eventById) {
   const parsedEntity = parseEntity(raw.entity);
   const relatedEvent = parsedEntity.entity_type === "event" ? eventById.get(parsedEntity.entity_id) : null;
   const relatedEventRaw = relatedEvent ? relatedEvent.get({ plain: true }) : null;
+  const actorUserId = raw.actor_user_id || raw.user_id || null;
+  const lensUserId = raw.lens_user_id || null;
 
   return {
     id: raw.id,
     user_id: raw.user_id,
+    actor_user_id: actorUserId,
+    lens_user_id: lensUserId,
+    lens_attribution_state: lensUserId ? "attributed" : "legacy_missing",
     action: raw.action,
     entity: raw.entity,
     entity_type: parsedEntity.entity_type,
