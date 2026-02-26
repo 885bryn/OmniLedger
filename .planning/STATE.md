@@ -12,7 +12,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
 Plan: 6 of 12 (next: 09-04)
 Status: In progress
-Last activity: 2026-02-26 - Completed 09-05 audit actor+lens attribution persistence and regression coverage
+Last activity: 2026-02-26 - Completed 09-06 frontend admin lens controls with hard reset/refetch coverage
 
 Progress: [█████░░░░░] 50%
 
@@ -104,5 +104,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26 03:51
-Stopped at: Completed 09-05-PLAN.md
+Stopped at: Completed 09-06-PLAN.md
 Resume file: None
