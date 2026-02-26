@@ -2,11 +2,12 @@
 
 const { models } = require("../../db");
 const { EventQueryError, EVENT_QUERY_ERROR_CATEGORIES } = require("./event-query-errors");
-const { syncItemEvent } = require("../items/item-event-sync");
+const { syncItemEvent, projectItemEvents } = require("../items/item-event-sync");
 const { resolveOwnerFilter } = require("../../api/auth/scope-context");
 
 const STATUS_FILTERS = Object.freeze(["all", "pending", "completed"]);
 const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome"]);
+const FINANCIAL_ITEM_TYPE = "FinancialItem";
 
 function getDeletedAt(attributes) {
   if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) {
@@ -145,7 +146,8 @@ function normalizeInput(input) {
     ownerFilter,
     status,
     dueFrom,
-    dueTo
+    dueTo,
+    now: payload.now instanceof Date ? payload.now : payload.now ? new Date(payload.now) : new Date()
   };
 }
 
@@ -212,6 +214,42 @@ function compareEvents(left, right) {
   return left.id.localeCompare(right.id);
 }
 
+function compareEventsDescending(left, right) {
+  const dueDiff = toTime(right.due_date) - toTime(left.due_date);
+  if (dueDiff !== 0) {
+    return dueDiff;
+  }
+
+  const updatedDiff = toTime(right.updated_at, 0) - toTime(left.updated_at, 0);
+  if (updatedDiff !== 0) {
+    return updatedDiff;
+  }
+
+  return left.id.localeCompare(right.id);
+}
+
+function sortUpcomingThenHistory(events, now) {
+  const reference = now instanceof Date ? now : new Date(now);
+  const todayStart = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate())).getTime();
+
+  const upcoming = [];
+  const history = [];
+
+  events.forEach((event) => {
+    const dueTime = toTime(event.due_date, Number.NEGATIVE_INFINITY);
+    if (dueTime >= todayStart) {
+      upcoming.push(event);
+      return;
+    }
+    history.push(event);
+  });
+
+  upcoming.sort(compareEvents);
+  history.sort(compareEventsDescending);
+
+  return [...upcoming, ...history];
+}
+
 function dueGroupKey(event) {
   return new Date(event.due_date).toISOString().slice(0, 10);
 }
@@ -246,20 +284,51 @@ async function listEvents(input) {
     itemWhere.user_id = query.ownerFilter;
   }
 
-  const rows = await models.Event.findAll({
-    include: [
-      {
-        model: models.Item,
-        as: "item",
-        attributes: ["id", "user_id"],
-        required: true,
-        where: itemWhere
+  const [rows, financialItems] = await Promise.all([
+    models.Event.findAll({
+      include: [
+        {
+          model: models.Item,
+          as: "item",
+          attributes: ["id", "user_id"],
+          required: true,
+          where: itemWhere
+        }
+      ]
+    }),
+    models.Item.findAll({
+      where: {
+        ...itemWhere,
+        item_type: FINANCIAL_ITEM_TYPE
       }
-    ]
+    })
+  ]);
+
+  const persistedEvents = rows.map(normalizeEvent);
+  const persistedByItem = new Map();
+
+  persistedEvents.forEach((event) => {
+    const existing = persistedByItem.get(event.item_id);
+    if (existing) {
+      existing.push(event);
+      return;
+    }
+
+    persistedByItem.set(event.item_id, [event]);
   });
 
-  const events = rows.map(normalizeEvent);
-  const filtered = filterByRange(filterByStatus(events, query.status), query.dueFrom, query.dueTo).sort(compareEvents);
+  const projectedEvents = financialItems.flatMap((item) => {
+    const existingRows = persistedByItem.get(item.id) || [];
+    return projectItemEvents({
+      item,
+      persistedEvents: existingRows,
+      now: query.now,
+      limit: 3
+    });
+  });
+
+  const allEvents = [...persistedEvents, ...projectedEvents];
+  const filtered = sortUpcomingThenHistory(filterByRange(filterByStatus(allEvents, query.status), query.dueFrom, query.dueTo), query.now);
 
   return {
     groups: groupEvents(filtered),

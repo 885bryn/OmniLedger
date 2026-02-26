@@ -63,6 +63,28 @@ describe("GET /events", () => {
     });
   }
 
+  async function createFinancialItem({
+    userId,
+    title = "Recurring payment",
+    frequency = "monthly",
+    status = "Active",
+    dueDate = "2026-01-15",
+    defaultAmount = 250
+  }) {
+    return models.Item.create({
+      user_id: userId,
+      item_type: "FinancialItem",
+      title,
+      type: "Commitment",
+      frequency,
+      default_amount: defaultAmount,
+      status,
+      attributes: {
+        dueDate
+      }
+    });
+  }
+
   async function createEvent({ itemId, dueDate, status = "Pending", amount = "100.00", recurring = false }) {
     return models.Event.create({
       item_id: itemId,
@@ -281,5 +303,65 @@ describe("GET /events", () => {
 
     expect(secondRead.status).toBe(200);
     expect(secondMatches).toHaveLength(1);
+  });
+
+  it("projects recurring financial item occurrences on read and suppresses closed contracts", async () => {
+    const owner = await createUser();
+    const outsider = await createUser();
+    const ownerAgent = await signInAs(owner);
+
+    const activeRecurring = await createFinancialItem({
+      userId: owner.id,
+      title: "Monthly HOA",
+      frequency: "monthly",
+      status: "Active",
+      dueDate: "2026-02-10",
+      defaultAmount: 345.12
+    });
+
+    await createFinancialItem({
+      userId: owner.id,
+      title: "Closed insurance",
+      frequency: "monthly",
+      status: "Closed",
+      dueDate: "2026-02-01",
+      defaultAmount: 88
+    });
+
+    await createFinancialItem({
+      userId: outsider.id,
+      title: "Outsider recurring",
+      frequency: "monthly",
+      status: "Active",
+      dueDate: "2026-02-03",
+      defaultAmount: 99
+    });
+
+    const response = await ownerAgent.get("/events").query({ status: "pending" });
+
+    expect(response.status).toBe(200);
+    const projected = response.body.groups
+      .flatMap((group) => group.events)
+      .filter((event) => event.item_id === activeRecurring.id);
+
+    expect(projected).toHaveLength(3);
+    projected.forEach((event) => {
+      expect(event.id).toMatch(new RegExp(`^projected-${activeRecurring.id}-\\d{4}-\\d{2}-\\d{2}$`));
+      expect(event.status).toBe("Pending");
+      expect(event.recurring).toBe(true);
+      expect(event.type).toBe("Monthly HOA");
+    });
+
+    const leakedClosedOrForeign = response.body.groups
+      .flatMap((group) => group.events)
+      .filter((event) => event.type === "Closed insurance" || event.type === "Outsider recurring");
+    expect(leakedClosedOrForeign).toHaveLength(0);
+
+    const secondResponse = await ownerAgent.get("/events").query({ status: "pending" });
+    const secondProjected = secondResponse.body.groups
+      .flatMap((group) => group.events)
+      .filter((event) => event.item_id === activeRecurring.id);
+    expect(secondProjected).toHaveLength(3);
+    expect(secondProjected.map((event) => event.id)).toEqual(projected.map((event) => event.id));
   });
 });

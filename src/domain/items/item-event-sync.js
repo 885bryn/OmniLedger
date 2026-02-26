@@ -1,7 +1,11 @@
 "use strict";
 
+const { Op } = require("sequelize");
+
 const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome", "FinancialItem"]);
 const ONE_TIME_FREQUENCY = "one_time";
+const RECURRING_FREQUENCIES = new Set(["weekly", "monthly", "yearly"]);
+const ACTIVE_FINANCIAL_STATUS = "Active";
 
 function toDateKey(value) {
   if (!value) {
@@ -10,6 +14,49 @@ function toDateKey(value) {
 
   const parsed = value instanceof Date ? value : new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+}
+
+function toUtcDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()));
+}
+
+function addDaysUtc(date, count) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + count));
+}
+
+function addMonthsUtc(date, count) {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+  const targetMonth = month + count;
+  const monthAnchor = new Date(Date.UTC(year, targetMonth, 1));
+  const lastDay = new Date(Date.UTC(monthAnchor.getUTCFullYear(), monthAnchor.getUTCMonth() + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(monthAnchor.getUTCFullYear(), monthAnchor.getUTCMonth(), Math.min(day, lastDay)));
+}
+
+function advanceByFrequency(date, frequency) {
+  if (frequency === "weekly") {
+    return addDaysUtc(date, 7);
+  }
+
+  if (frequency === "monthly") {
+    return addMonthsUtc(date, 1);
+  }
+
+  if (frequency === "yearly") {
+    return addMonthsUtc(date, 12);
+  }
+
+  return null;
 }
 
 function isPlainObject(value) {
@@ -66,6 +113,132 @@ function getEventType(itemType, attributes, item) {
   const source = isPlainObject(attributes) ? attributes : {};
   const name = typeof source.name === "string" ? source.name.trim() : "";
   return name || itemType;
+}
+
+function shouldProjectRecurringFinancialItem(item) {
+  if (!item || item.item_type !== "FinancialItem") {
+    return false;
+  }
+
+  if (RECURRING_FREQUENCIES.has(item.frequency) === false) {
+    return false;
+  }
+
+  return item.status === ACTIVE_FINANCIAL_STATUS;
+}
+
+function toDateRangeForDay(dayInput) {
+  const day = toUtcDate(dayInput);
+  if (!day) {
+    return null;
+  }
+
+  const start = day;
+  const end = addDaysUtc(day, 1);
+  return { start, end };
+}
+
+async function materializeItemEventForDate({ item, dueDate, models, transaction }) {
+  if (!item || item.item_type !== "FinancialItem") {
+    return null;
+  }
+
+  const dueDateRange = toDateRangeForDay(dueDate);
+  if (!dueDateRange) {
+    return null;
+  }
+
+  const existing = await models.Event.findOne({
+    where: {
+      item_id: item.id,
+      due_date: {
+        [Op.gte]: dueDateRange.start,
+        [Op.lt]: dueDateRange.end
+      }
+    },
+    order: [["updated_at", "DESC"], ["id", "ASC"]],
+    transaction
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  return models.Event.create(
+    {
+      item_id: item.id,
+      event_type: getEventType(item.item_type, item.attributes, item),
+      due_date: dueDateRange.start,
+      amount: getAmount(item.attributes, item),
+      status: "Pending",
+      is_recurring: true
+    },
+    { transaction }
+  );
+}
+
+function projectItemEvents({ item, persistedEvents, now = new Date(), limit = 3 }) {
+  if (!shouldProjectRecurringFinancialItem(item)) {
+    return [];
+  }
+
+  const seedDate = toUtcDate(getDueDate(item.attributes, item));
+  const today = toUtcDate(now);
+  if (!seedDate || !today) {
+    return [];
+  }
+
+  const boundedLimit = Math.max(0, Number(limit) || 0);
+  if (boundedLimit === 0) {
+    return [];
+  }
+
+  const existingDateKeys = new Set(
+    (Array.isArray(persistedEvents) ? persistedEvents : [])
+      .map((event) => toDateKey(event.due_date))
+      .filter(Boolean)
+  );
+
+  const projected = [];
+  let cursor = seedDate;
+  let guard = 0;
+
+  while (cursor.getTime() < today.getTime() && guard < 500) {
+    const nextCursor = advanceByFrequency(cursor, item.frequency);
+    if (!nextCursor) {
+      return [];
+    }
+    cursor = nextCursor;
+    guard += 1;
+  }
+
+  while (projected.length < boundedLimit && guard < 1500) {
+    const dateKey = toDateKey(cursor);
+    if (dateKey && existingDateKeys.has(dateKey) === false) {
+      projected.push({
+        id: `projected-${item.id}-${dateKey}`,
+        item_id: item.id,
+        type: getEventType(item.item_type, item.attributes, item),
+        amount: getAmount(item.attributes, item),
+        due_date: cursor.toISOString(),
+        status: "Pending",
+        recurring: true,
+        completed_at: null,
+        created_at: null,
+        updated_at: null
+      });
+    }
+
+    const nextCursor = advanceByFrequency(cursor, item.frequency);
+    if (!nextCursor) {
+      break;
+    }
+
+    cursor = nextCursor;
+    guard += 1;
+  }
+
+  return projected;
 }
 
 async function syncItemEvent({ item, models, transaction, mode }) {
@@ -137,5 +310,7 @@ async function syncItemEvent({ item, models, transaction, mode }) {
 }
 
 module.exports = {
-  syncItemEvent
+  syncItemEvent,
+  materializeItemEventForDate,
+  projectItemEvents
 };
