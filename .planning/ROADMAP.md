@@ -16,7 +16,7 @@ v2.0 delivers secure multi-user operation, contract-and-occurrence financial mod
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 8: Auth Sessions & Protected Access** - Replace actor shim with secure sign-in and gated access. (completed 2026-02-25)
-- [ ] **Phase 9: RBAC Scope & Admin Safety Mode** - Enforce ownership boundaries with explicit admin all-data controls.
+- [x] **Phase 9: RBAC Scope & Admin Safety Mode** - Enforce ownership boundaries with explicit admin all-data controls. (completed 2026-02-26)
 - [ ] **Phase 10: Financial Contract-Occurrence Foundation** - Establish parent contracts and child occurrence persistence rules.
 - [ ] **Phase 11: Timeline Projection & Asset Ledger Views** - Deliver projected-versus-persisted timeline and split asset ledger UX.
 - [ ] **Phase 12: Deletion Lifecycle & Retention Controls** - Ship trash/restore/delete-intercept flows and 30-day hard purge.
@@ -91,7 +91,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 8. Auth Sessions & Protected Access | 6/6 | Complete    | 2026-02-25 |
-| 9. RBAC Scope & Admin Safety Mode | 11/12 | In Progress | - |
+| 9. RBAC Scope & Admin Safety Mode | 12/12 | Complete | 2026-02-26 |
 | 10. Financial Contract-Occurrence Foundation | 0/TBD | Not started | - |
 | 11. Timeline Projection & Asset Ledger Views | 0/TBD | Not started | - |
 | 12. Deletion Lifecycle & Retention Controls | 0/TBD | Not started | - |

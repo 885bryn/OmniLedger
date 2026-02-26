@@ -10,32 +10,32 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
-Plan: 11 of 12 (next: 09-12)
-Status: In progress
-Last activity: 2026-02-26 - Completed 09-10 dual-channel admin write safety feedback and invalid-lens blocking
+Plan: 12 of 12 (next: phase complete)
+Status: Phase complete
+Last activity: 2026-02-26 - Completed 09-12 invalid-lens safety hardening and locale-safe policy copy
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 27
+- Total plans completed: 28
 - Average duration: 3 min (v2.0)
-- Total execution time: 27 min (v2.0)
+- Total execution time: 28 min (v2.0)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
-| 9. RBAC Scope & Admin Safety Mode | 6 | 21 min | 4 min |
+| 9. RBAC Scope & Admin Safety Mode | 7 | 22 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 0 | 0 min | 0 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 09-10 (5 min), 09-07 (4 min), 09-04 (4 min), 09-09 (1 min), 09-06 (2 min)
-- Trend: Admin safety now has shared inline+toast write blocking and invalid-lens guards; Phase 9 is one plan away from completion.
+- Last 5 plans: 09-12 (1 min), 09-10 (5 min), 09-07 (4 min), 09-04 (4 min), 09-09 (1 min)
+- Trend: Admin safety now hard-blocks stale lens writes with localized policy copy; Phase 9 is complete.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
@@ -52,6 +52,7 @@ Progress: [█████████░] 92%
 | Phase 09 P04 | 4 min | 2 tasks | 5 files |
 | Phase 09 P07 | 4 min | 2 tasks | 5 files |
 | Phase 09 P10 | 5 min | 1 tasks | 10 files |
+| Phase 09-rbac-scope-admin-safety-mode P12 | 1 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -104,6 +105,8 @@ Recent decisions affecting current work:
 - [Phase 09]: Emit policy-denied toast signals in api-client so blocked writes keep one centralized toast channel while inline errors stay local.
 - [Phase 09]: Block admin owner-lens writes when the selected lens user is invalid and require reselection before mutation commit.
 - [Phase 09]: Use shared localized safety copy for policy-denied and invalid-lens write blocking messages across inline and toast channels.
+- [Phase 09-rbac-scope-admin-safety-mode]: Render invalid-lens blocking copy inline even when completion mutation is never started.
+- [Phase 09-rbac-scope-admin-safety-mode]: Assert safety messages in regressions through i18n keys so copy remains locale-safe.
 
 ### Pending Todos
 
@@ -116,6 +119,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 04:19
-Stopped at: Completed 09-10-PLAN.md
+Last session: 2026-02-26 04:25
+Stopped at: Completed 09-12-PLAN.md
 Resume file: None
