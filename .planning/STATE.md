@@ -10,32 +10,32 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 9 of 12 (RBAC Scope & Admin Safety Mode)
-Plan: 3 of 12 (next: 09-03)
+Plan: 4 of 12 (next: 09-03)
 Status: In progress
-Last activity: 2026-02-26 - Completed 09-02 owner-scope threading and create ownership hardening
+Last activity: 2026-02-26 - Completed 09-11 owner-scope regression locking for create/list/mutate/event flows
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
+- Total plans completed: 24
 - Average duration: 3 min (v2.0)
-- Total execution time: 12 min (v2.0)
+- Total execution time: 14 min (v2.0)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
-| 9. RBAC Scope & Admin Safety Mode | 2 | 6 min | 3 min |
+| 9. RBAC Scope & Admin Safety Mode | 3 | 8 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 0 | 0 min | 0 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 09-02 (3 min), 09-01 (3 min), 08-03 (2 min), 08-02 (2 min), 08-06 (5 min)
-- Trend: Phase 9 owner-scope enforcement landed with no blockers; ready for admin mode/lens controls.
+- Last 5 plans: 09-11 (2 min), 09-02 (3 min), 09-01 (3 min), 08-03 (2 min), 08-02 (2 min)
+- Trend: Owner-scope regressions are now locked across create/list/mutate/event flows; admin mode/lens plans can proceed with stronger safety coverage.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
@@ -43,6 +43,7 @@ Progress: [██░░░░░░░░] 17%
 | Phase 08 P04 | 5 min | 3 tasks | 10 files |
 | Phase 09 P01 | 3 min | 2 tasks | 6 files |
 | Phase 09 P02 | 3 min | 1 tasks | 9 files |
+| Phase 09 P11 | 2 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 09]: Route handlers pass req.scope into item/event domain entry points so ownership enforcement is server-derived and consistent.
 - [Phase 09]: POST /items ignores client-provided user_id and persists owner from authenticated scope.actorUserId.
 - [Phase 09]: create-item validates parent_item_id owner match against resolved scope owner to prevent cross-owner links.
+- [Phase 09]: Create/list/event regressions now inject foreign owner hints and assert authenticated scope remains authoritative.
+- [Phase 09]: Foreign event complete and undo attempts are regression-locked to 404 not_found denial behavior under AUTH-05.
 
 ### Pending Todos
 
@@ -87,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 03:26
-Stopped at: Completed 09-02-PLAN.md
+Last session: 2026-02-26 03:32
+Stopped at: Completed 09-11-PLAN.md
 Resume file: None
