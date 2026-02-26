@@ -10,18 +10,18 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 10 of 12 (Financial Contract-Occurrence Foundation)
-Plan: 2 of 4 (next: 10-03-PLAN.md)
+Plan: 3 of 4 (next: 10-04-PLAN.md)
 Status: In progress
-Last activity: 2026-02-26 - Completed 10-02 owner-scoped occurrence projection and projected exception materialization baseline
+Last activity: 2026-02-26 - Completed 10-03 guided Financial item create UX, warning confirmation flow, and terminology unification
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30
-- Average duration: 3 min (v2.0)
-- Total execution time: 35 min (v2.0)
+- Total plans completed: 31
+- Average duration: 4 min (v2.0)
+- Total execution time: 43 min (v2.0)
 
 **By Phase:**
 
@@ -29,13 +29,13 @@ Progress: [█████░░░░░] 50%
 |-------|-------|-------|----------|
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
 | 9. RBAC Scope & Admin Safety Mode | 8 | 23 min | 3 min |
-| 10. Financial Contract-Occurrence Foundation | 1 | 6 min | 6 min |
+| 10. Financial Contract-Occurrence Foundation | 3 | 19 min | 6 min |
 | 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 10-01 (6 min), 09-13 (1 min), 09-12 (1 min), 09-10 (5 min), 09-07 (4 min)
-- Trend: FinancialItem parent contract baseline is now explicit with transactional one-time parent+occurrence creation in place.
+- Last 5 plans: 10-03 (8 min), 10-02 (5 min), 10-01 (6 min), 09-13 (1 min), 09-12 (1 min)
+- Trend: Financial item create UX now matches the parent-contract model with explicit subtype labeling and unlinked-save confirmation safeguards.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
@@ -56,6 +56,7 @@ Progress: [█████░░░░░] 50%
 | Phase 09 P13 | 1 min | 2 tasks | 2 files |
 | Phase 10 P01 | 6 min | 2 tasks | 10 files |
 | Phase 10 P02 | 5 min | 2 tasks | 5 files |
+| Phase 10 P03 | 8 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Recent decisions affecting current work:
 - [Phase 10]: Used deterministic projected event ids (projected-{itemId}-{YYYY-MM-DD}) so projected rows can be acted on before persistence.
 - [Phase 10]: Bound recurring read projection to three upcoming occurrences per active FinancialItem to avoid long-horizon generation.
 - [Phase 10]: Materialized projected completion targets by item/date with dedupe lookup to prevent duplicate exception rows on retries.
+- [Phase 10]: Preserved legacy /items/create/wizard redirects with query params intact so subtype and parent prefill context survives on /items/create.
+- [Phase 10]: Financial item create now requires explicit warning confirmation for unlinked saves instead of blocking or silently allowing.
+- [Phase 10]: List and detail surfaces standardize parent label as Financial item while rendering Commitment or Income subtype badges.
 
 ### Pending Todos
 
@@ -130,6 +134,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26 21:16
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-02-26 21:26
+Stopped at: Completed 10-03-PLAN.md
 Resume file: None
