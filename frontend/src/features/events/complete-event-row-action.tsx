@@ -19,9 +19,10 @@ type CompletionPayload = {
 type CompleteEventRowActionProps = {
   eventId: string
   itemId?: string
+  eventStatus?: string
 }
 
-export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActionProps) {
+export function CompleteEventRowAction({ eventId, itemId, eventStatus }: CompleteEventRowActionProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { session } = useAuth()
@@ -32,6 +33,7 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [showFollowUp, setShowFollowUp] = useState(false)
   const [failureText, setFailureText] = useState<string | null>(null)
+  const isCompleted = eventStatus === 'Completed'
   const hasInvalidLensSelection = isAdmin && mode === 'owner' && (!lensUserId || !users.some((user) => user.id === lensUserId))
 
   function blockWhenLensInvalid() {
@@ -55,13 +57,17 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
   })
 
   const completionMutation = useMutation({
-    mutationFn: async () => apiRequest<CompletionPayload>(`/events/${eventId}/complete`, { method: 'PATCH' }),
+    mutationFn: async () =>
+      isCompleted
+        ? apiRequest<CompletionPayload>(`/events/${eventId}/undo-complete`, { method: 'PATCH' })
+        : apiRequest<CompletionPayload>(`/events/${eventId}/complete`, { method: 'PATCH' }),
     onMutate: () => {
       setFailureText(null)
+      setShowSuccess(false)
     },
     onSuccess: async (payload) => {
       setShowSuccess(true)
-      setShowFollowUp(payload.prompt_next_date)
+      setShowFollowUp(!isCompleted && payload.prompt_next_date)
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
@@ -99,7 +105,13 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
         }}
         className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {completionMutation.isPending ? t('events.completeAction.pending') : t('events.completeAction.button')}
+        {completionMutation.isPending
+          ? isCompleted
+            ? t('events.completeAction.undoPending')
+            : t('events.completeAction.pending')
+          : isCompleted
+            ? t('events.completeAction.undoButton')
+            : t('events.completeAction.button')}
       </button>
 
       {showSuccess ? <p className="text-xs font-medium text-emerald-600">{t('events.completeAction.completed')}</p> : null}
@@ -107,14 +119,22 @@ export function CompleteEventRowAction({ eventId, itemId }: CompleteEventRowActi
 
       <ConfirmationDialog
         open={confirmOpen}
-        title={t('events.completeAction.confirmTitle')}
+        title={isCompleted ? t('events.completeAction.undoConfirmTitle') : t('events.completeAction.confirmTitle')}
         description={
           <span className="space-y-2">
-            <span className="block">{t('events.completeAction.confirm')}</span>
+            <span className="block">{isCompleted ? t('events.completeAction.undoConfirm') : t('events.completeAction.confirm')}</span>
             {attribution ? <TargetUserChip actorLabel={attribution.actorLabel} lensLabel={attribution.lensLabel} /> : null}
           </span>
         }
-        confirmLabel={completionMutation.isPending ? t('events.completeAction.pending') : t('events.completeAction.button')}
+        confirmLabel={
+          completionMutation.isPending
+            ? isCompleted
+              ? t('events.completeAction.undoPending')
+              : t('events.completeAction.pending')
+            : isCompleted
+              ? t('events.completeAction.undoButton')
+              : t('events.completeAction.button')
+        }
         cancelLabel={t('events.completeAction.cancel')}
         pending={completionMutation.isPending}
         onCancel={() => setConfirmOpen(false)}

@@ -16,6 +16,13 @@ export function lensScopeToParams(scope: LensScope) {
   }
 }
 
+export function eventListParams(scope: LensScope, status: 'all' | 'pending' | 'completed' = 'all') {
+  return {
+    status,
+    ...lensScopeToParams(scope),
+  }
+}
+
 export const queryKeys = {
   users: {
     all: ['users'] as const,

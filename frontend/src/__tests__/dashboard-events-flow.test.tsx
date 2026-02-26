@@ -8,6 +8,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { EventsPage } from '../pages/events/events-page'
 
+vi.mock('../auth/auth-context', () => ({
+  useAuth: () => ({
+    session: {
+      id: 'actor-1',
+      username: 'tester',
+      email: 'tester@example.com',
+      role: 'admin',
+    },
+  }),
+}))
+
 type FetchMockResponse = {
   status: number
   json: unknown
@@ -39,8 +50,22 @@ function buildEventsResponse() {
           },
         ],
       },
+      {
+        due_date: '2026-02-10',
+        events: [
+          {
+            id: 'event-2',
+            item_id: 'item-2',
+            type: 'Insurance',
+            amount: 220,
+            due_date: '2026-02-10',
+            status: 'Completed',
+            updated_at: '2026-02-11T00:00:00.000Z',
+          },
+        ],
+      },
     ],
-    total_count: 1,
+    total_count: 2,
   }
 }
 
@@ -84,7 +109,7 @@ describe('dashboard/events completion flow', () => {
       const url = String(input)
       const method = init?.method ?? 'GET'
 
-      if (url.includes('/events?status=pending') && method === 'GET') {
+      if (url.includes('/events?status=all') && method === 'GET') {
         listCalls += 1
         return createResponse({ status: 200, json: buildEventsResponse() })
       }
@@ -93,7 +118,26 @@ describe('dashboard/events completion flow', () => {
         return createResponse({
           status: 200,
           json: {
-            items: [{ id: 'item-1', item_type: 'FinancialCommitment', attributes: { name: 'Maple Mortgage' } }],
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Maple Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                attributes: { name: 'Maple Mortgage' },
+              },
+              {
+                id: 'item-2',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Home Insurance',
+                frequency: 'yearly',
+                status: 'Closed',
+                attributes: { name: 'Home Insurance' },
+              },
+            ],
           },
         })
       }
@@ -116,6 +160,10 @@ describe('dashboard/events completion flow', () => {
     renderEventsPage()
 
     await screen.findByText('Mortgage')
+    expect(screen.getByText('Current and upcoming')).toBeTruthy()
+    expect(screen.getByText('History')).toBeTruthy()
+    expect(screen.getByText(/Monthly, next on/)).toBeTruthy()
+    expect(screen.getByText('Closed contract, no future projections')).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Complete' }))
     await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Complete' }))
 
@@ -136,7 +184,7 @@ describe('dashboard/events completion flow', () => {
       const url = String(input)
       const method = init?.method ?? 'GET'
 
-      if (url.includes('/events?status=pending') && method === 'GET') {
+      if (url.includes('/events?status=all') && method === 'GET') {
         return createResponse({ status: 200, json: buildEventsResponse() })
       }
 
@@ -144,7 +192,26 @@ describe('dashboard/events completion flow', () => {
         return createResponse({
           status: 200,
           json: {
-            items: [{ id: 'item-1', item_type: 'FinancialCommitment', attributes: { name: 'Maple Mortgage' } }],
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Maple Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                attributes: { name: 'Maple Mortgage' },
+              },
+              {
+                id: 'item-2',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Home Insurance',
+                frequency: 'yearly',
+                status: 'Closed',
+                attributes: { name: 'Home Insurance' },
+              },
+            ],
           },
         })
       }
@@ -180,7 +247,7 @@ describe('dashboard/events completion flow', () => {
       const url = String(input)
       const method = init?.method ?? 'GET'
 
-      if (url.includes('/events?status=pending') && method === 'GET') {
+      if (url.includes('/events?status=all') && method === 'GET') {
         return createResponse({ status: 200, json: buildEventsResponse() })
       }
 
@@ -188,7 +255,26 @@ describe('dashboard/events completion flow', () => {
         return createResponse({
           status: 200,
           json: {
-            items: [{ id: 'item-1', item_type: 'FinancialCommitment', attributes: { name: 'Maple Mortgage' } }],
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Maple Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                attributes: { name: 'Maple Mortgage' },
+              },
+              {
+                id: 'item-2',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Home Insurance',
+                frequency: 'yearly',
+                status: 'Closed',
+                attributes: { name: 'Home Insurance' },
+              },
+            ],
           },
         })
       }
@@ -218,5 +304,78 @@ describe('dashboard/events completion flow', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Schedule next date' }))
 
     expect(await screen.findByText('Item edit page')).toBeTruthy()
+  })
+
+  it('uses inline undo action for completed history rows', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        return createResponse({ status: 200, json: buildEventsResponse() })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Maple Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                attributes: { name: 'Maple Mortgage' },
+              },
+              {
+                id: 'item-2',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Home Insurance',
+                frequency: 'yearly',
+                status: 'Closed',
+                attributes: { name: 'Home Insurance' },
+              },
+            ],
+          },
+        })
+      }
+
+      if (url.includes('/events/event-2/undo-complete') && method === 'PATCH') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'event-2',
+            prompt_next_date: false,
+          },
+        })
+      }
+
+      if (url.includes('/events/event-1/complete') && method === 'PATCH') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'event-1',
+            prompt_next_date: false,
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage()
+
+    await screen.findByText('Insurance')
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Undo' }))
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/events/event-2/undo-complete'), expect.anything())
+    })
   })
 })
