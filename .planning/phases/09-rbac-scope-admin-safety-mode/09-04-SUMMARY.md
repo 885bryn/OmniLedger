@@ -59,7 +59,7 @@ Each task was committed atomically:
 1. **Task 1: Add persistent shell-level admin warning banner with Actor+Lens tuple** - `c92ab31` (feat)
 2. **Task 2: Gate admin-mode exit behind explicit confirmation in switcher flow** - `4fb6175` (feat)
 
-**Plan metadata:** Pending
+**Plan metadata:** `3b7b783`, `de68433` (docs)
 
 ## Files Created/Modified
 - `frontend/src/features/admin-scope/admin-safety-banner.tsx` - Renders the persistent all-data safety warning tuple.
