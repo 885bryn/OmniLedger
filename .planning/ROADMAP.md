@@ -80,8 +80,8 @@ Plans:
 **Plans**: 4 plans
 Plans:
 - [x] 11-01-PLAN.md - Extend timeline read model to 3-year projection window with explicit persisted/projected ordering contract. (completed 2026-02-28)
-- [ ] 11-02-PLAN.md - Add projected occurrence edit mutation that materializes and persists date-specific exception rows.
-- [ ] 11-03-PLAN.md - Implement timeline state cues and save-exception UX for projected edits with in-place persisted indicators.
+- [x] 11-02-PLAN.md - Add projected occurrence edit mutation that materializes and persists date-specific exception rows. (completed 2026-02-28)
+- [x] 11-03-PLAN.md - Implement timeline state cues and save-exception UX for projected edits with in-place persisted indicators. (completed 2026-02-28)
 - [ ] 11-04-PLAN.md - Split asset detail financial ledger into Current & Upcoming versus Historical sections with summaries and mobile collapse.
 
 ### Phase 12: Deletion Lifecycle & Retention Controls
@@ -103,5 +103,5 @@ Plans:
 | 8. Auth Sessions & Protected Access | 6/6 | Complete    | 2026-02-25 |
 | 9. RBAC Scope & Admin Safety Mode | 13/13 | Complete | 2026-02-26 |
 | 10. Financial Contract-Occurrence Foundation | 5/5 | Complete   | 2026-02-26 |
-| 11. Timeline Projection & Asset Ledger Views | 2/4 | In Progress|  |
+| 11. Timeline Projection & Asset Ledger Views | 3/4 | In Progress|  |
 | 12. Deletion Lifecycle & Retention Controls | 0/TBD | Not started | - |

@@ -7,17 +7,17 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 11 of 12 (Timeline Projection & Asset Ledger Views)
-Plan: 2 of 4 (next: 11-03-PLAN.md)
+Plan: 3 of 4 (next: 11-04-PLAN.md)
 Status: In progress
-Last activity: 2026-02-28 - Completed 11-02 projected occurrence edit persistence and exception metadata mutation
+Last activity: 2026-02-28 - Completed 11-03 timeline state cues and projected save-exception edit UX
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 **Velocity:**
-- Total plans completed: 33
+- Total plans completed: 34
 - Average duration: 4 min (v2.0)
-- Total execution time: 47 min (v2.0)
+- Total execution time: 53 min (v2.0)
 
 **By Phase:**
 
@@ -26,12 +26,12 @@ Progress: [████████░░] 83%
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
 | 9. RBAC Scope & Admin Safety Mode | 8 | 23 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 4 | 21 min | 5 min |
-| 11. Timeline Projection & Asset Ledger Views | 2 | 4 min | 2 min |
+| 11. Timeline Projection & Asset Ledger Views | 3 | 10 min | 3 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 11-02 (2 min), 11-01 (2 min), 10-05 (2 min), 10-04 (6 min), 10-03 (8 min)
-- Trend: Timeline now supports projected edit materialization into durable persisted exception rows while preserving deterministic source-state ordering.
+- Last 5 plans: 11-03 (6 min), 11-02 (2 min), 11-01 (2 min), 10-05 (2 min), 10-04 (6 min)
+- Trend: Timeline now renders explicit projected/persisted cues and save-exception edit confirmations with in-place edited occurrence state.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
@@ -57,6 +57,7 @@ Progress: [████████░░] 83%
 | Phase 10 P05 | 2 min | 2 tasks | 10 files |
 | Phase 11 P01 | 2 min | 2 tasks | 3 files |
 | Phase 11 P02 | 2 min | 2 tasks | 6 files |
+| Phase 11 P03 | 6 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -134,17 +135,15 @@ Recent decisions affecting current work:
 - [Phase 11]: Projected edit requests now materialize through item-event-sync before mutation to preserve dedupe semantics.
 - [Phase 11]: PATCH /events/:id ownership denials return not_found envelopes to match completion-route policy behavior.
 - [Phase 11]: Events persist an is_exception marker when projected materialization is used so edited occurrences remain identifiable after reload.
-
-### Pending Todos
-
-- [2026-02-25] Run Phase 5 second-device LAN health test (`.planning/todos/pending/2026-02-25-run-phase-5-second-device-lan-health-test.md`)
-- [2026-02-25] Add recurrence checkbox for cashflow items (`.planning/todos/pending/2026-02-25-add-recurrence-checkbox-for-cashflow-items.md`)
+- [Phase 11]: Timeline rows now render explicit projected/persisted badges with section legends while preserving grouped chronology.
+- [Phase 11]: Projected occurrence edits use a dedicated Save exception CTA and explain persisted exception creation before commit.
+- [Phase 11]: Edited occurrence success feedback is state-driven via refetch and is_exception indicators instead of extra success toasts.
 
 ### Blockers/Concerns
 
 None yet.
 
 ## Session Continuity
-Last session: 2026-02-28 01:23
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-02-28 01:37
+Stopped at: Completed 11-03-PLAN.md
 Resume file: None
