@@ -7,11 +7,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-25)
 ## Current Position
 
 Phase: 11 of 12 (Timeline Projection & Asset Ledger Views)
-Plan: 3 of 4 (next: 11-04-PLAN.md)
-Status: In progress
-Last activity: 2026-02-28 - Completed 11-03 timeline state cues and projected save-exception edit UX
+Plan: 4 of 4 (next: phase complete)
+Status: Complete
+Last activity: 2026-02-28 - Completed 11-04 split asset ledger sections with mobile historical collapse and summaries
 
-Progress: [█████████░] 88%
+Progress: [█████████▌] 92%
 
 ## Performance Metrics
 **Velocity:**
@@ -26,7 +26,7 @@ Progress: [█████████░] 88%
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
 | 9. RBAC Scope & Admin Safety Mode | 8 | 23 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 4 | 21 min | 5 min |
-| 11. Timeline Projection & Asset Ledger Views | 3 | 10 min | 3 min |
+| 11. Timeline Projection & Asset Ledger Views | 4 | 17 min | 4 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
@@ -58,6 +58,7 @@ Progress: [█████████░] 88%
 | Phase 11 P01 | 2 min | 2 tasks | 3 files |
 | Phase 11 P02 | 2 min | 2 tasks | 6 files |
 | Phase 11 P03 | 6 min | 2 tasks | 6 files |
+| Phase 11 P04 | 7 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -138,12 +139,15 @@ Recent decisions affecting current work:
 - [Phase 11]: Timeline rows now render explicit projected/persisted badges with section legends while preserving grouped chronology.
 - [Phase 11]: Projected occurrence edits use a dedicated Save exception CTA and explain persisted exception creation before commit.
 - [Phase 11]: Edited occurrence success feedback is state-driven via refetch and is_exception indicators instead of extra success toasts.
+- [Phase 11]: Asset detail ledger now reads owner-scoped /events rows filtered by linked financial item IDs for deterministic sectioning.
+- [Phase 11]: Current & Upcoming classification keeps pending or future-facing rows actionable while settled past rows move to Historical Ledger.
+- [Phase 11]: Historical Ledger defaults collapsed on mobile with explicit toggle controls and remains expanded on desktop.
 
 ### Blockers/Concerns
 
 None yet.
 
 ## Session Continuity
-Last session: 2026-02-28 01:37
-Stopped at: Completed 11-03-PLAN.md
+Last session: 2026-02-28 02:45
+Stopped at: Completed 11-04-PLAN.md
 Resume file: None
