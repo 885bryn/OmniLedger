@@ -213,6 +213,16 @@
         "commitments": "承诺",
         "activity": "动态"
       },
+      "ledger": {
+        "currentUpcomingTitle": "当前与即将到期",
+        "historicalTitle": "历史台账",
+        "sectionSummary": "{{count}} 条记录 · {{total}}",
+        "currentUpcomingEmpty": "关联财务项目当前没有待处理或即将到期的台账记录。",
+        "historicalEmpty": "关联财务项目暂无历史台账记录。",
+        "expandHistorical": "展开历史记录",
+        "collapseHistorical": "收起历史记录",
+        "historicalCollapsedHint": "历史记录在移动端默认折叠。点击“展开历史记录”可查看。"
+      },
       "commitmentFallbackTitle": "财务项目详情",
       "commitmentFallbackBody": "该类型不提供净状态卡片，但可继续使用动态与编辑流程。"
     },

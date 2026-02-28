@@ -213,6 +213,16 @@
         "commitments": "Commitments",
         "activity": "Activity"
       },
+      "ledger": {
+        "currentUpcomingTitle": "Current & Upcoming",
+        "historicalTitle": "Historical Ledger",
+        "sectionSummary": "{{count}} records · {{total}}",
+        "currentUpcomingEmpty": "No current or upcoming ledger records for linked financial items.",
+        "historicalEmpty": "No historical ledger records for linked financial items.",
+        "expandHistorical": "Show historical records",
+        "collapseHistorical": "Hide historical records",
+        "historicalCollapsedHint": "Historical records are collapsed on mobile. Use Show historical records to expand."
+      },
       "commitmentFallbackTitle": "Financial item detail",
       "commitmentFallbackBody": "This item type does not have net-status cards, but activity and edit workflows are available."
     },

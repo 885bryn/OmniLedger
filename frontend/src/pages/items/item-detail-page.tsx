@@ -169,6 +169,25 @@ function formatEventAmount(event: EventRow, item: ItemRow | undefined) {
   return item && isIncomeItem(item) ? `+${formatted}` : formatted
 }
 
+function getSignedLedgerAmount(event: EventRow, item: ItemRow | undefined) {
+  if (event.amount === null || Number.isNaN(event.amount)) {
+    return 0
+  }
+
+  return item && isIncomeItem(item) ? event.amount : -Math.abs(event.amount)
+}
+
+function summarizeLedgerSection(events: EventRow[], commitmentById: Map<string, ItemRow>) {
+  return events.reduce(
+    (summary, event) => {
+      summary.count += 1
+      summary.total += getSignedLedgerAmount(event, commitmentById.get(event.item_id))
+      return summary
+    },
+    { count: 0, total: 0 },
+  )
+}
+
 function toStartOfTodayUtc() {
   const now = new Date()
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).getTime()
@@ -315,6 +334,14 @@ export function ItemDetailPage() {
   const [selectedParentCascadeIds, setSelectedParentCascadeIds] = useState<string[]>([])
   const [childDeleteTarget, setChildDeleteTarget] = useState<ItemRow | null>(null)
   const [childDeleteError, setChildDeleteError] = useState<string | null>(null)
+  const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false
+    }
+
+    return window.matchMedia('(min-width: 768px)').matches
+  })
+  const [isHistoricalExpandedMobile, setIsHistoricalExpandedMobile] = useState(false)
   const returnTo = typeof location.state === 'object' && location.state !== null && 'from' in location.state ? String((location.state as { from?: string }).from ?? '') : ''
   const lensScope = useMemo(
     () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
@@ -454,6 +481,18 @@ export function ItemDetailPage() {
     )
   }, [commitments, ledgerEventsQuery.data?.groups])
 
+  const currentAndUpcomingSummary = useMemo(
+    () => summarizeLedgerSection(ledgerSections.currentAndUpcoming, commitmentById),
+    [commitmentById, ledgerSections.currentAndUpcoming],
+  )
+
+  const historicalSummary = useMemo(
+    () => summarizeLedgerSection(ledgerSections.historical, commitmentById),
+    [commitmentById, ledgerSections.historical],
+  )
+
+  const historicalExpanded = isDesktopViewport || isHistoricalExpandedMobile
+
   useEffect(() => {
     if (!deleteOpen || !detail || (detail.item_type !== 'RealEstate' && detail.item_type !== 'Vehicle')) {
       setSelectedParentCascadeIds([])
@@ -462,6 +501,21 @@ export function ItemDetailPage() {
 
     setSelectedParentCascadeIds(commitments.map((commitment) => commitment.id))
   }, [commitments, deleteOpen, detail])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 768px)')
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsDesktopViewport(event.matches)
+    }
+
+    setIsDesktopViewport(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
 
   const parentDeleteRelatedItems = useMemo(() => {
     if (!detail || (detail.item_type !== 'RealEstate' && detail.item_type !== 'Vehicle')) {
@@ -763,9 +817,19 @@ export function ItemDetailPage() {
           ) : (
             <div className="space-y-4">
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Current & Upcoming</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('items.detail.ledger.currentUpcomingTitle')}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {t('items.detail.ledger.sectionSummary', {
+                      count: currentAndUpcomingSummary.count,
+                      total: formatCurrency(currentAndUpcomingSummary.total),
+                    })}
+                  </p>
+                </div>
                 {ledgerSections.currentAndUpcoming.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">No current or upcoming ledger records.</p>
+                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">
+                    {t('items.detail.ledger.currentUpcomingEmpty')}
+                  </p>
                 ) : (
                   <ul className="space-y-2">
                     {ledgerSections.currentAndUpcoming.map((event) => {
@@ -816,10 +880,31 @@ export function ItemDetailPage() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Historical Ledger</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('items.detail.ledger.historicalTitle')}</h3>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {t('items.detail.ledger.sectionSummary', {
+                        count: historicalSummary.count,
+                        total: formatCurrency(historicalSummary.total),
+                      })}
+                    </p>
+                    {!isDesktopViewport ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsHistoricalExpandedMobile((value) => !value)}
+                        className="rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground"
+                      >
+                        {historicalExpanded ? t('items.detail.ledger.collapseHistorical') : t('items.detail.ledger.expandHistorical')}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
                 {ledgerSections.historical.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">No historical ledger records.</p>
-                ) : (
+                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">
+                    {t('items.detail.ledger.historicalEmpty')}
+                  </p>
+                ) : historicalExpanded ? (
                   <ul className="space-y-2">
                     {ledgerSections.historical.map((event) => {
                       const commitment = commitmentById.get(event.item_id)
@@ -865,6 +950,10 @@ export function ItemDetailPage() {
                       )
                     })}
                   </ul>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">
+                    {t('items.detail.ledger.historicalCollapsedHint')}
+                  </p>
                 )}
               </section>
             </div>

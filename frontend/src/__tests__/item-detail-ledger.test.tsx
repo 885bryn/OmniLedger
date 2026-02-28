@@ -72,10 +72,12 @@ function renderItemDetail(initialPath = '/items/asset-1') {
 
 describe('item detail ledger', () => {
   const originalFetch = globalThis.fetch
+  const originalMatchMedia = window.matchMedia
 
   afterEach(() => {
     cleanup()
     globalThis.fetch = originalFetch
+    window.matchMedia = originalMatchMedia
     vi.restoreAllMocks()
   })
 
@@ -180,6 +182,16 @@ describe('item detail ledger', () => {
     })
 
     globalThis.fetch = fetchMock as typeof fetch
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query === '(min-width: 768px)' ? false : false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as typeof window.matchMedia
 
     renderItemDetail()
 
@@ -196,6 +208,12 @@ describe('item detail ledger', () => {
 
     expect(within(currentSection).getAllByText('Mortgage').length).toBeGreaterThan(0)
     expect(within(currentSection).getByText('Projected')).toBeTruthy()
+    expect(within(currentSection).getByText('1 records · -$1,200')).toBeTruthy()
+    expect(within(historicalSection).getByText('1 records · $800')).toBeTruthy()
+    expect(within(historicalSection).getByText('Historical records are collapsed on mobile. Use Show historical records to expand.')).toBeTruthy()
+
+    await userEvent.click(within(historicalSection).getByRole('button', { name: 'Show historical records' }))
+
     expect(within(historicalSection).getAllByText('Rent').length).toBeGreaterThan(0)
     expect(within(historicalSection).getByText('Persisted')).toBeTruthy()
     expect(within(historicalSection).getByText('Edited occurrence')).toBeTruthy()
@@ -203,5 +221,75 @@ describe('item detail ledger', () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/events?status=all'), expect.anything())
     })
+  })
+
+  it('shows plain empty-state copy when linked financial items have no ledger occurrences', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/asset-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'asset-1',
+            item_type: 'RealEstate',
+            user_id: 'owner-1',
+            child_commitments: [
+              {
+                id: 'fin-1',
+                user_id: 'owner-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Mortgage',
+                attributes: { name: 'Mortgage' },
+                updated_at: '2026-02-20T00:00:00.000Z',
+              },
+            ],
+            summary: {
+              monthly_obligation_total: 1200,
+              monthly_income_total: 0,
+              net_monthly_cashflow: -1200,
+              excluded_row_count: 0,
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              { id: 'asset-1', item_type: 'RealEstate', attributes: { address: 'Maple Street' }, updated_at: '2026-02-20T00:00:00.000Z' },
+              { id: 'fin-1', item_type: 'FinancialItem', type: 'Commitment', title: 'Mortgage', attributes: { name: 'Mortgage' }, updated_at: '2026-02-20T00:00:00.000Z' },
+            ],
+          },
+        })
+      }
+
+      if (url.includes('/events?') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [],
+            total_count: 0,
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail()
+
+    await screen.findByRole('button', { name: 'Commitments' })
+    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+
+    expect(await screen.findByText('No current or upcoming ledger records for linked financial items.')).toBeTruthy()
+    expect(screen.getByText('No historical ledger records for linked financial items.')).toBeTruthy()
+    expect(screen.getAllByText('0 records · $0').length).toBe(2)
   })
 })
