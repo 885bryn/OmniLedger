@@ -29,7 +29,7 @@ Progress: [████████░░] 80%
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
 | 9. RBAC Scope & Admin Safety Mode | 8 | 23 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 4 | 21 min | 5 min |
-| 11. Timeline Projection & Asset Ledger Views | 0 | 0 min | 0 min |
+| 11. Timeline Projection & Asset Ledger Views | 1 | 2 min | 2 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**

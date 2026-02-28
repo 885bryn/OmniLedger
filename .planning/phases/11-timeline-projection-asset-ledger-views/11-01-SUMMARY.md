@@ -100,6 +100,10 @@ None - no external service configuration required.
 
 ## Self-Check: PASSED
 
+- Commit `f80c6a0` exists and is discoverable as `feat(11-01): switch recurring projection to 3-year date horizon`.
+- Commit `37c1739` exists and is discoverable as `feat(11-01): add explicit event source metadata and tie-break ordering`.
+- Verification rerun passed: `npm test -- test/api/events-list.test.js --runInBand`.
+
 ---
 *Phase: 11-timeline-projection-asset-ledger-views*
 *Completed: 2026-02-28*

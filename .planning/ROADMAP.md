@@ -18,7 +18,7 @@ v2.0 delivers secure multi-user operation, contract-and-occurrence financial mod
 - [x] **Phase 8: Auth Sessions & Protected Access** - Replace actor shim with secure sign-in and gated access. (completed 2026-02-25)
 - [x] **Phase 9: RBAC Scope & Admin Safety Mode** - Enforce ownership boundaries with explicit admin all-data controls. (completed 2026-02-26)
 - [x] **Phase 10: Financial Contract-Occurrence Foundation** - Establish parent contracts and child occurrence persistence rules. (completed 2026-02-26)
-- [ ] **Phase 11: Timeline Projection & Asset Ledger Views** - Deliver projected-versus-persisted timeline and split asset ledger UX.
+- [ ] **Phase 11: Timeline Projection & Asset Ledger Views** - Deliver projected-versus-persisted timeline and split asset ledger UX. (in progress; 11-01 completed 2026-02-28)
 - [ ] **Phase 12: Deletion Lifecycle & Retention Controls** - Ship trash/restore/delete-intercept flows and 30-day hard purge.
 
 ## Phase Details
@@ -79,7 +79,7 @@ Plans:
   4. Asset financial view is split into `Current & Upcoming` and `Historical Ledger` sections with records visible in the expected section.
 **Plans**: 4 plans
 Plans:
-- [ ] 11-01-PLAN.md - Extend timeline read model to 3-year projection window with explicit persisted/projected ordering contract.
+- [x] 11-01-PLAN.md - Extend timeline read model to 3-year projection window with explicit persisted/projected ordering contract. (completed 2026-02-28)
 - [ ] 11-02-PLAN.md - Add projected occurrence edit mutation that materializes and persists date-specific exception rows.
 - [ ] 11-03-PLAN.md - Implement timeline state cues and save-exception UX for projected edits with in-place persisted indicators.
 - [ ] 11-04-PLAN.md - Split asset detail financial ledger into Current & Upcoming versus Historical sections with summaries and mobile collapse.
