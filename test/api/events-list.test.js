@@ -174,12 +174,61 @@ describe("GET /events", () => {
       "created_at",
       "due_date",
       "id",
+      "is_projected",
       "item_id",
       "recurring",
+      "source_state",
       "status",
       "type",
       "updated_at"
     ]);
+  });
+
+  it("returns explicit source metadata and sorts persisted rows before projected rows on same due date", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const persistedItem = await createItem(owner.id);
+
+    const sameDate = new Date();
+    sameDate.setUTCDate(sameDate.getUTCDate() + 8);
+    const dueDateKey = sameDate.toISOString().slice(0, 10);
+    const dueDateIso = `${dueDateKey}T00:00:00.000Z`;
+
+    const persisted = await createEvent({
+      itemId: persistedItem.id,
+      dueDate: dueDateIso,
+      status: "Pending",
+      amount: "111.00"
+    });
+
+    const projectedItem = await createFinancialItem({
+      userId: owner.id,
+      title: "Projected monthly bill",
+      frequency: "monthly",
+      status: "Active",
+      dueDate: dueDateKey,
+      defaultAmount: 222
+    });
+
+    const response = await ownerAgent.get("/events").query({ status: "all" });
+
+    expect(response.status).toBe(200);
+    const sameDateGroup = response.body.groups.find((group) => group.due_date === dueDateKey);
+    expect(sameDateGroup).toBeTruthy();
+    expect(sameDateGroup.events).toHaveLength(2);
+
+    expect(sameDateGroup.events[0]).toMatchObject({
+      id: persisted.id,
+      source_state: "persisted",
+      is_projected: false
+    });
+
+    expect(sameDateGroup.events[1]).toMatchObject({
+      item_id: projectedItem.id,
+      source_state: "projected",
+      is_projected: true
+    });
+    expect(sameDateGroup.events[1].id).toMatch(new RegExp(`^projected-${projectedItem.id}-${dueDateKey}$`));
   });
 
   it("supports status and due range filters for page-level event views", async () => {
@@ -350,6 +399,8 @@ describe("GET /events", () => {
       expect(event.status).toBe("Pending");
       expect(event.recurring).toBe(true);
       expect(event.type).toBe("Monthly HOA");
+      expect(event.source_state).toBe("projected");
+      expect(event.is_projected).toBe(true);
     });
 
     const today = new Date();

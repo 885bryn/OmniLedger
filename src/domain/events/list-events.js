@@ -79,6 +79,19 @@ function toTime(value, fallback = Number.POSITIVE_INFINITY) {
   return Number.isNaN(time) ? fallback : time;
 }
 
+function startOfUtcDay(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function addYearsUtc(date, count) {
+  return new Date(Date.UTC(date.getUTCFullYear() + count, date.getUTCMonth(), date.getUTCDate()));
+}
+
 function normalizeInput(input) {
   const payload = isPlainObject(input) ? input : {};
   const scope = isPlainObject(payload.scope) ? payload.scope : {};
@@ -162,10 +175,16 @@ function normalizeEvent(eventInstance) {
     due_date: raw.due_date,
     status: raw.status,
     recurring: Boolean(raw.is_recurring),
+    source_state: "persisted",
+    is_projected: false,
     completed_at: raw.completed_at || null,
     created_at: raw.created_at || raw.createdAt,
     updated_at: raw.updated_at || raw.updatedAt
   };
+}
+
+function sourceRank(event) {
+  return event && event.source_state === "projected" ? 1 : 0;
 }
 
 function filterByStatus(events, status) {
@@ -206,6 +225,11 @@ function compareEvents(left, right) {
     return dueDiff;
   }
 
+  const sourceDiff = sourceRank(left) - sourceRank(right);
+  if (sourceDiff !== 0) {
+    return sourceDiff;
+  }
+
   const updatedDiff = toTime(right.updated_at, 0) - toTime(left.updated_at, 0);
   if (updatedDiff !== 0) {
     return updatedDiff;
@@ -218,6 +242,11 @@ function compareEventsDescending(left, right) {
   const dueDiff = toTime(right.due_date) - toTime(left.due_date);
   if (dueDiff !== 0) {
     return dueDiff;
+  }
+
+  const sourceDiff = sourceRank(left) - sourceRank(right);
+  if (sourceDiff !== 0) {
+    return sourceDiff;
   }
 
   const updatedDiff = toTime(right.updated_at, 0) - toTime(left.updated_at, 0);
@@ -310,6 +339,8 @@ function groupEvents(events) {
 
 async function listEvents(input) {
   const query = normalizeInput(input);
+  const today = startOfUtcDay(query.now) || startOfUtcDay(new Date());
+  const projectionWindowEnd = addYearsUtc(today, 3);
   await ensurePendingEventsForScope(query.ownerFilter);
 
   const itemWhere = {};
@@ -355,13 +386,18 @@ async function listEvents(input) {
   const projectedEvents = financialItems
     .filter((item) => !getDeletedAt(item.attributes))
     .flatMap((item) => {
-    const existingRows = persistedByItem.get(item.id) || [];
-    return projectItemEvents({
-      item,
-      persistedEvents: existingRows,
-      now: query.now,
-      limit: 3
-    });
+      const existingRows = persistedByItem.get(item.id) || [];
+      return projectItemEvents({
+        item,
+        persistedEvents: existingRows,
+        now: query.now,
+        windowStart: today,
+        windowEnd: projectionWindowEnd
+      }).map((event) => ({
+        ...event,
+        source_state: "projected",
+        is_projected: true
+      }));
     });
 
   const allEvents = mergePersistedAndProjectedEvents(persistedEvents, projectedEvents);
