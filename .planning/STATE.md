@@ -1,26 +1,23 @@
 # Project State
-
 ## Project Reference
 See: `.planning/PROJECT.md` (updated 2026-02-25)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
 **Current focus:** Phase 11 - Timeline Projection & Asset Ledger Views (v2.0)
-
 ## Current Position
 
 Phase: 11 of 12 (Timeline Projection & Asset Ledger Views)
-Plan: 1 of 4 (next: 11-02-PLAN.md)
+Plan: 2 of 4 (next: 11-03-PLAN.md)
 Status: In progress
-Last activity: 2026-02-28 - Completed 11-01 deterministic 3-year timeline projection and source-state contract
+Last activity: 2026-02-28 - Completed 11-02 projected occurrence edit persistence and exception metadata mutation
 
-Progress: [████████░░] 80%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
-
 **Velocity:**
-- Total plans completed: 32
+- Total plans completed: 33
 - Average duration: 4 min (v2.0)
-- Total execution time: 45 min (v2.0)
+- Total execution time: 47 min (v2.0)
 
 **By Phase:**
 
@@ -29,12 +26,12 @@ Progress: [████████░░] 80%
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
 | 9. RBAC Scope & Admin Safety Mode | 8 | 23 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 4 | 21 min | 5 min |
-| 11. Timeline Projection & Asset Ledger Views | 1 | 2 min | 2 min |
+| 11. Timeline Projection & Asset Ledger Views | 2 | 4 min | 2 min |
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 11-01 (2 min), 10-05 (2 min), 10-04 (6 min), 10-03 (8 min), 10-02 (5 min)
-- Trend: Timeline read model now projects recurring occurrences through a bounded 3-year horizon with explicit persisted/projected state metadata.
+- Last 5 plans: 11-02 (2 min), 11-01 (2 min), 10-05 (2 min), 10-04 (6 min), 10-03 (8 min)
+- Trend: Timeline now supports projected edit materialization into durable persisted exception rows while preserving deterministic source-state ordering.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
@@ -59,6 +56,7 @@ Progress: [████████░░] 80%
 | Phase 10 P04 | 6 min | 2 tasks | 7 files |
 | Phase 10 P05 | 2 min | 2 tasks | 10 files |
 | Phase 11 P01 | 2 min | 2 tasks | 3 files |
+| Phase 11 P02 | 2 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -133,6 +131,9 @@ Recent decisions affecting current work:
 - [Phase 11]: Projection generation now uses explicit today..today+3y date bounds instead of occurrence count limits.
 - [Phase 11]: Event timeline DTOs now include source_state and is_projected so projected state is explicit.
 - [Phase 11]: Same-date event tie-breaks now rank persisted rows ahead of projected rows for deterministic ordering.
+- [Phase 11]: Projected edit requests now materialize through item-event-sync before mutation to preserve dedupe semantics.
+- [Phase 11]: PATCH /events/:id ownership denials return not_found envelopes to match completion-route policy behavior.
+- [Phase 11]: Events persist an is_exception marker when projected materialization is used so edited occurrences remain identifiable after reload.
 
 ### Pending Todos
 
@@ -144,6 +145,6 @@ Recent decisions affecting current work:
 None yet.
 
 ## Session Continuity
-Last session: 2026-02-27 16:58
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-02-28 01:23
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None
