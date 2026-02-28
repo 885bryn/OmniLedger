@@ -1,20 +1,19 @@
 # Project State
 
 ## Project Reference
-
 See: `.planning/PROJECT.md` (updated 2026-02-25)
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 10 - Financial Contract-Occurrence Foundation (v2.0)
+**Current focus:** Phase 11 - Timeline Projection & Asset Ledger Views (v2.0)
 
 ## Current Position
 
-Phase: 10 of 12 (Financial Contract-Occurrence Foundation)
-Plan: 5 of 5 (next: none)
-Status: Phase complete
-Last activity: 2026-02-26 - Completed 10-05 UAT visibility regression closure across item lists, asset commitments, and events lifecycle
+Phase: 11 of 12 (Timeline Projection & Asset Ledger Views)
+Plan: 1 of 4 (next: 11-02-PLAN.md)
+Status: In progress
+Last activity: 2026-02-28 - Completed 11-01 deterministic 3-year timeline projection and source-state contract
 
-Progress: [██████████] 100%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -34,8 +33,8 @@ Progress: [██████████] 100%
 | 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 10-05 (2 min), 10-04 (6 min), 10-03 (8 min), 10-02 (5 min), 10-01 (6 min)
-- Trend: Financial item visibility now stays consistent across Items, asset detail commitments, and post-completion event lifecycle refreshes.
+- Last 5 plans: 11-01 (2 min), 10-05 (2 min), 10-04 (6 min), 10-03 (8 min), 10-02 (5 min)
+- Trend: Timeline read model now projects recurring occurrences through a bounded 3-year horizon with explicit persisted/projected state metadata.
 | Phase 08 P03 | 2 min | 2 tasks | 6 files |
 | Phase 08 P02 | 2 min | 2 tasks | 10 files |
 | Phase 08 P06 | 5 min | 2 tasks | 6 files |
@@ -59,6 +58,7 @@ Progress: [██████████] 100%
 | Phase 10 P03 | 8 min | 2 tasks | 8 files |
 | Phase 10 P04 | 6 min | 2 tasks | 7 files |
 | Phase 10 P05 | 2 min | 2 tasks | 10 files |
+| Phase 11 P01 | 2 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -130,6 +130,9 @@ Recent decisions affecting current work:
 - [Phase 10]: List filters now classify FinancialItem rows by subtype so commitments/income views include canonical contracts.
 - [Phase 10]: Net-status child lookup now includes both parent_item_id and linked_asset_item_id with existing owner/soft-delete guards.
 - [Phase 10]: Event lifecycle merge now prefers persisted rows over projections for the same item/date key to preserve completed visibility.
+- [Phase 11]: Projection generation now uses explicit today..today+3y date bounds instead of occurrence count limits.
+- [Phase 11]: Event timeline DTOs now include source_state and is_projected so projected state is explicit.
+- [Phase 11]: Same-date event tie-breaks now rank persisted rows ahead of projected rows for deterministic ordering.
 
 ### Pending Todos
 
@@ -141,7 +144,6 @@ Recent decisions affecting current work:
 None yet.
 
 ## Session Continuity
-
-Last session: 2026-02-26 22:27
-Stopped at: Completed 10-05-PLAN.md
+Last session: 2026-02-27 16:58
+Stopped at: Completed 11-01-PLAN.md
 Resume file: None

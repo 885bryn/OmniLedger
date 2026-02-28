@@ -27,8 +27,8 @@
 
 ### Timeline & Asset UX
 
-- [ ] **TIME-01**: User can view a unified timeline up to 3 years including paid, pending, and projected occurrences.
-- [ ] **TIME-02**: Timeline distinguishes projected versus persisted occurrences and applies deterministic ordering.
+- [x] **TIME-01**: User can view a unified timeline up to 3 years including paid, pending, and projected occurrences.
+- [x] **TIME-02**: Timeline distinguishes projected versus persisted occurrences and applies deterministic ordering.
 - [ ] **TIME-03**: Asset commitment view is split into `Current & Upcoming` and `Historical Ledger` sections.
 - [x] **TIME-04**: Admin can view combined data or filter dashboard/timeline through a selected user lens.
 
@@ -87,8 +87,8 @@ Traceability for milestone v2.0 is mapped to Phases 8-12.
 | FIN-04 | Phase 10 | Complete |
 | FIN-05 | Phase 11 | Pending |
 | FIN-06 | Phase 10 | Complete |
-| TIME-01 | Phase 11 | Pending |
-| TIME-02 | Phase 11 | Pending |
+| TIME-01 | Phase 11 | Complete |
+| TIME-02 | Phase 11 | Complete |
 | TIME-03 | Phase 11 | Pending |
 | TIME-04 | Phase 9 | Complete |
 | LIFE-01 | Phase 12 | Pending |

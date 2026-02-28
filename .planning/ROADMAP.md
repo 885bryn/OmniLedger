@@ -77,7 +77,12 @@ Plans:
   2. Timeline clearly distinguishes projected occurrences from persisted occurrences.
   3. Editing a projected future occurrence instantiates a stored exception for that date and the edit appears as persisted data.
   4. Asset financial view is split into `Current & Upcoming` and `Historical Ledger` sections with records visible in the expected section.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 11-01-PLAN.md - Extend timeline read model to 3-year projection window with explicit persisted/projected ordering contract.
+- [ ] 11-02-PLAN.md - Add projected occurrence edit mutation that materializes and persists date-specific exception rows.
+- [ ] 11-03-PLAN.md - Implement timeline state cues and save-exception UX for projected edits with in-place persisted indicators.
+- [ ] 11-04-PLAN.md - Split asset detail financial ledger into Current & Upcoming versus Historical sections with summaries and mobile collapse.
 
 ### Phase 12: Deletion Lifecycle & Retention Controls
 **Goal**: Users can safely delete and restore data with guarded linked-record behavior and predictable retention cleanup.
@@ -98,5 +103,5 @@ Plans:
 | 8. Auth Sessions & Protected Access | 6/6 | Complete    | 2026-02-25 |
 | 9. RBAC Scope & Admin Safety Mode | 13/13 | Complete | 2026-02-26 |
 | 10. Financial Contract-Occurrence Foundation | 5/5 | Complete   | 2026-02-26 |
-| 11. Timeline Projection & Asset Ledger Views | 0/TBD | Not started | - |
+| 11. Timeline Projection & Asset Ledger Views | 1/4 | In Progress|  |
 | 12. Deletion Lifecycle & Retention Controls | 0/TBD | Not started | - |
