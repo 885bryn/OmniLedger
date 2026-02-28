@@ -109,6 +109,24 @@
       "undoConfirm": "Undo completion for this event?",
       "cancel": "Cancel"
     },
+    "editAction": {
+      "button": "Edit",
+      "pending": "Saving...",
+      "confirmTitle": "Review occurrence changes",
+      "projectedConfirm": "Saving this projected occurrence creates a persisted exception for this date.",
+      "persistedConfirm": "Save changes to this persisted occurrence?",
+      "save": "Save changes",
+      "saveException": "Save exception",
+      "cancel": "Cancel",
+      "failed": "Update failed. Try again.",
+      "noChanges": "No changes detected. Update the date or amount before saving.",
+      "fields": {
+        "date": "Due date",
+        "amount": "Amount"
+      },
+      "changeSummaryDate": "Date: {{oldValue}} -> {{newValue}}",
+      "changeSummaryAmount": "Amount: {{oldValue}} -> {{newValue}}"
+    },
     "recurrence": {
       "oneTime": "One-time",
       "weekly": "Weekly",

@@ -109,6 +109,24 @@
       "undoConfirm": "确认撤销该事件的完成状态吗？",
       "cancel": "取消"
     },
+    "editAction": {
+      "button": "编辑",
+      "pending": "保存中...",
+      "confirmTitle": "确认发生项变更",
+      "projectedConfirm": "保存该预测发生项会为此日期创建一条已落库异常记录。",
+      "persistedConfirm": "确认保存该已落库发生项的修改吗？",
+      "save": "保存修改",
+      "saveException": "保存异常",
+      "cancel": "取消",
+      "failed": "更新失败，请重试。",
+      "noChanges": "未检测到变更。请先修改日期或金额再保存。",
+      "fields": {
+        "date": "到期日期",
+        "amount": "金额"
+      },
+      "changeSummaryDate": "日期：{{oldValue}} -> {{newValue}}",
+      "changeSummaryAmount": "金额：{{oldValue}} -> {{newValue}}"
+    },
     "recurrence": {
       "oneTime": "一次性",
       "weekly": "每周",

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
+import { EditEventRowAction } from '../../features/events/edit-event-row-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
@@ -342,6 +343,11 @@ export function EventsPage() {
                           {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
                         </span>
                         <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
+                        {event.is_exception ? (
+                          <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                            {t('events.stateLegend.editedOccurrence')}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
                         <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
@@ -354,6 +360,14 @@ export function EventsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">{formatEventAmount(event, itemById.get(event.item_id)) ?? t('events.amountPending')}</div>
+                      <EditEventRowAction
+                        eventId={event.id}
+                        itemId={event.item_id}
+                        eventStatus={event.status}
+                        dueDate={event.due_date}
+                        amount={event.amount}
+                        isProjected={projected}
+                      />
                       <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
                     </div>
                   </li>
@@ -403,6 +417,11 @@ export function EventsPage() {
                           {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
                         </span>
                         <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
+                        {event.is_exception ? (
+                          <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                            {t('events.stateLegend.editedOccurrence')}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
                         <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
@@ -415,6 +434,14 @@ export function EventsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-medium">{formatEventAmount(event, itemById.get(event.item_id)) ?? t('events.amountPending')}</div>
+                      <EditEventRowAction
+                        eventId={event.id}
+                        itemId={event.item_id}
+                        eventStatus={event.status}
+                        dueDate={event.due_date}
+                        amount={event.amount}
+                        isProjected={projected}
+                      />
                       <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
                     </div>
                   </li>

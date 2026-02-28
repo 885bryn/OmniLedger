@@ -542,4 +542,115 @@ describe('dashboard/events completion flow', () => {
     expect(within(rows[0]).getByText('Persisted')).toBeTruthy()
     expect(within(rows[1]).getByText('Projected')).toBeTruthy()
   })
+
+  it('edits a projected row with save-exception confirmation and shows edited occurrence state after refetch', async () => {
+    let listCalls = 0
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        listCalls += 1
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [
+              {
+                due_date: '2026-03-03',
+                events:
+                  listCalls === 1
+                    ? [
+                        {
+                          id: 'projected-item-1-2026-03-03',
+                          item_id: 'item-1',
+                          type: 'Mortgage',
+                          amount: 1400,
+                          due_date: '2026-03-03',
+                          status: 'Pending',
+                          updated_at: '2026-03-03T00:00:00.000Z',
+                          source_state: 'projected',
+                          is_projected: true,
+                          is_exception: false,
+                        },
+                      ]
+                    : [
+                        {
+                          id: 'event-1',
+                          item_id: 'item-1',
+                          type: 'Mortgage',
+                          amount: 1500,
+                          due_date: '2026-03-05',
+                          status: 'Pending',
+                          updated_at: '2026-03-03T00:00:00.000Z',
+                          source_state: 'persisted',
+                          is_projected: false,
+                          is_exception: true,
+                        },
+                      ],
+              },
+            ],
+            total_count: 1,
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Maple Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                attributes: { name: 'Maple Mortgage' },
+              },
+            ],
+          },
+        })
+      }
+
+      if (url.includes('/events/projected-item-1-2026-03-03') && method === 'PATCH') {
+        const body = typeof init?.body === 'string' ? JSON.parse(init.body) : {}
+        expect(body).toMatchObject({
+          due_date: '2026-03-05',
+          amount: 1500,
+        })
+
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'event-1',
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage()
+
+    await screen.findByText('Mortgage')
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await screen.findByText('Saving this projected occurrence creates a persisted exception for this date.')
+    await userEvent.clear(screen.getByLabelText('Due date'))
+    await userEvent.type(screen.getByLabelText('Due date'), '2026-03-05')
+    await userEvent.clear(screen.getByLabelText('Amount'))
+    await userEvent.type(screen.getByLabelText('Amount'), '1500')
+
+    expect(screen.getByText(/Date:\s*2026-03-03\s*->\s*2026-03-05/)).toBeTruthy()
+    expect(screen.getByText(/Amount:\s*1400\s*->\s*1500/)).toBeTruthy()
+
+    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Save exception' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Edited occurrence')).toBeTruthy()
+    })
+    expect(screen.queryByText('Saving this projected occurrence creates a persisted exception for this date.')).toBeNull()
+  })
 })
