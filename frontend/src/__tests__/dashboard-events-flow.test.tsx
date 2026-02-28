@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { EventsPage } from '../pages/events/events-page'
+import { DashboardPage } from '../pages/dashboard/dashboard-page'
 
 vi.mock('../auth/auth-context', () => ({
   useAuth: () => ({
@@ -47,6 +48,8 @@ function buildEventsResponse(currentEvent: { id: string; status: string }) {
             due_date: '2026-02-26',
             status: currentEvent.status,
             updated_at: '2026-02-25T00:00:00.000Z',
+            source_state: 'persisted',
+            is_projected: false,
           },
         ],
       },
@@ -61,6 +64,8 @@ function buildEventsResponse(currentEvent: { id: string; status: string }) {
             due_date: '2026-02-10',
             status: 'Completed',
             updated_at: '2026-02-11T00:00:00.000Z',
+            source_state: 'persisted',
+            is_projected: false,
           },
         ],
       },
@@ -86,8 +91,32 @@ function renderEventsPage() {
       <MemoryRouter initialEntries={['/events']}>
         <Routes>
           <Route path="/events" element={<EventsPage />} />
-          <Route path="/items/:itemId/edit" element={<p>Item edit page</p>} />
-          <Route path="/items" element={<p>Items list page</p>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
+
+function renderDashboardPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+      mutations: {
+        retry: false,
+      },
+    },
+  })
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Routes>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/items/:itemId" element={<p>Item detail page</p>} />
+          <Route path="/items/create/wizard" element={<p>Create item page</p>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -103,7 +132,7 @@ describe('dashboard/events completion flow', () => {
     vi.restoreAllMocks()
   })
 
-  it('shows follow-up modal when completion payload has prompt_next_date true', async () => {
+  it('completes event without showing recurring schedule follow-up modal', async () => {
     let listCalls = 0
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
@@ -168,13 +197,10 @@ describe('dashboard/events completion flow', () => {
     await screen.findByText('Mortgage')
     expect(screen.getByText('Current and upcoming')).toBeTruthy()
     expect(screen.getByText('History')).toBeTruthy()
-    expect(screen.getByText(/Monthly, next on/)).toBeTruthy()
+    expect(screen.getByText(/Monthly, (next on|no upcoming date)/)).toBeTruthy()
     expect(screen.getByText('Closed contract, no future projections')).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Complete' }))
     await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Complete' }))
-
-    expect(await screen.findByText('Schedule the next date')).toBeTruthy()
-    await userEvent.click(screen.getByRole('button', { name: 'Not now' }))
 
     expect((await screen.findAllByRole('button', { name: 'Undo' })).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Completed').length).toBeGreaterThan(0)
@@ -192,7 +218,7 @@ describe('dashboard/events completion flow', () => {
     })
   })
 
-  it('keeps modal hidden when completion payload has prompt_next_date false', async () => {
+  it('keeps completion flow unchanged when prompt_next_date is false', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -253,70 +279,6 @@ describe('dashboard/events completion flow', () => {
     await waitFor(() => {
       expect(screen.queryByText('Schedule the next date')).toBeNull()
     })
-  })
-
-  it('routes schedule action to item edit when itemId is available', async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input)
-      const method = init?.method ?? 'GET'
-
-      if (url.includes('/events?status=all') && method === 'GET') {
-        return createResponse({ status: 200, json: buildEventsResponse({ id: 'event-1', status: 'Pending' }) })
-      }
-
-      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
-        return createResponse({
-          status: 200,
-          json: {
-            items: [
-              {
-                id: 'item-1',
-                item_type: 'FinancialItem',
-                type: 'Commitment',
-                title: 'Maple Mortgage',
-                frequency: 'monthly',
-                status: 'Active',
-                attributes: { name: 'Maple Mortgage' },
-              },
-              {
-                id: 'item-2',
-                item_type: 'FinancialItem',
-                type: 'Commitment',
-                title: 'Home Insurance',
-                frequency: 'yearly',
-                status: 'Closed',
-                attributes: { name: 'Home Insurance' },
-              },
-            ],
-          },
-        })
-      }
-
-      if (url.includes('/events/event-1/complete') && method === 'PATCH') {
-        return createResponse({
-          status: 200,
-          json: {
-            id: 'event-1',
-            prompt_next_date: true,
-          },
-        })
-      }
-
-      throw new Error(`Unhandled request: ${method} ${url}`)
-    })
-
-    globalThis.fetch = fetchMock as typeof fetch
-
-    renderEventsPage()
-
-    await screen.findByText('Mortgage')
-    await userEvent.click(screen.getByRole('button', { name: 'Complete' }))
-    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Complete' }))
-
-    await screen.findByText('Schedule the next date')
-    await userEvent.click(screen.getByRole('button', { name: 'Schedule next date' }))
-
-    expect(await screen.findByText('Item edit page')).toBeTruthy()
   })
 
   it('uses inline undo action for completed history rows', async () => {
@@ -390,5 +352,194 @@ describe('dashboard/events completion flow', () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/events/event-2/undo-complete'), expect.anything())
     })
+  })
+
+  it('computes upcoming amount from outflows only, excluding income events', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+      const parsedUrl = new URL(url, 'http://localhost')
+      const pathname = parsedUrl.pathname
+      const search = parsedUrl.searchParams
+
+      if (pathname === '/events' && search.get('status') === 'pending' && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [
+              {
+                due_date: '2026-02-26',
+                events: [
+                  {
+                    id: 'event-1',
+                    item_id: 'item-commitment',
+                    type: 'Mortgage',
+                    amount: 1400,
+                    due_date: '2026-02-26',
+                    status: 'Pending',
+                    updated_at: '2026-02-25T00:00:00.000Z',
+                    source_state: 'persisted',
+                    is_projected: false,
+                  },
+                  {
+                    id: 'event-2',
+                    item_id: 'item-income',
+                    type: 'Renting out SUV',
+                    amount: 2200,
+                    due_date: '2026-02-26',
+                    status: 'Pending',
+                    updated_at: '2026-02-25T00:00:00.000Z',
+                    source_state: 'persisted',
+                    is_projected: false,
+                  },
+                ],
+              },
+            ],
+            total_count: 2,
+          },
+        })
+      }
+
+      if (pathname === '/items' && search.get('filter') === 'assets' && method === 'GET') {
+        return createResponse({ status: 200, json: { items: [], total_count: 0 } })
+      }
+
+      if (pathname === '/items' && search.get('filter') === 'all' && search.get('sort') === 'recently_updated' && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'item-commitment',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Maple Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                attributes: { name: 'Maple Mortgage', financialSubtype: 'Commitment' },
+                updated_at: '2026-02-25T00:00:00.000Z',
+              },
+              {
+                id: 'item-income',
+                item_type: 'FinancialItem',
+                type: 'Income',
+                title: 'Renting out SUV',
+                frequency: 'weekly',
+                status: 'Active',
+                attributes: { name: 'Renting out SUV', financialSubtype: 'Income' },
+                updated_at: '2026-02-25T00:00:00.000Z',
+              },
+            ],
+            total_count: 2,
+          },
+        })
+      }
+
+      return createResponse({ status: 200, json: { groups: [], total_count: 0, items: [] } })
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderDashboardPage()
+
+    await screen.findByText('Upcoming amount')
+    const upcomingAmountCard = screen.getByText('Upcoming amount').closest('article')
+    expect(upcomingAmountCard).toBeTruthy()
+
+    if (!upcomingAmountCard) {
+      throw new Error('Expected upcoming amount card')
+    }
+
+    expect(within(upcomingAmountCard).getByText('$1,400')).toBeTruthy()
+    expect(within(upcomingAmountCard).queryByText('$3,600')).toBeNull()
+    expect(screen.getByText((content) => content.includes('+$2,200'))).toBeTruthy()
+  })
+
+  it('shows projected/persisted legend and keeps persisted rows above projected rows on same date', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [
+              {
+                due_date: '2026-02-26',
+                events: [
+                  {
+                    id: 'projected-item-1-2026-02-26',
+                    item_id: 'item-1',
+                    type: 'Projected Mortgage',
+                    amount: 1400,
+                    due_date: '2026-02-26',
+                    status: 'Pending',
+                    updated_at: '2026-02-26T00:00:00.000Z',
+                    source_state: 'projected',
+                    is_projected: true,
+                  },
+                  {
+                    id: 'event-1',
+                    item_id: 'item-2',
+                    type: 'Persisted Mortgage',
+                    amount: 1200,
+                    due_date: '2026-02-26',
+                    status: 'Pending',
+                    updated_at: '2026-02-25T00:00:00.000Z',
+                    source_state: 'persisted',
+                    is_projected: false,
+                  },
+                ],
+              },
+            ],
+            total_count: 2,
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Projected Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                attributes: { name: 'Projected Mortgage' },
+              },
+              {
+                id: 'item-2',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Persisted Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                attributes: { name: 'Persisted Mortgage' },
+              },
+            ],
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage()
+
+    await screen.findAllByText('Persisted Mortgage')
+    expect(screen.getAllByText('State:').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Projected').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Persisted').length).toBeGreaterThan(0)
+
+    const rows = screen.getAllByRole('listitem')
+    expect(within(rows[0]).getByText('Persisted')).toBeTruthy()
+    expect(within(rows[1]).getByText('Projected')).toBeTruthy()
   })
 })

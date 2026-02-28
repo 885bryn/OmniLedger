@@ -90,6 +90,12 @@
     "returnDashboard": "Return to dashboard",
     "amountPending": "Amount pending",
     "itemLabel": "Item {{itemId}}",
+    "stateLegend": {
+      "label": "State:",
+      "projected": "Projected",
+      "persisted": "Persisted",
+      "editedOccurrence": "Edited occurrence"
+    },
     "completeAction": {
       "button": "Complete",
       "undoButton": "Undo",

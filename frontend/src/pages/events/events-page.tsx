@@ -6,7 +6,7 @@ import { CompleteEventRowAction } from '../../features/events/complete-event-row
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
-import { getItemDisplayName } from '../../lib/item-display'
+import { getItemDisplayName, isIncomeItem } from '../../lib/item-display'
 import { eventListParams, lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type EventRow = {
@@ -17,6 +17,9 @@ type EventRow = {
   due_date: string
   status: string
   updated_at: string
+  source_state?: 'projected' | 'persisted' | string
+  is_projected?: boolean
+  is_exception?: boolean
 }
 
 type EventGroup = {
@@ -69,6 +72,15 @@ function formatCurrency(value: number | null) {
   }).format(value)
 }
 
+function formatEventAmount(event: EventRow, item: ItemRow | undefined) {
+  const formatted = formatCurrency(event.amount)
+  if (!formatted) {
+    return null
+  }
+
+  return item && isIncomeItem(item) ? `+${formatted}` : formatted
+}
+
 function toGroupedEvents(events: EventRow[]): EventGroup[] {
   const groups = new Map<string, EventRow[]>()
 
@@ -87,6 +99,22 @@ function toGroupedEvents(events: EventRow[]): EventGroup[] {
 function toStartOfTodayUtc() {
   const now = new Date()
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).getTime()
+}
+
+function isProjectedEvent(event: EventRow) {
+  if (event.source_state === 'projected') {
+    return true
+  }
+
+  if (event.source_state === 'persisted') {
+    return false
+  }
+
+  if (typeof event.is_projected === 'boolean') {
+    return event.is_projected
+  }
+
+  return event.id.startsWith('projected-')
 }
 
 function getFrequencyLabel(value: string | null | undefined, t: (key: string) => string) {
@@ -108,16 +136,34 @@ function getFrequencyLabel(value: string | null | undefined, t: (key: string) =>
   }
 }
 
+function getItemStatus(item: ItemRow) {
+  if (item.status && item.status.length > 0) {
+    return item.status
+  }
+
+  const attributeStatus = item.attributes?.status
+  return typeof attributeStatus === 'string' && attributeStatus.length > 0 ? attributeStatus : null
+}
+
+function getItemFrequency(item: ItemRow) {
+  if (item.frequency && item.frequency.length > 0) {
+    return item.frequency
+  }
+
+  const attributeFrequency = item.attributes?.billingCycle ?? item.attributes?.frequency
+  return typeof attributeFrequency === 'string' && attributeFrequency.length > 0 ? attributeFrequency : null
+}
+
 function getRecurrenceText(item: ItemRow | undefined, event: EventRow, nextByItemId: Map<string, string>, t: (key: string, options?: Record<string, unknown>) => string) {
   if (!item) {
     return null
   }
 
-  if (item.status === 'Closed') {
+  if (getItemStatus(item) === 'Closed') {
     return t('events.recurrence.closed')
   }
 
-  const frequencyLabel = getFrequencyLabel(item.frequency, t)
+  const frequencyLabel = getFrequencyLabel(getItemFrequency(item), t)
   const nextDue = nextByItemId.get(event.item_id)
   if (!nextDue) {
     return t('events.recurrence.summaryNoDate', { frequency: frequencyLabel })
@@ -258,7 +304,14 @@ export function EventsPage() {
       </header>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('events.upcomingTitle')}</h2>
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('events.upcomingTitle')}</h2>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+            <span>{t('events.stateLegend.label')}</span>
+            <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{t('events.stateLegend.projected')}</span>
+            <span className="rounded-full border border-border bg-background px-2 py-0.5 font-medium text-foreground">{t('events.stateLegend.persisted')}</span>
+          </div>
+        </div>
         {groupedSections.upcoming.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border bg-card/70 px-4 py-3 text-sm text-muted-foreground">{t('events.noUpcoming')}</p>
         ) : (
@@ -266,11 +319,28 @@ export function EventsPage() {
             <section key={`upcoming-${group.due_date}`} className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h3 className="text-sm font-semibold text-foreground">{formatDueLabel(group.due_date)}</h3>
               <ul className="mt-3 space-y-2">
-                {group.events.map((event) => (
-                  <li key={event.id} className="hover-lift flex flex-col gap-2 rounded-xl border border-border bg-background/80 p-3 md:flex-row md:items-center md:justify-between">
+                {group.events.map((event) => {
+                  const projected = isProjectedEvent(event)
+
+                  return (
+                  <li
+                    key={event.id}
+                    className={`hover-lift flex flex-col gap-2 rounded-xl border p-3 md:flex-row md:items-center md:justify-between ${
+                      projected ? 'border-sky-200 bg-sky-50/40' : 'border-border bg-background/80'
+                    }`}
+                  >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium">{event.type}</p>
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                            projected
+                              ? 'border-sky-300 bg-sky-50 text-sky-700'
+                              : 'border-border bg-background text-foreground'
+                          }`}
+                        >
+                          {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
+                        </span>
                         <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -283,11 +353,11 @@ export function EventsPage() {
                       ) : null}
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="text-sm font-medium">{formatCurrency(event.amount) ?? t('events.amountPending')}</div>
+                      <div className="text-sm font-medium">{formatEventAmount(event, itemById.get(event.item_id)) ?? t('events.amountPending')}</div>
                       <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
                     </div>
                   </li>
-                ))}
+                )})}
               </ul>
             </section>
           ))
@@ -295,7 +365,14 @@ export function EventsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('events.historyTitle')}</h2>
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('events.historyTitle')}</h2>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+            <span>{t('events.stateLegend.label')}</span>
+            <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{t('events.stateLegend.projected')}</span>
+            <span className="rounded-full border border-border bg-background px-2 py-0.5 font-medium text-foreground">{t('events.stateLegend.persisted')}</span>
+          </div>
+        </div>
         {groupedSections.history.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border bg-card/70 px-4 py-3 text-sm text-muted-foreground">{t('events.noHistory')}</p>
         ) : (
@@ -303,11 +380,28 @@ export function EventsPage() {
             <section key={`history-${group.due_date}`} className="animate-fade-up rounded-2xl border border-border bg-card/80 p-4 shadow-sm">
               <h3 className="text-sm font-semibold text-foreground">{formatDueLabel(group.due_date)}</h3>
               <ul className="mt-3 space-y-2">
-                {group.events.map((event) => (
-                  <li key={event.id} className="hover-lift flex flex-col gap-2 rounded-xl border border-border bg-background/70 p-3 md:flex-row md:items-center md:justify-between">
+                {group.events.map((event) => {
+                  const projected = isProjectedEvent(event)
+
+                  return (
+                  <li
+                    key={event.id}
+                    className={`hover-lift flex flex-col gap-2 rounded-xl border p-3 md:flex-row md:items-center md:justify-between ${
+                      projected ? 'border-sky-200 bg-sky-50/35' : 'border-border bg-background/70'
+                    }`}
+                  >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium">{event.type}</p>
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                            projected
+                              ? 'border-sky-300 bg-sky-50 text-sky-700'
+                              : 'border-border bg-background text-foreground'
+                          }`}
+                        >
+                          {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
+                        </span>
                         <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -320,11 +414,11 @@ export function EventsPage() {
                       ) : null}
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="text-sm font-medium">{formatCurrency(event.amount) ?? t('events.amountPending')}</div>
+                      <div className="text-sm font-medium">{formatEventAmount(event, itemById.get(event.item_id)) ?? t('events.amountPending')}</div>
                       <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
                     </div>
                   </li>
-                ))}
+                )})}
               </ul>
             </section>
           ))

@@ -2,6 +2,8 @@ type DueComparable = {
   id?: string
   due_date?: string | null
   updated_at?: string | null
+  source_state?: string | null
+  is_projected?: boolean | null
 }
 
 function toTime(value: string | null | undefined, fallback: number) {
@@ -21,6 +23,13 @@ export function compareByNearestDue(left: DueComparable, right: DueComparable) {
   const dueDiff = toTime(left.due_date, Number.POSITIVE_INFINITY) - toTime(right.due_date, Number.POSITIVE_INFINITY)
   if (dueDiff !== 0) {
     return dueDiff
+  }
+
+  const leftSourceRank = left.source_state === 'persisted' || left.is_projected === false ? 0 : 1
+  const rightSourceRank = right.source_state === 'persisted' || right.is_projected === false ? 0 : 1
+  const sourceDiff = leftSourceRank - rightSourceRank
+  if (sourceDiff !== 0) {
+    return sourceDiff
   }
 
   const updatedDiff = toTime(right.updated_at, 0) - toTime(left.updated_at, 0)

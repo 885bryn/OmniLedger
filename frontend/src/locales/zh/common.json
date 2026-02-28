@@ -90,6 +90,12 @@
     "returnDashboard": "返回仪表盘",
     "amountPending": "金额待定",
     "itemLabel": "项目 {{itemId}}",
+    "stateLegend": {
+      "label": "状态：",
+      "projected": "预测",
+      "persisted": "已落库",
+      "editedOccurrence": "已编辑发生项"
+    },
     "completeAction": {
       "button": "完成",
       "undoButton": "撤销",
