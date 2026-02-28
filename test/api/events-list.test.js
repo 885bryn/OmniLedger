@@ -305,7 +305,7 @@ describe("GET /events", () => {
     expect(secondMatches).toHaveLength(1);
   });
 
-  it("projects recurring financial item occurrences on read and suppresses closed contracts", async () => {
+  it("projects recurring financial item occurrences across a 3-year horizon and suppresses closed contracts", async () => {
     const owner = await createUser();
     const outsider = await createUser();
     const ownerAgent = await signInAs(owner);
@@ -344,13 +344,22 @@ describe("GET /events", () => {
       .flatMap((group) => group.events)
       .filter((event) => event.item_id === activeRecurring.id);
 
-    expect(projected).toHaveLength(3);
+    expect(projected.length).toBeGreaterThan(30);
     projected.forEach((event) => {
       expect(event.id).toMatch(new RegExp(`^projected-${activeRecurring.id}-\\d{4}-\\d{2}-\\d{2}$`));
       expect(event.status).toBe("Pending");
       expect(event.recurring).toBe(true);
       expect(event.type).toBe("Monthly HOA");
     });
+
+    const today = new Date();
+    const todayStart = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    const horizonDate = new Date(Date.UTC(today.getUTCFullYear() + 3, today.getUTCMonth(), today.getUTCDate()));
+    const horizonEnd = horizonDate.getTime();
+
+    const projectedTimes = projected.map((event) => new Date(event.due_date).getTime());
+    expect(Math.min(...projectedTimes)).toBeGreaterThanOrEqual(todayStart);
+    expect(Math.max(...projectedTimes)).toBeLessThanOrEqual(horizonEnd);
 
     const leakedClosedOrForeign = response.body.groups
       .flatMap((group) => group.events)
@@ -361,7 +370,45 @@ describe("GET /events", () => {
     const secondProjected = secondResponse.body.groups
       .flatMap((group) => group.events)
       .filter((event) => event.item_id === activeRecurring.id);
-    expect(secondProjected).toHaveLength(3);
+    expect(secondProjected).toHaveLength(projected.length);
     expect(secondProjected.map((event) => event.id)).toEqual(projected.map((event) => event.id));
+  });
+
+  it("hides persisted and projected events when source financial item is soft-deleted", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+
+    const financialItem = await createFinancialItem({
+      userId: owner.id,
+      title: "Deleted recurring bill",
+      frequency: "monthly",
+      status: "Active",
+      dueDate: "2026-03-10",
+      defaultAmount: 220
+    });
+
+    await createEvent({
+      itemId: financialItem.id,
+      dueDate: "2026-03-10T00:00:00.000Z",
+      status: "Pending",
+      amount: "220.00",
+      recurring: true
+    });
+
+    const deletedAttributes = {
+      ...(financialItem.attributes || {}),
+      _deleted_at: "2026-02-26T00:00:00.000Z",
+      _deleted_by: owner.id
+    };
+    await financialItem.update({ attributes: deletedAttributes });
+
+    const response = await ownerAgent.get("/events").query({ status: "all" });
+
+    expect(response.status).toBe(200);
+    const matching = response.body.groups
+      .flatMap((group) => group.events)
+      .filter((event) => event.item_id === financialItem.id || event.type === "Deleted recurring bill");
+
+    expect(matching).toHaveLength(0);
   });
 });

@@ -238,27 +238,27 @@ function eventDateKey(value) {
 }
 
 function mergePersistedAndProjectedEvents(persistedEvents, projectedEvents) {
-  const byKey = new Map();
+  const persisted = Array.isArray(persistedEvents) ? persistedEvents : [];
+  const projected = Array.isArray(projectedEvents) ? projectedEvents : [];
+  const persistedKeys = new Set(
+    persisted
+      .map((event) => {
+        const dueKey = eventDateKey(event.due_date);
+        return dueKey ? `${event.item_id}:${dueKey}` : null;
+      })
+      .filter(Boolean)
+  );
 
-  (Array.isArray(projectedEvents) ? projectedEvents : []).forEach((event) => {
+  const nonOverlappingProjected = projected.filter((event) => {
     const dueKey = eventDateKey(event.due_date);
     if (!dueKey) {
-      return;
+      return false;
     }
 
-    byKey.set(`${event.item_id}:${dueKey}`, event);
+    return persistedKeys.has(`${event.item_id}:${dueKey}`) === false;
   });
 
-  (Array.isArray(persistedEvents) ? persistedEvents : []).forEach((event) => {
-    const dueKey = eventDateKey(event.due_date);
-    if (!dueKey) {
-      return;
-    }
-
-    byKey.set(`${event.item_id}:${dueKey}`, event);
-  });
-
-  return Array.from(byKey.values());
+  return [...persisted, ...nonOverlappingProjected];
 }
 
 function sortUpcomingThenHistory(events, now) {
@@ -323,7 +323,7 @@ async function listEvents(input) {
         {
           model: models.Item,
           as: "item",
-          attributes: ["id", "user_id"],
+          attributes: ["id", "user_id", "attributes"],
           required: true,
           where: itemWhere
         }
@@ -337,7 +337,9 @@ async function listEvents(input) {
     })
   ]);
 
-  const persistedEvents = rows.map(normalizeEvent);
+  const persistedEvents = rows
+    .filter((row) => !getDeletedAt(row.item && row.item.attributes))
+    .map(normalizeEvent);
   const persistedByItem = new Map();
 
   persistedEvents.forEach((event) => {
@@ -350,7 +352,9 @@ async function listEvents(input) {
     persistedByItem.set(event.item_id, [event]);
   });
 
-  const projectedEvents = financialItems.flatMap((item) => {
+  const projectedEvents = financialItems
+    .filter((item) => !getDeletedAt(item.attributes))
+    .flatMap((item) => {
     const existingRows = persistedByItem.get(item.id) || [];
     return projectItemEvents({
       item,
@@ -358,7 +362,7 @@ async function listEvents(input) {
       now: query.now,
       limit: 3
     });
-  });
+    });
 
   const allEvents = mergePersistedAndProjectedEvents(persistedEvents, projectedEvents);
   const filtered = sortUpcomingThenHistory(filterByRange(filterByStatus(allEvents, query.status), query.dueFrom, query.dueTo), query.now);

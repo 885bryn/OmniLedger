@@ -43,6 +43,10 @@ function addMonthsUtc(date, count) {
   return new Date(Date.UTC(monthAnchor.getUTCFullYear(), monthAnchor.getUTCMonth(), Math.min(day, lastDay)));
 }
 
+function addYearsUtc(date, count) {
+  return addMonthsUtc(date, count * 12);
+}
+
 function advanceByFrequency(date, frequency) {
   if (frequency === "weekly") {
     return addDaysUtc(date, 7);
@@ -177,7 +181,13 @@ async function materializeItemEventForDate({ item, dueDate, models, transaction 
   );
 }
 
-function projectItemEvents({ item, persistedEvents, now = new Date(), limit = 3 }) {
+function projectItemEvents({
+  item,
+  persistedEvents,
+  now = new Date(),
+  windowStart,
+  windowEnd
+}) {
   if (!shouldProjectRecurringFinancialItem(item)) {
     return [];
   }
@@ -188,8 +198,9 @@ function projectItemEvents({ item, persistedEvents, now = new Date(), limit = 3 
     return [];
   }
 
-  const boundedLimit = Math.max(0, Number(limit) || 0);
-  if (boundedLimit === 0) {
+  const projectionStart = toUtcDate(windowStart || today);
+  const projectionEnd = toUtcDate(windowEnd || addYearsUtc(today, 3));
+  if (!projectionStart || !projectionEnd || projectionEnd.getTime() < projectionStart.getTime()) {
     return [];
   }
 
@@ -203,7 +214,7 @@ function projectItemEvents({ item, persistedEvents, now = new Date(), limit = 3 
   let cursor = seedDate;
   let guard = 0;
 
-  while (cursor.getTime() < today.getTime() && guard < 500) {
+  while (cursor.getTime() < projectionStart.getTime() && guard < 500) {
     const nextCursor = advanceByFrequency(cursor, item.frequency);
     if (!nextCursor) {
       return [];
@@ -212,7 +223,7 @@ function projectItemEvents({ item, persistedEvents, now = new Date(), limit = 3 
     guard += 1;
   }
 
-  while (projected.length < boundedLimit && guard < 1500) {
+  while (cursor.getTime() <= projectionEnd.getTime() && guard < 2000) {
     const dateKey = toDateKey(cursor);
     if (dateKey && existingDateKeys.has(dateKey) === false) {
       projected.push({
