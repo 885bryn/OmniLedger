@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { ItemActivityTimeline } from '../../features/audit/item-activity-timeline'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
-import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel } from '../../lib/item-display'
-import { queryKeys } from '../../lib/query-keys'
+import { compareByNearestDue } from '../../lib/date-ordering'
+import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel, isHiddenAttributeKey, isIncomeItem } from '../../lib/item-display'
+import { eventListParams, queryKeys } from '../../lib/query-keys'
 
 type ItemRow = {
   id: string
@@ -17,6 +19,7 @@ type ItemRow = {
   frequency?: string | null
   status?: string | null
   default_amount?: number | null
+  linked_asset_item_id?: string | null
   attributes: Record<string, unknown>
   parent_item_id?: string | null
   updated_at: string
@@ -34,6 +37,29 @@ type NetStatusResponse = ItemRow & {
     net_monthly_cashflow: number
     excluded_row_count: number
   }
+}
+
+type EventRow = {
+  id: string
+  item_id: string
+  type: string
+  amount: number | null
+  due_date: string
+  status: string
+  updated_at: string
+  source_state?: 'projected' | 'persisted' | string
+  is_projected?: boolean
+  is_exception?: boolean
+}
+
+type EventGroup = {
+  due_date: string
+  events: EventRow[]
+}
+
+type EventsResponse = {
+  groups: EventGroup[]
+  total_count: number
 }
 
 type DetailTab = 'overview' | 'commitments' | 'activity'
@@ -100,10 +126,12 @@ function getDisplayEntries(attributes: Record<string, unknown>) {
   const preferred = DETAIL_KEY_ORDER.filter((key) => key in attributes)
   const extras = Object.keys(attributes)
     .filter((key) => !DETAIL_KEY_ORDER.includes(key as (typeof DETAIL_KEY_ORDER)[number]))
-    .filter((key) => !key.startsWith('_'))
+    .filter((key) => !isHiddenAttributeKey(key))
     .sort()
 
-  return [...preferred, ...extras].map((key) => ({ key, value: attributes[key] }))
+  return [...preferred, ...extras]
+    .filter((key) => !isHiddenAttributeKey(key))
+    .map((key) => ({ key, value: attributes[key] }))
 }
 
 function formatCurrency(value: number) {
@@ -132,6 +160,43 @@ function formatDateLabel(value: string) {
   }).format(parsed)
 }
 
+function formatEventAmount(event: EventRow, item: ItemRow | undefined) {
+  if (event.amount === null || Number.isNaN(event.amount)) {
+    return null
+  }
+
+  const formatted = formatCurrency(event.amount)
+  return item && isIncomeItem(item) ? `+${formatted}` : formatted
+}
+
+function toStartOfTodayUtc() {
+  const now = new Date()
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).getTime()
+}
+
+function isProjectedEvent(event: EventRow) {
+  if (event.source_state === 'projected') {
+    return true
+  }
+
+  if (event.source_state === 'persisted') {
+    return false
+  }
+
+  if (typeof event.is_projected === 'boolean') {
+    return event.is_projected
+  }
+
+  return event.id.startsWith('projected-')
+}
+
+function isCurrentOrUpcomingLedgerRow(event: EventRow, todayStart: number) {
+  const dueTime = Date.parse(event.due_date)
+  const normalizedDue = Number.isNaN(dueTime) ? Number.POSITIVE_INFINITY : dueTime
+  const status = event.status.trim().toLowerCase()
+  return status === 'pending' || normalizedDue >= todayStart
+}
+
 function recurrenceFrequencyLabel(frequency: string | null | undefined, t: (key: string) => string) {
   switch (frequency) {
     case 'weekly':
@@ -151,6 +216,47 @@ function recurrenceFrequencyLabel(frequency: string | null | undefined, t: (key:
   }
 }
 
+function resolveFinancialFrequency(item: ItemRow | null, attributes: Record<string, unknown>) {
+  if (item?.frequency && item.frequency.length > 0) {
+    return item.frequency
+  }
+
+  const attributeFrequency = attributes.billingCycle ?? attributes.frequency
+  return typeof attributeFrequency === 'string' && attributeFrequency.length > 0 ? attributeFrequency : null
+}
+
+function resolveFinancialStatus(item: ItemRow | null, attributes: Record<string, unknown>) {
+  if (item?.status && item.status.length > 0) {
+    return item.status
+  }
+
+  const attributeStatus = attributes.status
+  return typeof attributeStatus === 'string' && attributeStatus.length > 0 ? attributeStatus : null
+}
+
+function resolveParentLinkId(item: ItemRow | null) {
+  if (!item) {
+    return null
+  }
+
+  if (item.parent_item_id) {
+    return item.parent_item_id
+  }
+
+  if (item.linked_asset_item_id) {
+    return item.linked_asset_item_id
+  }
+
+  const attributes = isRecord(item.attributes) ? item.attributes : {}
+  const attrParentId = attributes.parentItemId
+  if (typeof attrParentId === 'string' && attrParentId.length > 0) {
+    return attrParentId
+  }
+
+  const attrLinkedId = attributes.linkedAssetItemId
+  return typeof attrLinkedId === 'string' && attrLinkedId.length > 0 ? attrLinkedId : null
+}
+
 function getDeletedAtFromAttributes(attributes: Record<string, unknown> | undefined) {
   if (!attributes || typeof attributes._deleted_at !== 'string') {
     return null
@@ -168,7 +274,7 @@ function deriveSummaryFromCommitments(commitments: ItemRow[]) {
   return commitments.reduce(
     (summary, commitment) => {
       const attrs = isRecord(commitment.attributes) ? commitment.attributes : {}
-      const amount = Number((attrs.amount ?? attrs.nextPaymentAmount) ?? 0)
+      const amount = Number((attrs.amount ?? attrs.nextPaymentAmount ?? commitment.default_amount) ?? 0)
       const normalizedAmount = Number.isFinite(amount) ? amount : 0
 
       if (getFinancialSubtype(commitment) === 'Income') {
@@ -198,6 +304,7 @@ export function ItemDetailPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { mode, lensUserId } = useAdminScope()
   const params = useParams<{ itemId: string }>()
   const itemId = params.itemId || ''
 
@@ -205,9 +312,15 @@ export function ItemDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [showTechnical, setShowTechnical] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [selectedParentCascadeIds, setSelectedParentCascadeIds] = useState<string[]>([])
   const [childDeleteTarget, setChildDeleteTarget] = useState<ItemRow | null>(null)
   const [childDeleteError, setChildDeleteError] = useState<string | null>(null)
   const returnTo = typeof location.state === 'object' && location.state !== null && 'from' in location.state ? String((location.state as { from?: string }).from ?? '') : ''
+  const lensScope = useMemo(
+    () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
+    [lensUserId, mode],
+  )
+  const ledgerListParams = useMemo(() => eventListParams(lensScope, 'all'), [lensScope])
 
   const netStatusQuery = useQuery({
     queryKey: queryKeys.items.detail(itemId),
@@ -222,15 +335,19 @@ export function ItemDetailPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: async () =>
-      apiRequest(`/items/${itemId}`, {
+    mutationFn: async ({ cascadeDeleteIds }: { cascadeDeleteIds: string[] }) => {
+      return apiRequest(`/items/${itemId}`, {
         method: 'DELETE',
-      }),
-    onSuccess: async () => {
+        body: { cascade_delete_ids: cascadeDeleteIds },
+      })
+    },
+    onSuccess: async (_, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.items.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.items.activity(itemId) }),
+        ...variables.cascadeDeleteIds.map((childId) => queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(childId) })),
+        ...variables.cascadeDeleteIds.map((childId) => queryClient.invalidateQueries({ queryKey: queryKeys.items.activity(childId) })),
         queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
       ])
@@ -292,6 +409,7 @@ export function ItemDetailPage() {
   const detail = netStatusQuery.data ?? lookupItem
   const tabs: DetailTab[] = ['overview', 'commitments', 'activity']
   const subtype = detail ? getFinancialSubtype(detail) : null
+  const isFinancialDetail = detail?.item_type === 'FinancialItem'
 
   const commitments = useMemo<ItemRow[]>(() => {
     if (!isNetStatusItem(detail)) {
@@ -302,6 +420,60 @@ export function ItemDetailPage() {
       .filter((commitment) => !isSoftDeletedItem(commitment))
       .filter((commitment) => (detail.user_id ? commitment.user_id === detail.user_id : true))
   }, [detail])
+
+  const ledgerEventsQuery = useQuery({
+    queryKey: queryKeys.items.itemLedger(itemId, ledgerListParams),
+    enabled: Boolean(itemId) && activeTab === 'commitments' && commitments.length > 0,
+    queryFn: async () => {
+      const params = new URLSearchParams(ledgerListParams)
+      return apiRequest<EventsResponse>(`/events?${params.toString()}`)
+    },
+  })
+
+  const commitmentById = useMemo(() => new Map(commitments.map((commitment) => [commitment.id, commitment])), [commitments])
+
+  const ledgerSections = useMemo(() => {
+    const allEvents = (ledgerEventsQuery.data?.groups ?? []).flatMap((group) => group.events)
+    const commitmentIds = new Set(commitments.map((commitment) => commitment.id))
+    const relevantEvents = allEvents
+      .filter((event) => commitmentIds.has(event.item_id))
+      .sort(compareByNearestDue)
+    const todayStart = toStartOfTodayUtc()
+
+    return relevantEvents.reduce(
+      (acc, event) => {
+        if (isCurrentOrUpcomingLedgerRow(event, todayStart)) {
+          acc.currentAndUpcoming.push(event)
+        } else {
+          acc.historical.push(event)
+        }
+
+        return acc
+      },
+      { currentAndUpcoming: [] as EventRow[], historical: [] as EventRow[] },
+    )
+  }, [commitments, ledgerEventsQuery.data?.groups])
+
+  useEffect(() => {
+    if (!deleteOpen || !detail || (detail.item_type !== 'RealEstate' && detail.item_type !== 'Vehicle')) {
+      setSelectedParentCascadeIds([])
+      return
+    }
+
+    setSelectedParentCascadeIds(commitments.map((commitment) => commitment.id))
+  }, [commitments, deleteOpen, detail])
+
+  const parentDeleteRelatedItems = useMemo(() => {
+    if (!detail || (detail.item_type !== 'RealEstate' && detail.item_type !== 'Vehicle')) {
+      return []
+    }
+
+    return commitments.map((commitment) => ({
+      id: commitment.id,
+      label: getItemDisplayName(commitment),
+      checked: selectedParentCascadeIds.includes(commitment.id),
+    }))
+  }, [commitments, detail, selectedParentCascadeIds])
   const effectiveSummary = useMemo(() => {
     if (!isNetStatusItem(detail)) {
       return {
@@ -312,19 +484,26 @@ export function ItemDetailPage() {
       }
     }
 
+    if (detail.summary) {
+      return detail.summary
+    }
+
     return deriveSummaryFromCommitments(commitments)
   }, [commitments, detail])
   const rootAttributes = isRecord(detail?.attributes) ? detail.attributes : {}
+  const resolvedFinancialFrequency = resolveFinancialFrequency(detail, rootAttributes)
+  const resolvedFinancialStatus = resolveFinancialStatus(detail, rootAttributes)
+  const parentLinkId = resolveParentLinkId(detail)
   const recurrenceSummary = useMemo(() => {
     if (!detail || detail.item_type !== 'FinancialItem') {
       return null
     }
 
-    if (detail.status === 'Closed') {
+    if (resolvedFinancialStatus === 'Closed') {
       return t('items.detail.recurrence.closed')
     }
 
-    const frequencyLabel = recurrenceFrequencyLabel(detail.frequency, t)
+    const frequencyLabel = recurrenceFrequencyLabel(resolvedFinancialFrequency, t)
     const nextDueRaw = [rootAttributes.nextDueDate, rootAttributes.dueDate].find((value) => typeof value === 'string' && value.length > 0)
 
     if (typeof nextDueRaw === 'string') {
@@ -335,23 +514,25 @@ export function ItemDetailPage() {
     }
 
     return t('items.detail.recurrence.summaryNoDate', { frequency: frequencyLabel })
-  }, [detail, rootAttributes.dueDate, rootAttributes.nextDueDate, t])
+  }, [detail, resolvedFinancialFrequency, resolvedFinancialStatus, rootAttributes.dueDate, rootAttributes.nextDueDate, t])
 
   const parentItem = useMemo(() => {
-    if (!detail?.parent_item_id) {
+    const parentId = parentLinkId
+    if (!parentId) {
       return null
     }
 
-    return lookupRows.find((item) => item.id === detail.parent_item_id) ?? null
-  }, [detail?.parent_item_id, lookupRows])
+    return lookupRows.find((item) => item.id === parentId) ?? null
+  }, [lookupRows, parentLinkId])
 
   const siblingItems = useMemo(() => {
-    if (!detail?.parent_item_id) {
+    const parentId = parentLinkId
+    if (!parentId) {
       return []
     }
 
-    return lookupRows.filter((item) => item.parent_item_id === detail.parent_item_id && item.id !== detail.id)
-  }, [detail?.id, detail?.parent_item_id, lookupRows])
+    return lookupRows.filter((item) => resolveParentLinkId(item) === parentId && item.id !== detail?.id)
+  }, [detail?.id, lookupRows, parentLinkId])
 
   useEffect(() => {
     setActiveTab('overview')
@@ -433,16 +614,32 @@ export function ItemDetailPage() {
           <div className="animate-fade-up space-y-3">
             <section className="grid gap-3 md:grid-cols-3">
               <article className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.fields.nextPaymentAmount')}</p>
-                <p className="mt-2 text-2xl font-semibold">{formatCurrency(toNumberOrZero(rootAttributes.nextPaymentAmount ?? rootAttributes.amount))}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {isFinancialDetail ? t('items.fields.amount') : t('items.fields.nextPaymentAmount')}
+                </p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {formatCurrency(
+                    toNumberOrZero(
+                      isFinancialDetail
+                        ? detail?.default_amount ?? rootAttributes.amount ?? rootAttributes.nextPaymentAmount
+                        : rootAttributes.nextPaymentAmount ?? rootAttributes.amount,
+                    ),
+                  )}
+                </p>
               </article>
               <article className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.fields.remainingBalance')}</p>
-                <p className="mt-2 text-2xl font-semibold">{formatCurrency(toNumberOrZero(rootAttributes.remainingBalance))}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {isFinancialDetail ? t('items.fields.billingCycle') : t('items.fields.remainingBalance')}
+                </p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {isFinancialDetail
+                    ? recurrenceFrequencyLabel(resolvedFinancialFrequency, t)
+                    : formatCurrency(toNumberOrZero(rootAttributes.remainingBalance))}
+                </p>
               </article>
               <article className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.fields.dueDate')}</p>
-                <p className="mt-2 text-2xl font-semibold">{String(rootAttributes.dueDate ?? '-')}</p>
+                <p className="mt-2 text-2xl font-semibold">{String(rootAttributes.dueDate ?? rootAttributes.nextDueDate ?? '-')}</p>
               </article>
             </section>
 
@@ -559,54 +756,118 @@ export function ItemDetailPage() {
 
           {commitments.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('items.detail.noCommitments')}</p>
+          ) : ledgerEventsQuery.isError ? (
+            <p className="text-sm text-destructive">{t('events.loadError')}</p>
+          ) : ledgerEventsQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">{t('events.subtitle')}</p>
           ) : (
-            <ul className="space-y-2">
-              {commitments.map((commitment) => (
-                <li key={commitment.id} className="rounded-xl border border-border bg-background/80 px-3 py-2">
-                  <p className="text-sm font-medium">
-                    <Link to={`/items/${commitment.id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
-                      {getItemDisplayName(commitment)}
-                    </Link>
-                  </p>
-                  {getFinancialSubtype(commitment) ? (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground">{getFinancialSubtype(commitment)}</span>
-                    </p>
-                  ) : null}
-                  {typeof commitment.attributes?.description === 'string' ? <p className="mt-1 text-xs text-muted-foreground">{commitment.attributes.description}</p> : null}
+            <div className="space-y-4">
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Current & Upcoming</h3>
+                {ledgerSections.currentAndUpcoming.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">No current or upcoming ledger records.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {ledgerSections.currentAndUpcoming.map((event) => {
+                      const commitment = commitmentById.get(event.item_id)
+                      const projected = isProjectedEvent(event)
 
-                  <dl className="mt-2 grid gap-2 sm:grid-cols-2">
-                    {getDisplayEntries(isRecord(commitment.attributes) ? commitment.attributes : {})
-                      .filter((entry) => entry.key !== 'name' && entry.key !== 'description')
-                      .map((entry) => (
-                        <div key={entry.key}>
-                          <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{t(`items.fields.${entry.key}`, { defaultValue: entry.key })}</dt>
-                          <dd className="text-sm">{toFriendlyValue(entry.key, entry.value)}</dd>
-                        </div>
-                      ))}
-                  </dl>
+                      return (
+                        <li key={event.id} className={`rounded-xl border px-3 py-2 ${projected ? 'border-sky-200 bg-sky-50/40' : 'border-border bg-background/80'}`}>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-medium">{event.type}</p>
+                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${projected ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-border bg-background text-foreground'}`}>
+                              {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
+                            </span>
+                            <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
+                            {event.is_exception ? (
+                              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                                {t('events.stateLegend.editedOccurrence')}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
+                              {commitment ? getItemDisplayName(commitment) : t('events.itemLabel', { itemId: event.item_id })}
+                            </Link>
+                            {' · '}
+                            {formatDateLabel(event.due_date)}
+                          </p>
+                          <div className="mt-2 flex justify-between gap-2">
+                            <span className="text-sm font-medium">{formatEventAmount(event, commitment) ?? t('events.amountPending')}</span>
+                            {commitment ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setChildDeleteError(null)
+                                  setChildDeleteTarget(commitment)
+                                }}
+                                className="rounded-lg border border-destructive/40 px-3 py-1 text-xs font-medium text-destructive"
+                              >
+                                {t('items.deleteAction')}
+                              </button>
+                            ) : null}
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </section>
 
-                  {showTechnical ? (
-                    <pre className="mt-2 overflow-x-auto rounded-lg border border-border bg-background p-2 text-xs text-foreground">
-                      {JSON.stringify(commitment.attributes, null, 2)}
-                    </pre>
-                  ) : null}
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Historical Ledger</h3>
+                {ledgerSections.historical.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">No historical ledger records.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {ledgerSections.historical.map((event) => {
+                      const commitment = commitmentById.get(event.item_id)
+                      const projected = isProjectedEvent(event)
 
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setChildDeleteError(null)
-                        setChildDeleteTarget(commitment)
-                      }}
-                      className="rounded-lg border border-destructive/40 px-3 py-2 text-xs font-medium text-destructive"
-                    >
-                      {t('items.deleteAction')}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                      return (
+                        <li key={event.id} className={`rounded-xl border px-3 py-2 ${projected ? 'border-sky-200 bg-sky-50/35' : 'border-border bg-background/70'}`}>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-medium">{event.type}</p>
+                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${projected ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-border bg-background text-foreground'}`}>
+                              {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
+                            </span>
+                            <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
+                            {event.is_exception ? (
+                              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                                {t('events.stateLegend.editedOccurrence')}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
+                              {commitment ? getItemDisplayName(commitment) : t('events.itemLabel', { itemId: event.item_id })}
+                            </Link>
+                            {' · '}
+                            {formatDateLabel(event.due_date)}
+                          </p>
+                          <div className="mt-2 flex justify-between gap-2">
+                            <span className="text-sm font-medium">{formatEventAmount(event, commitment) ?? t('events.amountPending')}</span>
+                            {commitment ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setChildDeleteError(null)
+                                  setChildDeleteTarget(commitment)
+                                }}
+                                className="rounded-lg border border-destructive/40 px-3 py-1 text-xs font-medium text-destructive"
+                              >
+                                {t('items.deleteAction')}
+                              </button>
+                            ) : null}
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </section>
+            </div>
           )}
         </section>
       ) : null}
@@ -618,8 +879,18 @@ export function ItemDetailPage() {
         itemLabel={detail ? getItemDisplayName(detail) : ''}
         pending={deleteMutation.isPending}
         errorText={deleteError}
+        relatedItems={parentDeleteRelatedItems}
+        onToggleRelatedItem={(itemId, checked) => {
+          setSelectedParentCascadeIds((previous) => {
+            if (checked) {
+              return previous.includes(itemId) ? previous : [...previous, itemId]
+            }
+
+            return previous.filter((id) => id !== itemId)
+          })
+        }}
         onCancel={() => setDeleteOpen(false)}
-        onConfirm={() => deleteMutation.mutate()}
+        onConfirm={() => deleteMutation.mutate({ cascadeDeleteIds: selectedParentCascadeIds })}
       />
 
       <ItemSoftDeleteDialog

@@ -37,6 +37,8 @@ export const queryKeys = {
       ['items', 'list', params] as const,
     detail: (itemId: string) => ['items', 'detail', itemId] as const,
     activity: (itemId: string) => ['items', 'activity', itemId] as const,
+    itemLedger: (itemId: string, params: Record<string, string | number | boolean | undefined>) =>
+      ['items', 'ledger', itemId, params] as const,
   },
   events: {
     all: ['events'] as const,
