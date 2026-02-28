@@ -4,6 +4,37 @@ const express = require("express");
 const { requireAuth } = require("../auth/require-auth");
 const { completeEvent, undoEventCompletion } = require("../../domain/events/complete-event");
 const { listEvents } = require("../../domain/events/list-events");
+const { updateEvent } = require("../../domain/events/update-event");
+const { EventUpdateError, EVENT_UPDATE_ERROR_CATEGORIES } = require("../../domain/events/event-update-errors");
+
+function mapEventUpdateError(error) {
+  if (!(error instanceof EventUpdateError)) {
+    return null;
+  }
+
+  const category = error.category || EVENT_UPDATE_ERROR_CATEGORIES.INVALID_REQUEST;
+  const status = category === EVENT_UPDATE_ERROR_CATEGORIES.NOT_FOUND ? 404 : 422;
+  const issues = Array.isArray(error.issues)
+    ? error.issues.map((issue) => ({
+      field: issue.field || "unknown",
+      code: issue.code || "validation_error",
+      category,
+      message: issue.message || "Invalid value."
+    }))
+    : [];
+
+  return {
+    status,
+    body: {
+      error: {
+        code: "event_update_failed",
+        category,
+        message: error.message || "Event update request failed.",
+        issues
+      }
+    }
+  };
+}
 
 function createEventsRouter() {
   const router = express.Router();
@@ -47,6 +78,26 @@ function createEventsRouter() {
 
       res.status(200).json(undone);
     } catch (error) {
+      next(error);
+    }
+  });
+
+  router.patch("/events/:id", async (req, res, next) => {
+    try {
+      const updated = await updateEvent({
+        eventId: req.params.id,
+        payload: req.body,
+        scope: req.scope
+      });
+
+      res.status(200).json(updated);
+    } catch (error) {
+      const mapped = mapEventUpdateError(error);
+      if (mapped) {
+        res.status(mapped.status).json(mapped.body);
+        return;
+      }
+
       next(error);
     }
   });
