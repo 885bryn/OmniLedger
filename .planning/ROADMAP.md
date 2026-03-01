@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** - Phases 1-7 shipped 2026-02-25 (details: `.planning/milestones/v1.0-ROADMAP.md`)
-- 📋 **v2.0 Auth, Timeline & Data Lifecycle** - Phases 8-12 planned
+- ⚠ **v2.0 Auth, Timeline & Data Lifecycle** - Core phases 8-12 complete; gap-closure phase 13 added from milestone audit.
 
 ## Overview
 
@@ -18,8 +18,9 @@ v2.0 delivers secure multi-user operation, contract-and-occurrence financial mod
 - [x] **Phase 8: Auth Sessions & Protected Access** - Replace actor shim with secure sign-in and gated access. (completed 2026-02-25)
 - [x] **Phase 9: RBAC Scope & Admin Safety Mode** - Enforce ownership boundaries with explicit admin all-data controls. (completed 2026-02-26)
 - [x] **Phase 10: Financial Contract-Occurrence Foundation** - Establish parent contracts and child occurrence persistence rules. (completed 2026-02-26)
-- [x] **Phase 11: Timeline Projection & Asset Ledger Views** - Deliver projected-versus-persisted timeline and split asset ledger UX. (in progress; 11-01 completed 2026-02-28) (completed 2026-02-28)
-- [ ] **Phase 12: Deletion Lifecycle & Retention Controls** - Ship trash/restore/delete-intercept flows and 30-day hard purge.
+- [x] **Phase 11: Timeline Projection & Asset Ledger Views** - Deliver projected-versus-persisted timeline and split asset ledger UX, plus lifecycle controls merged from the planned Phase 12 scope. (completed 2026-02-28)
+- [x] **Phase 12: Deletion Lifecycle & Retention Controls** - Scope delivered during Phase 11 extension work; retained here for traceability. (completed 2026-02-28)
+- [ ] **Phase 13: Admin Scope Integration Hardening** - Close audit gaps on admin scope/lens mutation and drill-through consistency.
 
 ## Phase Details
 
@@ -76,13 +77,13 @@ Plans:
   1. User can view a unified timeline up to 3 years showing paid, pending, and projected occurrences in deterministic order.
   2. Timeline clearly distinguishes projected occurrences from persisted occurrences.
   3. Editing a projected future occurrence instantiates a stored exception for that date and the edit appears as persisted data.
-  4. Asset financial view is split into `Current & Upcoming` and `Historical Ledger` sections with records visible in the expected section.
+  4. Asset detail commitments/income view shows one row per linked financial item, and financial item detail view shows present/history occurrence timelines with per-occurrence edit support.
 **Plans**: 4 plans
 Plans:
 - [x] 11-01-PLAN.md - Extend timeline read model to 3-year projection window with explicit persisted/projected ordering contract. (completed 2026-02-28)
 - [x] 11-02-PLAN.md - Add projected occurrence edit mutation that materializes and persists date-specific exception rows. (completed 2026-02-28)
 - [x] 11-03-PLAN.md - Implement timeline state cues and save-exception UX for projected edits with in-place persisted indicators. (completed 2026-02-28)
-- [ ] 11-04-PLAN.md - Split asset detail financial ledger into Current & Upcoming versus Historical sections with summaries and mobile collapse.
+- [x] 11-04-PLAN.md - Split asset detail financial ledger into Current & Upcoming versus Historical sections with summaries and mobile collapse. (completed 2026-02-28)
 
 ### Phase 12: Deletion Lifecycle & Retention Controls
 **Goal**: Users can safely delete and restore data with guarded linked-record behavior and predictable retention cleanup.
@@ -94,6 +95,17 @@ Plans:
   3. Deleting an asset with linked financial records presents intercept options to either trash active links or preserve them as closed historical records.
   4. Records remain restorable before 30 days and are permanently removed only after exceeding the 30-day retention window.
   5. Restore and purge actions are audit-visible and still enforce ownership/RBAC policy.
+**Plans**: 0 standalone (implemented in Phase 11 extension)
+
+### Phase 13: Admin Scope Integration Hardening
+**Goal**: Ensure admin all-data/lens behavior remains consistent across mutations and detail drill-through flows.
+**Depends on**: Phase 12
+**Requirements**: AUTH-06, TIME-04
+**Gap Closure**: Closes gaps from `.planning/v2.0-MILESTONE-AUDIT.md` (admin mutation scope consistency, admin drill-through continuity)
+**Success Criteria** (what must be TRUE):
+  1. Admin all-data/lens mode can mutate eligible cross-owner records using consistent scope resolution.
+  2. Dashboard/timeline/admin lens drill-through into item detail and net-status preserves admin scope continuity.
+  3. Regression coverage locks admin scope behavior for read + mutate + drill-through flows.
 **Plans**: TBD
 
 ## Progress
@@ -103,5 +115,6 @@ Plans:
 | 8. Auth Sessions & Protected Access | 6/6 | Complete    | 2026-02-25 |
 | 9. RBAC Scope & Admin Safety Mode | 13/13 | Complete | 2026-02-26 |
 | 10. Financial Contract-Occurrence Foundation | 5/5 | Complete   | 2026-02-26 |
-| 11. Timeline Projection & Asset Ledger Views | 4/4 | Complete   | 2026-02-28 |
-| 12. Deletion Lifecycle & Retention Controls | 0/TBD | Not started | - |
+| 11. Timeline Projection & Asset Ledger Views | 4/4 (+extension work) | Complete   | 2026-02-28 |
+| 12. Deletion Lifecycle & Retention Controls | Integrated in Phase 11 | Complete | 2026-02-28 |
+| 13. Admin Scope Integration Hardening | 0/TBD | Not started | - |

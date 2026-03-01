@@ -12,7 +12,7 @@
 - [x] **AUTH-03**: API no longer accepts actor identity via client-selected `x-user-id` shim for authorization.
 - [x] **AUTH-04**: Each user has role `user` (default) or `admin` (elevated), enforced server-side.
 - [x] **AUTH-05**: Standard users can only read and mutate records they own.
-- [x] **AUTH-06**: Admin user can intentionally switch to all-data mode and bypass owner scope.
+- [ ] **AUTH-06**: Admin user can intentionally switch to all-data mode and bypass owner scope.
 - [x] **AUTH-07**: System records acting user for create, complete, restore, and delete actions in audit-visible history.
 - [x] **AUTH-08**: Admin mode displays persistent safeguards, including visible mode state and action attribution context.
 
@@ -30,15 +30,15 @@
 - [x] **TIME-01**: User can view a unified timeline up to 3 years including paid, pending, and projected occurrences.
 - [x] **TIME-02**: Timeline distinguishes projected versus persisted occurrences and applies deterministic ordering.
 - [x] **TIME-03**: Asset commitment view is split into `Current & Upcoming` and `Historical Ledger` sections.
-- [x] **TIME-04**: Admin can view combined data or filter dashboard/timeline through a selected user lens.
+- [ ] **TIME-04**: Admin can view combined data or filter dashboard/timeline through a selected user lens.
 
 ### Deletion Lifecycle & Retention
 
-- [ ] **LIFE-01**: Assets, financial parents, and occurrences support soft delete via `deleted_at` and are hidden from default views.
-- [ ] **LIFE-02**: User can view soft-deleted records in Trash and restore them.
-- [ ] **LIFE-03**: Deleting an asset with linked financial records prompts intercept options to trash active links or keep them as closed historical records.
-- [ ] **LIFE-04**: Backend scheduler permanently deletes records only when `deleted_at` is older than 30 days.
-- [ ] **LIFE-05**: Restore and purge actions are audit-visible and enforce ownership/RBAC policy.
+- [x] **LIFE-01**: Assets, financial parents, and occurrences support soft delete via `deleted_at` and are hidden from default views.
+- [x] **LIFE-02**: User can view soft-deleted records in Trash and restore them.
+- [x] **LIFE-03**: Deleting an asset with linked financial records prompts intercept options to trash active links or keep them as closed historical records.
+- [x] **LIFE-04**: Backend scheduler permanently deletes records only when `deleted_at` is older than 30 days.
+- [x] **LIFE-05**: Restore and purge actions are audit-visible and enforce ownership/RBAC policy.
 
 ## Future Requirements (Deferred)
 
@@ -69,7 +69,7 @@
 
 ## Traceability
 
-Traceability for milestone v2.0 is mapped to Phases 8-12.
+Traceability for milestone v2.0 is mapped to Phases 8-13.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -78,7 +78,7 @@ Traceability for milestone v2.0 is mapped to Phases 8-12.
 | AUTH-03 | Phase 8 | Complete |
 | AUTH-04 | Phase 9 | Complete |
 | AUTH-05 | Phase 9 | Complete |
-| AUTH-06 | Phase 9 | Complete |
+| AUTH-06 | Phase 13 | Pending |
 | AUTH-07 | Phase 9 | Complete |
 | AUTH-08 | Phase 9 | Complete |
 | FIN-01 | Phase 10 | Complete |
@@ -90,12 +90,14 @@ Traceability for milestone v2.0 is mapped to Phases 8-12.
 | TIME-01 | Phase 11 | Complete |
 | TIME-02 | Phase 11 | Complete |
 | TIME-03 | Phase 11 | Complete |
-| TIME-04 | Phase 9 | Complete |
-| LIFE-01 | Phase 12 | Pending |
-| LIFE-02 | Phase 12 | Pending |
-| LIFE-03 | Phase 12 | Pending |
-| LIFE-04 | Phase 12 | Pending |
-| LIFE-05 | Phase 12 | Pending |
+| TIME-04 | Phase 13 | Pending |
+| LIFE-01 | Phase 12 | Complete |
+| LIFE-02 | Phase 12 | Complete |
+| LIFE-03 | Phase 12 | Complete |
+| LIFE-04 | Phase 12 | Complete |
+| LIFE-05 | Phase 12 | Complete |
+
+Lifecycle traceability note: Phase 12 scope was delivered as add-on work during the Phase 11 extension and is tracked as a Phase 11/12 merge.
 
 **Coverage:**
 - v2.0 requirements: 23 total
@@ -104,4 +106,4 @@ Traceability for milestone v2.0 is mapped to Phases 8-12.
 
 ---
 *Requirements defined: 2026-02-25*
-*Last updated: 2026-02-28 after 11-01 requirement completion validation*
+*Last updated: 2026-03-01 after gap-closure phase planning alignment*
