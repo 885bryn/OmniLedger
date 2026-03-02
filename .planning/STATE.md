@@ -9,10 +9,10 @@ Milestone summary: `.planning/milestones/v2.0-MILESTONE-SUMMARY.md`
 
 Phase: 13 of 13 (Admin Scope Integration Hardening)
 Plan: 03 of 03
-Status: In Progress
-Last activity: 2026-03-02 - Completed 13-02 frontend scope-aware item-detail drill-through continuity hardening
+Status: Complete
+Last activity: 2026-03-02 - Completed 13-03 backend admin scope regression expansion for items/events
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 **Velocity:**
@@ -39,6 +39,7 @@ Progress: [█████████░] 90%
 | Phase 11 P04 | 7 min | 2 tasks | 5 files |
 | Phase 13-admin-scope-integration-hardening P01 | 3 min | 2 tasks | 9 files |
 | Phase 13 P02 | 2 min | 2 tasks | 4 files |
+| Phase 13 P03 | 4 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -129,12 +130,14 @@ Recent decisions affecting current work:
 - [Phase 13]: Extended item detail query keys with optional LensScope segments so non-lens callers remain compatible while lens-aware callers are isolated.
 - [Phase 13]: Bound detail lookup URL params and query keys to scope_mode/lens_user_id so lens transitions deterministically refetch same-route item detail context.
 - [Phase 13]: Locked scoped cache partition behavior in frontend regressions with QueryClient-level assertions.
+- [Phase 13]: Expanded admin scope regressions directly in items/events API contract suites to catch drift at endpoint boundaries.
+- [Phase 13]: Out-of-lens projected-id mutation tests assert both 404/not_found envelopes and zero materialization side effects.
 
 ### Blockers/Concerns
 
 - Unrelated frontend build check currently fails at `frontend/src/pages/events/events-page.tsx:255` (TS6133 unused `todayStart`), logged in `.planning/phases/13-admin-scope-integration-hardening/deferred-items.md`.
 
 ## Session Continuity
-Last session: 2026-03-02 00:30
-Stopped at: Completed 13-02-PLAN.md
+Last session: 2026-03-02 00:31
+Stopped at: Completed 13-03-PLAN.md
 Resume file: None

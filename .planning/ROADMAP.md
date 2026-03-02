@@ -20,7 +20,7 @@ v2.0 delivers secure multi-user operation, contract-and-occurrence financial mod
 - [x] **Phase 10: Financial Contract-Occurrence Foundation** - Establish parent contracts and child occurrence persistence rules. (completed 2026-02-26)
 - [x] **Phase 11: Timeline Projection & Asset Ledger Views** - Deliver projected-versus-persisted timeline and split asset ledger UX, plus lifecycle controls merged from the planned Phase 12 scope. (completed 2026-02-28)
 - [x] **Phase 12: Deletion Lifecycle & Retention Controls** - Scope delivered during Phase 11 extension work; retained here for traceability. (completed 2026-02-28)
-- [ ] **Phase 13: Admin Scope Integration Hardening** - Close audit gaps on admin scope/lens mutation and drill-through consistency.
+- [x] **Phase 13: Admin Scope Integration Hardening** - Close audit gaps on admin scope/lens mutation and drill-through consistency. (completed 2026-03-02)
 
 ## Phase Details
 
@@ -108,9 +108,9 @@ Plans:
   3. Regression coverage locks admin scope behavior for read + mutate + drill-through flows.
 **Plans**: 3 plans
 Plans:
-- [ ] 13-01-PLAN.md - Harden backend scope resolution for admin cross-owner mutations and net-status drill-through continuity.
+- [x] 13-01-PLAN.md - Harden backend scope resolution for admin cross-owner mutations and net-status drill-through continuity. (completed 2026-03-02)
 - [x] 13-02-PLAN.md - Add lens-scoped item-detail query partitioning and frontend drill-through continuity regressions. (completed 2026-03-02)
-- [ ] 13-03-PLAN.md - Expand backend integration regressions for admin all/lens mutate and net-status continuity.
+- [x] 13-03-PLAN.md - Expand backend integration regressions for admin all/lens mutate and net-status continuity. (completed 2026-03-02)
 
 ## Progress
 
@@ -121,4 +121,4 @@ Plans:
 | 10. Financial Contract-Occurrence Foundation | 5/5 | Complete   | 2026-02-26 |
 | 11. Timeline Projection & Asset Ledger Views | 4/4 (+extension work) | Complete   | 2026-02-28 |
 | 12. Deletion Lifecycle & Retention Controls | Integrated in Phase 11 | Complete | 2026-02-28 |
-| 13. Admin Scope Integration Hardening | 2/3 | In Progress|  |
+| 13. Admin Scope Integration Hardening | 3/3 | Complete   | 2026-03-02 |
