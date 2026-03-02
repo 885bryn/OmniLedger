@@ -1,272 +1,247 @@
 # Architecture Research
 
-**Domain:** Household Asset & Commitment Tracker v2.0 architecture evolution (auth/RBAC + financial hierarchy + smart timeline + data lifecycle)
-**Researched:** 2026-02-25
-**Confidence:** MEDIUM
+**Domain:** HACT v3.0 Data Portability - Excel backup export in existing Node/Express + Sequelize + React stack
+**Researched:** 2026-03-01
+**Confidence:** HIGH
 
 ## Standard Architecture
 
 ### System Overview
 
 ```text
-+---------------------------------------------------------------------------------------------------+
-|                                      Client Interface (React)                                    |
-|  Auth session store | route guards | timeline views (projected + actual) | item/trash workflows |
-+---------------------------------------------+-----------------------------------------------------+
-                                              |
-+---------------------------------------------v-----------------------------------------------------+
-|                                         API Layer (Express)                                      |
-|  auth middleware -> policy scope middleware -> routers (items/events/timeline/auth/lifecycle)   |
-|  deterministic envelope + centralized error mapper                                                |
-+---------------------------------------------+-----------------------------------------------------+
-                                              |
-+---------------------------------------------v-----------------------------------------------------+
-|                                 Domain/Application Layer                                          |
-|  Access Policy | Financial Contract Service | Occurrence Service | Timeline Composer             |
-|  Deletion Lifecycle Service | Audit Writer | Scheduler Orchestrator                               |
-+---------------------------------------------+-----------------------------------------------------+
-                                              |
-+---------------------------------------------v-----------------------------------------------------+
-|                                    Persistence Layer (Sequelize)                                 |
-|  Users/Roles/Sessions | Items | FinancialItems | FinancialOccurrences | AuditLog                 |
-|  ownership + lifecycle columns + indexed timeline reads                                           |
-+---------------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------------------------------------+
+|                                   Frontend (React + React Query)                                    |
+|  AppShell/UserSwitcher export action -> export mutation hook -> fetch(blob) -> browser download     |
++----------------------------------------------+-------------------------------------------------------+
+                                               |
++----------------------------------------------v-------------------------------------------------------+
+|                                       API Layer (Express)                                            |
+|  requireAuth -> req.scope/req.actor -> /exports/ledger.xlsx route -> stream response                |
+|  existing error envelope path retained for JSON errors                                                |
++----------------------------------------------+-------------------------------------------------------+
+                                               |
++----------------------------------------------v-------------------------------------------------------+
+|                           Domain Export Module (new, isolated read-model path)                       |
+|  scope resolver reuse + export query service + workbook builder + stream writer + export audit       |
++----------------------------------------------+-------------------------------------------------------+
+                                               |
++----------------------------------------------v-------------------------------------------------------+
+|                                  Sequelize Models / PostgreSQL                                       |
+|  Items (assets + financial contracts), Events (persisted history), AuditLog (actor/lens attribution)|
++------------------------------------------------------------------------------------------------------+
 ```
 
 ### Component Responsibilities
 
 | Component | Responsibility | Typical Implementation |
 |-----------|----------------|------------------------|
-| `api/middleware/authenticate` **(new)** | Resolve bearer token/session into trusted actor context | Express app-level middleware before routers; populates `req.auth` |
-| `api/middleware/authorize-scope` **(new)** | Convert role + optional admin actor override into query scope (`own` vs `all`) | Router-level middleware + domain policy helpers |
-| `domain/security/access-policy` **(new)** | Centralize ownership and RBAC checks for all mutations/reads | Pure functions used by items/events/timeline services |
-| `domain/items/*` **(modified)** | Keep item CRUD, but remove direct header-driven ownership checks | Accept `actorContext` instead of raw `actorUserId` |
-| `domain/financial-contracts/*` **(new)** | Manage parent financial contract definitions and recurrence rules | Services + validators + transaction-safe writes |
-| `domain/occurrences/*` **(new)** | Persist instantiated occurrences and completion/undo effects | Replaces ad-hoc `derived-*` event resolution |
-| `domain/timeline/compose-timeline` **(new)** | Build 3-year timeline by merging persisted + projected rows | Deterministic projector with bounded window and filters |
-| `domain/lifecycle/*` **(new + modified)** | Soft delete, restore, delete intercept, hard cleanup command | Uses explicit lifecycle metadata and scheduler entry point |
+| `src/api/routes/exports.routes.js` **(new)** | Expose authenticated Excel download endpoint | `router.use(requireAuth)` + `GET /exports/ledger.xlsx` streaming handler |
+| `src/domain/exports/export-ledger-workbook.js` **(new)** | Orchestrate scoped data read and workbook assembly | Calls query layer and workbook writer; no HTTP details |
+| `src/domain/exports/export-ledger-query.js` **(new)** | Read persisted rows for export sheets | Sequelize queries with `resolveOwnerFilter(req.scope)` and soft-delete policy |
+| `src/domain/exports/excel-workbook-writer.js` **(new)** | Convert rows to multi-sheet `.xlsx` stream | ExcelJS streaming workbook writer, header freeze + filters + date/amount formatting |
+| `src/api/errors/http-error-mapper.js` **(modified)** | Map export errors to existing envelope conventions | Adds `mapExportError` preserving 404/422 semantics where relevant |
+| `frontend/src/features/export/*` **(new)** | UI action, pending/progress/error states, download handling | React mutation + `fetch` blob + filename extraction |
+| `frontend/src/lib/api-client.ts` **(modified, minimal)** | Optional transport helper for blob download | Add `apiRequestBlob` to avoid JSON parser regressions in existing calls |
 
 ## Recommended Project Structure
 
 ```text
 src/
 |-- api/
-|   |-- app.js                           # Register auth/scope middleware before routers
-|   |-- middleware/
-|   |   |-- authenticate-request.js      # Token/session -> req.auth
-|   |   `-- authorize-scope.js           # RBAC + ownership scope resolution
+|   |-- app.js                                # Mount export router beside existing routers
+|   |-- errors/http-error-mapper.js           # Add export mapper only
 |   `-- routes/
-|       |-- auth.routes.js               # login/refresh/logout/me
-|       |-- timeline.routes.js           # 3-year timeline query + projection actions
-|       |-- lifecycle.routes.js          # restore/trash/force-delete endpoints
-|       |-- items.routes.js              # Existing, now actorContext-based
-|       `-- events.routes.js             # Existing, now occurrence-aware
+|       `-- exports.routes.js                 # GET /exports/ledger.xlsx
 |-- domain/
-|   |-- security/
-|   |   `-- access-policy.js             # canRead/canWrite/canAdmin checks
-|   |-- financial-contracts/
-|   |   |-- create-financial-item.js     # Parent contract write path
-|   |   `-- update-financial-item.js     # Recurrence/projection rule updates
-|   |-- occurrences/
-|   |   |-- instantiate-occurrence.js    # Projected -> persisted transition
-|   |   `-- complete-occurrence.js       # Completion/undo and side effects
-|   |-- timeline/
-|   |   `-- compose-timeline.js          # Merge actual + projected for requested range
-|   `-- lifecycle/
-|       |-- delete-item.js               # Intercept linked active records
-|       |-- restore-item.js              # Undo soft delete consistently
-|       `-- purge-expired.js             # 30-day hard cleanup command
-|-- db/
-|   |-- models/
-|   |   |-- user.model.js                # Add role + auth metadata
-|   |   |-- session.model.js             # Refresh/session persistence
-|   |   |-- item.model.js                # Add lifecycle columns or paranoid mapping
-|   |   |-- financial-item.model.js      # Parent contract data
-|   |   `-- financial-occurrence.model.js# Child event occurrence data
-|   `-- migrations/                      # Additive migrations with backfill
-`-- jobs/
-    `-- lifecycle-cleanup-job.js         # Scheduled purge with advisory lock
+|   `-- exports/
+|       |-- export-errors.js                  # Typed categories (invalid_scope, generation_failed, etc.)
+|       |-- export-ledger-query.js            # Scope-filtered read-model queries
+|       |-- excel-column-specs.js             # Stable flattened columns per sheet
+|       |-- excel-workbook-writer.js          # Streaming writer + worksheet UX defaults
+|       `-- export-ledger-workbook.js         # Orchestrator entry point for route
+`-- test/
+    |-- api/exports-download.test.js          # Auth/scope/content headers/regression coverage
+    `-- domain/exports/*.test.js              # Query scope and workbook shape tests
+
+frontend/src/
+|-- features/
+|   `-- export/
+|       |-- use-ledger-export.ts              # Export mutation hook
+|       |-- export-button.tsx                 # Reusable action UI
+|       `-- download-file.ts                  # Blob -> object URL helper
+|-- app/shell/user-switcher.tsx               # Natural entry point for global export action
+`-- lib/query-keys.ts                         # Optional export mutation key namespace
 ```
 
 ### Structure Rationale
 
-- **`domain/security/`** keeps RBAC and ownership rules single-sourced so every service enforces the same policy.
-- **`domain/financial-contracts/` + `domain/occurrences/`** separates recurring definition from realized history, which is required for projection and instantiation.
-- **`domain/timeline/`** isolates expensive composition logic from generic event listing so 3-year range logic remains testable and bounded.
-- **`jobs/`** keeps background cleanup explicit and decoupled from request handlers, while still running in the same deployable unit.
+- **`domain/exports/` is isolated:** prevents accidental coupling with timeline projection logic in `list-events` and minimizes blast radius.
+- **Route stays thin:** auth/scope from existing `requireAuth` remains authoritative; route does not own business logic.
+- **Read-model query layer is explicit:** export can include exactly persisted backup data (not projected timeline rows).
+- **Frontend export feature is additive:** avoids changing dashboard/events data flows and cache partition behavior from Phase 13.
 
 ## Architectural Patterns
 
-### Pattern 1: Actor Context Propagation (Auth + RBAC)
+### Pattern 1: Scope-First Read Model for Export
 
-**What:** Build `actorContext` once in middleware (`actorId`, `role`, `scopeUserId`, `isAdminMode`) and pass it through domain services.
-**When to use:** Every route that currently accepts `x-user-id` and every new timeline/lifecycle endpoint.
-**Trade-offs:** Slightly larger service signatures, but removes duplicated ownership checks and prevents accidental unscoped queries.
-
-**Example:**
-```javascript
-// api/routes/items.routes.js (target shape)
-router.get("/items", authorizeScope("items:read"), async (req, res, next) => {
-  try {
-    const result = await listItems({
-      actorContext: req.auth,
-      search: req.query.search,
-      filter: req.query.filter,
-      sort: req.query.sort,
-      includeDeleted: req.query.include_deleted === "true"
-    });
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-```
-
-### Pattern 2: Contract/Occurrence Split with Lazy Instantiation
-
-**What:** Store recurring financial definition in `FinancialItem`; generate timeline projections on read; only persist `FinancialOccurrence` when user edits/completes/skips a projected row.
-**When to use:** Timeline rows beyond currently persisted events, and any projected row that needs mutation.
-**Trade-offs:** More moving parts than one-table events, but avoids pre-generating thousands of rows and removes current `derived-*` id workaround.
+**What:** Use `req.scope` -> `resolveOwnerFilter(scope)` for all export queries; never trust user-provided scope query params.
+**When to use:** Every export query (assets, financial contracts, event history).
+**Trade-offs:** Slightly more wiring than direct model reads, but guarantees Phase 13 lens/all/owner semantics remain consistent.
 
 **Example:**
 ```javascript
-// domain/occurrences/instantiate-occurrence.js
-async function instantiateOccurrence({ financialItemId, dueDate, actorContext, transaction }) {
-  const existing = await models.FinancialOccurrence.findOne({
-    where: { financial_item_id: financialItemId, due_date: dueDate },
-    transaction
-  });
-
-  if (existing) return existing;
-
-  return models.FinancialOccurrence.create(
-    {
-      financial_item_id: financialItemId,
-      due_date: dueDate,
-      source: "instantiated",
-      status: "Pending",
-      instantiated_by: actorContext.actorId
-    },
-    { transaction }
-  );
-}
+// domain/exports/export-ledger-query.js
+const ownerFilter = resolveOwnerFilter(scope);
+const itemWhere = ownerFilter ? { user_id: ownerFilter } : {};
+const items = await models.Item.findAll({ where: itemWhere });
 ```
 
-### Pattern 3: Explicit Lifecycle State + Scheduled Purge
+### Pattern 2: Streaming Workbook Writer at HTTP Boundary
 
-**What:** Represent deletion using dedicated fields (`deleted_at`, `deleted_by`, `purge_after_at`) and a daily purge job that hard-deletes expired records.
-**When to use:** All mutable entities participating in timeline or ownership reads (`Items`, `FinancialItems`, `FinancialOccurrences`).
-**Trade-offs:** Adds migration complexity, but simplifies filters (no JSON parsing) and makes restore/purge semantics deterministic.
+**What:** Build workbook with ExcelJS stream writer targeting `res` writable stream.
+**When to use:** Download endpoint where row counts can grow and memory spikes must be avoided.
+**Trade-offs:** Rows must be committed in order and are not editable afterward; this is acceptable for one-pass export generation.
+
+**Example:**
+```javascript
+const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: res, useStyles: true });
+const sheet = workbook.addWorksheet("Assets", { views: [{ state: "frozen", ySplit: 1 }] });
+sheet.autoFilter = "A1:H1";
+rows.forEach((row) => sheet.addRow(row).commit());
+sheet.commit();
+await workbook.commit();
+```
+
+### Pattern 3: Flat Column Contract with Versioned Metadata
+
+**What:** Define stable, flattened sheet columns in one place and include an `Export_Metadata` sheet (`schema_version`, generated timestamp, scope mode).
+**When to use:** Any portability artifact meant for restore/audit and cross-version resilience.
+**Trade-offs:** Adds a small maintenance burden, but prevents silent downstream breakage when internal JSON fields evolve.
 
 ## Data Flow
 
 ### Request Flow
 
 ```text
-User request
-  -> authenticate-request middleware
-  -> authorize-scope middleware
-  -> route handler
-  -> domain service (policy + business rules)
-  -> Sequelize transaction
-  -> audit write (same transaction)
-  -> deterministic envelope response
+[User clicks Export]
+    -> frontend export action/hook
+    -> GET /exports/ledger.xlsx (credentials include cookies)
+    -> requireAuth resolves req.actor + req.scope
+    -> export-ledger-workbook(scope)
+       -> scoped queries (Items, Events, optional AuditLog attribution)
+       -> workbook stream writer
+    -> HTTP stream response with attachment headers
+    -> browser saves file
 ```
 
-### State Management
+### Frontend State Management
 
 ```text
-React auth/session state
-  -> api-client attaches Authorization header
-  -> React Query keys include actor scope mode
-  -> cache invalidation on login/logout/admin-scope switch
+AdminScopeContext/AuthContext
+    -> export action reads current scope display context only (not authoritative)
+    -> API enforces true scope from session
+    -> mutation local state: idle -> pending -> success/error
 ```
 
 ### Key Data Flows
 
-1. **Auth-scoped timeline read (modified):** frontend sends token -> API resolves `actorContext` -> timeline composer loads contracts within actor scope -> merges persisted occurrences and projected rows for `[today, today+3y]` -> returns grouped timeline with `source: actual|projected`.
-2. **Projected row mutation (new):** user edits/completes projected row -> occurrence service instantiates row first (idempotent) -> applies mutation -> writes audit event (`occurrence.instantiated`, `occurrence.completed`) -> timeline query now returns row as actual.
-3. **Delete/restore lifecycle (modified + new):** delete command checks linked active children/occurrences -> if blocked, returns conflict with dependencies; otherwise marks soft-deleted + sets purge date -> restore endpoint clears lifecycle fields -> scheduled purge removes expired soft-deleted graphs.
+1. **Export in admin all-data mode:** session scope is `mode=all`; query layer uses `ownerFilter=null`; workbook includes all owners.
+2. **Export in admin owner-lens mode:** session scope is `mode=owner,lensUserId=X`; query layer filters `user_id=X`; no cross-lens leakage.
+3. **Export for standard user:** scope forced to actor owner; query params like `scope_mode=all` are ignored; result remains owner-only.
 
 ## New vs Modified Integration Points
 
-| Area | New Components | Modified Existing Components |
-|------|----------------|------------------------------|
-| Auth + RBAC | `api/routes/auth.routes.js`, `api/middleware/authenticate-request.js`, `api/middleware/authorize-scope.js`, `domain/security/access-policy.js`, `db/models/session.model.js` | `src/api/app.js`, `src/api/routes/items.routes.js`, `src/api/routes/events.routes.js`, `frontend/src/lib/api-client.ts`, `frontend/src/app/shell/user-switcher.tsx` |
-| Financial hierarchy | `domain/financial-contracts/*`, `db/models/financial-item.model.js`, `db/models/financial-occurrence.model.js` | `src/domain/items/create-item.js`, `src/domain/items/update-item.js`, `src/domain/events/complete-event.js`, `src/domain/events/list-events.js`, `src/domain/items/item-event-sync.js` |
-| Smart timeline | `api/routes/timeline.routes.js`, `domain/timeline/compose-timeline.js` | `frontend/src/pages/events/events-page.tsx`, `frontend/src/pages/items/item-detail-page.tsx`, `frontend/src/lib/query-keys.ts` |
-| Soft delete lifecycle | `api/routes/lifecycle.routes.js`, `domain/lifecycle/restore-item.js`, `jobs/lifecycle-cleanup-job.js` | `src/domain/items/soft-delete-item.js`, `src/domain/items/list-items.js`, `src/domain/items/get-item-net-status.js`, `src/domain/events/list-events.js` |
+| Layer | New Components | Modified Components |
+|------|----------------|---------------------|
+| API route layer | `src/api/routes/exports.routes.js` | `src/api/app.js` (mount router), `src/api/errors/http-error-mapper.js` (export mapper) |
+| Domain services | `src/domain/exports/export-ledger-workbook.js`, `src/domain/exports/export-ledger-query.js`, `src/domain/exports/excel-workbook-writer.js`, `src/domain/exports/export-errors.js` | none required in `domain/items` or `domain/events` if export stays isolated |
+| Query/data layer | Export-specific scoped queries across `models.Item`, `models.Event`, optional `models.AuditLog` | none (reuse existing models only) |
+| Frontend UI/actions | `frontend/src/features/export/use-ledger-export.ts`, `frontend/src/features/export/export-button.tsx`, `frontend/src/features/export/download-file.ts` | `frontend/src/app/shell/user-switcher.tsx` (entry point), optional `frontend/src/lib/api-client.ts` blob helper |
+| Tests/regressions | `test/api/exports-download.test.js`, `test/domain/exports/*`, `frontend/src/__tests__/export-action.test.tsx` | existing admin-scope tests extended with export assertions |
+
+## Integration Points (explicit)
+
+### API Route Contract
+
+| Route | Method | Auth | Response | Notes |
+|------|--------|------|----------|-------|
+| `/exports/ledger.xlsx` | `GET` | `requireAuth` required | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` stream | `Content-Disposition: attachment; filename="hact-ledger-YYYY-MM-DD.xlsx"` |
+
+### Domain Service Boundaries
+
+| Service | Input | Output | Communicates With |
+|---------|-------|--------|-------------------|
+| `exportLedgerWorkbook` | `{ scope, now, localeHint }` | writes stream + metadata | `exportLedgerQuery`, `excelWorkbookWriter` |
+| `exportLedgerQuery` | `{ scope }` | `{ assets, financialContracts, events }` | Sequelize `models` + `resolveOwnerFilter(scope)` |
+| `excelWorkbookWriter` | `{ stream, datasets, formatting }` | committed workbook stream | ExcelJS writer only |
+
+### Frontend Entry Points
+
+| Entry point | Why here | Trigger |
+|------------|----------|---------|
+| `frontend/src/app/shell/user-switcher.tsx` | Global, always visible where scope context already lives | Export button near identity/lens controls |
+| optional secondary CTA on `frontend/src/pages/dashboard/dashboard-page.tsx` | Discoverability for non-admin users | Same hook, no duplicated logic |
 
 ## Dependency-Aware Build Order
 
-1. **Identity and policy foundation (highest dependency):** add user roles + session model + auth middleware + `actorContext` wiring in `app.js`; keep temporary compatibility for `x-user-id` in non-auth tests during transition.
-2. **Centralize authorization in domain services:** update items/events services to consume policy helpers instead of direct `actorUserId` comparisons; this prevents security drift before adding new financial/timeline paths.
-3. **Financial schema introduction (additive, low blast radius):** create `FinancialItems` and `FinancialOccurrences` tables plus migrations/backfill from existing `Items`/`Events`; keep old read paths working.
-4. **Timeline composer + lazy instantiation:** introduce new `/timeline` read model and projected-row instantiation commands; migrate UI pages to new endpoint after parity validation.
-5. **Lifecycle hardening:** move soft-delete metadata from `attributes._deleted_at` to explicit lifecycle fields, add restore endpoint, and implement delete intercept using contract/occurrence graph checks.
-6. **Cleanup scheduler activation (last):** enable daily purge job guarded by Postgres advisory lock so only one app instance purges at a time; add operational metrics/logging.
+1. **Export domain skeleton first (no HTTP/UI):** add `domain/exports` query + workbook writer + unit tests.
+2. **Add API route + streaming headers:** mount router in `src/api/app.js`, add endpoint integration tests for auth and file headers.
+3. **RBAC regression hardening:** add tests for user/admin all/admin lens export counts; ensure out-of-scope leakage never occurs.
+4. **Frontend action integration:** add export hook/button in `user-switcher`; keep existing query/cache behavior unchanged.
+5. **UX polish + i18n + failure states:** disabled state during download, retry messaging, toast/inline errors.
+6. **Performance and edge-case pass:** large dataset stream test, aborted client handling, filename/date formatting checks.
+
+Dependency chain: `domain queries -> workbook writer -> API route -> RBAC tests -> frontend action`.
+
+## Security and RBAC Notes
+
+- Preserve existing trust boundary: only `req.scope` from `requireAuth` is authoritative.
+- Keep non-leaky policy posture: ownership denials should not expose foreign owner IDs.
+- Do not reuse `list-events` for backup export because it materializes projections and can mutate state (`ensurePendingEventsForScope`); export must be read-only over persisted rows.
+- Consider spreadsheet formula-injection hardening for text cells that can start with `= + - @` when opened in Excel.
+- Auditability: write an `AuditLog` action like `export.generated` with `actor_user_id` and `lens_user_id` for parity with Phase 13 attribution model.
 
 ## Scaling Considerations
 
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| 0-1k users | Keep monolith; compute 3-year projections in-process; daily purge inside API process |
-| 1k-100k users | Add indexes on `(scope_user_id, due_date, status, deleted_at)` equivalents; paginate timeline windows by month; separate read-heavy timeline query functions |
-| 100k+ users | Move scheduler to dedicated worker, precompute timeline snapshots/materialized views, and split auth/session verification behind cache |
+| 0-1k users | On-demand synchronous stream in request is sufficient |
+| 1k-100k users | Add paged DB reads and row-by-row stream commit; enforce server timeout budget |
+| 100k+ users | Move to async export job + object storage link while preserving same scope query contracts |
 
 ### Scaling Priorities
 
-1. **First bottleneck:** 3-year timeline joins/projections; fix with bounded windows, covering indexes, and optional monthly snapshot table.
-2. **Second bottleneck:** cleanup contention and long delete cascades; fix with batched purge and lock-safe worker isolation.
+1. **First bottleneck:** DB read volume for full-history events; solve with scoped indexes and chunked reads.
+2. **Second bottleneck:** concurrent export CPU/IO pressure; solve with concurrency caps or queued job mode.
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Header-Driven Identity in Business Logic
+### Anti-Pattern 1: Reusing Timeline Projection Endpoint for Backup Export
 
-**What people do:** Keep reading `x-user-id` in every route/service and bolt RBAC checks on top.
-**Why it's wrong:** Easy to bypass/forget ownership guards; difficult to support admin all-data mode safely.
-**Do this instead:** Resolve identity once in middleware and enforce policy through shared `access-policy` functions.
+**What people do:** Export from `/events` grouped timeline output.
+**Why it's wrong:** Includes projected/derived rows and side effects from sync logic, so backup is not faithful.
+**Do this instead:** Use dedicated persisted-export query layer.
 
-### Anti-Pattern 2: Persisting All Projected Events Upfront
+### Anti-Pattern 2: Trusting Client Scope Query Params for Export
 
-**What people do:** Materialize every recurrence occurrence for the full 3-year horizon.
-**Why it's wrong:** Table growth, noisy audit logs, costly updates when recurrence rules change.
-**Do this instead:** Project on read and instantiate only on user mutation or completion.
+**What people do:** Accept `scope_mode` and `lens_user_id` from URL as authority.
+**Why it's wrong:** Bypasses Phase 13 safety model and enables privilege drift.
+**Do this instead:** Resolve scope exclusively from authenticated session (`req.scope`).
 
-### Anti-Pattern 3: Soft Delete Flags Buried in JSON Attributes
+### Anti-Pattern 3: Buffering Whole Workbook In Memory
 
-**What people do:** Continue encoding lifecycle metadata in `attributes._deleted_at`.
-**Why it's wrong:** Hard to index, easy to miss in joins, and restore/purge logic becomes inconsistent.
-**Do this instead:** Use explicit lifecycle columns (or Sequelize paranoid with custom fields) and central lifecycle services.
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| PostgreSQL | Sequelize models + migrations + advisory lock SQL for scheduler singleton | Use transaction boundaries for mutation + audit consistency |
-| Browser storage (frontend) | Store auth session/refresh state and selected admin scope | Replace current actor-only local storage usage |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| `api/middleware` -> `domain/security` | Direct function call with `actorContext` | Prevent route-level policy drift |
-| `domain/financial-contracts` -> `domain/timeline` | Read model APIs (`listContractsForRange`) | Keep projection logic isolated from write models |
-| `domain/occurrences` -> `domain/events` | Replace/bridge completion handlers | Remove `derived-*` event ID behavior progressively |
-| `domain/lifecycle` -> `jobs/lifecycle-cleanup-job` | Shared purge command module | Same deletion rules for manual and scheduled purge |
+**What people do:** Build workbook fully then `writeBuffer()` for response.
+**Why it's wrong:** Memory spikes and poor resilience as data grows.
+**Do this instead:** Stream workbook directly to response and commit rows incrementally.
 
 ## Sources
 
-- Project baseline and milestone scope: `.planning/PROJECT.md`
-- Current backend integration points: `src/api/app.js`, `src/api/routes/items.routes.js`, `src/api/routes/events.routes.js`, `src/domain/events/complete-event.js`, `src/domain/items/soft-delete-item.js`
-- Current frontend integration points: `frontend/src/lib/api-client.ts`, `frontend/src/pages/events/events-page.tsx`, `frontend/src/pages/items/item-detail-page.tsx`
-- Express middleware ordering and composition: https://expressjs.com/en/guide/using-middleware.html
-- Sequelize transaction patterns: https://sequelize.org/docs/v6/other-topics/transactions/
-- Sequelize paranoid soft-delete behavior: https://sequelize.org/docs/v6/core-concepts/paranoid/
-- PostgreSQL advisory locks for singleton scheduler execution: https://www.postgresql.org/docs/current/explicit-locking.html#ADVISORY-LOCKS
+- Project context: `.planning/PROJECT.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/STATE.md`
+- Current architecture references: `src/api/app.js`, `src/api/auth/require-auth.js`, `src/api/auth/scope-context.js`, `src/api/routes/items.routes.js`, `src/api/routes/events.routes.js`, `src/domain/events/list-events.js`, `frontend/src/app/shell/user-switcher.tsx`, `frontend/src/lib/query-keys.ts`
+- ExcelJS README (streaming writer, worksheet views, autoFilter): https://github.com/exceljs/exceljs
+- SheetJS Node docs (installation/channel caveats, updated 2024-10-11): https://docs.sheetjs.com/docs/getting-started/installation/nodejs/
+- OWASP CSV/Formula Injection guidance: https://owasp.org/www-community/attacks/CSV_Injection
 
 ---
-*Architecture research for: HACT v2.0 auth/timeline/lifecycle milestone*
-*Researched: 2026-02-25*
+*Architecture research for: HACT v3.0 Data Portability export*
+*Researched: 2026-03-01*

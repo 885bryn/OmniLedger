@@ -1,206 +1,206 @@
 # Pitfalls Research
 
-**Domain:** Existing household ledger app upgrade (auth + RBAC, financial contract/occurrence refactor, smart timeline, soft-delete lifecycle)
-**Researched:** 2026-02-25
+**Domain:** v3.0 data portability export for a live household ledger with existing auth + RBAC + admin lens modes
+**Researched:** 2026-03-01
 **Confidence:** MEDIUM-HIGH
 
-## Suggested Milestone Phases
+## Suggested Milestone Phases (for mitigation mapping)
 
-1. **Phase A - Auth and authorization foundation:** identity, session/token flow, role model, ownership policy enforcement.
-2. **Phase B - Financial model expand + compatibility:** introduce `FinancialItem` parent contracts and child occurrences without breaking old reads/writes.
-3. **Phase C - Projection and timeline behavior:** recurrence projection, exceptions, timeline UX/read models.
-4. **Phase D - Soft-delete and retention lifecycle:** reversible delete, restore, linked-record intercepts, 30-day purge.
-5. **Phase E - Cutover hardening:** data backfill finalization, legacy endpoint retirement, monitoring and incident playbooks.
+1. **Phase A - Export policy contract:** explicit actor/scope matrix, endpoint contract, and deny-by-default behavior.
+2. **Phase B - Scoped data assembly:** server query builders and snapshot semantics for export payloads.
+3. **Phase C - Workbook generation hardening:** XLSX schema, formatting, escaping, and corruption safeguards.
+4. **Phase D - Delivery UX and transport safety:** stream/download behavior, progress UX, and secure response headers.
+5. **Phase E - Verification and operational guardrails:** perf tests, security regression suite, observability, and runbooks.
 
 ## Critical Pitfalls
 
-### Pitfall 1: Auth added, but legacy ID-based endpoints still bypass ownership
+### Pitfall 1: Scope bleed between user scope and admin lens mode
 
 **What goes wrong:**
-Some old routes still trust path/body IDs and return or mutate another user's records (classic horizontal privilege escalation).
+Export queries accidentally run with broadened scope (or stale admin lens context), so regular users can receive cross-owner rows.
 
 **Why it happens:**
-Existing codebase often has direct repository calls (for example `findByPk(id)`) added before auth existed; teams secure new routes but miss old ones.
+Teams bolt export onto existing endpoints and reuse query helpers that assume UI scope state is already correct.
 
 **How to avoid:**
-Implement one mandatory server-side policy layer for every data access (`actor -> allowed scope -> query filter`), and require all repositories to accept scope criteria. Add negative integration tests that attempt cross-user UUID access on every route.
+Create one export authorization resolver that computes `effectiveScope` on the server from session + role + explicit lens selection, then injects it into every repository call. Forbid direct model calls inside export handlers.
 
 **Warning signs:**
-Handlers resolving entities by bare ID without `user_id` predicate, "403 in UI but curl can still access" bugs, authorization checks only in controllers.
+Handlers using `findAll()` without owner predicate, fallback to "all" when lens is missing, and tests that only validate positive cases.
 
 **Phase to address:**
-Phase A (define and enforce deny-by-default ownership checks).
+Phase A (policy contract) and Phase B (query implementation).
 
 ---
 
-### Pitfall 2: Role-only RBAC creates "admin or nothing" behavior
+### Pitfall 2: Stale filter/export mismatch (UI says one scope, file contains another)
 
 **What goes wrong:**
-Permissions become too coarse; either data is overexposed in admin-like roles or legitimate workflows are blocked for regular users.
+User applies filters in UI, clicks export, and receives stale or differently scoped data because query cache state and export request parameters diverge.
 
 **Why it happens:**
-Teams model authorization as role checks only, ignoring object relationships (owner, linked asset, household boundary).
+Export action reads partial filter state (or stale React Query state) instead of a canonical, serialized filter object.
 
 **How to avoid:**
-Use RBAC + relationship rules: role decides capability class, object ownership decides record-level access. Encode a policy matrix and test it as a table-driven suite (`role x action x resource_owner`).
+Define a single `ExportRequest` DTO derived from URL/search state (not transient component state), include all scope and filter fields explicitly, and log the exact DTO hash with the export job.
 
 **Warning signs:**
-Conditionals like `if (isAdmin) allowAll else deny`, repeated ad hoc exceptions in route handlers, frequent hotfixes for permission edge cases.
+"Export does not match screen" bug reports, missing filters in query key, and export endpoint receiving optional params with server defaults.
 
 **Phase to address:**
-Phase A (policy model) and Phase E (policy regression suite before cutover).
+Phase A (contract) and Phase D (frontend wiring).
 
 ---
 
-### Pitfall 3: Dual-write period causes ledger drift between legacy item rows and new contract/occurrence model
+### Pitfall 3: Non-atomic multi-table reads produce mixed-time snapshots
 
 **What goes wrong:**
-Totals diverge because writes land in old shape on some paths and new shape on others; timeline and balances disagree.
+Workbook contains internally inconsistent data (for example, Assets sheet reflects newer state than Event History sheet).
 
 **Why it happens:**
-Refactor is introduced in-place without explicit compatibility strategy (expand-migrate-contract), and clients are switched incrementally.
+Export reads each sheet from separate queries over a mutable dataset without a consistent snapshot boundary.
 
 **How to avoid:**
-Introduce new tables/columns first, write-through adapter with idempotency keys, and parity checks that compare old/new computed totals per asset. Keep read-path feature flags and only cut over when parity SLO is met.
+Run export reads in a transaction/snapshot boundary where feasible, or stamp `exportGeneratedAt` and `dataAsOf` and query by deterministic cutoff rules. Never mix "current" and "as-of" semantics in one workbook.
 
 **Warning signs:**
-Different totals between old and new endpoints, manual one-off SQL corrections, inability to explain balance mismatches from audit trail.
+Row counts differ between repeated exports seconds apart, cross-sheet totals fail reconciliation, and flaky integration tests under concurrent writes.
 
 **Phase to address:**
-Phase B (expand + dual-write guardrails) and Phase E (final contract cutover).
+Phase B.
 
 ---
 
-### Pitfall 4: Recurrence projection is not idempotent, creating duplicate future occurrences
+### Pitfall 4: Memory blowups and timeouts on large exports
 
 **What goes wrong:**
-Background jobs or repeated API calls project the same future occurrences multiple times, inflating upcoming obligations and timeline noise.
+Node process spikes memory or times out when generating large workbooks, degrading the live API.
 
 **Why it happens:**
-Projection engine lacks stable natural key (contract + due date + sequence/rrule fingerprint) and safe upsert rules.
+Workbook is built fully in memory and rows are expanded with N+1 relation lookups.
 
 **How to avoid:**
-Define deterministic occurrence identity, enforce unique constraint on projected rows, and make projection job upsert-only. Add replay tests that run projection N times and assert constant row count.
+Use streaming XLSX writer path for large datasets, enforce server-side page/chunk iteration, and cap max export size with explicit user messaging. Add relation prefetch strategy to avoid N+1.
 
 **Warning signs:**
-Occurrence count increases after rerunning projection, duplicate due dates for same contract, scheduler retries correlate with record spikes.
+p95 export latency climbing with row count, OOM restarts, and DB query count proportional to rows.
 
 **Phase to address:**
-Phase C (projection engine + uniqueness constraints).
+Phase B (query plan) and Phase C/E (streaming + perf gates).
 
 ---
 
-### Pitfall 5: DST/timezone ambiguity shifts due dates in projected timeline
+### Pitfall 5: XLSX corruption from invalid worksheet names/cell values/styles
 
 **What goes wrong:**
-Monthly/weekly recurrences appear one day early/late around DST boundaries or when server/client timezones differ.
+Generated file downloads but opens with repair warnings, missing formatting, or broken sheets.
 
 **Why it happens:**
-Mixing local `timestamp without time zone` assumptions with UTC conversions and inconsistent recurrence library semantics.
+Unvalidated sheet names, unsupported style combinations, and ad hoc type coercion when flattening complex objects.
 
 **How to avoid:**
-Store schedule intent as explicit timezone + local wall-clock rule, store occurrence instants as `timestamptz`, and use a single recurrence engine contract. Add timezone test vectors (DST start/end, leap day, month-end) in CI.
+Centralize workbook schema definitions: sheet names, column types, width/format presets, and per-field serializers. Add a post-generation open/parse smoke test in CI.
 
 **Warning signs:**
-"Due date moved overnight" reports, inconsistent results between local dev and Docker, date-only fields silently interpreted in server timezone.
+Excel "repaired records" dialogs, columns shifted after opening, and inconsistent date/number rendering across locales.
 
 **Phase to address:**
-Phase C (time model + recurrence tests).
+Phase C.
 
 ---
 
-### Pitfall 6: Editing one projected occurrence accidentally mutates the parent contract rule
+### Pitfall 6: Date/time and locale formatting drift in exported workbook
 
 **What goes wrong:**
-Single-instance adjustments (skip, amount tweak, reschedule) alter future schedule globally and corrupt expected recurrence behavior.
+Users see one-day offsets, mixed date formats, or numbers treated as text.
 
 **Why it happens:**
-Exception model is missing or under-specified; system treats all occurrence edits as parent updates.
+Mixing JS `Date` serialization, locale-formatted strings, and Excel serial dates without a clear convention.
 
 **How to avoid:**
-Separate parent rule updates from occurrence exceptions (`override`, `skip`, `detach`) with explicit commands and audit events. Enforce immutable occurrence lineage fields and exception precedence rules.
+Pick one rule: store date-time cells as true date values with explicit `numFmt`; export date-only fields in one normalized representation; include timezone note in workbook metadata sheet.
 
 **Warning signs:**
-User edits one date and multiple future dates change, unclear audit logs for whether parent vs child was changed, support cannot replay schedule state.
+Different display between Excel desktop/web, sort order failures on date columns, and support tickets around DST/date boundaries.
 
 **Phase to address:**
-Phase C (exception semantics and audit contract).
+Phase C and Phase E (cross-locale test matrix).
 
 ---
 
-### Pitfall 7: Soft-delete hides rows but does not enforce relational lifecycle
+### Pitfall 7: Spreadsheet formula injection through user-entered text
 
 **What goes wrong:**
-Deleted parents still have active children, restore fails, and users see missing/ghost records in rollups.
+Cells beginning with formula prefixes execute when workbook is opened, creating client-side exfiltration or phishing vectors.
 
 **Why it happens:**
-Paranoid delete is enabled per model, but cross-entity delete policy (restrict/cascade/archive) is not designed end-to-end.
+Untrusted free-text fields (notes, labels, payees) are written directly to cells without sanitization policy.
 
 **How to avoid:**
-Define lifecycle matrix per relationship (contract -> occurrences, item -> events, item -> audit refs), require delete intercept checks, and implement deterministic restore ordering. Add integration tests for delete/restore graph integrity.
+Apply output encoding/escaping policy for potentially dangerous leading characters (`=`, `+`, `-`, `@`, tabs/newlines where relevant), and treat all user text fields as untrusted in export serializer.
 
 **Warning signs:**
-Restore endpoint returning FK/conflict errors, orphan occurrences with soft-deleted parent, timeline showing children of deleted items.
+Values preserved exactly from user input at cell start with formula operators, and no dedicated security tests for export content.
 
 **Phase to address:**
-Phase D (lifecycle policy + delete intercept implementation).
+Phase C (serializer policy) and Phase E (security regression).
 
 ---
 
-### Pitfall 8: 30-day purge job hard-deletes records still needed for compliance or restore
+### Pitfall 8: Sensitive file leakage via caching, logs, and temp artifacts
 
 **What goes wrong:**
-Cleanup permanently removes data still referenced by audit/business workflows or racing with restore requests.
+Backups persist in browser/proxy cache, server temp directories, or logs with data-bearing filenames and parameters.
 
 **Why it happens:**
-Purge job keyed only on `deleted_at < now - 30 days`, without hold states, referential checks, or concurrency control.
+Download endpoint is treated like generic file download, not as sensitive personal financial data.
 
 **How to avoid:**
-Implement purge eligibility state machine (`deleted`, `pending_purge`, `on_hold`, `purged`), run purge in small transactional batches with `SKIP LOCKED`, and keep immutable purge audit entries. Add chaos test with concurrent restore vs purge.
+Set strict response headers (`Cache-Control: no-store`, correct `Content-Type`, safe `Content-Disposition` filename), avoid disk persistence unless encrypted/ephemeral, and redact export parameters in logs.
 
 **Warning signs:**
-Intermittent restore "not found" after being visible in trash, broken foreign keys in historical reports, cleanup job lock contention spikes.
+Export payload IDs in logs, temp files surviving process restart, and repeated download from back button without re-auth.
 
 **Phase to address:**
-Phase D (purge mechanics) and Phase E (operational runbook + alerting).
+Phase D and Phase E.
 
 ---
 
-### Pitfall 9: Timeline UX merges historical and projected rows without source semantics
+### Pitfall 9: UX ambiguity between "current view export" and "full backup export"
 
 **What goes wrong:**
-Users cannot distinguish planned vs executed vs deleted states; edits happen on the wrong row type, causing trust loss.
+Users cannot tell whether export is filtered view, role-limited subset, or full account backup; trust declines.
 
 **Why it happens:**
-UI and API collapse multiple state machines into one list without explicit `entry_kind` and action affordance rules.
+Single "Export" CTA with hidden scope rules and no summary of included data.
 
 **How to avoid:**
-Return normalized timeline entries with explicit source/status (`projected`, `scheduled`, `completed`, `deleted`, `restored`) and allowed actions per state. Add contract tests and UX acceptance scenarios for mixed-state timelines.
+Present explicit mode labels before export (`Current filters`, `All my data`, `Admin lens: selected scope`), show included sheets/row counts, and include "Scope Summary" tab inside workbook.
 
 **Warning signs:**
-Buttons disabled/enabled inconsistently across similar rows, user confusion between "upcoming" and "history", frequent support tickets on accidental edits.
+Support questions about missing data, repeated re-exports with different filters, and user-created manual reconciliation steps.
 
 **Phase to address:**
-Phase C (timeline API shape) and Phase D (deleted/restored state surfacing).
+Phase D.
 
 ---
 
-### Pitfall 10: Partial migration deployment causes downtime due to locking/backfill pressure
+### Pitfall 10: Missing auditability of exports in a live RBAC system
 
 **What goes wrong:**
-DDL/backfill blocks hot tables; API latency spikes or writes fail during migration windows.
+Team cannot answer who exported what scope and when after a suspected leak or policy incident.
 
 **Why it happens:**
-Large schema/data changes are applied as one migration with full-table rewrites and no chunking or rehearsal.
+Feature is shipped as "utility" without audit events, reason codes (for admin scope), or correlation IDs.
 
 **How to avoid:**
-Use expand-migrate-contract, `NOT VALID` constraints where appropriate, chunked backfills, and rehearsal on production-like volume. Gate release on measured lock duration and rollback/cutover plan.
+Log immutable export audit events: actor, effective scope, filter hash, row counts, workbook id, timestamp, and outcome. Require reason metadata for admin broad-scope exports.
 
 **Warning signs:**
-Migration runtime unpredictability, long-running table locks, emergency manual SQL during rollout.
+Download endpoint has no structured logs, only 200/500 metrics, and no linkage between UI action and backend export execution.
 
 **Phase to address:**
-Phase B (migration design) and Phase E (cutover rehearsal sign-off).
+Phase A (audit contract) and Phase E (observability + incident readiness).
 
 ---
 
@@ -208,93 +208,91 @@ Phase B (migration design) and Phase E (cutover rehearsal sign-off).
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Keep using `x-user-id` as effective auth for old routes | Fast compatibility | Silent auth bypass and inconsistent trust model | Never once real auth ships |
-| Compute timeline by merging raw arrays in Node | Fast implementation | Unstable ordering, poor pagination, CPU hotspots | Temporary for low-volume local testing only |
-| Soft-delete without restore integration tests | Faster delivery | Trash becomes one-way delete in practice | Never |
-| One-shot backfill SQL for all historical rows | Quick migration | Lock contention, hard rollback, data drift risk | Only on tiny datasets with verified downtime window |
+| Reuse list-page query directly for export | Fast implementation | Scope leaks and stale-filter mismatches | Never for RBAC-sensitive exports |
+| Build workbook fully in memory first | Simpler coding model | OOM/timeout risk and poor scalability | Only for tiny datasets with hard row cap |
+| Export with implicit server defaults for missing filters | Fewer UI params | Inconsistent "what user saw" vs "what exported" | Never |
+| Skip export audit log fields until later | Faster ship | No incident forensics for leakage claims | Never |
 
 ## Integration Gotchas
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Existing frontend actor switcher and new auth session | Keeping dual identity sources (`x-user-id` + JWT/session) active without precedence rules | Define one canonical actor source and reject mismatched headers/tokens in middleware |
-| Sequelize paranoid models with legacy raw SQL | Assuming all queries respect soft-delete filters | Audit all raw queries and explicitly add `deleted_at` predicates or `paranoid` options as needed |
-| Recurrence library integration | Assuming RFC behavior equals library behavior by default | Lock down recurrence semantics with golden tests and document known deviations |
-| Migration scripts and running API | Deploying DDL that app code cannot tolerate mid-rollout | Use compatibility layers and feature flags so old and new code can run safely during transition |
+| Express download responses | Treating export like static file endpoint | Attach security headers and auth checks per request, then stream |
+| Sequelize query layer | Mixing scoped and unscoped helper calls | Require `effectiveScope` in repository APIs and test for cross-owner denial |
+| React Query filter state | Export button reads stale cache/view state | Build export payload from canonical URL/filter model at click time |
+| ExcelJS workbook generation | Ad hoc serializers and style assignment per callsite | Use centralized sheet schema + serializer map + workbook smoke test |
 
 ## Performance Traps
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Timeline query does per-item occurrence expansion in request path | p95 spikes on dashboard/timeline | Precompute/project occurrences asynchronously and query indexed materialized shape | Usually visible by 5k-20k occurrences |
-| Missing partial indexes for active (non-deleted) rows | Trash-enabled queries get slower after soft-delete launch | Add partial indexes aligned to `deleted_at IS NULL` and timeline filters | Early, often within first month of retained deletes |
-| Purge job scans full tables daily | Cleanup job slow, lock contention at night | Batch by indexed `deleted_at`, `LIMIT`, and lock-safe worker strategy | Breaks as soon as deleted rows reach high tens of thousands |
+| N+1 relation loading while writing rows | DB query explosion and slow exports | Batch includes/prefetch and chunked iteration | Often visible beyond 5k-20k rows |
+| Non-streaming XLSX generation | High memory and process instability | Streaming writer path + max row guardrails | Commonly painful beyond tens of MB outputs |
+| Export competing with API traffic | Normal app latency spikes during exports | Concurrency limits and queue/backpressure for export jobs | Under bursty parallel exports |
 
 ## Security Mistakes
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Authorization checks only in UI or route decorators | Direct API abuse and IDOR | Enforce server-side object-level policy in repository/service layer with deny-by-default |
-| Admin all-data mode reused for support tooling without audit | Silent overreach and privacy exposure | Time-bound admin elevation, mandatory reason code, immutable audit trail |
-| Tokens/sessions not invalidated on role change | Stale privileges remain active | Version auth context and force re-auth/token refresh on privilege updates |
-| Exposing deleted records via debug/admin endpoints unintentionally | Data leakage beyond lifecycle intent | Separate privileged endpoints, strict scopes, and response DTO redaction |
+| Missing object-level authorization on export reads | Cross-tenant-ish data exfiltration | Deny-by-default scope resolver + negative integration tests |
+| Unescaped formula-like cell values | Spreadsheet formula execution on open | Sanitize/escape dangerous leading characters in user text fields |
+| Cacheable responses for sensitive exports | Leakage via browser/shared cache | `Cache-Control: no-store` and strict response handling |
+| No auditable trail for admin exports | Undetectable privilege misuse | Immutable export audit events + admin reason codes |
 
 ## UX Pitfalls
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Trash state not visible in timeline context | Users think data vanished | Show deleted/restored events in history with clear badges and timestamps |
-| Recurrence exceptions hidden behind generic "edited" label | Users cannot trust future schedule | Display exception reason and parent/child linkage for changed occurrences |
-| Upcoming vs historical split inconsistent across asset page and timeline | Perceived bugs and duplicate work | Use one shared timeline classification rule and expose it in API metadata |
+| One generic Export button for multiple scopes | Users misunderstand what is included | Explicit export mode selector with scope summary |
+| No progress/failure states on long exports | Users retry repeatedly and create duplicates | Visible progress + idempotent request handling + clear retry guidance |
+| Download lacks metadata on snapshot time/scope | Workbook trust problems during reconciliation | Add "Scope Summary" sheet with actor scope, filter summary, and timestamp |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Authorization:** Every read/write route has a failing cross-user test; verify no endpoint succeeds with guessed UUIDs from another user.
-- [ ] **RBAC:** Permission matrix tests cover role x action x resource owner permutations; verify deny-by-default path.
-- [ ] **Financial refactor:** Old and new read models are in parity for seeded historical data; verify dual-write idempotency under retries.
-- [ ] **Recurrence:** Replaying projection job does not change row counts or duplicate keys; verify DST and month-end fixtures.
-- [ ] **Timeline:** API returns explicit `entry_kind` and allowed actions; verify mixed projected/completed/deleted rendering.
-- [ ] **Soft delete:** Delete intercept blocks unsafe graph deletes; verify restore order for parent/child records.
-- [ ] **Retention purge:** Concurrent restore/purge test cannot lose restorable data; verify purge audit records are immutable.
-- [ ] **Migration:** Rehearsal on production-like volume passes lock/latency thresholds; verify rollback and feature-flag cutback path.
+- [ ] **RBAC isolation:** Cross-owner negative tests exist for user and admin-lens paths; verify guessed UUIDs never broaden export scope.
+- [ ] **Filter fidelity:** Export payload includes every active filter/scope field; verify exported row counts match on-screen query for "current view" mode.
+- [ ] **Snapshot consistency:** Multi-sheet workbook uses one data cutoff strategy; verify cross-sheet reconciliation checks pass.
+- [ ] **XLSX safety:** Sheet names/types/styles are schema-driven; verify generated file opens without Excel repair warnings.
+- [ ] **Date integrity:** Date/time columns sort correctly and match expected day across locale/timezone fixtures.
+- [ ] **Injection defense:** User text cells are sanitized for formula execution prefixes; verify security tests with malicious fixtures pass.
+- [ ] **Transport security:** Download responses are non-cacheable and sanitized; verify no sensitive temp files/log artifacts remain.
+- [ ] **Auditability:** Every export emits structured audit event with actor, scope, filter hash, and outcome.
 
 ## Recovery Strategies
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Cross-user data exposure via missed scope check | HIGH | Disable affected endpoints, rotate sessions/tokens, run access log impact analysis, patch policy layer, add regression tests |
-| Ledger drift during dual-write migration | HIGH | Freeze mutating writes, run reconciliation job per contract, backfill canonical rows, replay missed events from audit log |
-| Duplicate projected occurrences | MEDIUM | Deduplicate by deterministic key, rebuild projection window, add unique constraint + idempotent upsert |
-| Broken restore/purge race | HIGH | Stop purge workers, recover from backups/audit snapshots, re-link dependent rows, deploy purge state-machine fix |
+| Scope leak in export | HIGH | Disable endpoint, rotate affected sessions, identify impacted exports from audit/logs, patch scope resolver, add regression suite |
+| Corrupted or inconsistent workbook output | MEDIUM | Roll back to prior export schema version, regenerate affected exports, add CI open/parse verification |
+| Export-induced performance incident | MEDIUM-HIGH | Rate-limit/queue exports, switch to streaming path, profile query plan, deploy row caps until fixed |
+| Stale-filter mismatch complaints | MEDIUM | Patch canonical export DTO flow, add filter hash in workbook metadata, add end-to-end "screen vs export" tests |
 
 ## Pitfall-to-Phase Mapping
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Legacy endpoints bypass ownership (IDOR) | Phase A | Automated negative tests fail for cross-user UUID access on all routes |
-| Role-only RBAC over/under grants access | Phase A and Phase E | Policy matrix test suite passes and no ad hoc allowlist logic remains |
-| Dual-write ledger drift in refactor | Phase B and Phase E | Old/new totals parity report remains within defined SLO before cutover |
-| Non-idempotent recurrence projection duplicates rows | Phase C | Repeated projection replay test keeps occurrence count stable |
-| DST/timezone due-date drift | Phase C | Timezone edge-case fixtures (DST, month-end, leap-day) pass in CI |
-| Occurrence edit mutates parent schedule unintentionally | Phase C | Command tests prove single-instance exception does not alter parent rule |
-| Soft-delete without lifecycle integrity | Phase D | Delete/restore graph tests maintain referential and visibility consistency |
-| 30-day purge removes still-restorable data | Phase D and Phase E | Concurrent restore-vs-purge test and purge audit validation pass |
-| Timeline conflates projected/historical/deleted states | Phase C and Phase D | Contract tests assert `entry_kind` + allowed actions for each state |
-| Migration lock/backfill outages | Phase B and Phase E | Rehearsal metrics meet lock and latency budgets; rollback drill succeeds |
+| Scope bleed in admin/user exports | Phase A + B | Matrix tests for role x lens x ownership with negative assertions |
+| Stale UI filters in exported file | Phase A + D | E2E tests compare active filter state to export request payload + row set |
+| Mixed-time data across sheets | Phase B | Concurrency test proves deterministic snapshot/cutoff behavior |
+| Memory/timeouts on large exports | Phase B + C + E | Load test at target row volumes with p95 latency and memory budgets |
+| XLSX corruption/format breakage | Phase C | CI opens generated workbook and validates expected sheet schema |
+| Date/locale drift | Phase C + E | Locale/timezone fixture suite passes for date formatting and ordering |
+| Formula injection risk | Phase C + E | Security fixtures confirm dangerous prefixes are neutralized |
+| Cache/log/temp leakage | Phase D + E | Header tests + artifact scans + log redaction checks |
+| UX scope confusion | Phase D | Usability acceptance checks for explicit mode labels and summary tab |
+| Missing export audit trail | Phase A + E | Audit event contract test and dashboard/alert checks |
 
 ## Sources
 
-- OWASP Authorization Cheat Sheet (deny-by-default, per-request object checks): https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
-- Sequelize transactions (atomic write workflows): https://sequelize.org/docs/v6/other-topics/transactions/
-- Sequelize optimistic locking (concurrent edit conflict handling): https://sequelize.org/docs/v6/other-topics/optimistic-locking/
-- Sequelize paranoid soft-delete behavior (query semantics, restore, `force` delete): https://sequelize.org/docs/v6/core-concepts/paranoid/
-- Sequelize scopes (default scope behavior and override caveats): https://sequelize.org/docs/v6/other-topics/scopes/
-- PostgreSQL row-level security (defense in depth for row isolation): https://www.postgresql.org/docs/current/ddl-rowsecurity.html
-- PostgreSQL partial indexes (active-row query performance with soft delete): https://www.postgresql.org/docs/current/indexes-partial.html
-- PostgreSQL date/time and timezone behavior (UTC storage, timezone conversion semantics): https://www.postgresql.org/docs/current/datatype-datetime.html
-- RFC 5545 iCalendar recurrence model (RRULE/EXDATE/recurrence baseline semantics): https://www.rfc-editor.org/rfc/rfc5545
-- rrule.js docs (notable RFC behavior differences and timezone caveats): https://github.com/jkbrzt/rrule
+- Internal project context: `.planning/PROJECT.md` (v3.0 goal and constraints) - HIGH
+- Internal v2.0 debt context: `.planning/milestones/v2.0-MILESTONE-AUDIT.md` (noted stale refresh/invalidation debt) - HIGH
+- OWASP Authorization Cheat Sheet (deny-by-default, per-request auth checks): https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html - HIGH
+- OWASP IDOR Prevention Cheat Sheet (object-level access enforcement): https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html - HIGH
+- OWASP CSV/Formula Injection guidance (spreadsheet formula execution risk): https://owasp.org/www-community/attacks/CSV_Injection - MEDIUM
+- ExcelJS README/docs (streaming writer behavior and worksheet features): https://github.com/exceljs/exceljs - MEDIUM
+- Microsoft Excel specifications and limits (row/column/cell/style limits): https://support.microsoft.com/en-us/office/excel-specifications-and-limits-1672b34d-7043-467e-8e27-269d656771c3 - HIGH
+- MDN Cache-Control reference (`no-store` semantics for sensitive responses): https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control - MEDIUM
 
 ---
-*Pitfalls research for: HACT v2.0 auth, financial hierarchy, smart timeline, and delete lifecycle milestone*
-*Researched: 2026-02-25*
+*Pitfalls research for: HACT v3.0 secure RBAC-aware XLSX backup export milestone*
+*Researched: 2026-03-01*

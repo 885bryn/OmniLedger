@@ -1,165 +1,171 @@
 # Project Research Summary
 
 **Project:** Household Asset & Commitment Tracker (HACT)
-**Domain:** Multi-user household asset and financial commitment ledger (v2.0 milestone)
-**Researched:** 2026-02-25
+**Domain:** Secure, RBAC-aware household-finance data portability export (v3.0 milestone)
+**Researched:** 2026-03-01
 **Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-This milestone is an architecture evolution of an existing ledger product, not a greenfield rewrite. Expert consensus across the research is to keep the current Node/Express/Sequelize/PostgreSQL monolith, then add secure identity, server-side authorization, a parent/occurrence financial model, bounded recurrence projection, and lifecycle controls (soft delete, restore, purge). The product should behave like an auditable operations system: deterministic policy decisions, predictable timeline state, and reversible user actions.
+This milestone is a portability release for an existing product, not a platform rewrite. The recommended path is to add a dedicated server-side export flow that generates multi-sheet `.xlsx` backups (Assets, Financial Contracts, Event History) from persisted ledger data, scoped by existing auth/session RBAC semantics (`user`, `admin all-data`, `admin lens`). Experts converge on preserving the current Node/Express/Sequelize/React architecture and adding focused capabilities: Excel workbook generation, secure stream delivery, export audit events, and clear frontend download states.
 
-The strongest recommendation is dependency-first delivery: establish authenticated actor context and deny-by-default scoping before touching high-volume timeline features; introduce `FinancialItem` (contract) and `FinancialOccurrence` (instance) before timeline UX refactors; then activate lifecycle automation after restore and delete-intercept semantics are proven. This ordering avoids the two biggest failure classes: security bypass via legacy routes and data drift during dual-write migration.
+The strongest implementation pattern is scope-first and contract-first. Resolve effective scope only on the server (`req.scope`), then execute explicit scoped export queries, then stream workbook output with stable schema/version metadata and usability defaults (frozen headers, filters, deterministic date formats). This keeps backup artifacts faithful and supportable while avoiding projection-side effects from timeline endpoints.
 
-Main risks are known and manageable: IDOR from leftover ID-based handlers, duplicate/misaligned recurrence due to weak idempotency/timezone handling, and destructive lifecycle races between restore and purge. Mitigation is explicit in research: centralized access-policy enforcement, deterministic occurrence keys with replay-safe projection tests, timezone fixtures in CI, and purge state-machine plus lock-safe batched jobs.
+Primary risks are scope leakage, stale UI/export mismatches, mixed-time snapshots, and large-export reliability failures. The mitigation strategy is explicit and actionable: central scope resolver + negative RBAC tests, canonical export DTO tied to URL/filter state, snapshot/cutoff semantics across all sheets, streaming writer with row/time guardrails, formula-injection sanitization, and immutable audit logging for every export event.
 
 ## Key Findings
 
 ### Recommended Stack
 
-`STACK.md` recommends minimal-change, production-safe deltas that fit the current app shape rather than introducing new infrastructure.
+`STACK.md` recommends minimal, high-leverage additions to the existing stack for v3.0 export delivery.
 
 **Core technologies:**
-- `jsonwebtoken@9.0.3`: access/refresh token handling - replaces temporary `x-user-id` identity transport with standard bearer auth.
-- `argon2@0.44.0`: password hashing - aligns with OWASP Argon2id guidance for secure credential storage.
-- `rrule@2.8.1` + `luxon@3.7.2`: recurrence and timezone-safe date logic - reduces DST and projection math errors in 3-year windows.
-- `pg-boss@12.13.0`: durable scheduled jobs - supports 30-day hard-delete cleanup and projection materialization on existing Postgres.
-- Sequelize v6 paranoid/scopes (stay on latest v6 patch): soft-delete + owner/admin visibility model - native fit for trash/restore workflows.
+- `exceljs@4.4.0`: server-side multi-sheet workbook generation and stream writing - best fit for styled, readable exports without introducing new infra.
+- `content-disposition@1.0.1`: safe RFC-compliant attachment filename handling - avoids Unicode/escaping bugs in download headers.
+- Node.js built-ins (`stream`, `Intl.DateTimeFormat`) on Node 22.x: backpressure-safe delivery and locale/timezone-aware formatting - keeps implementation lightweight and deterministic.
 
-**Critical version constraints:**
-- Keep Sequelize on stable v6 (do not upgrade to v7 during this refactor).
-- `pg-boss@12.13.0` expects Node `>=22.12` and PostgreSQL `>=13` (matches current environment).
-- Apply `helmet@8.1.0` and `express-rate-limit@8.2.1` immediately when auth endpoints ship.
+**Stack additions and version constraints:**
+- Required v3.0 additions: `exceljs@4.4.0`, `content-disposition@1.0.1`.
+- Optional addition: `luxon@3.7.2` if explicit timezone conversion is needed beyond `Intl` behavior.
+- Keep export path server-side; avoid client-side XLSX generation, temp-file download pipelines, and queue/object-store complexity in v3.0.
 
 ### Expected Features
 
-`FEATURES.md` is clear that v2.0 acceptance depends on security and lifecycle trust, not just new screens.
+`FEATURES.md` sets clear scope boundaries for portability-first delivery.
 
 **Must have (table stakes):**
-- Real auth sessions and protected routes replacing actor header shim behavior.
-- Backend-enforced RBAC with owner-scoped isolation and explicit, auditable admin bypass mode.
-- Parent `FinancialItem` + child occurrence model with bounded recurrence projection (3-year horizon).
-- Recurrence edit semantics (`this occurrence`, `this and following`, `entire series`).
-- Unified timeline segmented by temporal state, plus soft-delete/restore/trash and 30-day automated purge.
+- One obvious export entry point with clear included-data messaging.
+- Server-enforced scope-correct export (standard user, admin all-data, admin lens) with no client-authoritative scope.
+- Multi-sheet `.xlsx` output with stable column contract and schema/version marker.
+- Date/entity filters, workbook readability defaults, explicit row/time guardrails, and non-silent failures.
+- Frontend loading/success/retry states and export audit events (actor, scope, filters, outcome).
 
-**Should have (competitive):**
-- Explainable authorization denials to reduce support churn.
-- Persistent visual admin-mode indicator to prevent accidental cross-owner edits.
-- Projection confidence states and decision lanes (upcoming/due soon/overdue/history) for timeline clarity.
+**Should have (differentiators):**
+- `Export Info`/provenance metadata sheet (actor, lens, timezone, filters, timestamp).
+- Strong audit traceability with resolved scope and row counts.
 
-**Defer (v2.1+):**
-- Granular custom role matrices beyond admin/standard.
-- Advanced restore conflict assistant.
-- Bulk timeline operations and policy-heavy retention/legal-hold customization.
+**Defer (v3.1+ / v4+):**
+- Async export jobs with short-lived links (v3.1 once baseline is stable).
+- Optional zipped CSV companion package and saved presets (v3.1).
+- Report builder, formula authoring, scheduled third-party exports, and import/restore round-trip tooling (v4+).
 
 ### Architecture Approach
 
-`ARCHITECTURE.md` recommends a policy-first modular monolith. Identity is resolved once in middleware into `actorContext`; domain services enforce shared `access-policy`; timeline read model merges projected and actual data; lifecycle logic is explicit and scheduler-driven.
+`ARCHITECTURE.md` recommends an additive export module integrated into the existing monolith, with strict boundaries between route, query, and workbook responsibilities.
 
 **Major components:**
-1. API middleware and routes - authenticate request, authorize scope, expose auth/timeline/lifecycle endpoints.
-2. Domain services - `security`, `financial-contracts`, `occurrences`, `timeline`, and `lifecycle` each own one business concern.
-3. Persistence and jobs - additive migrations for new models/lifecycle columns plus scheduled cleanup job with advisory-lock singleton behavior.
+1. API route layer (`src/api/routes/exports.routes.js`) - authenticated `/exports/ledger.xlsx` stream endpoint with safe response headers and existing error envelope.
+2. Domain export module (`src/domain/exports/*`) - scope-aware query service, workbook orchestrator, typed export errors, and centralized column/schema definitions.
+3. Frontend export feature (`frontend/src/features/export/*`) - blob download mutation, UX states, and entry point near user/lens context.
+
+**Architecture integration points:**
+- Mount export router in `src/api/app.js`; extend `src/api/errors/http-error-mapper.js` for export error taxonomy.
+- Reuse existing `requireAuth` + `req.scope` trust boundary; do not trust client scope params.
+- Query persisted models (`Item`, `Event`, optional `AuditLog`) via export-specific scoped read model; do not reuse projection-oriented `/events` behavior.
+- Stream workbook to `res` with `Content-Type`, `Content-Disposition`, and `Cache-Control: no-store`.
 
 ### Critical Pitfalls
 
-`PITFALLS.md` identifies recurring failure modes that should directly drive roadmap gates:
+`PITFALLS.md` identifies concrete failure modes that should gate phase completion.
 
-1. **Legacy endpoint scope bypass (IDOR):** old ID-based handlers remain reachable - prevent by enforcing one mandatory policy layer and negative cross-user tests on every route.
-2. **Dual-write ledger drift during model migration:** old/new write paths diverge - prevent with expand-migrate-contract sequencing, idempotent write-through adapters, and parity SLO checks before cutover.
-3. **Non-idempotent recurrence projection:** retries create duplicate future rows - prevent with deterministic occurrence keys, uniqueness constraints, and replay tests.
-4. **Timezone/DST recurrence drift:** due dates move unexpectedly - prevent with explicit timezone intent, `timestamptz` storage, and DST/leap/month-end fixtures.
-5. **Restore/purge lifecycle races:** 30-day purge removes still-restorable data - prevent with purge eligibility states, batched `SKIP LOCKED` execution, and concurrent restore-vs-purge tests.
+1. **Scope bleed across user/admin/lens contexts** - prevent with a single server-side `effectiveScope` resolver and mandatory scoped repository APIs.
+2. **Filter/view mismatch in exports** - prevent with canonical `ExportRequest` DTO sourced from URL/filter state and logged filter hash.
+3. **Mixed-time snapshots across sheets** - prevent with transaction/cutoff strategy (`dataAsOf`) and deterministic cross-sheet semantics.
+4. **Memory/timeouts on large exports** - prevent with streaming writer, chunked reads, relation prefetching, and explicit row/time caps.
+5. **XLSX/security defects (corruption, date drift, formula injection, cache leakage)** - prevent with schema-driven serializers, locale/timezone test matrix, dangerous-prefix sanitization, and strict no-store/secure header policy.
 
 ## Implications for Roadmap
 
-Based on all four research outputs, the roadmap should use five dependency-locked phases.
+Based on combined research, the v3.0 roadmap should use five dependency-ordered phases focused on secure portability scope boundaries.
 
-### Phase 1: Identity and Policy Foundation
-**Rationale:** Every later feature depends on trusted actor context and deny-by-default data scope.
-**Delivers:** Auth/session endpoints, token validation, role model, `actorContext`, shared access-policy, route-level scope middleware.
-**Addresses:** Auth, RBAC, owner isolation, admin bypass preconditions.
-**Avoids:** Pitfall 1 (scope bypass), Pitfall 2 (coarse role-only checks).
+### Phase 1: Export Policy and Scope Contract
+**Rationale:** Everything depends on deny-by-default scope correctness and explicit export contract semantics.
+**Delivers:** Effective scope resolver, export DTO contract, route auth contract, error code taxonomy, audit event schema.
+**Addresses:** Table-stakes RBAC-correct export and clear UX scope messaging.
+**Avoids:** Scope bleed, stale filter mismatch, and missing auditability pitfalls.
 
-### Phase 2: Financial Model Expansion with Compatibility Guardrails
-**Rationale:** Timeline and recurrence are unreliable until contract/occurrence entities exist and legacy parity is maintained.
-**Delivers:** `FinancialItem` and `FinancialOccurrence` schema/services, additive migrations/backfill, dual-write compatibility layer, parity reports.
-**Addresses:** Parent/occurrence feature baseline and migration safety.
-**Uses:** Sequelize v6 migrations/scopes and Postgres indexing strategy.
-**Avoids:** Pitfall 3 (ledger drift), Pitfall 10 (migration lock pressure).
+### Phase 2: Scoped Data Assembly and Snapshot Semantics
+**Rationale:** Data fidelity must be solved before workbook formatting and UI polish.
+**Delivers:** Export query layer for Assets/Contracts/Events, deterministic filters, snapshot/cutoff model, row-limit strategy.
+**Implements:** `export-ledger-query` + scope-first read model.
+**Avoids:** Mixed-time workbook inconsistencies, N+1 query growth, and leakage from unscoped reads.
 
-### Phase 3: Projection Engine and Timeline Behavior
-**Rationale:** Only after policy and data shape are stable should the 3-year timeline be composed and exposed.
-**Delivers:** `rrule` + `luxon` projection service, lazy instantiation flow, timeline API/read model, series edit semantics, timeline state labels.
-**Addresses:** Smart timeline and recurrence workflows.
-**Implements:** `domain/timeline`, `domain/occurrences`, `api/routes/timeline.routes.js`.
-**Avoids:** Pitfall 4 (duplicate projection), Pitfall 5 (timezone drift), Pitfall 6 and 9 (state/exception ambiguity).
+### Phase 3: Workbook Contract and Stream Delivery
+**Rationale:** Once datasets are correct, define the stable portability artifact and transport behavior.
+**Delivers:** Excel schema/column specs, metadata sheet, streaming workbook writer, download headers (`content-disposition`, `no-store`).
+**Uses:** `exceljs@4.4.0`, `content-disposition@1.0.1`, Node stream primitives.
+**Avoids:** In-memory blowups, XLSX corruption, date/locale drift, and cache leakage.
 
-### Phase 4: Lifecycle Controls and Retention Automation
-**Rationale:** Delete behavior must be safe and reversible before hard cleanup is enabled.
-**Delivers:** Delete intercepts, trash/restore endpoints, explicit lifecycle columns, purge state machine, scheduled 30-day cleanup job.
-**Addresses:** Soft delete, restore, linked-record protections, retention requirements.
-**Uses:** Sequelize paranoid/lifecycle scopes + `pg-boss` scheduler.
-**Avoids:** Pitfall 7 (graph inconsistency), Pitfall 8 (premature destructive purge).
+### Phase 4: Frontend Export UX and Guardrails
+**Rationale:** Users need trustworthy feedback and explicit scope visibility for safe adoption.
+**Delivers:** Export action in global scope context, loading/success/retry states, error-code-aware messaging, scope summary UX.
+**Addresses:** One-click export discoverability and resilient failure handling.
+**Avoids:** UX ambiguity between current-view vs full-backup semantics and duplicate retry churn.
 
-### Phase 5: Cutover Hardening and Legacy Retirement
-**Rationale:** Production cutover should happen only after parity, policy, and lifecycle tests pass under realistic load.
-**Delivers:** Feature-flag cutover, legacy endpoint removal, policy regression suite, replay/chaos tests, observability and incident playbooks.
-**Addresses:** Stability and confidence to deprecate transitional compatibility paths.
-**Avoids:** Regressions across all prior pitfalls during final switch-over.
+### Phase 5: Verification and Operational Readiness
+**Rationale:** Portability is a trust feature; release requires hard security/performance evidence.
+**Delivers:** RBAC negative test matrix, workbook open/parse CI smoke checks, locale/timezone fixtures, load budgets, logging/redaction checks, runbooks.
+**Addresses:** Release confidence for sensitive export workflows.
+**Avoids:** Late-stage security regressions and incident-response blind spots.
 
 ### Phase Ordering Rationale
 
-- Auth and policy first because every repository query and mutation requires trusted scope.
-- Financial contract/occurrence split before timeline because projection quality depends on canonical model boundaries.
-- Lifecycle automation after restore semantics because purge without lifecycle integrity is irreversible risk.
-- Hardening last to validate parity and operational safety before retiring legacy paths.
+- Policy/contract first, because every later query and UI path depends on authoritative scope and filter semantics.
+- Data assembly before workbook/UI, because portability quality is determined by dataset correctness, not formatting.
+- Streaming transport before UX polish, because guardrails and headers are core safety controls.
+- Verification last as a release gate across security, fidelity, and operational stability.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 2:** Backfill and dual-write strategy at production-like volume (lock budgets, chunking, rollback envelopes).
-- **Phase 3:** Recurrence semantics edge cases (`this and following` splits, timezone intent contract, projection/read performance budgets).
-- **Phase 4:** Purge eligibility policy (holds, legal/audit constraints) and restore-vs-purge concurrency behavior.
+- **Phase 2:** Snapshot strategy in PostgreSQL/Sequelize under concurrent writes; finalize `dataAsOf` and consistency rules.
+- **Phase 3:** Large dataset thresholds for switching synchronous vs async path and exact stream memory/latency budgets.
+- **Phase 5:** Security test fixtures for formula injection and log-redaction verification in production-like environments.
 
-Phases with standard patterns (skip extra research-phase):
-- **Phase 1:** JWT auth middleware, RBAC scope middleware, and rate-limited auth endpoints are well documented.
-- **Phase 5:** Regression test gating, feature-flag cutover, and monitoring runbooks follow established delivery practices.
+Phases with standard patterns (can likely skip extra research-phase):
+- **Phase 1:** Session-auth RBAC scope enforcement and export route authorization patterns are well established.
+- **Phase 4:** Blob-download UX with mutation state handling follows established frontend patterns in current stack.
+
+### Recommended v3.0 Scope Boundaries
+
+- **In scope:** synchronous server-side `.xlsx` export with scoped datasets (Assets, Contracts, Events), filters (date/entity), workbook metadata/versioning, secure headers, audit events, and robust frontend states.
+- **Conditionally in scope:** locale/timezone enhancement via headers and optional `luxon` conversion if deterministic user-timezone rendering is required.
+- **Out of scope:** async job system as default path, report-builder customization, formula-authored spreadsheets, scheduled integrations, and import/restore workflows.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Strong official-source backing (Express, Sequelize, OWASP, Postgres) and version checks completed. |
-| Features | MEDIUM | Core feature dependencies are clear, but some differentiators are benchmarked from product behavior and need real-user validation. |
-| Architecture | MEDIUM | Recommended patterns align with codebase structure, but full performance impact depends on implementation details. |
-| Pitfalls | MEDIUM-HIGH | Risks are concrete, phase-mapped, and testable; residual uncertainty is mostly operational execution quality. |
+| Stack | HIGH | Backed by official docs and version checks; additions are narrow and compatible with current Node/Express baseline. |
+| Features | MEDIUM-HIGH | Strong table-stakes and dependency mapping; some differentiators still need product validation after v3.0 launch. |
+| Architecture | HIGH | Directly aligned to existing codebase boundaries with explicit integration points and build order. |
+| Pitfalls | MEDIUM-HIGH | Risks are concrete, phase-mapped, and testable; uncertainty remains around scale thresholds and snapshot implementation detail. |
 
 **Overall confidence:** MEDIUM-HIGH
 
 ### Gaps to Address
 
-- Define canonical admin-mode UX and audit requirements (reason codes, timeout, visibility boundaries) before Phase 1 implementation completes.
-- Finalize recurrence exception contract (`override`, `skip`, `detach`) and timeline DTO action rules before Phase 3 API freeze.
-- Set measurable SLOs for parity, query latency, and purge throughput before Phase 5 cutover sign-off.
-- Confirm compliance/data-retention constraints that may require `on_hold` purge states beyond default 30-day policy.
+- Define exact snapshot contract (`transaction snapshot` vs `cutoff timestamp`) before Phase 2 implementation starts.
+- Set explicit v3.0 limits (max rows, max duration, concurrent exports) and criteria for v3.1 async handoff.
+- Confirm admin broad-scope export governance (reason codes/approval policy) before production rollout.
+- Finalize canonical date/time representation policy for each sheet column and verify across Excel desktop/web locale variants.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `.planning/research/STACK.md`, `.planning/research/FEATURES.md`, `.planning/research/ARCHITECTURE.md`, `.planning/research/PITFALLS.md`, `.planning/PROJECT.md` - direct milestone-aligned synthesis inputs.
-- Sequelize docs (paranoid, scopes, transactions): https://sequelize.org/docs/v6/core-concepts/paranoid/ ; https://sequelize.org/docs/v6/other-topics/scopes/ ; https://sequelize.org/docs/v6/other-topics/transactions/
-- PostgreSQL docs (RLS, partial indexes, datetime, advisory locks): https://www.postgresql.org/docs/current/ddl-rowsecurity.html ; https://www.postgresql.org/docs/current/indexes-partial.html ; https://www.postgresql.org/docs/current/datatype-datetime.html ; https://www.postgresql.org/docs/current/explicit-locking.html#ADVISORY-LOCKS
-- Express and Helmet security guidance: https://expressjs.com/en/advanced/best-practice-security.html ; https://helmetjs.github.io/
-- OWASP authorization/password guidance: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html ; https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+- `.planning/research/STACK.md`, `.planning/research/FEATURES.md`, `.planning/research/ARCHITECTURE.md`, `.planning/research/PITFALLS.md`, `.planning/PROJECT.md` - direct v3.0 synthesis inputs.
+- ExcelJS docs/README: https://github.com/exceljs/exceljs - streaming writer, formatting, worksheet UX features.
+- Express API docs: https://expressjs.com/en/api.html - attachment/download response behavior.
+- OWASP API Security and authorization guidance: https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/ ; https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/ ; https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
 
 ### Secondary (MEDIUM confidence)
-- RFC references and library docs for recurrence/JWT semantics: https://www.rfc-editor.org/rfc/rfc5545 ; https://www.rfc-editor.org/rfc/rfc7519 ; https://github.com/jkbrzt/rrule ; https://www.npmjs.com/package/jsonwebtoken ; https://www.npmjs.com/package/pg-boss
-- Product-behavior comparators (calendar/trash lifecycle patterns): https://developers.google.com/calendar/api/guides/recurringevents ; https://support.google.com/calendar/answer/37115 ; https://support.google.com/drive/answer/2375102 ; https://support.google.com/mail/answer/7401 ; https://docs.github.com/en/repositories/creating-and-managing-repositories/restoring-a-deleted-repository
+- `content-disposition` docs: https://github.com/jshttp/content-disposition - RFC-safe filename handling.
+- MDN date/cache references: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat ; https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+- Finance export comparators: https://help.monarchmoney.com/hc/en-us/articles/15526600975764-Downloading-Transaction-or-Account-History ; https://support.simplifi.quicken.com/en/articles/3404263-how-to-export-transactions-from-quicken-simplifi
 
 ### Tertiary (LOW confidence)
-- Product marketing references for finance UX positioning: https://www.quicken.com/products/simplifi/ (directional only).
+- Alternative XLSX ecosystem positioning for tradeoff context: https://docs.sheetjs.com/docs/ ; https://github.com/dtjohnson/xlsx-populate
 
 ---
-*Research completed: 2026-02-25*
+*Research completed: 2026-03-01*
 *Ready for roadmap: yes*
