@@ -5,13 +5,13 @@ Milestone archive: `.planning/milestones/v2.0-ROADMAP.md`
 Requirements archive: `.planning/milestones/v2.0-REQUIREMENTS.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v3.0 definition and requirements planning
+**Current focus:** Milestone v3.0 Data Portability definition and requirements planning
 ## Current Position
 
-Phase: Milestone boundary (v2.0 archived)
-Plan: n/a
-Status: Ready for new milestone planning
-Last activity: 2026-03-02 - Archived v2.0 roadmap/requirements/audit and prepared planning state for next milestone
+Phase: Not started (defining requirements)
+Plan: -
+Status: Defining requirements
+Last activity: 2026-03-02 - Milestone v3.0 Data Portability started
 
 Progress: [██████████] 100%
 
@@ -140,5 +140,5 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 Last session: 2026-03-02 01:30
-Stopped at: Completed v2.0 milestone archival and handoff to v3.0 milestone setup
+Stopped at: Started v3.0 new-milestone workflow (questioning/research/requirements/roadmap)
 Resume file: None

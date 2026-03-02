@@ -14,18 +14,22 @@ Users can see each asset together with its linked obligations and timeline statu
 - **Archive references:** `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v2.0-REQUIREMENTS.md`, `.planning/milestones/v2.0-MILESTONE-AUDIT.md`
 - **Completion stance:** shipped with accepted tech debt (non-blocking)
 
-## Next Milestone Goals
+## Current Milestone: v3.0 Data Portability
 
-- Define v3.0 scope and fresh requirements using `/gsd-new-milestone`.
-- Resolve carried debt items from v2.0 where prioritized:
-  - Item detail ledger invalidation continuity after event mutations.
-  - Human UX sign-off items from v2.0 Phases 10 and 11.
-  - Deferred second-device LAN verification.
+**Goal:** Implement a secure, RBAC-aware data portability module that exports clean multi-sheet Excel backups of ledger data.
+
+**Target features:**
+- Server-side `.xlsx` generation and download streaming for ledger backup export.
+- Multi-sheet workbook output for Assets, Financial Contracts, and Event History with readable flattened columns.
+- Scope-correct export behavior for standard users and admin all-data/lens modes.
+- Frontend export action with loading/progress UX and resilient error handling.
+- Usability defaults in exported workbook (frozen headers, auto-filters, date formatting aligned to locale/timezone where available).
 
 ## Active Priorities
 
-- [ ] Run milestone setup workflow for v3.0 (questioning, research, requirements, roadmap).
-- [ ] Decide whether v2.0 debt items are v3.0 must-haves or deferred backlog.
+- [ ] Define and finalize v3.0 requirements for data portability export scope.
+- [ ] Create phased roadmap for implementation and verification.
+- [ ] Decide which carried v2.0 debt items are in-scope for v3.0 versus deferred.
 
 ## Constraints
 
@@ -42,4 +46,4 @@ Users can see each asset together with its linked obligations and timeline statu
 </details>
 
 ---
-*Last updated: 2026-03-02 after v2.0 milestone completion*
+*Last updated: 2026-03-02 after v3.0 milestone kickoff*
