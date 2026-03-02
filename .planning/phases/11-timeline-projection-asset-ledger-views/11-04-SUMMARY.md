@@ -86,7 +86,7 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 - TIME-03 split-ledger UX expectations are implemented with deterministic behavior and regression coverage.
-- Phase 11 is complete and ready for transition into phase 12 lifecycle and retention controls.
+- Deletion lifecycle and retention controls were added during the Phase 11 extension work; no standalone Phase 12 planning track is required.
 
 ## Self-Check: PASSED
 

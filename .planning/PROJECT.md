@@ -2,7 +2,7 @@
 
 ## What This Is
 
-HACT is a full-stack household ledger app with a Node/Express/Sequelize API and a React web UI. It models owned assets (real estate and vehicles), linked commitments and income rows (recurring or one-time), and timeline events such as payments and maintenance. Users can switch actors, review dashboard/event queues, manage items end-to-end, and complete or undo event actions with audit history.
+HACT is a full-stack household ledger app with a Node/Express/Sequelize API and a React web UI. It models owned assets (real estate and vehicles), linked financial items (commitment or income, recurring or one-time), and timeline events such as payments and maintenance. Users can switch actors, review dashboard/event queues, manage items end-to-end, and complete or undo event actions with audit history.
 
 ## Core Value
 
@@ -37,21 +37,25 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ### Active
 
-- [ ] Implement authentication, RBAC data scoping, and admin visibility controls.
-- [ ] Refactor financial data model to parent contracts with child occurrences and recurrence/projection logic.
-- [ ] Deliver smart timeline UX and asset financial section split (current/upcoming vs historical).
-- [ ] Implement soft delete/restore lifecycle including delete intercept and 30-day cleanup automation.
+- [ ] Maintain and verify shipped v2.0 capabilities through regression coverage and operational checks.
 
 ### Out of Scope
 
 - Authentication/session implementation details beyond user schema — not specified in this initialization scope.
 - Production cloud deployment and CI/CD — current deployment requirement is local docker-compose hosting.
 
+### Recently Completed (v2.0)
+
+- ✓ Implemented authentication, RBAC data scoping, and admin visibility controls.
+- ✓ Refactored financial data model to parent contracts with child occurrences and recurrence/projection logic.
+- ✓ Delivered smart timeline UX and asset financial section split (current/upcoming vs historical).
+- ✓ Implemented soft delete/restore lifecycle including delete intercept and 30-day cleanup automation (delivered during Phase 11 extension; tracked as Phase 12 scope).
+
 ## Context
 
 - Product is a greenfield API-first system named Household Asset & Commitment Tracker (HACT).
 - Data model centers on `items` as a unified ledger object with typed metadata in `attributes` JSONB and self-references for linked commitments.
-- Key domain categories include assets (`RealEstate`, `Vehicle`) and obligations/income (`FinancialCommitment`, `FinancialIncome`) with timeline events and history.
+- Key domain categories include assets (`RealEstate`, `Vehicle`) and financial contracts (`FinancialItem` with subtype `Commitment`/`Income`) with timeline events and history.
 - Critical workflow behavior: completing non-recurring events must return `prompt_next_date: true` so clients can trigger follow-up scheduling UX.
 - Deliverables explicitly requested: Sequelize model files, Express route controllers for specified business logic, and Docker setup.
 
@@ -76,4 +80,4 @@ Users can see each asset together with its linked obligations and timeline statu
 | Treat event undo as first-class workflow (`/events/:id/undo-complete`) that reverses totals and restores pending state | Prevents accidental completion drift and keeps financial rollups/audit history trustworthy | Adopted in Phase 6 |
 
 ---
-*Last updated: 2026-02-25 after milestone v2.0 initialization*
+*Last updated: 2026-03-01 after v2.0 phase alignment update*

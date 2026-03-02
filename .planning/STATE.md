@@ -1,17 +1,18 @@
 # Project State
 ## Project Reference
 See: `.planning/PROJECT.md` (updated 2026-02-25)
+Milestone summary: `.planning/milestones/v2.0-MILESTONE-SUMMARY.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 11 - Timeline Projection & Asset Ledger Views (v2.0)
+**Current focus:** Phase 13 admin scope integration hardening
 ## Current Position
 
-Phase: 11 of 12 (Timeline Projection & Asset Ledger Views)
-Plan: 4 of 4 (next: phase complete)
-Status: Complete
-Last activity: 2026-02-28 - Completed 11-04 split asset ledger sections with mobile historical collapse and summaries
+Phase: 13 of 13 (Admin Scope Integration Hardening)
+Plan: 02 of 03
+Status: In Progress
+Last activity: 2026-03-02 - Completed 13-01 scope hardening for item/event mutation and net-status continuity
 
-Progress: [█████████▌] 92%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 **Velocity:**
@@ -26,39 +27,17 @@ Progress: [█████████▌] 92%
 | 8. Auth Sessions & Protected Access | 2 | 6 min | 3 min |
 | 9. RBAC Scope & Admin Safety Mode | 8 | 23 min | 3 min |
 | 10. Financial Contract-Occurrence Foundation | 4 | 21 min | 5 min |
-| 11. Timeline Projection & Asset Ledger Views | 4 | 17 min | 4 min |
-| 12. Deletion Lifecycle & Retention Controls | 0 | 0 min | 0 min |
+| 11. Timeline Projection & Asset Ledger Views | 4 (+extension) | 17 min | 4 min |
+| 12. Deletion Lifecycle & Retention Controls | integrated | n/a | n/a |
 
 **Recent Trend:**
-- Last 5 plans: 11-03 (6 min), 11-02 (2 min), 11-01 (2 min), 10-05 (2 min), 10-04 (6 min)
-- Trend: Timeline now renders explicit projected/persisted cues and save-exception edit confirmations with in-place edited occurrence state.
-| Phase 08 P03 | 2 min | 2 tasks | 6 files |
-| Phase 08 P02 | 2 min | 2 tasks | 10 files |
-| Phase 08 P06 | 5 min | 2 tasks | 6 files |
-| Phase 08 P05 | 4 min | 2 tasks | 8 files |
-| Phase 08 P04 | 5 min | 3 tasks | 10 files |
-| Phase 09 P01 | 3 min | 2 tasks | 6 files |
-| Phase 09 P02 | 3 min | 1 tasks | 9 files |
-| Phase 09 P11 | 2 min | 2 tasks | 3 files |
-| Phase 09 P08 | 4 min | 2 tasks | 9 files |
-| Phase 09 P03 | 7 min | 2 tasks | 9 files |
-| Phase 09 P05 | 4 min | 2 tasks | 7 files |
-| Phase 09 P06 | 2 min | 2 tasks | 9 files |
-| Phase 09 P09 | 1 min | 2 tasks | 6 files |
-| Phase 09 P04 | 4 min | 2 tasks | 5 files |
-| Phase 09 P07 | 4 min | 2 tasks | 5 files |
-| Phase 09 P10 | 5 min | 1 tasks | 10 files |
-| Phase 09-rbac-scope-admin-safety-mode P12 | 1 min | 2 tasks | 4 files |
-| Phase 09 P13 | 1 min | 2 tasks | 2 files |
-| Phase 10 P01 | 6 min | 2 tasks | 10 files |
-| Phase 10 P02 | 5 min | 2 tasks | 5 files |
-| Phase 10 P03 | 8 min | 2 tasks | 8 files |
-| Phase 10 P04 | 6 min | 2 tasks | 7 files |
-| Phase 10 P05 | 2 min | 2 tasks | 10 files |
+- Last 5 plans: 13-01 (3 min), 11-04 (7 min), 11-03 (6 min), 11-02 (2 min), 11-01 (2 min)
+- Trend: admin scope continuity hardening is now progressing with backend mutation/detail authorization alignment.
 | Phase 11 P01 | 2 min | 2 tasks | 3 files |
 | Phase 11 P02 | 2 min | 2 tasks | 6 files |
 | Phase 11 P03 | 6 min | 2 tasks | 6 files |
 | Phase 11 P04 | 7 min | 2 tasks | 5 files |
+| Phase 13-admin-scope-integration-hardening P01 | 3 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -142,12 +121,16 @@ Recent decisions affecting current work:
 - [Phase 11]: Asset detail ledger now reads owner-scoped /events rows filtered by linked financial item IDs for deterministic sectioning.
 - [Phase 11]: Current & Upcoming classification keeps pending or future-facing rows actionable while settled past rows move to Historical Ledger.
 - [Phase 11]: Historical Ledger defaults collapsed on mobile with explicit toggle controls and remains expanded on desktop.
+- [Phase 11/12 alignment]: Deletion lifecycle and retention scope was delivered during Phase 11 extension work; roadmap/state now track Phase 12 as integrated and complete for traceability.
+- [Phase 13-admin-scope-integration-hardening]: Added canAccessOwner(scope, ownerUserId) as the shared mutation/detail authorization contract for owner/all/lens semantics.
+- [Phase 13-admin-scope-integration-hardening]: Changed /items/:id/net-status to consume req.scope directly so admin drill-through follows active scope mode.
+- [Phase 13-admin-scope-integration-hardening]: Preserved existing 404 not_found ownership-denial envelopes while replacing actor-only owner resolution.
 
 ### Blockers/Concerns
 
 None yet.
 
 ## Session Continuity
-Last session: 2026-02-28 02:45
-Stopped at: Completed 11-04-PLAN.md
+Last session: 2026-03-02 00:24
+Stopped at: Completed 13-admin-scope-integration-hardening-01-PLAN.md
 Resume file: None
