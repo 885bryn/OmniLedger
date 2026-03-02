@@ -67,7 +67,7 @@ Each task was committed atomically:
 1. **Task 1: Expand item mutate and net-status scope regressions** - `1d9d4e0` (test)
 2. **Task 2: Expand event complete/update scope regressions** - `d6a38ae` (test)
 
-**Plan metadata:** pending
+**Plan metadata:** `86183d0` (docs)
 
 ## Files Created/Modified
 - `test/api/admin-scope-lens.test.js` - extends owner-lens denial coverage to delete and restore mutation paths.
@@ -103,3 +103,4 @@ None - no external service configuration required.
 - FOUND: .planning/phases/13-admin-scope-integration-hardening/13-03-SUMMARY.md
 - FOUND: 1d9d4e0
 - FOUND: d6a38ae
+- FOUND: 86183d0
