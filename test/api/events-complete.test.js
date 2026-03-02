@@ -21,17 +21,19 @@ const { createApp } = require("../../src/api/app");
 describe("PATCH /events/:id/complete", () => {
   const app = createApp();
   let counter = 0;
+  const originalAdminEmail = process.env.HACT_ADMIN_EMAIL;
 
-  async function createUser() {
+  async function createUser(overrides = {}) {
     counter += 1;
 
-    const password = "StrongPass123!";
+    const password = overrides.password || "StrongPass123!";
     const passwordHash = await bcrypt.hash(password, 12);
 
     const created = await models.User.create({
-      username: `event-api-user-${counter}`,
-      email: `event-api-user-${counter}@example.com`,
-      password_hash: passwordHash
+      username: overrides.username || `event-api-user-${counter}`,
+      email: overrides.email || `event-api-user-${counter}@example.com`,
+      password_hash: passwordHash,
+      role: overrides.role
     });
 
     return {
@@ -67,12 +69,19 @@ describe("PATCH /events/:id/complete", () => {
   async function createCommitment({ userId, parentItemId }) {
     return models.Item.create({
       user_id: userId,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
       parent_item_id: parentItemId || null,
+      linked_asset_item_id: parentItemId || null,
+      title: "1578 payment test",
+      type: "Commitment",
+      frequency: "one_time",
+      default_amount: 9,
+      status: "Active",
       attributes: {
         name: "1578 payment test",
         amount: 9,
-        dueDate: "2026-03-02"
+        dueDate: "2026-03-02",
+        financialSubtype: "Commitment"
       }
     });
   }
@@ -116,6 +125,7 @@ describe("PATCH /events/:id/complete", () => {
   });
 
   beforeEach(async () => {
+    process.env.HACT_ADMIN_EMAIL = "admin@example.com";
     await sequelize.query("PRAGMA foreign_keys = OFF");
     await models.AuditLog.destroy({ where: {}, force: true });
     await models.Event.destroy({ where: {}, force: true });
@@ -125,6 +135,12 @@ describe("PATCH /events/:id/complete", () => {
   });
 
   afterAll(async () => {
+    if (typeof originalAdminEmail === "string") {
+      process.env.HACT_ADMIN_EMAIL = originalAdminEmail;
+    } else {
+      delete process.env.HACT_ADMIN_EMAIL;
+    }
+
     await sequelize.close();
   });
 
@@ -329,15 +345,21 @@ describe("PATCH /events/:id/complete", () => {
     expect(persisted[0].status).toBe("Completed");
   });
 
-  it("returns 200 for legacy commitment rows with missing dueDate attributes", async () => {
+  it("returns 200 for one-time financial rows with missing dueDate attributes", async () => {
     const owner = await createUser();
     const ownerAgent = await signInAs(owner);
     const legacyCommitment = await models.Item.create(
       {
         user_id: owner.id,
-        item_type: "FinancialCommitment",
+        item_type: "FinancialItem",
+        title: "Legacy commitment",
+        type: "Commitment",
+        frequency: "one_time",
+        default_amount: 25,
+        status: "Active",
         attributes: {
           amount: 25,
+          financialSubtype: "Commitment",
           billingCycle: "monthly",
           remainingBalance: 150
         }
@@ -367,12 +389,19 @@ describe("PATCH /events/:id/complete", () => {
     const parent = await createItem({ userId: owner.id });
     const rentItem = await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialIncome",
+      item_type: "FinancialItem",
       parent_item_id: parent.id,
+      linked_asset_item_id: parent.id,
+      title: "1578 rent test",
+      type: "Income",
+      frequency: "one_time",
+      default_amount: 5.53,
+      status: "Active",
       attributes: {
         name: "1578 rent test",
         amount: 5.53,
-        dueDate: "2026-02-28"
+        dueDate: "2026-02-28",
+        financialSubtype: "Income"
       }
     });
 
@@ -395,13 +424,21 @@ describe("PATCH /events/:id/complete", () => {
     const parent = await createItem({ userId: owner.id });
     const commitment = await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
       parent_item_id: parent.id,
+      linked_asset_item_id: parent.id,
+      title: "Undo test loan",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 100,
+      status: "Active",
       attributes: {
         name: "Undo test loan",
         amount: 100,
         remainingBalance: 900,
-        dueDate: "2026-03-10"
+        trackingStartingRemainingBalance: 900,
+        dueDate: "2026-03-10",
+        financialSubtype: "Commitment"
       }
     });
     const event = await createEvent({ itemId: commitment.id, dueDate: "2026-03-10T00:00:00.000Z", amount: "100.00" });
@@ -525,5 +562,68 @@ describe("PATCH /events/:id/complete", () => {
 
     const materializedRows = await models.Event.findAll({ where: { item_id: recurring.id } });
     expect(materializedRows).toHaveLength(0);
+  });
+
+  it("supports admin all-mode complete/undo across owners while owner-lens keeps not_found denials", async () => {
+    const admin = await createUser({ email: "admin@example.com" });
+    const ownerA = await createUser({ email: "events-owner-a@example.com" });
+    const ownerB = await createUser({ email: "events-owner-b@example.com" });
+    const adminAgent = await signInAs(admin);
+
+    const ownerAItem = await createItem({ userId: ownerA.id });
+    const ownerBItem = await createItem({ userId: ownerB.id });
+    const ownerAEvent = await createEvent({ itemId: ownerAItem.id, dueDate: "2026-07-01T00:00:00.000Z" });
+    const ownerBEvent = await createEvent({ itemId: ownerBItem.id, dueDate: "2026-07-02T00:00:00.000Z" });
+
+    const ownerBRecurring = await createFinancialItem({
+      userId: ownerB.id,
+      title: "Owner B recurring",
+      dueDate: "2026-02-10",
+      defaultAmount: 60
+    });
+
+    const allModeComplete = await adminAgent.patch(`/events/${ownerBEvent.id}/complete`);
+    expect(allModeComplete.status).toBe(200);
+    expect(allModeComplete.body.item_id).toBe(ownerBItem.id);
+
+    const allModeUndo = await adminAgent.patch(`/events/${ownerBEvent.id}/undo-complete`);
+    expect(allModeUndo.status).toBe(200);
+    expect(allModeUndo.body.status).toBe("Pending");
+
+    const allModeProjected = await adminAgent.patch(`/events/projected-${ownerBRecurring.id}-2026-03-10/complete`);
+    expect(allModeProjected.status).toBe(200);
+    expect(allModeProjected.body.item_id).toBe(ownerBRecurring.id);
+
+    const setLens = await adminAgent.patch("/auth/admin-scope").send({
+      mode: "owner",
+      lens_user_id: ownerA.id
+    });
+    expect(setLens.status).toBe(200);
+
+    const ownerLensAllowed = await adminAgent.patch(`/events/${ownerAEvent.id}/complete`);
+    expect(ownerLensAllowed.status).toBe(200);
+    expect(ownerLensAllowed.body.item_id).toBe(ownerAItem.id);
+
+    const ownerLensDeniedUndo = await adminAgent.patch(`/events/${ownerBEvent.id}/undo-complete`);
+    expect(ownerLensDeniedUndo.status).toBe(404);
+    expect(ownerLensDeniedUndo.body.error).toMatchObject({
+      code: "event_completion_failed",
+      category: "not_found"
+    });
+
+    const ownerLensDeniedProjected = await adminAgent.patch(`/events/projected-${ownerBRecurring.id}-2026-04-10/complete`);
+    expect(ownerLensDeniedProjected.status).toBe(404);
+    expect(ownerLensDeniedProjected.body.error).toMatchObject({
+      code: "event_completion_failed",
+      category: "not_found"
+    });
+
+    const deniedProjectedRows = await models.Event.findAll({
+      where: {
+        item_id: ownerBRecurring.id,
+        due_date: "2026-04-10T00:00:00.000Z"
+      }
+    });
+    expect(deniedProjectedRows).toHaveLength(0);
   });
 });
