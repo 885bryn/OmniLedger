@@ -1,10 +1,10 @@
 "use strict";
 
 const { sequelize, models } = require("../../db");
-const { Op } = require("sequelize");
+const { canAccessOwner } = require("../../api/auth/scope-context");
 const { EventCompletionError, EVENT_COMPLETION_ERROR_CATEGORIES } = require("./event-completion-errors");
 const { syncItemEvent, materializeItemEventForDate } = require("../items/item-event-sync");
-const { minimumAttributeKeys } = require("../items/minimum-attribute-keys");
+const { recalculateAndPersistFinancialProgress } = require("../items/financial-metrics");
 
 const COMPLETED_STATUS = "Completed";
 const PENDING_STATUS = "Pending";
@@ -111,26 +111,6 @@ function resolveAuditAttribution({ scope, fallbackUserId }) {
   };
 }
 
-function resolveOwnerUserId(input) {
-  const payload = isPlainObject(input) ? input : {};
-  const scope = isPlainObject(payload.scope) ? payload.scope : {};
-  const scopeActorUserId = normalizeActorUserId(scope.actorUserId);
-  return scopeActorUserId || normalizeActorUserId(payload.actorUserId);
-}
-
-function toFiniteNumber(value) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  return null;
-}
-
 function isUuidLike(value) {
   return typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value);
 }
@@ -148,127 +128,7 @@ function getDeletedAt(attributes) {
   return Number.isNaN(parsed) ? null : attributes._deleted_at;
 }
 
-function hasRequiredAttributes(itemType, attributes) {
-  const requiredKeys = minimumAttributeKeys[itemType] || [];
-
-  return requiredKeys.every((key) => {
-    const value = attributes[key];
-    return value !== undefined && value !== null && value !== "";
-  });
-}
-
-function applyRounded(value) {
-  return Number(Number(value).toFixed(2));
-}
-
-function setOrDelete(attributes, key, value) {
-  if (value === undefined || value === null || value === "") {
-    delete attributes[key];
-    return;
-  }
-
-  attributes[key] = value;
-}
-
-async function getLatestCompletedEvent(itemId, transaction, excludedEventId) {
-  return models.Event.findOne({
-    where: {
-      item_id: itemId,
-      status: COMPLETED_STATUS,
-      ...(excludedEventId ? { id: { [Op.ne]: excludedEventId } } : {})
-    },
-    order: [["completed_at", "DESC"], ["updated_at", "DESC"], ["id", "ASC"]],
-    transaction
-  });
-}
-
-async function applyCompletionSideEffects(paymentItem, event, completedAt, transaction) {
-  if (paymentItem && paymentItem.item_type === "FinancialCommitment") {
-    const attributes = isPlainObject(paymentItem.attributes) ? { ...paymentItem.attributes } : {};
-    const remainingBalance = toFiniteNumber(attributes.remainingBalance);
-    const paidAmount = toFiniteNumber(event.amount);
-
-    if (remainingBalance !== null && paidAmount !== null && paidAmount > 0) {
-      attributes.remainingBalance = applyRounded(Math.max(0, remainingBalance - paidAmount));
-      attributes.lastPaymentAmount = paidAmount;
-      attributes.lastPaymentDate = completedAt.toISOString().slice(0, 10);
-
-      if (hasRequiredAttributes(paymentItem.item_type, attributes)) {
-        paymentItem.attributes = attributes;
-        await paymentItem.save({ transaction });
-      }
-    }
-    return;
-  }
-
-  if (paymentItem && paymentItem.item_type === "FinancialIncome") {
-    const attributes = isPlainObject(paymentItem.attributes) ? { ...paymentItem.attributes } : {};
-    const collectedTotal = toFiniteNumber(attributes.collectedTotal) || 0;
-    const collectedAmount = toFiniteNumber(event.amount);
-
-    if (collectedAmount !== null && collectedAmount > 0) {
-      attributes.collectedTotal = applyRounded(collectedTotal + collectedAmount);
-      attributes.lastCollectedAmount = collectedAmount;
-      attributes.lastCollectedDate = completedAt.toISOString().slice(0, 10);
-
-      if (hasRequiredAttributes(paymentItem.item_type, attributes)) {
-        paymentItem.attributes = attributes;
-        await paymentItem.save({ transaction });
-      }
-    }
-  }
-}
-
-async function applyUndoCompletionSideEffects(paymentItem, event, transaction) {
-  const eventAmount = toFiniteNumber(event.amount);
-
-  if (paymentItem && paymentItem.item_type === "FinancialCommitment") {
-    const attributes = isPlainObject(paymentItem.attributes) ? { ...paymentItem.attributes } : {};
-    const remainingBalance = toFiniteNumber(attributes.remainingBalance);
-
-    if (remainingBalance !== null && eventAmount !== null && eventAmount > 0) {
-      attributes.remainingBalance = applyRounded(Math.max(0, remainingBalance + eventAmount));
-    }
-
-    const latestCompleted = await getLatestCompletedEvent(paymentItem.id, transaction, event.id);
-    const lastAmount = latestCompleted ? toFiniteNumber(latestCompleted.amount) : null;
-    const lastDateSource = latestCompleted && (latestCompleted.completed_at || latestCompleted.due_date);
-    const lastDate = lastDateSource ? new Date(lastDateSource).toISOString().slice(0, 10) : null;
-
-    setOrDelete(attributes, "lastPaymentAmount", lastAmount);
-    setOrDelete(attributes, "lastPaymentDate", lastDate);
-
-    if (hasRequiredAttributes(paymentItem.item_type, attributes)) {
-      paymentItem.attributes = attributes;
-      await paymentItem.save({ transaction });
-    }
-    return;
-  }
-
-  if (paymentItem && paymentItem.item_type === "FinancialIncome") {
-    const attributes = isPlainObject(paymentItem.attributes) ? { ...paymentItem.attributes } : {};
-    const collectedTotal = toFiniteNumber(attributes.collectedTotal) || 0;
-
-    if (eventAmount !== null && eventAmount > 0) {
-      attributes.collectedTotal = applyRounded(Math.max(0, collectedTotal - eventAmount));
-    }
-
-    const latestCompleted = await getLatestCompletedEvent(paymentItem.id, transaction, event.id);
-    const lastAmount = latestCompleted ? toFiniteNumber(latestCompleted.amount) : null;
-    const lastDateSource = latestCompleted && (latestCompleted.completed_at || latestCompleted.due_date);
-    const lastDate = lastDateSource ? new Date(lastDateSource).toISOString().slice(0, 10) : null;
-
-    setOrDelete(attributes, "lastCollectedAmount", lastAmount);
-    setOrDelete(attributes, "lastCollectedDate", lastDate);
-
-    if (hasRequiredAttributes(paymentItem.item_type, attributes)) {
-      paymentItem.attributes = attributes;
-      await paymentItem.save({ transaction });
-    }
-  }
-}
-
-async function resolveTargetEvent({ eventId, actorUserId, transaction }) {
+async function resolveTargetEvent({ eventId, scope, actorUserId, transaction }) {
   if (typeof eventId === "string") {
     const projectedMatch = /^projected-([0-9a-f-]{36})-(\d{4}-\d{2}-\d{2})$/i.exec(eventId);
     if (projectedMatch) {
@@ -279,7 +139,7 @@ async function resolveTargetEvent({ eventId, actorUserId, transaction }) {
         throwNotFound(eventId);
       }
 
-      if (item.user_id !== actorUserId) {
+      if (!canAccessOwner(scope, item.user_id)) {
         throwForbidden(eventId, actorUserId);
       }
 
@@ -314,7 +174,7 @@ async function resolveTargetEvent({ eventId, actorUserId, transaction }) {
       throwNotFound(eventId);
     }
 
-    if (item.user_id !== actorUserId) {
+    if (!canAccessOwner(scope, item.user_id)) {
       throwForbidden(eventId, actorUserId);
     }
 
@@ -344,15 +204,21 @@ async function resolveTargetEvent({ eventId, actorUserId, transaction }) {
 }
 
 async function completeEvent({ eventId, scope, actorUserId, now = new Date() }) {
-  const ownerUserId = resolveOwnerUserId({ actorUserId, scope });
-  if (!ownerUserId) {
+  const scopeContext = isPlainObject(scope) ? scope : {};
+  const resolvedActorUserId = normalizeActorUserId(scopeContext.actorUserId) || normalizeActorUserId(actorUserId);
+  if (!resolvedActorUserId) {
     throwInvalidState(eventId);
   }
-  const attribution = resolveAuditAttribution({ scope, fallbackUserId: ownerUserId });
+  const attribution = resolveAuditAttribution({ scope: scopeContext, fallbackUserId: resolvedActorUserId });
   const completedAt = now instanceof Date ? now : new Date(now);
 
   return sequelize.transaction(async (transaction) => {
-    const event = await resolveTargetEvent({ eventId, actorUserId: ownerUserId, transaction });
+    const event = await resolveTargetEvent({
+      eventId,
+      scope: scopeContext,
+      actorUserId: resolvedActorUserId,
+      transaction
+    });
 
     if (!event) {
       throwNotFound(eventId);
@@ -367,8 +233,8 @@ async function completeEvent({ eventId, scope, actorUserId, now = new Date() }) 
       throwInvalidState(event.id);
     }
 
-    if (ownerItem.user_id !== ownerUserId) {
-      throwForbidden(event.id, ownerUserId);
+    if (!canAccessOwner(scopeContext, ownerItem.user_id)) {
+      throwForbidden(event.id, resolvedActorUserId);
     }
 
     if (event.status === COMPLETED_STATUS) {
@@ -380,7 +246,7 @@ async function completeEvent({ eventId, scope, actorUserId, now = new Date() }) 
     await event.save({ transaction });
 
     const paymentItem = await models.Item.findByPk(event.item_id, { transaction });
-    await applyCompletionSideEffects(paymentItem, event, completedAt, transaction);
+    await recalculateAndPersistFinancialProgress({ item: paymentItem, models, transaction });
 
     await models.AuditLog.create(
       {
@@ -399,15 +265,21 @@ async function completeEvent({ eventId, scope, actorUserId, now = new Date() }) 
 }
 
 async function undoEventCompletion({ eventId, scope, actorUserId, now = new Date() }) {
-  const ownerUserId = resolveOwnerUserId({ actorUserId, scope });
-  if (!ownerUserId) {
+  const scopeContext = isPlainObject(scope) ? scope : {};
+  const resolvedActorUserId = normalizeActorUserId(scopeContext.actorUserId) || normalizeActorUserId(actorUserId);
+  if (!resolvedActorUserId) {
     throwInvalidState(eventId);
   }
-  const attribution = resolveAuditAttribution({ scope, fallbackUserId: ownerUserId });
+  const attribution = resolveAuditAttribution({ scope: scopeContext, fallbackUserId: resolvedActorUserId });
   const undoneAt = now instanceof Date ? now : new Date(now);
 
   return sequelize.transaction(async (transaction) => {
-    const event = await resolveTargetEvent({ eventId, actorUserId: ownerUserId, transaction });
+    const event = await resolveTargetEvent({
+      eventId,
+      scope: scopeContext,
+      actorUserId: resolvedActorUserId,
+      transaction
+    });
 
     if (!event) {
       throwNotFound(eventId);
@@ -422,8 +294,8 @@ async function undoEventCompletion({ eventId, scope, actorUserId, now = new Date
       throwInvalidState(event.id);
     }
 
-    if (ownerItem.user_id !== ownerUserId) {
-      throwForbidden(event.id, ownerUserId);
+    if (!canAccessOwner(scopeContext, ownerItem.user_id)) {
+      throwForbidden(event.id, resolvedActorUserId);
     }
 
     if (event.status !== COMPLETED_STATUS) {
@@ -436,7 +308,7 @@ async function undoEventCompletion({ eventId, scope, actorUserId, now = new Date
     event.completed_at = null;
     await event.save({ transaction });
 
-    await applyUndoCompletionSideEffects(paymentItem, event, transaction);
+    await recalculateAndPersistFinancialProgress({ item: paymentItem, models, transaction });
 
     await models.AuditLog.create(
       {

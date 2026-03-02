@@ -1,22 +1,12 @@
 "use strict";
 
 const { sequelize, models } = require("../../db");
+const { canAccessOwner } = require("../../api/auth/scope-context");
 const { materializeItemEventForDate } = require("../items/item-event-sync");
 const { EventUpdateError, EVENT_UPDATE_ERROR_CATEGORIES } = require("./event-update-errors");
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
-}
-
-function normalizeActorUserId(value) {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function resolveOwnerUserId(input) {
-  const payload = isPlainObject(input) ? input : {};
-  const scope = isPlainObject(payload.scope) ? payload.scope : {};
-  const scopeActorUserId = normalizeActorUserId(scope.actorUserId);
-  return scopeActorUserId || normalizeActorUserId(payload.actorUserId);
 }
 
 function parseProjectedEventId(value) {
@@ -195,7 +185,7 @@ function normalizeEvent(eventInstance) {
   };
 }
 
-async function resolveTargetEvent({ eventId, actorUserId, transaction }) {
+async function resolveTargetEvent({ eventId, scope, transaction }) {
   const projectedTarget = parseProjectedEventId(eventId);
   if (projectedTarget) {
     const item = await models.Item.findByPk(projectedTarget.itemId, { transaction });
@@ -204,7 +194,7 @@ async function resolveTargetEvent({ eventId, actorUserId, transaction }) {
       throwNotFound(eventId);
     }
 
-    if (item.user_id !== actorUserId) {
+    if (!canAccessOwner(scope, item.user_id)) {
       throwNotFound(eventId);
     }
 
@@ -241,8 +231,10 @@ async function resolveTargetEvent({ eventId, actorUserId, transaction }) {
 }
 
 async function updateEvent({ eventId, payload, scope, actorUserId }) {
-  const ownerUserId = resolveOwnerUserId({ scope, actorUserId });
-  if (!ownerUserId) {
+  const scopeContext = isPlainObject(scope) ? scope : {};
+  const resolvedActorUserId = typeof scopeContext.actorUserId === "string" ? scopeContext.actorUserId.trim() : "";
+  const fallbackActorUserId = typeof actorUserId === "string" ? actorUserId.trim() : "";
+  if (!resolvedActorUserId && !fallbackActorUserId) {
     throwInvalidState(eventId);
   }
 
@@ -251,7 +243,7 @@ async function updateEvent({ eventId, payload, scope, actorUserId }) {
   return sequelize.transaction(async (transaction) => {
     const resolved = await resolveTargetEvent({
       eventId,
-      actorUserId: ownerUserId,
+      scope: scopeContext,
       transaction
     });
     const event = resolved.event;
@@ -264,7 +256,7 @@ async function updateEvent({ eventId, payload, scope, actorUserId }) {
       throwInvalidState(event.id);
     }
 
-    if (ownerItem.user_id !== ownerUserId) {
+    if (!canAccessOwner(scopeContext, ownerItem.user_id)) {
       throwNotFound(event.id);
     }
 
