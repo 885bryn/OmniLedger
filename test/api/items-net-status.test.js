@@ -21,17 +21,19 @@ const { createApp } = require("../../src/api/app");
 describe("GET /items/:id/net-status", () => {
   const app = createApp();
   let counter = 0;
+  const originalAdminEmail = process.env.HACT_ADMIN_EMAIL;
 
-  async function createUser() {
+  async function createUser(overrides = {}) {
     counter += 1;
 
-    const password = "StrongPass123!";
+    const password = overrides.password || "StrongPass123!";
     const passwordHash = await bcrypt.hash(password, 12);
 
     const created = await models.User.create({
-      username: `net-user-${counter}`,
-      email: `net-user-${counter}@example.com`,
-      password_hash: passwordHash
+      username: overrides.username || `net-user-${counter}`,
+      email: overrides.email || `net-user-${counter}@example.com`,
+      password_hash: passwordHash,
+      role: overrides.role
     });
 
     return {
@@ -54,11 +56,36 @@ describe("GET /items/:id/net-status", () => {
   }
 
   async function createItem({ userId, itemType, parentItemId = null, attributes }) {
+    const rawAttributes = attributes || {};
+
+    if (itemType === "FinancialCommitment" || itemType === "FinancialIncome") {
+      const subtype = itemType === "FinancialIncome" ? "Income" : "Commitment";
+      const amountCandidate = Number(rawAttributes.nextPaymentAmount ?? rawAttributes.amount);
+      const defaultAmount = Number.isFinite(amountCandidate) ? amountCandidate : null;
+
+      return models.Item.create({
+        user_id: userId,
+        item_type: "FinancialItem",
+        parent_item_id: parentItemId,
+        linked_asset_item_id: parentItemId,
+        title: rawAttributes.name || (subtype === "Income" ? "Income item" : "Commitment item"),
+        type: subtype,
+        frequency: "monthly",
+        default_amount: defaultAmount,
+        status: "Active",
+        attributes: {
+          ...rawAttributes,
+          dueDate: rawAttributes.dueDate || "1970-01-01",
+          financialSubtype: subtype
+        }
+      });
+    }
+
     return models.Item.create({
       user_id: userId,
       item_type: itemType,
       parent_item_id: parentItemId,
-      attributes
+      attributes: rawAttributes
     });
   }
 
@@ -81,6 +108,7 @@ describe("GET /items/:id/net-status", () => {
   });
 
   beforeEach(async () => {
+    process.env.HACT_ADMIN_EMAIL = "admin@example.com";
     await sequelize.query("PRAGMA foreign_keys = OFF");
     await models.Item.destroy({ where: {}, force: true });
     await models.User.destroy({ where: {}, force: true });
@@ -88,6 +116,12 @@ describe("GET /items/:id/net-status", () => {
   });
 
   afterAll(async () => {
+    if (typeof originalAdminEmail === "string") {
+      process.env.HACT_ADMIN_EMAIL = originalAdminEmail;
+    } else {
+      delete process.env.HACT_ADMIN_EMAIL;
+    }
+
     await sequelize.close();
   });
 
@@ -330,6 +364,163 @@ describe("GET /items/:id/net-status", () => {
           field: "item_type",
           code: "wrong_root_type",
           category: "wrong_root_type"
+        })
+      ])
+    );
+  });
+
+  it("includes legacy FinancialItem children linked via compatibility attributes", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "RealEstate",
+      attributes: {
+        address: "Legacy Link Root",
+        estimatedValue: 310000
+      }
+    });
+
+    const legacyLinkedFinancialItem = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      title: "Legacy water",
+      type: "Commitment",
+      frequency: "weekly",
+      default_amount: 95,
+      status: "Active",
+      linked_asset_item_id: null,
+      parent_item_id: null,
+      attributes: {
+        dueDate: "2026-03-03",
+        financialSubtype: "Commitment",
+        parentItemId: root.id,
+        linkedAssetItemId: root.id,
+        amount: 95,
+        nextPaymentAmount: 95
+      }
+    });
+
+    const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.child_commitments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: legacyLinkedFinancialItem.id,
+          item_type: "FinancialItem",
+          title: "Legacy water"
+        })
+      ])
+    );
+    expect(response.body.summary.monthly_obligation_total).toBe(95);
+  });
+
+  it("counts FinancialItem income subtype as income in summary totals", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "Vehicle",
+      attributes: {
+        vin: "VIN-SUV-INCOME",
+        estimatedValue: 50000
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: 1200,
+        dueDate: "2026-03-01"
+      }
+    });
+
+    await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      title: "Renting out SUV",
+      type: "Income",
+      frequency: "weekly",
+      default_amount: 3333333478,
+      status: "Active",
+      linked_asset_item_id: root.id,
+      attributes: {
+        dueDate: "2026-03-02",
+        financialSubtype: "Income",
+        amount: 3333333478
+      }
+    });
+
+    const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.summary).toMatchObject({
+      monthly_obligation_total: 1200,
+      monthly_income_total: 3333333478,
+      net_monthly_cashflow: 3333332278
+    });
+  });
+
+  it("supports admin all-mode drill-through and preserves owner-lens not_found denials", async () => {
+    const admin = await createUser({ email: "admin@example.com" });
+    const ownerA = await createUser({ email: "net-owner-a@example.com" });
+    const ownerB = await createUser({ email: "net-owner-b@example.com" });
+    const adminAgent = await signInAs(admin);
+
+    const ownerARoot = await createItem({
+      userId: ownerA.id,
+      itemType: "RealEstate",
+      attributes: { address: "Owner A Root", estimatedValue: 300000 }
+    });
+    const ownerBRoot = await createItem({
+      userId: ownerB.id,
+      itemType: "RealEstate",
+      attributes: { address: "Owner B Root", estimatedValue: 340000 }
+    });
+
+    await createItem({
+      userId: ownerA.id,
+      itemType: "FinancialCommitment",
+      parentItemId: ownerARoot.id,
+      attributes: { amount: 275, dueDate: "2026-03-04" }
+    });
+    const ownerBCommitment = await createItem({
+      userId: ownerB.id,
+      itemType: "FinancialCommitment",
+      parentItemId: ownerBRoot.id,
+      attributes: { amount: 325, dueDate: "2026-03-05" }
+    });
+
+    const allModeRead = await adminAgent.get(`/items/${ownerBRoot.id}/net-status`);
+    expect(allModeRead.status).toBe(200);
+    expect(allModeRead.body.user_id).toBe(ownerB.id);
+    expect(allModeRead.body.child_commitments.map((item) => item.id)).toContain(ownerBCommitment.id);
+
+    const setLens = await adminAgent.patch("/auth/admin-scope").send({
+      mode: "owner",
+      lens_user_id: ownerA.id
+    });
+    expect(setLens.status).toBe(200);
+
+    const ownerLensAllowed = await adminAgent.get(`/items/${ownerARoot.id}/net-status`);
+    expect(ownerLensAllowed.status).toBe(200);
+    expect(ownerLensAllowed.body.user_id).toBe(ownerA.id);
+
+    const ownerLensDenied = await adminAgent.get(`/items/${ownerBRoot.id}/net-status`);
+    expect(ownerLensDenied.status).toBe(404);
+    expect(ownerLensDenied.body.error).toMatchObject({
+      code: "item_net_status_failed",
+      category: "not_found"
+    });
+    expect(ownerLensDenied.body.error.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "item_id",
+          code: "not_found",
+          category: "not_found"
         })
       ])
     );

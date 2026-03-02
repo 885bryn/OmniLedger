@@ -322,5 +322,19 @@ describe("admin scope lens enforcement", () => {
       code: "item_query_failed",
       category: "not_found"
     });
+
+    const deniedDelete = await agent.delete(`/items/${ownerBItem.id}`);
+    expect(deniedDelete.status).toBe(404);
+    expect(deniedDelete.body.error).toMatchObject({
+      code: "item_query_failed",
+      category: "not_found"
+    });
+
+    const deniedRestore = await agent.patch(`/items/${ownerBItem.id}/restore`);
+    expect(deniedRestore.status).toBe(404);
+    expect(deniedRestore.body.error).toMatchObject({
+      code: "item_query_failed",
+      category: "not_found"
+    });
   });
 });

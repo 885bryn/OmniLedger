@@ -21,16 +21,18 @@ const { createApp } = require("../../src/api/app");
 describe("items list and mutate contracts", () => {
   const app = createApp();
   let userCount = 0;
+  const originalAdminEmail = process.env.HACT_ADMIN_EMAIL;
 
-  async function createUser() {
+  async function createUser(overrides = {}) {
     userCount += 1;
-    const password = "StrongPass123!";
+    const password = overrides.password || "StrongPass123!";
     const passwordHash = await bcrypt.hash(password, 12);
 
     const created = await models.User.create({
-      username: `items-user-${userCount}`,
-      email: `items-user-${userCount}@example.com`,
-      password_hash: passwordHash
+      username: overrides.username || `items-user-${userCount}`,
+      email: overrides.email || `items-user-${userCount}@example.com`,
+      password_hash: passwordHash,
+      role: overrides.role
     });
 
     return {
@@ -67,12 +69,19 @@ describe("items list and mutate contracts", () => {
   async function createCommitment(userId, parentItemId, amount, dueDate) {
     return models.Item.create({
       user_id: userId,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
       parent_item_id: parentItemId,
+      linked_asset_item_id: parentItemId,
+      title: `Commitment ${amount}`,
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: amount,
+      status: "Active",
       attributes: {
         name: `Commitment ${amount}`,
         amount,
-        dueDate
+        dueDate,
+        financialSubtype: "Commitment"
       }
     });
   }
@@ -80,13 +89,20 @@ describe("items list and mutate contracts", () => {
   async function createIncome(userId, parentItemId, amount, collectedTotal, dueDate) {
     return models.Item.create({
       user_id: userId,
-      item_type: "FinancialIncome",
+      item_type: "FinancialItem",
       parent_item_id: parentItemId,
+      linked_asset_item_id: parentItemId,
+      title: `Income ${amount}`,
+      type: "Income",
+      frequency: "monthly",
+      default_amount: amount,
+      status: "Active",
       attributes: {
         name: `Income ${amount}`,
         amount,
         collectedTotal,
-        dueDate
+        dueDate,
+        financialSubtype: "Income"
       }
     });
   }
@@ -137,6 +153,7 @@ describe("items list and mutate contracts", () => {
   });
 
   beforeEach(async () => {
+    process.env.HACT_ADMIN_EMAIL = "admin@example.com";
     await sequelize.query("PRAGMA foreign_keys = OFF");
     await models.AuditLog.destroy({ where: {}, force: true });
     await models.Event.destroy({ where: {}, force: true });
@@ -146,6 +163,12 @@ describe("items list and mutate contracts", () => {
   });
 
   afterAll(async () => {
+    if (typeof originalAdminEmail === "string") {
+      process.env.HACT_ADMIN_EMAIL = originalAdminEmail;
+    } else {
+      delete process.env.HACT_ADMIN_EMAIL;
+    }
+
     await sequelize.close();
   });
 
@@ -219,7 +242,7 @@ describe("items list and mutate contracts", () => {
       .query({ filter: "income", sort: "amount_low_to_high" });
 
     expect(incomeSorted.status).toBe(200);
-    expect(incomeSorted.body.items.map((item) => item.id).slice(0, 3)).toEqual([incomeB.id, recurringIncome.id, incomeA.id]);
+    expect(incomeSorted.body.items.map((item) => item.id).slice(0, 3)).toEqual([incomeA.id, incomeB.id, recurringIncome.id]);
     const recurringIncomeRow = incomeSorted.body.items.find((item) => item.id === recurringIncome.id);
     expect(recurringIncomeRow).toMatchObject({
       item_type: "FinancialItem",
@@ -298,6 +321,63 @@ describe("items list and mutate contracts", () => {
     const persisted = await models.Item.findByPk(ownerItem.id);
     expect(persisted.attributes.estimatedValue).toBe(420000);
     expect(persisted.attributes._deleted_at).toBeUndefined();
+  });
+
+  it("allows admin all-mode cross-owner mutate/restore and enforces owner-lens not_found boundaries", async () => {
+    const admin = await createUser({ email: "admin@example.com" });
+    const ownerA = await createUser({ email: "items-owner-a@example.com" });
+    const ownerB = await createUser({ email: "items-owner-b@example.com" });
+    const adminAgent = await signInAs(admin);
+    const ownerAItem = await createItem(ownerA.id, { address: "Lens Owner A House" });
+    const ownerBItem = await createItem(ownerB.id, { address: "Lens Owner B House", estimatedValue: 225000 });
+
+    const allModePatch = await adminAgent
+      .patch(`/items/${ownerBItem.id}`)
+      .send({ attributes: { estimatedValue: 235000 } });
+
+    expect(allModePatch.status).toBe(200);
+    expect(allModePatch.body.user_id).toBe(ownerB.id);
+    expect(allModePatch.body.attributes.estimatedValue).toBe(235000);
+
+    const allModeDelete = await adminAgent.delete(`/items/${ownerBItem.id}`);
+    expect(allModeDelete.status).toBe(200);
+    expect(allModeDelete.body.is_deleted).toBe(true);
+
+    const lensSet = await adminAgent.patch("/auth/admin-scope").send({
+      mode: "owner",
+      lens_user_id: ownerA.id
+    });
+    expect(lensSet.status).toBe(200);
+
+    const ownerLensAllowed = await adminAgent
+      .patch(`/items/${ownerAItem.id}`)
+      .send({ attributes: { estimatedValue: 410000 } });
+    expect(ownerLensAllowed.status).toBe(200);
+    expect(ownerLensAllowed.body.user_id).toBe(ownerA.id);
+
+    const ownerLensRestoreDenied = await adminAgent.patch(`/items/${ownerBItem.id}/restore`);
+    expect(ownerLensRestoreDenied.status).toBe(404);
+    expect(ownerLensRestoreDenied.body.error).toMatchObject({
+      code: "item_query_failed",
+      category: "not_found"
+    });
+
+    const ownerLensPatchDenied = await adminAgent
+      .patch(`/items/${ownerBItem.id}`)
+      .send({ attributes: { estimatedValue: 250000 } });
+    expect(ownerLensPatchDenied.status).toBe(404);
+    expect(ownerLensPatchDenied.body.error).toMatchObject({
+      code: "item_query_failed",
+      category: "not_found"
+    });
+
+    const switchBackAll = await adminAgent.patch("/auth/admin-scope").send({ mode: "all" });
+    expect(switchBackAll.status).toBe(200);
+
+    const allModeRestore = await adminAgent.patch(`/items/${ownerBItem.id}/restore`);
+    expect(allModeRestore.status).toBe(200);
+    expect(allModeRestore.body.was_deleted).toBe(true);
+    expect(allModeRestore.body.user_id).toBe(ownerB.id);
   });
 
   it("returns field-level issue envelopes for invalid list and mutate requests", async () => {
@@ -391,6 +471,80 @@ describe("items list and mutate contracts", () => {
 
     expect(updateAfterDelete.status).toBe(422);
     expect(updateAfterDelete.body.error.category).toBe("invalid_state");
+
+    const restored = await ownerAgent.patch(`/items/${item.id}/restore`);
+
+    expect(restored.status).toBe(200);
+    expect(restored.body.was_deleted).toBe(true);
+    expect(restored.body.restored_at).toEqual(expect.any(String));
+    expect(restored.body.attributes._deleted_at).toBeUndefined();
+
+    const defaultListAfterRestore = await ownerAgent.get("/items");
+    expect(defaultListAfterRestore.status).toBe(200);
+    expect(defaultListAfterRestore.body.total_count).toBe(1);
+
+    const deletedListAfterRestore = await ownerAgent
+      .get("/items")
+      .query({ include_deleted: "true", filter: "deleted" });
+
+    expect(deletedListAfterRestore.status).toBe(200);
+    expect(deletedListAfterRestore.body.total_count).toBe(0);
+
+    const updateAfterRestore = await ownerAgent
+      .patch(`/items/${item.id}`)
+      .send({ attributes: { estimatedValue: 130000 } });
+
+    expect(updateAfterRestore.status).toBe(200);
+    expect(updateAfterRestore.body.attributes.estimatedValue).toBe(130000);
+  });
+
+  it("restores parent with commitments that were cascade-deleted together", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+
+    const parent = await createItem(owner.id, { address: "Sandbox Family SUV" });
+    const commitment = await createFinancialItem({
+      userId: owner.id,
+      linkedAssetItemId: parent.id,
+      type: "Commitment",
+      title: "Sandbox auto insurance",
+      defaultAmount: 350,
+      dueDate: "2026-03-03"
+    });
+
+    const deleted = await ownerAgent
+      .delete(`/items/${parent.id}`)
+      .send({ cascade_delete_ids: [commitment.id] });
+
+    expect(deleted.status).toBe(200);
+    expect(deleted.body.cascade_deleted_ids).toEqual([commitment.id]);
+
+    const deletedList = await ownerAgent
+      .get("/items")
+      .query({ include_deleted: "true", filter: "deleted" });
+
+    expect(deletedList.status).toBe(200);
+    expect(deletedList.body.items.map((item) => item.id)).toEqual(expect.arrayContaining([parent.id, commitment.id]));
+
+    const restored = await ownerAgent.patch(`/items/${parent.id}/restore`);
+
+    expect(restored.status).toBe(200);
+    expect(restored.body.cascade_restored_ids).toEqual([commitment.id]);
+
+    const commitmentItem = await models.Item.findByPk(commitment.id);
+    expect(commitmentItem.attributes._deleted_at).toBeUndefined();
+    expect(commitmentItem.attributes._deleted_with_parent_id).toBeUndefined();
+
+    const commitments = await ownerAgent
+      .get("/items")
+      .query({ filter: "commitments", sort: "recently_updated" });
+
+    expect(commitments.status).toBe(200);
+    expect(commitments.body.items.map((item) => item.id)).toContain(commitment.id);
+
+    const parentNetStatus = await ownerAgent.get(`/items/${parent.id}/net-status`);
+    expect(parentNetStatus.status).toBe(200);
+    expect(parentNetStatus.body.child_commitments.map((item) => item.id)).toContain(commitment.id);
   });
 
   it("derives item ownership from authenticated scope and ignores payload user_id", async () => {
@@ -439,6 +593,7 @@ describe("items list and mutate contracts", () => {
     activity.body.activity.forEach((entry) => {
       expect(Object.keys(entry).sort()).toEqual([
         "action",
+        "actor_user_id",
         "created_at",
         "entity",
         "entity_id",
@@ -449,6 +604,8 @@ describe("items list and mutate contracts", () => {
         "event_status",
         "event_type",
         "id",
+        "lens_attribution_state",
+        "lens_user_id",
         "timestamp",
         "updated_at",
         "user_id"
