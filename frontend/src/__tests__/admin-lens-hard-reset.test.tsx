@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { UserSwitcher } from '../app/shell/user-switcher'
-import { actorSensitiveQueryRoots } from '../lib/query-keys'
+import { actorSensitiveQueryRoots, queryKeys } from '../lib/query-keys'
 
 const logoutMock = vi.fn(async () => undefined)
 const setAllUsersMock = vi.fn(async () => undefined)
@@ -133,6 +133,7 @@ describe('admin lens controls', () => {
     expect(select).toBeTruthy()
 
     await userEvent.selectOptions(select, 'user-2')
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirm exit' }))
     expect(setLensUserMock).toHaveBeenCalledWith('user-2')
     expect(clearSpy).toHaveBeenCalledTimes(1)
     actorSensitiveQueryRoots.forEach((root) => {
@@ -147,5 +148,18 @@ describe('admin lens controls', () => {
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Admin lens' }), 'all')
     expect(setAllUsersMock).toHaveBeenCalledTimes(1)
     expect(clearSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('partitions item detail cache entries by admin scope lens', () => {
+    const queryClient = new QueryClient()
+    const allScopeKey = queryKeys.items.detail('asset-1', { mode: 'all', lensUserId: null })
+    const ownerScopeKey = queryKeys.items.detail('asset-1', { mode: 'owner', lensUserId: 'user-2' })
+
+    queryClient.setQueryData(allScopeKey, { owner: 'all-users' })
+    queryClient.setQueryData(ownerScopeKey, { owner: 'user-2' })
+
+    expect(allScopeKey).not.toEqual(ownerScopeKey)
+    expect(queryClient.getQueryData(allScopeKey)).toEqual({ owner: 'all-users' })
+    expect(queryClient.getQueryData(ownerScopeKey)).toEqual({ owner: 'user-2' })
   })
 })
