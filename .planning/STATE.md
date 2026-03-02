@@ -1,16 +1,17 @@
 # Project State
 ## Project Reference
-See: `.planning/PROJECT.md` (updated 2026-02-25)
-Milestone summary: `.planning/milestones/v2.0-MILESTONE-SUMMARY.md`
+See: `.planning/PROJECT.md` (updated 2026-03-02)
+Milestone archive: `.planning/milestones/v2.0-ROADMAP.md`
+Requirements archive: `.planning/milestones/v2.0-REQUIREMENTS.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 13 admin scope integration hardening
+**Current focus:** Milestone v3.0 definition and requirements planning
 ## Current Position
 
-Phase: 13 of 13 (Admin Scope Integration Hardening)
-Plan: 03 of 03
-Status: Complete
-Last activity: 2026-03-02 - Completed 13-03 backend admin scope regression expansion for items/events
+Phase: Milestone boundary (v2.0 archived)
+Plan: n/a
+Status: Ready for new milestone planning
+Last activity: 2026-03-02 - Archived v2.0 roadmap/requirements/audit and prepared planning state for next milestone
 
 Progress: [██████████] 100%
 
@@ -138,6 +139,6 @@ Recent decisions affecting current work:
 - Unrelated frontend build check currently fails at `frontend/src/pages/events/events-page.tsx:255` (TS6133 unused `todayStart`), logged in `.planning/phases/13-admin-scope-integration-hardening/deferred-items.md`.
 
 ## Session Continuity
-Last session: 2026-03-02 00:31
-Stopped at: Completed 13-03-PLAN.md
+Last session: 2026-03-02 01:30
+Stopped at: Completed v2.0 milestone archival and handoff to v3.0 milestone setup
 Resume file: None
