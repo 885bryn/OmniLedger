@@ -109,7 +109,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [ ] 13-01-PLAN.md - Harden backend scope resolution for admin cross-owner mutations and net-status drill-through continuity.
-- [ ] 13-02-PLAN.md - Add lens-scoped item-detail query partitioning and frontend drill-through continuity regressions.
+- [x] 13-02-PLAN.md - Add lens-scoped item-detail query partitioning and frontend drill-through continuity regressions. (completed 2026-03-02)
 - [ ] 13-03-PLAN.md - Expand backend integration regressions for admin all/lens mutate and net-status continuity.
 
 ## Progress
@@ -121,4 +121,4 @@ Plans:
 | 10. Financial Contract-Occurrence Foundation | 5/5 | Complete   | 2026-02-26 |
 | 11. Timeline Projection & Asset Ledger Views | 4/4 (+extension work) | Complete   | 2026-02-28 |
 | 12. Deletion Lifecycle & Retention Controls | Integrated in Phase 11 | Complete | 2026-02-28 |
-| 13. Admin Scope Integration Hardening | 1/3 | In Progress|  |
+| 13. Admin Scope Integration Hardening | 2/3 | In Progress|  |

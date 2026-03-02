@@ -8,11 +8,11 @@ Milestone summary: `.planning/milestones/v2.0-MILESTONE-SUMMARY.md`
 ## Current Position
 
 Phase: 13 of 13 (Admin Scope Integration Hardening)
-Plan: 02 of 03
+Plan: 03 of 03
 Status: In Progress
-Last activity: 2026-03-02 - Completed 13-01 scope hardening for item/event mutation and net-status continuity
+Last activity: 2026-03-02 - Completed 13-02 frontend scope-aware item-detail drill-through continuity hardening
 
-Progress: [████████░░] 80%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 **Velocity:**
@@ -31,13 +31,14 @@ Progress: [████████░░] 80%
 | 12. Deletion Lifecycle & Retention Controls | integrated | n/a | n/a |
 
 **Recent Trend:**
-- Last 5 plans: 13-01 (3 min), 11-04 (7 min), 11-03 (6 min), 11-02 (2 min), 11-01 (2 min)
-- Trend: admin scope continuity hardening is now progressing with backend mutation/detail authorization alignment.
+- Last 5 plans: 13-02 (2 min), 13-01 (3 min), 11-04 (7 min), 11-03 (6 min), 11-02 (2 min)
+- Trend: admin scope continuity hardening now covers backend mutation authorization plus frontend drill-through cache partitioning.
 | Phase 11 P01 | 2 min | 2 tasks | 3 files |
 | Phase 11 P02 | 2 min | 2 tasks | 6 files |
 | Phase 11 P03 | 6 min | 2 tasks | 6 files |
 | Phase 11 P04 | 7 min | 2 tasks | 5 files |
 | Phase 13-admin-scope-integration-hardening P01 | 3 min | 2 tasks | 9 files |
+| Phase 13 P02 | 2 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -125,12 +126,15 @@ Recent decisions affecting current work:
 - [Phase 13-admin-scope-integration-hardening]: Added canAccessOwner(scope, ownerUserId) as the shared mutation/detail authorization contract for owner/all/lens semantics.
 - [Phase 13-admin-scope-integration-hardening]: Changed /items/:id/net-status to consume req.scope directly so admin drill-through follows active scope mode.
 - [Phase 13-admin-scope-integration-hardening]: Preserved existing 404 not_found ownership-denial envelopes while replacing actor-only owner resolution.
+- [Phase 13]: Extended item detail query keys with optional LensScope segments so non-lens callers remain compatible while lens-aware callers are isolated.
+- [Phase 13]: Bound detail lookup URL params and query keys to scope_mode/lens_user_id so lens transitions deterministically refetch same-route item detail context.
+- [Phase 13]: Locked scoped cache partition behavior in frontend regressions with QueryClient-level assertions.
 
 ### Blockers/Concerns
 
-None yet.
+- Unrelated frontend build check currently fails at `frontend/src/pages/events/events-page.tsx:255` (TS6133 unused `todayStart`), logged in `.planning/phases/13-admin-scope-integration-hardening/deferred-items.md`.
 
 ## Session Continuity
-Last session: 2026-03-02 00:24
-Stopped at: Completed 13-admin-scope-integration-hardening-01-PLAN.md
+Last session: 2026-03-02 00:30
+Stopped at: Completed 13-02-PLAN.md
 Resume file: None

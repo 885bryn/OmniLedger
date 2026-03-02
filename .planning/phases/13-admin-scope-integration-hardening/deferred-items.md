@@ -1,0 +1,2 @@
+- 2026-03-02: `npm --prefix frontend run build` fails in `frontend/src/pages/events/events-page.tsx:255` with TS6133 (`todayStart` declared but never read).
+- Classified out-of-scope for 13-02 because it is unrelated to item detail/admin lens continuity changes in this plan.
