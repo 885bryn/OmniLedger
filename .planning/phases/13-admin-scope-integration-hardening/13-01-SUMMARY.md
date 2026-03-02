@@ -72,7 +72,7 @@ Each task was committed atomically:
 1. **Task 1: Establish shared scope-resolution contract for mutation/detail authorization** - `5db2876` (feat)
 2. **Task 2: Apply scope-resolution contract to event complete/update mutation flows** - `5121f2b` (feat)
 
-**Plan metadata:** Pending
+**Plan metadata:** `e7081a8` (docs)
 
 ## Files Created/Modified
 - `src/api/auth/scope-context.js` - adds `canAccessOwner` shared scope authorization helper.
