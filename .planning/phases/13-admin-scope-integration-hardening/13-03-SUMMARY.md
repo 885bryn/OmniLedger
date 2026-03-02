@@ -82,10 +82,23 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] STATE.md helper commands could not parse existing state layout**
+- **Found during:** Post-task metadata/state update workflow
+- **Issue:** `state advance-plan`, `state update-progress`, and `state record-session` returned parse errors against current `STATE.md` headings/field patterns.
+- **Fix:** Applied the required current-position/session updates manually in `.planning/STATE.md` after running non-blocked `gsd-tools` commands.
+- **Files modified:** `.planning/STATE.md`
+- **Verification:** `STATE.md` now reflects Plan 03/03, complete status, 100% progress, and session stop point at `13-03-PLAN.md`.
+- **Committed in:** `86183d0` (metadata commit)
+
+---
+
+**Total deviations:** 1 auto-fixed (1 blocking)
+**Impact on plan:** No scope creep; required only to complete planning metadata updates when helper parsing failed.
 
 ## Issues Encountered
-None.
+- `gsd-tools requirements mark-complete AUTH-06 TIME-04` reported IDs as not found even though both requirements are already complete in `REQUIREMENTS.md`; no data correction required.
 
 ## User Setup Required
 
