@@ -1,0 +1,94 @@
+# Requirements: Household Asset & Commitment Tracker (HACT)
+
+**Defined:** 2026-03-02
+**Core Value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
+
+## v3.0 Requirements
+
+### Export Core
+
+- [ ] **EXPT-01**: User can trigger a ledger backup export and download a generated `.xlsx` file from the app.
+- [ ] **EXPT-02**: Export workbook includes separate sheets for `Assets`, `Financial Contracts`, and `Event History`.
+- [ ] **EXPT-03**: Exported `Assets` sheet presents readable flattened columns for common asset fields and attribute values.
+- [ ] **EXPT-04**: Exported `Financial Contracts` sheet includes contract subtype, recurrence fields, status, and linked context fields.
+- [ ] **EXPT-05**: Exported `Event History` sheet includes occurrence/payment lifecycle fields with stable identifiers.
+
+### Scope and RBAC
+
+- [ ] **SCOP-01**: Standard users can export only records in their resolved owner scope.
+- [ ] **SCOP-02**: Admin users in all-data mode can export all eligible household records.
+- [ ] **SCOP-03**: Admin users in lens mode can export only records for the selected lens user.
+- [ ] **SCOP-04**: Export scope is derived server-side from authenticated session scope and cannot be overridden by client-provided owner identifiers.
+
+### Relationship Fidelity
+
+- [ ] **RELA-01**: Export sheets expose parent-child relationships between assets and linked financial commitments using stable IDs and readable reference columns.
+- [ ] **RELA-02**: Exported event rows include references to related contract and asset records where links exist.
+
+### Workbook Usability
+
+- [ ] **XLSX-01**: Each export sheet has frozen headers and auto-filter enabled by default.
+- [ ] **XLSX-02**: Date/time columns use app locale/timezone preference behavior (or deterministic fallback when preference is unavailable).
+
+### Security and Auditability
+
+- [ ] **SECU-01**: Export output sanitizes cell values that could trigger spreadsheet formula execution.
+- [ ] **SECU-02**: Export actions are audit-visible with actor/lens attribution.
+
+### Frontend UX
+
+- [ ] **UXEX-01**: App exposes an `Export Backup` action in a user-facing management surface.
+- [ ] **UXEX-02**: Export flow shows loading/progress, success, and actionable failure states.
+
+## Future Requirements (Deferred)
+
+### Advanced Portability
+
+- **EXPT-ADV-01**: User can choose partial exports by date range, entity set, or sheet selection.
+- **EXPT-ADV-02**: System supports async queued export jobs for very large datasets.
+
+### Governance
+
+- **EXPT-ADV-03**: Admin can configure retention and legal-hold policy for export artifacts.
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| CSV/PDF export formats in v3.0 | Milestone focuses on one reliable `.xlsx` contract first. |
+| Cloud backup destinations (Drive/Dropbox/S3 upload) | Adds auth/storage complexity beyond local download scope. |
+| Scheduled recurring exports | Better handled after manual export flow is stable. |
+| End-user custom column builder | Would significantly expand product/UI surface and validation burden. |
+
+## Traceability
+
+Traceability for milestone v3.0 will be mapped during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| EXPT-01 | Phase TBD | Pending |
+| EXPT-02 | Phase TBD | Pending |
+| EXPT-03 | Phase TBD | Pending |
+| EXPT-04 | Phase TBD | Pending |
+| EXPT-05 | Phase TBD | Pending |
+| SCOP-01 | Phase TBD | Pending |
+| SCOP-02 | Phase TBD | Pending |
+| SCOP-03 | Phase TBD | Pending |
+| SCOP-04 | Phase TBD | Pending |
+| RELA-01 | Phase TBD | Pending |
+| RELA-02 | Phase TBD | Pending |
+| XLSX-01 | Phase TBD | Pending |
+| XLSX-02 | Phase TBD | Pending |
+| SECU-01 | Phase TBD | Pending |
+| SECU-02 | Phase TBD | Pending |
+| UXEX-01 | Phase TBD | Pending |
+| UXEX-02 | Phase TBD | Pending |
+
+**Coverage:**
+- v3.0 requirements: 17 total
+- Mapped to phases: 0
+- Unmapped: 17 ⚠️
+
+---
+*Requirements defined: 2026-03-02*
+*Last updated: 2026-03-02 after v3.0 milestone requirement definition*
