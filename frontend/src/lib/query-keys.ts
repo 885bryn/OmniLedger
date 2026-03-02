@@ -3,6 +3,14 @@ export type LensScope = {
   lensUserId: string | null
 }
 
+function lensScopeToSegments(scope?: LensScope) {
+  if (!scope) {
+    return ['owner', 'self'] as const
+  }
+
+  return [scope.mode, scope.lensUserId ?? 'all'] as const
+}
+
 export function lensScopeToParams(scope: LensScope): Record<string, string> {
   if (scope.mode === 'owner' && scope.lensUserId) {
     return {
@@ -35,7 +43,7 @@ export const queryKeys = {
     all: ['items'] as const,
     list: (params: Record<string, string | number | boolean | undefined>) =>
       ['items', 'list', params] as const,
-    detail: (itemId: string) => ['items', 'detail', itemId] as const,
+    detail: (itemId: string, scope?: LensScope) => ['items', 'detail', ...lensScopeToSegments(scope), itemId] as const,
     activity: (itemId: string) => ['items', 'activity', itemId] as const,
     itemLedger: (itemId: string, params: Record<string, string | number | boolean | undefined>) =>
       ['items', 'ledger', itemId, params] as const,

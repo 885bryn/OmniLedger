@@ -4,11 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { ItemActivityTimeline } from '../../features/audit/item-activity-timeline'
+import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
+import { EditEventRowAction } from '../../features/events/edit-event-row-action'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
 import { compareByNearestDue } from '../../lib/date-ordering'
 import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel, isHiddenAttributeKey, isIncomeItem } from '../../lib/item-display'
-import { eventListParams, queryKeys } from '../../lib/query-keys'
+import { eventListParams, lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type ItemRow = {
   id: string
@@ -63,6 +65,7 @@ type EventsResponse = {
 }
 
 type DetailTab = 'overview' | 'commitments' | 'activity'
+type FinancialEventsTab = 'present' | 'history'
 
 const DETAIL_KEY_ORDER = [
   'name',
@@ -81,7 +84,15 @@ const DETAIL_KEY_ORDER = [
   'interestRate',
   'originalPrincipal',
   'remainingBalance',
+  'trackingStartingRemainingBalance',
+  'trackingCompletedTotal',
+  'trackingCompletedCount',
+  'trackingLastCompletedDate',
   'nextPaymentAmount',
+  'collectedTotal',
+  'trackingStartingCollectedTotal',
+  'lastCollectedAmount',
+  'lastCollectedDate',
   'amount',
   'dueDate',
   'billingCycle',
@@ -101,14 +112,7 @@ function toFriendlyValue(key: string, value: unknown): string {
       return `${value}%`
     }
 
-    if (
-      key === 'amount' ||
-      key === 'monthlyRent' ||
-      key === 'estimatedValue' ||
-      key === 'originalPrincipal' ||
-      key === 'remainingBalance' ||
-      key === 'nextPaymentAmount'
-    ) {
+    if (isMoneyField(key)) {
       return formatCurrency(value)
     }
 
@@ -120,6 +124,23 @@ function toFriendlyValue(key: string, value: unknown): string {
   }
 
   return String(value)
+}
+
+function isMoneyField(key: string) {
+  return [
+    'amount',
+    'monthlyRent',
+    'estimatedValue',
+    'originalPrincipal',
+    'remainingBalance',
+    'nextPaymentAmount',
+    'trackingStartingRemainingBalance',
+    'trackingCompletedTotal',
+    'collectedTotal',
+    'trackingStartingCollectedTotal',
+    'lastCollectedAmount',
+    'lastPaymentAmount',
+  ].includes(key)
 }
 
 function getDisplayEntries(attributes: Record<string, unknown>) {
@@ -209,11 +230,12 @@ function isProjectedEvent(event: EventRow) {
   return event.id.startsWith('projected-')
 }
 
-function isCurrentOrUpcomingLedgerRow(event: EventRow, todayStart: number) {
-  const dueTime = Date.parse(event.due_date)
-  const normalizedDue = Number.isNaN(dueTime) ? Number.POSITIVE_INFINITY : dueTime
-  const status = event.status.trim().toLowerCase()
-  return status === 'pending' || normalizedDue >= todayStart
+function isCompletedEvent(event: EventRow) {
+  return event.status.trim().toLowerCase() === 'completed'
+}
+
+function isOverduePendingEvent(event: EventRow, todayStart: number) {
+  return isCompletedEvent(event) === false && Date.parse(event.due_date) < todayStart
 }
 
 function recurrenceFrequencyLabel(frequency: string | null | undefined, t: (key: string) => string) {
@@ -328,37 +350,41 @@ export function ItemDetailPage() {
   const itemId = params.itemId || ''
 
   const [activeTab, setActiveTab] = useState<DetailTab>('overview')
+  const [activeFinancialEventsTab, setActiveFinancialEventsTab] = useState<FinancialEventsTab>('present')
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [showTechnical, setShowTechnical] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [selectedParentCascadeIds, setSelectedParentCascadeIds] = useState<string[]>([])
   const [childDeleteTarget, setChildDeleteTarget] = useState<ItemRow | null>(null)
   const [childDeleteError, setChildDeleteError] = useState<string | null>(null)
-  const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return false
-    }
-
-    return window.matchMedia('(min-width: 768px)').matches
-  })
-  const [isHistoricalExpandedMobile, setIsHistoricalExpandedMobile] = useState(false)
   const returnTo = typeof location.state === 'object' && location.state !== null && 'from' in location.state ? String((location.state as { from?: string }).from ?? '') : ''
   const lensScope = useMemo(
     () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
     [lensUserId, mode],
   )
   const ledgerListParams = useMemo(() => eventListParams(lensScope, 'all'), [lensScope])
+  const detailLookupParams = useMemo(
+    () => ({
+      filter: 'all',
+      sort: 'recently_updated',
+      ...lensScopeToParams(lensScope),
+    }),
+    [lensScope],
+  )
 
   const netStatusQuery = useQuery({
-    queryKey: queryKeys.items.detail(itemId),
+    queryKey: queryKeys.items.detail(itemId, lensScope),
     enabled: Boolean(itemId),
     queryFn: async () => apiRequest<NetStatusResponse>(`/items/${itemId}/net-status`),
   })
 
   const itemsLookupQuery = useQuery({
-    queryKey: queryKeys.items.list({ scope: 'detail-lookup', itemId }),
+    queryKey: queryKeys.items.list({ scope: 'detail-lookup', itemId, ...detailLookupParams }),
     enabled: Boolean(itemId),
-    queryFn: async () => apiRequest<ItemsResponse>('/items?filter=all&sort=recently_updated'),
+    queryFn: async () => {
+      const params = new URLSearchParams(detailLookupParams)
+      return apiRequest<ItemsResponse>(`/items?${params.toString()}`)
+    },
   })
 
   const deleteMutation = useMutation({
@@ -371,9 +397,9 @@ export function ItemDetailPage() {
     onSuccess: async (_, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.items.all }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(itemId, lensScope) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.items.activity(itemId) }),
-        ...variables.cascadeDeleteIds.map((childId) => queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(childId) })),
+        ...variables.cascadeDeleteIds.map((childId) => queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(childId, lensScope) })),
         ...variables.cascadeDeleteIds.map((childId) => queryClient.invalidateQueries({ queryKey: queryKeys.items.activity(childId) })),
         queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
@@ -409,8 +435,8 @@ export function ItemDetailPage() {
     onSuccess: async (_, target) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.items.all }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(target.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(itemId, lensScope) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(target.id, lensScope) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.items.activity(itemId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.items.activity(target.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
@@ -448,50 +474,51 @@ export function ItemDetailPage() {
       .filter((commitment) => (detail.user_id ? commitment.user_id === detail.user_id : true))
   }, [detail])
 
-  const ledgerEventsQuery = useQuery({
+  const financialTimelineEventsQuery = useQuery({
     queryKey: queryKeys.items.itemLedger(itemId, ledgerListParams),
-    enabled: Boolean(itemId) && activeTab === 'commitments' && commitments.length > 0,
+    enabled: Boolean(itemId) && activeTab === 'commitments' && isFinancialDetail,
     queryFn: async () => {
       const params = new URLSearchParams(ledgerListParams)
       return apiRequest<EventsResponse>(`/events?${params.toString()}`)
     },
   })
 
-  const commitmentById = useMemo(() => new Map(commitments.map((commitment) => [commitment.id, commitment])), [commitments])
-
-  const ledgerSections = useMemo(() => {
-    const allEvents = (ledgerEventsQuery.data?.groups ?? []).flatMap((group) => group.events)
-    const commitmentIds = new Set(commitments.map((commitment) => commitment.id))
+  const financialTimelineSections = useMemo(() => {
+    const allEvents = (financialTimelineEventsQuery.data?.groups ?? []).flatMap((group) => group.events)
     const relevantEvents = allEvents
-      .filter((event) => commitmentIds.has(event.item_id))
+      .filter((event) => event.item_id === itemId)
       .sort(compareByNearestDue)
-    const todayStart = toStartOfTodayUtc()
 
     return relevantEvents.reduce(
       (acc, event) => {
-        if (isCurrentOrUpcomingLedgerRow(event, todayStart)) {
-          acc.currentAndUpcoming.push(event)
+        if (isCompletedEvent(event)) {
+          acc.history.push(event)
         } else {
-          acc.historical.push(event)
+          acc.present.push(event)
         }
 
         return acc
       },
-      { currentAndUpcoming: [] as EventRow[], historical: [] as EventRow[] },
+      { present: [] as EventRow[], history: [] as EventRow[] },
     )
-  }, [commitments, ledgerEventsQuery.data?.groups])
+  }, [financialTimelineEventsQuery.data?.groups, itemId])
 
-  const currentAndUpcomingSummary = useMemo(
-    () => summarizeLedgerSection(ledgerSections.currentAndUpcoming, commitmentById),
-    [commitmentById, ledgerSections.currentAndUpcoming],
+  const financialTimelineCounts = useMemo(
+    () => ({
+      present: financialTimelineSections.present.length,
+      history: financialTimelineSections.history.length,
+    }),
+    [financialTimelineSections.history.length, financialTimelineSections.present.length],
   )
 
-  const historicalSummary = useMemo(
-    () => summarizeLedgerSection(ledgerSections.historical, commitmentById),
-    [commitmentById, ledgerSections.historical],
+  const detailAsItem = detail ? (detail as ItemRow) : undefined
+  const financialTimelineSummary = useMemo(
+    () => ({
+      present: summarizeLedgerSection(financialTimelineSections.present, new Map(detailAsItem ? [[detailAsItem.id, detailAsItem]] : [])),
+      history: summarizeLedgerSection(financialTimelineSections.history, new Map(detailAsItem ? [[detailAsItem.id, detailAsItem]] : [])),
+    }),
+    [detailAsItem, financialTimelineSections.history, financialTimelineSections.present],
   )
-
-  const historicalExpanded = isDesktopViewport || isHistoricalExpandedMobile
 
   useEffect(() => {
     if (!deleteOpen || !detail || (detail.item_type !== 'RealEstate' && detail.item_type !== 'Vehicle')) {
@@ -501,21 +528,6 @@ export function ItemDetailPage() {
 
     setSelectedParentCascadeIds(commitments.map((commitment) => commitment.id))
   }, [commitments, deleteOpen, detail])
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return
-    }
-
-    const mediaQuery = window.matchMedia('(min-width: 768px)')
-    const handleChange = (event: MediaQueryListEvent) => {
-      setIsDesktopViewport(event.matches)
-    }
-
-    setIsDesktopViewport(mediaQuery.matches)
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [])
 
   const parentDeleteRelatedItems = useMemo(() => {
     if (!detail || (detail.item_type !== 'RealEstate' && detail.item_type !== 'Vehicle')) {
@@ -590,6 +602,7 @@ export function ItemDetailPage() {
 
   useEffect(() => {
     setActiveTab('overview')
+    setActiveFinancialEventsTab('present')
   }, [itemId])
 
   if (netStatusQuery.isLoading || itemsLookupQuery.isLoading) {
@@ -808,154 +821,149 @@ export function ItemDetailPage() {
             </div>
           ) : null}
 
-          {commitments.length === 0 ? (
+          {!isFinancialDetail && commitments.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('items.detail.noCommitments')}</p>
-          ) : ledgerEventsQuery.isError ? (
-            <p className="text-sm text-destructive">{t('events.loadError')}</p>
-          ) : ledgerEventsQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">{t('events.subtitle')}</p>
           ) : (
             <div className="space-y-4">
-              <section className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('items.detail.ledger.currentUpcomingTitle')}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {t('items.detail.ledger.sectionSummary', {
-                      count: currentAndUpcomingSummary.count,
-                      total: formatCurrency(currentAndUpcomingSummary.total),
-                    })}
-                  </p>
-                </div>
-                {ledgerSections.currentAndUpcoming.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">
-                    {t('items.detail.ledger.currentUpcomingEmpty')}
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {ledgerSections.currentAndUpcoming.map((event) => {
-                      const commitment = commitmentById.get(event.item_id)
-                      const projected = isProjectedEvent(event)
+              {!isFinancialDetail ? (
+                <ul className="space-y-2">
+                  {commitments.map((commitment) => {
+                    const attributes = isRecord(commitment.attributes) ? commitment.attributes : {}
+                    const frequency = resolveFinancialFrequency(commitment, attributes)
+                    const status = resolveFinancialStatus(commitment, attributes)
+                    const amount = toNumberOrZero(commitment.default_amount ?? attributes.amount)
+                    const dueDate = String(attributes.dueDate ?? attributes.nextDueDate ?? '-')
+                    const subtypeLabel = getFinancialSubtype(commitment)
 
-                      return (
-                        <li key={event.id} className={`rounded-xl border px-3 py-2 ${projected ? 'border-sky-200 bg-sky-50/40' : 'border-border bg-background/80'}`}>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-medium">{event.type}</p>
-                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${projected ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-border bg-background text-foreground'}`}>
-                              {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
-                            </span>
-                            <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
-                            {event.is_exception ? (
-                              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                                {t('events.stateLegend.editedOccurrence')}
-                              </span>
-                            ) : null}
+                    return (
+                      <li key={commitment.id} className="rounded-xl border border-border bg-background/80 px-3 py-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <Link to={`/items/${commitment.id}`} state={{ from: location.pathname + location.search }} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
+                            {getItemDisplayName(commitment)}
+                          </Link>
+                          <div className="flex items-center gap-2">
+                            {subtypeLabel ? <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{subtypeLabel}</span> : null}
+                            <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{recurrenceFrequencyLabel(frequency, t)}</span>
+                            <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{status || '-'}</span>
                           </div>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
-                              {commitment ? getItemDisplayName(commitment) : t('events.itemLabel', { itemId: event.item_id })}
-                            </Link>
-                            {' · '}
-                            {formatDateLabel(event.due_date)}
-                          </p>
-                          <div className="mt-2 flex justify-between gap-2">
-                            <span className="text-sm font-medium">{formatEventAmount(event, commitment) ?? t('events.amountPending')}</span>
-                            {commitment ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setChildDeleteError(null)
-                                  setChildDeleteTarget(commitment)
-                                }}
-                                className="rounded-lg border border-destructive/40 px-3 py-1 text-xs font-medium text-destructive"
-                              >
-                                {t('items.deleteAction')}
-                              </button>
-                            ) : null}
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </section>
-
-              <section className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('items.detail.ledger.historicalTitle')}</h3>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs text-muted-foreground">
-                      {t('items.detail.ledger.sectionSummary', {
-                        count: historicalSummary.count,
-                        total: formatCurrency(historicalSummary.total),
-                      })}
-                    </p>
-                    {!isDesktopViewport ? (
-                      <button
-                        type="button"
-                        onClick={() => setIsHistoricalExpandedMobile((value) => !value)}
-                        className="rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground"
-                      >
-                        {historicalExpanded ? t('items.detail.ledger.collapseHistorical') : t('items.detail.ledger.expandHistorical')}
-                      </button>
-                    ) : null}
+                        </div>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {t('items.fields.amount')}: <span className="font-medium text-foreground">{formatCurrency(amount)}</span>
+                          {' · '}
+                          {t('items.fields.dueDate')}: <span className="font-medium text-foreground">{formatDateLabel(dueDate)}</span>
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <Link to={`/items/${commitment.id}/edit`} className="rounded-lg border border-border px-3 py-1 text-xs font-medium">
+                            {t('items.editAction')}
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setChildDeleteError(null)
+                              setChildDeleteTarget(commitment)
+                            }}
+                            className="rounded-lg border border-destructive/40 px-3 py-1 text-xs font-medium text-destructive"
+                          >
+                            {t('items.deleteAction')}
+                          </button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <div className="space-y-3">
+                  <div className="inline-flex rounded-lg border border-border bg-background p-1 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setActiveFinancialEventsTab('present')}
+                      className={`rounded-md px-3 py-1 font-medium ${
+                        activeFinancialEventsTab === 'present' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t('items.detail.ledger.currentUpcomingTitle')} ({financialTimelineCounts.present})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveFinancialEventsTab('history')}
+                      className={`rounded-md px-3 py-1 font-medium ${
+                        activeFinancialEventsTab === 'history' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t('items.detail.ledger.historicalTitle')} ({financialTimelineCounts.history})
+                    </button>
                   </div>
-                </div>
-                {ledgerSections.historical.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">
-                    {t('items.detail.ledger.historicalEmpty')}
-                  </p>
-                ) : historicalExpanded ? (
-                  <ul className="space-y-2">
-                    {ledgerSections.historical.map((event) => {
-                      const commitment = commitmentById.get(event.item_id)
-                      const projected = isProjectedEvent(event)
 
-                      return (
-                        <li key={event.id} className={`rounded-xl border px-3 py-2 ${projected ? 'border-sky-200 bg-sky-50/35' : 'border-border bg-background/70'}`}>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-medium">{event.type}</p>
-                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${projected ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-border bg-background text-foreground'}`}>
-                              {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
-                            </span>
-                            <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
-                            {event.is_exception ? (
-                              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                                {t('events.stateLegend.editedOccurrence')}
-                              </span>
-                            ) : null}
-                          </div>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
-                              {commitment ? getItemDisplayName(commitment) : t('events.itemLabel', { itemId: event.item_id })}
-                            </Link>
-                            {' · '}
-                            {formatDateLabel(event.due_date)}
-                          </p>
-                          <div className="mt-2 flex justify-between gap-2">
-                            <span className="text-sm font-medium">{formatEventAmount(event, commitment) ?? t('events.amountPending')}</span>
-                            {commitment ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setChildDeleteError(null)
-                                  setChildDeleteTarget(commitment)
-                                }}
-                                className="rounded-lg border border-destructive/40 px-3 py-1 text-xs font-medium text-destructive"
-                              >
-                                {t('items.deleteAction')}
-                              </button>
-                            ) : null}
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                ) : (
-                  <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">
-                    {t('items.detail.ledger.historicalCollapsedHint')}
+                  <p className="text-xs text-muted-foreground">
+                    {activeFinancialEventsTab === 'present'
+                      ? t('items.detail.ledger.sectionSummary', {
+                          count: financialTimelineSummary.present.count,
+                          total: formatCurrency(financialTimelineSummary.present.total),
+                        })
+                      : t('items.detail.ledger.sectionSummary', {
+                          count: financialTimelineSummary.history.count,
+                          total: formatCurrency(financialTimelineSummary.history.total),
+                        })}
                   </p>
-                )}
-              </section>
+
+                  {((activeFinancialEventsTab === 'present' ? financialTimelineSections.present : financialTimelineSections.history).length === 0) ? (
+                    <p className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-2 text-sm text-muted-foreground">
+                      {activeFinancialEventsTab === 'present' ? t('items.detail.ledger.currentUpcomingEmpty') : t('items.detail.ledger.historicalEmpty')}
+                    </p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {(activeFinancialEventsTab === 'present' ? financialTimelineSections.present : financialTimelineSections.history).map((event) => {
+                        const projected = isProjectedEvent(event)
+                        const overdue = isOverduePendingEvent(event, toStartOfTodayUtc())
+
+                        return (
+                          <li
+                            key={event.id}
+                            className={`rounded-xl border px-3 py-2 ${
+                              overdue
+                                ? 'border-red-300 bg-red-50/60'
+                                : projected
+                                  ? 'border-sky-200 bg-sky-50/40'
+                                  : 'border-border bg-background/80'
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-medium">{event.type}</p>
+                              <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${projected ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-border bg-background text-foreground'}`}>
+                                {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
+                              </span>
+                              <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
+                              {overdue ? (
+                                <span className="rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">{t('dashboard.overdue')}</span>
+                              ) : null}
+                              {event.is_exception ? (
+                                <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                                  {t('events.stateLegend.editedOccurrence')}
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">{formatDateLabel(event.due_date)}</p>
+                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-sm font-medium">{formatEventAmount(event, detailAsItem) ?? t('events.amountPending')}</span>
+                              <div className="flex items-center gap-2">
+                                <EditEventRowAction
+                                  eventId={event.id}
+                                  itemId={event.item_id}
+                                  eventStatus={event.status}
+                                  dueDate={event.due_date}
+                                  amount={event.amount}
+                                  isProjected={projected}
+                                />
+                                <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
+                              </div>
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </section>
