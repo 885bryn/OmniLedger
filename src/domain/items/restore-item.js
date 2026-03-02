@@ -8,6 +8,12 @@ const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
   "user_id",
   "item_type",
+  "title",
+  "type",
+  "frequency",
+  "default_amount",
+  "status",
+  "linked_asset_item_id",
   "attributes",
   "parent_item_id",
   "created_at",
@@ -62,7 +68,7 @@ function normalizeInput(input) {
 
   if (issues.length > 0) {
     throw new ItemQueryError({
-      message: "Item delete request is invalid.",
+      message: "Item restore request is invalid.",
       category: ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
       issues
     });
@@ -70,7 +76,6 @@ function normalizeInput(input) {
 
   return {
     itemId: payload.itemId,
-    cascadeDeleteIds: Array.isArray(payload.cascadeDeleteIds) ? payload.cascadeDeleteIds.filter((value) => typeof value === "string" && value.trim() !== "") : [],
     scope,
     actorUserId: ownerUserId,
     now: payload.now instanceof Date ? payload.now : payload.now ? new Date(payload.now) : new Date()
@@ -105,9 +110,26 @@ function getDeletedAt(item) {
   return Number.isNaN(new Date(deletedAt).getTime()) ? null : deletedAt;
 }
 
+function getDeletedWithParentId(item) {
+  const attrs = isPlainObject(item.attributes) ? item.attributes : {};
+  const parentId = attrs._deleted_with_parent_id;
+  return typeof parentId === "string" && parentId.trim() !== "" ? parentId.trim() : null;
+}
+
+function clearDeletedMarkers(item) {
+  const nextAttributes = {
+    ...(isPlainObject(item.attributes) ? item.attributes : {})
+  };
+
+  delete nextAttributes._deleted_at;
+  delete nextAttributes._deleted_by;
+  delete nextAttributes._deleted_with_parent_id;
+  item.attributes = nextAttributes;
+}
+
 function throwNotFound(itemId) {
   throw new ItemQueryError({
-    message: "Item delete target not found.",
+    message: "Item restore target not found.",
     category: ITEM_QUERY_ERROR_CATEGORIES.NOT_FOUND,
     issues: [
       {
@@ -137,48 +159,7 @@ function throwForbidden(itemId, actorUserId) {
   });
 }
 
-function resolveParentLinkId(item) {
-  if (!item) {
-    return null;
-  }
-
-  if (typeof item.parent_item_id === "string" && item.parent_item_id.trim() !== "") {
-    return item.parent_item_id.trim();
-  }
-
-  if (typeof item.linked_asset_item_id === "string" && item.linked_asset_item_id.trim() !== "") {
-    return item.linked_asset_item_id.trim();
-  }
-
-  const attrs = isPlainObject(item.attributes) ? item.attributes : {};
-  if (typeof attrs.parentItemId === "string" && attrs.parentItemId.trim() !== "") {
-    return attrs.parentItemId.trim();
-  }
-
-  if (typeof attrs.linkedAssetItemId === "string" && attrs.linkedAssetItemId.trim() !== "") {
-    return attrs.linkedAssetItemId.trim();
-  }
-
-  return null;
-}
-
-function markDeleted(item, actorUserId, deletedAt, parentId = null) {
-  const nextAttributes = {
-    ...(isPlainObject(item.attributes) ? item.attributes : {}),
-    _deleted_at: deletedAt,
-    _deleted_by: actorUserId
-  };
-
-  if (parentId) {
-    nextAttributes._deleted_with_parent_id = parentId;
-  } else {
-    delete nextAttributes._deleted_with_parent_id;
-  }
-
-  item.attributes = nextAttributes;
-}
-
-async function softDeleteItem(input) {
+async function restoreItem(input) {
   const payload = normalizeInput(input);
 
   return sequelize.transaction(async (transaction) => {
@@ -194,62 +175,65 @@ async function softDeleteItem(input) {
 
     const targetOwnerUserId = item.user_id;
 
-    const deletedAt = payload.now.toISOString();
-    const isAssetParent = item.item_type === "RealEstate" || item.item_type === "Vehicle";
-
-    const cascadeTargets = [];
-    if (isAssetParent && payload.cascadeDeleteIds.length > 0) {
-      for (const childId of payload.cascadeDeleteIds) {
-        if (childId === item.id) {
-          continue;
-        }
-
-        const child = await models.Item.findByPk(childId, { transaction });
-        if (!child || child.user_id !== targetOwnerUserId) {
-          continue;
-        }
-
-        if (resolveParentLinkId(child) !== item.id) {
-          continue;
-        }
-
-        if (getDeletedAt(child)) {
-          continue;
-        }
-
-        markDeleted(child, payload.actorUserId, deletedAt, item.id);
-        await child.save({ transaction });
-        cascadeTargets.push(child);
-      }
-    }
-
     const existingDeletedAt = getDeletedAt(item);
     if (!existingDeletedAt) {
-      markDeleted(item, payload.actorUserId, deletedAt);
-      await item.save({ transaction });
+      return {
+        ...toCanonicalItem(item),
+        restored_at: null,
+        was_deleted: false
+      };
+    }
+
+    clearDeletedMarkers(item);
+
+    await item.save({ transaction });
+
+    const restoredCascadeTargets = [];
+    const children = await models.Item.findAll({
+      where: {
+        user_id: targetOwnerUserId
+      },
+      transaction
+    });
+
+    for (const child of children) {
+      if (child.id === item.id) {
+        continue;
+      }
+
+      if (!getDeletedAt(child)) {
+        continue;
+      }
+
+      if (getDeletedWithParentId(child) !== item.id) {
+        continue;
+      }
+
+      clearDeletedMarkers(child);
+      await child.save({ transaction });
+      restoredCascadeTargets.push(child);
     }
 
     const attribution = resolveAuditAttribution(payload);
-
     await models.AuditLog.create(
       {
         user_id: attribution.actorUserId,
         actor_user_id: attribution.actorUserId,
         lens_user_id: attribution.lensUserId,
-        action: "item.deleted",
+        action: "item.restored",
         entity: `item:${item.id}`,
         timestamp: payload.now
       },
       { transaction }
     );
 
-    for (const child of cascadeTargets) {
+    for (const child of restoredCascadeTargets) {
       await models.AuditLog.create(
         {
           user_id: attribution.actorUserId,
           actor_user_id: attribution.actorUserId,
           lens_user_id: attribution.lensUserId,
-          action: "item.deleted",
+          action: "item.restored",
           entity: `item:${child.id}`,
           timestamp: payload.now
         },
@@ -259,13 +243,13 @@ async function softDeleteItem(input) {
 
     return {
       ...toCanonicalItem(item),
-      deleted_at: existingDeletedAt || deletedAt,
-      is_deleted: true,
-      cascade_deleted_ids: cascadeTargets.map((target) => target.id)
+      restored_at: payload.now.toISOString(),
+      was_deleted: true,
+      cascade_restored_ids: restoredCascadeTargets.map((target) => target.id)
     };
   });
 }
 
 module.exports = {
-  softDeleteItem
+  restoreItem
 };

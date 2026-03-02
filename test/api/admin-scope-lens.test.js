@@ -69,6 +69,25 @@ describe("admin scope lens enforcement", () => {
     });
   }
 
+  async function createFinancialItem(userId, parentItemId, amount, dueDate = "2026-08-10") {
+    return models.Item.create({
+      user_id: userId,
+      item_type: "FinancialItem",
+      parent_item_id: parentItemId,
+      linked_asset_item_id: parentItemId,
+      title: `Scope commitment ${amount}`,
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: amount,
+      status: "Active",
+      attributes: {
+        amount,
+        dueDate,
+        financialSubtype: "Commitment"
+      }
+    });
+  }
+
   async function signIn(agent, email, password) {
     const login = await agent.post("/auth/login").send({ email, password });
     expect(login.status).toBe(200);
@@ -236,5 +255,72 @@ describe("admin scope lens enforcement", () => {
     expect(listWithOverride.status).toBe(200);
     expect(listWithOverride.body.total_count).toBe(1);
     expect(listWithOverride.body.items[0].user_id).toBe(owner.id);
+  });
+
+  it("allows admin all-mode item net-status and mutate actions across owners", async () => {
+    const admin = await createUser({ email: "admin@example.com" });
+    const owner = await createUser({ email: "cross-owner@example.com" });
+    const ownerItem = await createItem(owner.id, { address: "Cross Owner House", estimatedValue: 415000 });
+    const ownerCommitment = await createFinancialItem(owner.id, ownerItem.id, 375, "2026-09-01");
+
+    const agent = request.agent(app);
+    await signIn(agent, admin.email, admin.password);
+
+    const netStatus = await agent.get(`/items/${ownerItem.id}/net-status`);
+    expect(netStatus.status).toBe(200);
+    expect(netStatus.body.child_commitments.map((row) => row.id)).toContain(ownerCommitment.id);
+
+    const patched = await agent.patch(`/items/${ownerItem.id}`).send({
+      attributes: { estimatedValue: 430000 }
+    });
+    expect(patched.status).toBe(200);
+    expect(patched.body.user_id).toBe(owner.id);
+    expect(patched.body.attributes.estimatedValue).toBe(430000);
+
+    const deleted = await agent.delete(`/items/${ownerItem.id}`);
+    expect(deleted.status).toBe(200);
+    expect(deleted.body.is_deleted).toBe(true);
+
+    const restored = await agent.patch(`/items/${ownerItem.id}/restore`);
+    expect(restored.status).toBe(200);
+    expect(restored.body.was_deleted).toBe(true);
+    expect(restored.body.attributes._deleted_at).toBeUndefined();
+  });
+
+  it("enforces admin owner-lens boundaries for net-status and item mutation", async () => {
+    const admin = await createUser({ email: "admin@example.com" });
+    const ownerA = await createUser({ email: "lens-owner-a@example.com" });
+    const ownerB = await createUser({ email: "lens-owner-b@example.com" });
+    const ownerAItem = await createItem(ownerA.id, { address: "Lens A House" });
+    const ownerBItem = await createItem(ownerB.id, { address: "Lens B House" });
+    await createFinancialItem(ownerA.id, ownerAItem.id, 250, "2026-10-01");
+
+    const agent = request.agent(app);
+    await signIn(agent, admin.email, admin.password);
+
+    const setLens = await agent.patch("/auth/admin-scope").send({
+      mode: "owner",
+      lens_user_id: ownerA.id
+    });
+    expect(setLens.status).toBe(200);
+
+    const allowedNetStatus = await agent.get(`/items/${ownerAItem.id}/net-status`);
+    expect(allowedNetStatus.status).toBe(200);
+
+    const deniedNetStatus = await agent.get(`/items/${ownerBItem.id}/net-status`);
+    expect(deniedNetStatus.status).toBe(404);
+    expect(deniedNetStatus.body.error).toMatchObject({
+      code: "item_net_status_failed",
+      category: "not_found"
+    });
+
+    const deniedPatch = await agent.patch(`/items/${ownerBItem.id}`).send({
+      attributes: { estimatedValue: 275000 }
+    });
+    expect(deniedPatch.status).toBe(404);
+    expect(deniedPatch.body.error).toMatchObject({
+      code: "item_query_failed",
+      category: "not_found"
+    });
   });
 });

@@ -7,6 +7,7 @@ const { getItemNetStatus } = require("../../domain/items/get-item-net-status");
 const { listItems } = require("../../domain/items/list-items");
 const { updateItem } = require("../../domain/items/update-item");
 const { softDeleteItem } = require("../../domain/items/soft-delete-item");
+const { restoreItem } = require("../../domain/items/restore-item");
 const { getItemActivity } = require("../../domain/items/get-item-activity");
 
 function parseBoolean(value) {
@@ -61,7 +62,7 @@ function createItemsRouter() {
     try {
       const netStatus = await getItemNetStatus({
         itemId: req.params.id,
-        actorUserId: req.actor.userId
+        scope: req.scope
       });
 
       res.status(200).json(netStatus);
@@ -75,7 +76,9 @@ function createItemsRouter() {
       const updated = await updateItem({
         itemId: req.params.id,
         scope: req.scope,
-        attributes: req.body && req.body.attributes
+        attributes: req.body && req.body.attributes,
+        type: req.body && req.body.type,
+        frequency: req.body && req.body.frequency
       });
 
       res.status(200).json(updated);
@@ -86,12 +89,31 @@ function createItemsRouter() {
 
   router.delete("/items/:id", async (req, res, next) => {
     try {
+      const payload = req.body && typeof req.body === "object" ? req.body : {};
+      const cascadeDeleteIds = Array.isArray(payload.cascade_delete_ids)
+        ? payload.cascade_delete_ids.filter((value) => typeof value === "string" && value.trim() !== "")
+        : [];
+
       const deleted = await softDeleteItem({
         itemId: req.params.id,
+        cascadeDeleteIds,
         scope: req.scope
       });
 
       res.status(200).json(deleted);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.patch("/items/:id/restore", async (req, res, next) => {
+    try {
+      const restored = await restoreItem({
+        itemId: req.params.id,
+        scope: req.scope
+      });
+
+      res.status(200).json(restored);
     } catch (error) {
       next(error);
     }

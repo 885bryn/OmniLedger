@@ -1,8 +1,9 @@
 "use strict";
 
-const { Op } = require("sequelize");
 const { models } = require("../../db");
+const { canAccessOwner } = require("../../api/auth/scope-context");
 const { ItemNetStatusError, ITEM_NET_STATUS_ERROR_CATEGORIES } = require("./item-net-status-errors");
+const { applyComputedFinancialProgress } = require("./financial-metrics");
 
 const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
@@ -21,7 +22,7 @@ const CANONICAL_ITEM_FIELDS = Object.freeze([
 ]);
 
 const ROOT_ITEM_TYPES = new Set(["RealEstate", "Vehicle"]);
-const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome", "FinancialItem"]);
+const CASHFLOW_ITEM_TYPES = new Set(["FinancialItem"]);
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
@@ -140,6 +141,54 @@ function resolveSummaryAmount(item) {
   return toValidAmount(item.default_amount);
 }
 
+function normalizeLower(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function isIncomeItem(child) {
+  if (!child) {
+    return false;
+  }
+
+  if (child.item_type !== "FinancialItem") {
+    return false;
+  }
+
+  const explicitSubtype = normalizeLower(child.type);
+  if (explicitSubtype === "income") {
+    return true;
+  }
+
+  const attributes = isPlainObject(child.attributes) ? child.attributes : {};
+  const attributeSubtype = normalizeLower(attributes.financialSubtype || attributes.type);
+  return attributeSubtype === "income";
+}
+
+function resolveParentLinkId(item) {
+  if (!item) {
+    return null;
+  }
+
+  if (typeof item.parent_item_id === "string" && item.parent_item_id.length > 0) {
+    return item.parent_item_id;
+  }
+
+  if (typeof item.linked_asset_item_id === "string" && item.linked_asset_item_id.length > 0) {
+    return item.linked_asset_item_id;
+  }
+
+  const attributes = isPlainObject(item.attributes) ? item.attributes : {};
+  if (typeof attributes.parentItemId === "string" && attributes.parentItemId.length > 0) {
+    return attributes.parentItemId;
+  }
+
+  if (typeof attributes.linkedAssetItemId === "string" && attributes.linkedAssetItemId.length > 0) {
+    return attributes.linkedAssetItemId;
+  }
+
+  return null;
+}
+
 function buildSummary(childCommitments) {
   return childCommitments.reduce(
     (summary, child) => {
@@ -150,7 +199,7 @@ function buildSummary(childCommitments) {
         return summary;
       }
 
-      if (child.item_type === "FinancialIncome") {
+      if (isIncomeItem(child)) {
         summary.monthly_income_total += amount;
       } else {
         summary.monthly_obligation_total += amount;
@@ -219,15 +268,17 @@ function throwWrongRootType(rootType) {
   });
 }
 
-async function getItemNetStatus({ itemId, actorUserId }) {
+async function getItemNetStatus({ itemId, scope, actorUserId }) {
+  const scopeContext = scope && typeof scope === "object" ? scope : { actorUserId };
+  const resolvedActorUserId = typeof scopeContext.actorUserId === "string" ? scopeContext.actorUserId : actorUserId;
   const rootItem = await models.Item.findByPk(itemId);
 
   if (!rootItem) {
     throwNotFound(itemId);
   }
 
-  if (rootItem.user_id !== actorUserId) {
-    throwForbidden(itemId, actorUserId);
+  if (!canAccessOwner(scopeContext, rootItem.user_id)) {
+    throwForbidden(itemId, resolvedActorUserId);
   }
 
   if (isSoftDeleted(rootItem)) {
@@ -240,14 +291,13 @@ async function getItemNetStatus({ itemId, actorUserId }) {
 
   const childRows = await models.Item.findAll({
     where: {
-      [Op.or]: [{ parent_item_id: rootItem.id }, { linked_asset_item_id: rootItem.id }],
       user_id: rootItem.user_id
     }
   });
 
-  const canonicalChildren = childRows
-    .map(toCanonicalItem)
+  const canonicalChildren = (await applyComputedFinancialProgress(childRows.map(toCanonicalItem), models))
     .filter((child) => CASHFLOW_ITEM_TYPES.has(child.item_type))
+    .filter((child) => resolveParentLinkId(child) === rootItem.id)
     .filter((child) => !isSoftDeleted(child));
 
   const childCommitments = sortChildCommitments(canonicalChildren);

@@ -1,8 +1,12 @@
 "use strict";
 
 const { sequelize, models } = require("../../db");
+const { canAccessOwner } = require("../../api/auth/scope-context");
 const { ItemQueryError, ITEM_QUERY_ERROR_CATEGORIES } = require("./item-query-errors");
 const { syncItemEvent } = require("./item-event-sync");
+
+const FINANCIAL_SUBTYPES = new Set(["Commitment", "Income"]);
+const FINANCIAL_FREQUENCIES = new Set(["one_time", "weekly", "monthly", "yearly"]);
 
 const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
@@ -52,6 +56,8 @@ function normalizeInput(input) {
       ? payload.actorUserId.trim()
       : "";
   const issues = [];
+  const subtype = typeof payload.type === "string" ? payload.type.trim() : "";
+  const frequency = typeof payload.frequency === "string" ? payload.frequency.trim().toLowerCase() : "";
 
   if (typeof payload.itemId !== "string" || payload.itemId.trim() === "") {
     issues.push({
@@ -80,6 +86,24 @@ function normalizeInput(input) {
     });
   }
 
+  if (subtype && !FINANCIAL_SUBTYPES.has(subtype)) {
+    issues.push({
+      field: "type",
+      code: "invalid_financial_subtype",
+      category: ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
+      message: "type must be one of: Commitment, Income."
+    });
+  }
+
+  if (frequency && !FINANCIAL_FREQUENCIES.has(frequency)) {
+    issues.push({
+      field: "frequency",
+      code: "invalid_financial_frequency",
+      category: ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
+      message: "frequency must be one of: one_time, weekly, monthly, yearly."
+    });
+  }
+
   if (issues.length > 0) {
     throw new ItemQueryError({
       message: "Item update request is invalid.",
@@ -93,12 +117,27 @@ function normalizeInput(input) {
     scope,
     actorUserId: ownerUserId,
     attributes: payload.attributes,
+    type: subtype || null,
+    frequency: frequency || null,
     now: payload.now instanceof Date ? payload.now : payload.now ? new Date(payload.now) : new Date()
   };
 }
 
 function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function toFiniteNumber(value) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
 }
 
 function resolveAuditAttribution(payload) {
@@ -162,6 +201,38 @@ function throwInvalidState(itemId) {
   });
 }
 
+function throwInvalidSubtypeUsage(itemId) {
+  throw new ItemQueryError({
+    message: "Financial subtype can only be changed for FinancialItem records.",
+    category: ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
+    issues: [
+      {
+        field: "type",
+        code: "invalid_financial_subtype_target",
+        category: ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
+        message: "type updates are only supported for FinancialItem records.",
+        meta: { itemId }
+      }
+    ]
+  });
+}
+
+function throwInvalidFrequencyUsage(itemId) {
+  throw new ItemQueryError({
+    message: "Financial frequency can only be changed for FinancialItem records.",
+    category: ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
+    issues: [
+      {
+        field: "frequency",
+        code: "invalid_financial_frequency_target",
+        category: ITEM_QUERY_ERROR_CATEGORIES.INVALID_REQUEST,
+        message: "frequency updates are only supported for FinancialItem records.",
+        meta: { itemId }
+      }
+    ]
+  });
+}
+
 async function updateItem(input) {
   const payload = normalizeInput(input);
 
@@ -172,7 +243,7 @@ async function updateItem(input) {
       throwNotFound(payload.itemId);
     }
 
-    if (item.user_id !== payload.actorUserId) {
+    if (!canAccessOwner(payload.scope, item.user_id)) {
       throwForbidden(payload.itemId, payload.actorUserId);
     }
 
@@ -180,10 +251,66 @@ async function updateItem(input) {
       throwInvalidState(payload.itemId);
     }
 
+    if (payload.type && item.item_type !== "FinancialItem") {
+      throwInvalidSubtypeUsage(payload.itemId);
+    }
+
+    if (payload.frequency && item.item_type !== "FinancialItem") {
+      throwInvalidFrequencyUsage(payload.itemId);
+    }
+
     item.attributes = {
       ...(isPlainObject(item.attributes) ? item.attributes : {}),
       ...payload.attributes
     };
+
+    if (payload.type) {
+      item.type = payload.type;
+      item.attributes = {
+        ...item.attributes,
+        financialSubtype: payload.type
+      };
+    }
+
+    if (payload.frequency) {
+      item.frequency = payload.frequency;
+      item.attributes = {
+        ...item.attributes,
+        billingCycle: payload.frequency
+      };
+    }
+
+    if (item.item_type === "FinancialItem") {
+      const attributes = isPlainObject(item.attributes) ? { ...item.attributes } : {};
+      const recurring = typeof item.frequency === "string" && item.frequency !== "one_time";
+      const normalizedAmount = toFiniteNumber(attributes.amount) ?? toFiniteNumber(attributes.nextPaymentAmount);
+
+      if (normalizedAmount !== null) {
+        attributes.amount = normalizedAmount;
+        item.default_amount = normalizedAmount;
+      }
+
+      delete attributes.nextPaymentAmount;
+
+      if (recurring && attributes.dynamicTrackingEnabled === undefined) {
+        attributes.dynamicTrackingEnabled = true;
+      }
+
+      const subtype = item.type || attributes.financialSubtype;
+
+      if (recurring && subtype === "Commitment" && attributes.trackingStartingRemainingBalance === undefined) {
+        const startingRemaining = toFiniteNumber(attributes.remainingBalance) ?? toFiniteNumber(attributes.originalPrincipal);
+        if (startingRemaining !== null) {
+          attributes.trackingStartingRemainingBalance = startingRemaining;
+        }
+      }
+
+      if (recurring && subtype === "Income" && attributes.trackingStartingCollectedTotal === undefined) {
+        attributes.trackingStartingCollectedTotal = toFiniteNumber(attributes.collectedTotal) ?? 0;
+      }
+
+      item.attributes = attributes;
+    }
 
     await item.save({ transaction });
     await syncItemEvent({ item, models, transaction });

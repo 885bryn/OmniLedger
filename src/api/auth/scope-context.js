@@ -9,6 +9,10 @@ function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeScope(scopeInput) {
+  return scopeInput && typeof scopeInput === "object" ? scopeInput : {};
+}
+
 function normalizeActorRole(role) {
   return role === ROLE_ADMIN ? ROLE_ADMIN : ROLE_USER;
 }
@@ -77,7 +81,7 @@ function buildScopeContext(input) {
 }
 
 function resolveOwnerFilter(scopeInput) {
-  const scope = scopeInput && typeof scopeInput === "object" ? scopeInput : {};
+  const scope = normalizeScope(scopeInput);
   const actorRole = normalizeActorRole(scope.actorRole);
   const actorUserId = normalizeString(scope.actorUserId);
 
@@ -94,11 +98,35 @@ function resolveOwnerFilter(scopeInput) {
   return lensUserId || null;
 }
 
+function canAccessOwner(scopeInput, ownerUserIdInput) {
+  const ownerUserId = normalizeString(ownerUserIdInput);
+  if (!ownerUserId) {
+    return false;
+  }
+
+  const scope = normalizeScope(scopeInput);
+  const actorRole = normalizeActorRole(scope.actorRole);
+
+  if (actorRole !== ROLE_ADMIN) {
+    const actorUserId = normalizeString(scope.actorUserId);
+    return actorUserId !== "" && actorUserId === ownerUserId;
+  }
+
+  const mode = normalizeMode(scope.mode);
+  if (mode === SCOPE_MODE_ALL) {
+    return true;
+  }
+
+  const lensUserId = normalizeString(scope.lensUserId);
+  return lensUserId !== "" && lensUserId === ownerUserId;
+}
+
 module.exports = {
   ROLE_ADMIN,
   ROLE_USER,
   SCOPE_MODE_ALL,
   SCOPE_MODE_OWNER,
   buildScopeContext,
+  canAccessOwner,
   resolveOwnerFilter
 };
