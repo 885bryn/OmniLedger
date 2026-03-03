@@ -28,11 +28,11 @@
 ### Workbook Usability
 
 - [ ] **XLSX-01**: Each export sheet has frozen headers and auto-filter enabled by default.
-- [ ] **XLSX-02**: Date/time columns use app locale/timezone preference behavior (or deterministic fallback when preference is unavailable).
+- [x] **XLSX-02**: Date/time columns use app locale/timezone preference behavior (or deterministic fallback when preference is unavailable).
 
 ### Security and Auditability
 
-- [ ] **SECU-01**: Export output sanitizes cell values that could trigger spreadsheet formula execution.
+- [x] **SECU-01**: Export output sanitizes cell values that could trigger spreadsheet formula execution.
 - [ ] **SECU-02**: Export actions are audit-visible with actor/lens attribution.
 
 ### Frontend UX
@@ -78,8 +78,8 @@ Traceability for milestone v3.0 is mapped to roadmap phases 14-18.
 | RELA-01 | Phase 15 | Complete |
 | RELA-02 | Phase 16 | Complete |
 | XLSX-01 | Phase 17 | Pending |
-| XLSX-02 | Phase 17 | Pending |
-| SECU-01 | Phase 17 | Pending |
+| XLSX-02 | Phase 17 | Complete |
+| SECU-01 | Phase 17 | Complete |
 | SECU-02 | Phase 18 | Pending |
 | UXEX-01 | Phase 14 | Complete |
 | UXEX-02 | Phase 18 | Pending |

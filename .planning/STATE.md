@@ -6,16 +6,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-02)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v3.0 Data Portability execution (Phase 16 complete, Phase 17 pending)
+**Current focus:** Milestone v3.0 Data Portability execution (Phase 17 in progress)
 
 ## Current Position
 
-Phase: 16 of 18 (Event History and Downloadable Workbook)
-Plan: 3 of 3
+Phase: 17 of 18 (Workbook Safety and Usability Defaults)
+Plan: 1 of 2
 Status: In Progress
-Last activity: 2026-03-03 - Completed 16-03 frontend blob-download UX, feedback copy, and binary export action regressions
+Last activity: 2026-03-03 - Completed 17-01 centralized workbook export safety boundary and deterministic date policy regressions
 
-Progress: [████░░░░░░] 22%
+Progress: [█████░░░░░] 28%
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Progress: [████░░░░░░] 22%
 | Phase 16 P01 | 2 min | 3 tasks | 3 files |
 | Phase 16 P02 | 4 min | 3 tasks | 6 files |
 | Phase 16 P03 | 3 min | 3 tasks | 5 files |
+| Phase 17 P01 | 5 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting current work:
 - [Phase 16]: Locked export scope regressions by parsing downloaded workbook bytes and asserting sheet/row membership for owner, all-data, and lens modes.
 - [Phase 16]: Frontend export uses credentialed fetch + blob download with Content-Disposition filename parsing for real XLSX downloads.
 - [Phase 16]: UserSwitcher shows fixed actionable retry guidance for export failures instead of raw transport errors.
+- [Phase 17]: Applied workbook string sanitization at projection-time in projectColumns so every emitted sheet cell follows one formula-hardening policy.
+- [Phase 17]: Resolved export date preferences once per workbook build and applied a deterministic fallback policy when preferences are missing or invalid.
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03 13:10
-Stopped at: Phase 17 context gathered
-Resume file: .planning/phases/17-workbook-safety-and-usability-defaults/17-CONTEXT.md
+Last session: 2026-03-03 22:25
+Stopped at: Completed 17-01-PLAN.md
+Resume file: None

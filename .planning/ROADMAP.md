@@ -77,7 +77,11 @@ Plans:
   1. Every exported sheet opens with frozen headers and auto-filter enabled.
   2. Date/time columns reflect app locale/timezone preference behavior, with deterministic fallback when unavailable.
   3. Cell values that could execute spreadsheet formulas are sanitized in export output.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 17-01-PLAN.md - Add centralized export safety and deterministic date policy at workbook model boundary.
+- [ ] 17-02-PLAN.md - Wire preference-aware export context and lock serializer/API workbook usability regressions.
 
 ### Phase 18: Export Feedback UX and Audit Visibility
 **Goal**: Users get trustworthy export feedback in-app and administrators can trace export actions by actor and lens context.
@@ -97,5 +101,5 @@ Plans:
 | 14. Export Entry and Scope Enforcement | 2/2 | Complete    | 2026-03-03 |
 | 15. Assets and Contracts Workbook Model | 2/2 | Complete    | 2026-03-03 |
 | 16. Event History and Downloadable Workbook | 3/3 | Complete    | 2026-03-03 |
-| 17. Workbook Safety and Usability Defaults | 0/TBD | Not started | - |
+| 17. Workbook Safety and Usability Defaults | 1/2 | In Progress|  |
 | 18. Export Feedback UX and Audit Visibility | 0/TBD | Not started | - |
