@@ -18,7 +18,7 @@ v3.0 delivers secure, scope-correct ledger portability as downloadable `.xlsx` b
 
 - [x] **Phase 14: Export Entry and Scope Enforcement** - Establish the user entry point and server-authoritative RBAC export scope. (completed 2026-03-03)
 - [x] **Phase 15: Assets and Contracts Workbook Model** - Deliver readable asset and contract sheet contracts with stable relationship references. (completed 2026-03-03)
-- [ ] **Phase 16: Event History and Downloadable Workbook** - Complete event sheet fidelity and stream final three-sheet workbook download.
+- [x] **Phase 16: Event History and Downloadable Workbook** - Complete event sheet fidelity and stream final three-sheet workbook download. (completed 2026-03-03)
 - [ ] **Phase 17: Workbook Safety and Usability Defaults** - Apply spreadsheet-safe sanitization plus usability/date formatting defaults.
 - [ ] **Phase 18: Export Feedback UX and Audit Visibility** - Finalize resilient frontend export states and audit attribution traceability.
 
@@ -96,6 +96,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 14. Export Entry and Scope Enforcement | 2/2 | Complete    | 2026-03-03 |
 | 15. Assets and Contracts Workbook Model | 2/2 | Complete    | 2026-03-03 |
-| 16. Event History and Downloadable Workbook | 2/3 | In Progress|  |
+| 16. Event History and Downloadable Workbook | 3/3 | Complete   | 2026-03-03 |
 | 17. Workbook Safety and Usability Defaults | 0/TBD | Not started | - |
 | 18. Export Feedback UX and Audit Visibility | 0/TBD | Not started | - |
