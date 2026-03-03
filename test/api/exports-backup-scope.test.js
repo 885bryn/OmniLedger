@@ -2,6 +2,7 @@
 
 const request = require("supertest");
 const bcrypt = require("bcryptjs");
+const ExcelJS = require("exceljs");
 
 jest.mock("../../src/db", () => {
   const { Sequelize } = require("sequelize");
@@ -21,6 +22,63 @@ const { createApp } = require("../../src/api/app");
 
 process.env.SESSION_SECRET = "test-session-secret";
 process.env.FRONTEND_ORIGIN = "http://localhost:5173";
+
+function worksheetRowsAsObjects(worksheet) {
+  const header = worksheet.getRow(1).values.slice(1);
+  const rows = [];
+
+  for (let rowIndex = 2; rowIndex <= worksheet.rowCount; rowIndex += 1) {
+    const rowValues = worksheet.getRow(rowIndex).values.slice(1);
+    const rowObject = {};
+
+    header.forEach((columnName, index) => {
+      rowObject[columnName] = rowValues[index] == null ? "" : String(rowValues[index]);
+    });
+
+    rows.push(rowObject);
+  }
+
+  return rows;
+}
+
+async function parseWorkbookResponse(response) {
+  expect(response.headers["content-type"]).toMatch(
+    /application\/vnd.openxmlformats-officedocument.spreadsheetml.sheet/
+  );
+  expect(response.headers["content-disposition"]).toMatch(
+    /attachment; filename="?hact-backup-\d{4}-\d{2}-\d{2}\.xlsx"?/
+  );
+
+  const payload = Buffer.isBuffer(response.body)
+    ? response.body
+    : Buffer.from(response.body || "");
+
+  expect(payload.length).toBeGreaterThan(0);
+
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(payload);
+
+  expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
+    "Assets",
+    "Financial Contracts",
+    "Event History"
+  ]);
+
+  return workbook;
+}
+
+function binaryParser(res, callback) {
+  res.setEncoding("binary");
+  let data = "";
+
+  res.on("data", (chunk) => {
+    data += chunk;
+  });
+
+  res.on("end", () => {
+    callback(null, Buffer.from(data, "binary"));
+  });
+}
 
 describe("exports backup scope enforcement", () => {
   const app = createApp();
@@ -87,15 +145,6 @@ describe("exports backup scope enforcement", () => {
     });
   }
 
-  function expectWorkbookEnvelope(response) {
-    expect(response.body.workbook).toBeDefined();
-    expect(response.body.sheets).toBeDefined();
-    expect(response.body.sheets).toEqual(response.body.workbook.sheets);
-    expect(response.body.workbook.sheets.Assets).toBeDefined();
-    expect(response.body.workbook.sheets["Financial Contracts"]).toBeDefined();
-    return response.body.workbook.sheets;
-  }
-
   async function createEvent(itemId, dueDate) {
     return models.Event.create({
       item_id: itemId,
@@ -138,7 +187,7 @@ describe("exports backup scope enforcement", () => {
     await sequelize.close();
   });
 
-  it("returns only owner-scoped records for standard users", async () => {
+  it("returns only owner-scoped workbook rows for standard users", async () => {
     const owner = await createUser({ email: "owner@example.com" });
     const outsider = await createUser({ email: "outsider@example.com" });
 
@@ -164,40 +213,24 @@ describe("exports backup scope enforcement", () => {
     const agent = request.agent(app);
     await signIn(agent, owner.email, owner.password);
 
-    const response = await agent.get("/exports/backup.xlsx");
+    const response = await agent.get("/exports/backup.xlsx").buffer(true).parse(binaryParser);
 
     expect(response.status).toBe(200);
-    expect(response.body.export.scope.mode).toBe("owner");
-    expect(response.body.export.scope.owner_filter).toBe(owner.id);
-    expect(response.body.datasets.items.total_count).toBe(3);
-    expect(new Set(response.body.datasets.items.rows.map((row) => row.id))).toEqual(
-      new Set([ownerItem.id, ownerContract.id, ownerLegacyContract.id])
+    const workbook = await parseWorkbookResponse(response);
+
+    const assetRows = worksheetRowsAsObjects(workbook.getWorksheet("Assets"));
+    const financialRows = worksheetRowsAsObjects(workbook.getWorksheet("Financial Contracts"));
+    const eventRows = worksheetRowsAsObjects(workbook.getWorksheet("Event History"));
+
+    expect(assetRows.map((row) => row["Asset ID"])).toEqual([ownerItem.id]);
+    expect(new Set(financialRows.map((row) => row["Contract ID"]))).toEqual(
+      new Set([ownerContract.id, ownerLegacyContract.id])
     );
-    expect(response.body.datasets.items.rows.find((row) => row.id === outsiderItem.id)).toBeUndefined();
-    expect(response.body.datasets.events.total_count).toBe(1);
-    expect(response.body.datasets.events.rows.map((row) => row.id)).toEqual([ownerEvent.id]);
-    expect(response.body.datasets.events.rows.find((row) => row.id === outsiderEvent.id)).toBeUndefined();
-
-    const sheets = expectWorkbookEnvelope(response);
-    const assetRows = sheets.Assets.rows;
-    const financialRows = sheets["Financial Contracts"].rows;
-
-    expect(assetRows.map((row) => row.asset_id)).toEqual([ownerItem.id]);
-    expect(financialRows.map((row) => row.owner_user_id)).toEqual([owner.id, owner.id]);
-    expect(financialRows.find((row) => row.contract_id === ownerContract.id)).toMatchObject({
-      linked_asset_item_id: ownerItem.id,
-      linked_asset_title: "N/A",
-      contract_title: "Owner Mortgage"
-    });
-    expect(
-      financialRows.find((row) => row.contract_title === "Owner Legacy Contract")
-    ).toMatchObject({
-      linked_asset_item_id: "00000000-0000-0000-0000-000000000999",
-      linked_asset_title: "UNLINKED"
-    });
+    expect(new Set(eventRows.map((row) => row["Event ID"]))).toEqual(new Set([ownerEvent.id]));
+    expect(new Set(eventRows.map((row) => row["Event ID"]))).not.toContain(outsiderEvent.id);
   });
 
-  it("returns cross-owner records for admin all-data mode", async () => {
+  it("returns cross-owner workbook rows for admin all-data mode", async () => {
     const admin = await createUser({ email: "admin@example.com" });
     const ownerA = await createUser({ email: "owner-a@example.com" });
     const ownerB = await createUser({ email: "owner-b@example.com" });
@@ -219,28 +252,21 @@ describe("exports backup scope enforcement", () => {
     const login = await signIn(agent, admin.email, admin.password);
     expect(login.body.session.scope.mode).toBe("all");
 
-    const response = await agent.get("/exports/backup.xlsx");
+    const response = await agent.get("/exports/backup.xlsx").buffer(true).parse(binaryParser);
 
     expect(response.status).toBe(200);
-    expect(response.body.export.scope.mode).toBe("all");
-    expect(response.body.export.scope.owner_filter).toBeNull();
-    expect(response.body.datasets.items.total_count).toBe(4);
-    expect(new Set(response.body.datasets.items.rows.map((row) => row.id))).toEqual(
-      new Set([ownerAItem.id, ownerBItem.id, ownerAContract.id, ownerBContract.id])
-    );
-    expect(response.body.datasets.events.total_count).toBe(2);
-    expect(new Set(response.body.datasets.events.rows.map((row) => row.id))).toEqual(new Set([ownerAEvent.id, ownerBEvent.id]));
+    const workbook = await parseWorkbookResponse(response);
 
-    const sheets = expectWorkbookEnvelope(response);
-    const assetRows = sheets.Assets.rows;
-    const financialRows = sheets["Financial Contracts"].rows;
+    const assetRows = worksheetRowsAsObjects(workbook.getWorksheet("Assets"));
+    const financialRows = worksheetRowsAsObjects(workbook.getWorksheet("Financial Contracts"));
+    const eventRows = worksheetRowsAsObjects(workbook.getWorksheet("Event History"));
 
-    expect(new Set(assetRows.map((row) => row.asset_id))).toEqual(new Set([ownerAItem.id, ownerBItem.id]));
-    expect(new Set(financialRows.map((row) => row.contract_id))).toEqual(new Set([ownerAContract.id, ownerBContract.id]));
-    expect(new Set(financialRows.map((row) => row.owner_user_id))).toEqual(new Set([ownerA.id, ownerB.id]));
+    expect(new Set(assetRows.map((row) => row["Asset ID"]))).toEqual(new Set([ownerAItem.id, ownerBItem.id]));
+    expect(new Set(financialRows.map((row) => row["Contract ID"]))).toEqual(new Set([ownerAContract.id, ownerBContract.id]));
+    expect(new Set(eventRows.map((row) => row["Event ID"]))).toEqual(new Set([ownerAEvent.id, ownerBEvent.id]));
   });
 
-  it("enforces admin owner-lens filtering for export datasets", async () => {
+  it("enforces admin owner-lens filtering for workbook rows", async () => {
     const admin = await createUser({ email: "admin@example.com" });
     const ownerA = await createUser({ email: "lens-owner-a@example.com" });
     const ownerB = await createUser({ email: "lens-owner-b@example.com" });
@@ -256,7 +282,7 @@ describe("exports backup scope enforcement", () => {
       title: "Lens B Mortgage"
     });
     const ownerAEvent = await createEvent(ownerAItem.id, "2026-09-01T00:00:00.000Z");
-    const ownerBEvent = await createEvent(ownerBItem.id, "2026-09-02T00:00:00.000Z");
+    await createEvent(ownerBItem.id, "2026-09-02T00:00:00.000Z");
 
     const agent = request.agent(app);
     await signIn(agent, admin.email, admin.password);
@@ -266,28 +292,18 @@ describe("exports backup scope enforcement", () => {
     });
     expect(setLens.status).toBe(200);
 
-    const response = await agent.get("/exports/backup.xlsx");
+    const response = await agent.get("/exports/backup.xlsx").buffer(true).parse(binaryParser);
 
     expect(response.status).toBe(200);
-    expect(response.body.export.scope.mode).toBe("owner");
-    expect(response.body.export.scope.lens_user_id).toBe(ownerA.id);
-    expect(response.body.export.scope.owner_filter).toBe(ownerA.id);
-    expect(response.body.datasets.items.total_count).toBe(2);
-    expect(new Set(response.body.datasets.items.rows.map((row) => row.id))).toEqual(
-      new Set([ownerAItem.id, ownerAContract.id])
-    );
-    expect(response.body.datasets.items.rows.find((row) => row.id === ownerBItem.id)).toBeUndefined();
-    expect(response.body.datasets.events.total_count).toBe(1);
-    expect(response.body.datasets.events.rows[0].id).toBe(ownerAEvent.id);
-    expect(response.body.datasets.events.rows.find((row) => row.id === ownerBEvent.id)).toBeUndefined();
+    const workbook = await parseWorkbookResponse(response);
 
-    const sheets = expectWorkbookEnvelope(response);
-    expect(sheets.Assets.rows.map((row) => row.asset_id)).toEqual([ownerAItem.id]);
-    expect(sheets["Financial Contracts"].rows.map((row) => row.contract_id)).toEqual([ownerAContract.id]);
-    expect(sheets["Financial Contracts"].rows[0]).toMatchObject({
-      owner_user_id: ownerA.id,
-      linked_asset_item_id: ownerAItem.id
-    });
+    const assetRows = worksheetRowsAsObjects(workbook.getWorksheet("Assets"));
+    const financialRows = worksheetRowsAsObjects(workbook.getWorksheet("Financial Contracts"));
+    const eventRows = worksheetRowsAsObjects(workbook.getWorksheet("Event History"));
+
+    expect(assetRows.map((row) => row["Asset ID"])).toEqual([ownerAItem.id]);
+    expect(financialRows.map((row) => row["Contract ID"])).toEqual([ownerAContract.id]);
+    expect(eventRows.map((row) => row["Event ID"])).toEqual([ownerAEvent.id]);
   });
 
   it("ignores client query scope overrides for standard users", async () => {
@@ -295,28 +311,41 @@ describe("exports backup scope enforcement", () => {
     const outsider = await createUser({ email: "outsider@example.com" });
     const ownerItem = await createItem(owner.id, { address: "Owner Home" });
     const outsiderItem = await createItem(outsider.id, { address: "Outsider Home" });
+    const ownerContract = await createFinancialContract(owner.id, {
+      linkedAssetItemId: ownerItem.id,
+      title: "Owner Contract"
+    });
+    await createFinancialContract(outsider.id, {
+      linkedAssetItemId: outsiderItem.id,
+      title: "Outsider Contract"
+    });
     const ownerEvent = await createEvent(ownerItem.id, "2026-10-01T00:00:00.000Z");
-    const outsiderEvent = await createEvent(outsiderItem.id, "2026-10-02T00:00:00.000Z");
+    await createEvent(outsiderItem.id, "2026-10-02T00:00:00.000Z");
 
     const agent = request.agent(app);
     await signIn(agent, owner.email, owner.password);
 
-    const response = await agent.get("/exports/backup.xlsx").query({
-      user_id: outsider.id,
-      owner_id: outsider.id,
-      scope_mode: "all",
-      lens_user_id: outsider.id
-    });
+    const response = await agent
+      .get("/exports/backup.xlsx")
+      .buffer(true)
+      .parse(binaryParser)
+      .query({
+        user_id: outsider.id,
+        owner_id: outsider.id,
+        scope_mode: "all",
+        lens_user_id: outsider.id
+      });
 
     expect(response.status).toBe(200);
-    expect(response.body.export.scope.mode).toBe("owner");
-    expect(response.body.export.scope.owner_filter).toBe(owner.id);
-    expect(response.body.datasets.items.total_count).toBe(1);
-    expect(response.body.datasets.items.rows.map((row) => row.id)).toEqual([ownerItem.id]);
-    expect(response.body.datasets.items.rows.find((row) => row.id === outsiderItem.id)).toBeUndefined();
-    expect(response.body.datasets.events.total_count).toBe(1);
-    expect(response.body.datasets.events.rows.map((row) => row.id)).toEqual([ownerEvent.id]);
-    expect(response.body.datasets.events.rows.find((row) => row.id === outsiderEvent.id)).toBeUndefined();
+    const workbook = await parseWorkbookResponse(response);
+
+    const assetRows = worksheetRowsAsObjects(workbook.getWorksheet("Assets"));
+    const financialRows = worksheetRowsAsObjects(workbook.getWorksheet("Financial Contracts"));
+    const eventRows = worksheetRowsAsObjects(workbook.getWorksheet("Event History"));
+
+    expect(assetRows.map((row) => row["Asset ID"])).toEqual([ownerItem.id]);
+    expect(financialRows.map((row) => row["Contract ID"])).toEqual([ownerContract.id]);
+    expect(eventRows.map((row) => row["Event ID"])).toEqual([ownerEvent.id]);
   });
 
   it("ignores client query and body override attempts in admin owner-lens mode", async () => {
@@ -326,8 +355,16 @@ describe("exports backup scope enforcement", () => {
 
     const lensItem = await createItem(lensOwner.id, { address: "Lens Home" });
     const outsiderItem = await createItem(outsider.id, { address: "Outsider Home" });
+    const lensContract = await createFinancialContract(lensOwner.id, {
+      linkedAssetItemId: lensItem.id,
+      title: "Lens Contract"
+    });
+    await createFinancialContract(outsider.id, {
+      linkedAssetItemId: outsiderItem.id,
+      title: "Outsider Contract"
+    });
     const lensEvent = await createEvent(lensItem.id, "2026-11-01T00:00:00.000Z");
-    const outsiderEvent = await createEvent(outsiderItem.id, "2026-11-02T00:00:00.000Z");
+    await createEvent(outsiderItem.id, "2026-11-02T00:00:00.000Z");
 
     const agent = request.agent(app);
     await signIn(agent, admin.email, admin.password);
@@ -339,6 +376,8 @@ describe("exports backup scope enforcement", () => {
 
     const response = await agent
       .get("/exports/backup.xlsx")
+      .buffer(true)
+      .parse(binaryParser)
       .query({
         user_id: outsider.id,
         owner_id: outsider.id,
@@ -353,14 +392,14 @@ describe("exports backup scope enforcement", () => {
       });
 
     expect(response.status).toBe(200);
-    expect(response.body.export.scope.mode).toBe("owner");
-    expect(response.body.export.scope.lens_user_id).toBe(lensOwner.id);
-    expect(response.body.export.scope.owner_filter).toBe(lensOwner.id);
-    expect(response.body.datasets.items.total_count).toBe(1);
-    expect(response.body.datasets.items.rows.map((row) => row.id)).toEqual([lensItem.id]);
-    expect(response.body.datasets.items.rows.find((row) => row.id === outsiderItem.id)).toBeUndefined();
-    expect(response.body.datasets.events.total_count).toBe(1);
-    expect(response.body.datasets.events.rows.map((row) => row.id)).toEqual([lensEvent.id]);
-    expect(response.body.datasets.events.rows.find((row) => row.id === outsiderEvent.id)).toBeUndefined();
+    const workbook = await parseWorkbookResponse(response);
+
+    const assetRows = worksheetRowsAsObjects(workbook.getWorksheet("Assets"));
+    const financialRows = worksheetRowsAsObjects(workbook.getWorksheet("Financial Contracts"));
+    const eventRows = worksheetRowsAsObjects(workbook.getWorksheet("Event History"));
+
+    expect(assetRows.map((row) => row["Asset ID"])).toEqual([lensItem.id]);
+    expect(financialRows.map((row) => row["Contract ID"])).toEqual([lensContract.id]);
+    expect(eventRows.map((row) => row["Event ID"])).toEqual([lensEvent.id]);
   });
 });
