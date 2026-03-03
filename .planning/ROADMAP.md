@@ -85,7 +85,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 14. Export Entry and Scope Enforcement | 2/2 | Complete   | 2026-03-03 |
+| 14. Export Entry and Scope Enforcement | 2/2 | Complete    | 2026-03-03 |
 | 15. Assets and Contracts Workbook Model | 0/TBD | Not started | - |
 | 16. Event History and Downloadable Workbook | 0/TBD | Not started | - |
 | 17. Workbook Safety and Usability Defaults | 0/TBD | Not started | - |
