@@ -73,6 +73,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03 20:03
-Stopped at: Completed 15-02-PLAN.md
-Resume file: None
+Last session: 2026-03-03 12:17
+Stopped at: Phase 16 context gathered
+Resume file: .planning/phases/16-event-history-and-downloadable-workbook/16-CONTEXT.md
