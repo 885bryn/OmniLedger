@@ -388,4 +388,87 @@ describe("workbook model domain transform", () => {
       asset_title: EXPLICIT_MARKERS.notAvailable
     });
   });
+
+  it("enforces cross-sheet sanitization and deterministic date policy behavior", () => {
+    const sharedDatasets = {
+      items: {
+        rows: [
+          {
+            id: "asset-policy",
+            user_id: "owner-1",
+            item_type: "Vehicle",
+            title: "=Injected Asset",
+            status: "active",
+            created_at: new Date("2026-06-01T01:00:00.000Z"),
+            updated_at: "2026-06-01T01:00:00.000Z",
+            attributes: {
+              make: "+Tesla",
+              model: "Model S",
+              year: 2026,
+              nickname: "@House Car"
+            }
+          },
+          {
+            id: "fin-policy",
+            user_id: "owner-1",
+            item_type: "FinancialItem",
+            title: "-Lease",
+            type: "Commitment",
+            frequency: "monthly",
+            status: "Active",
+            linked_asset_item_id: "asset-policy",
+            created_at: "2026-06-01T01:00:00.000Z",
+            updated_at: "2026-06-01T01:00:00.000Z",
+            attributes: {
+              dueDate: "bad-date",
+              amount: 900
+            }
+          }
+        ]
+      },
+      events: {
+        rows: [
+          {
+            id: "event-policy",
+            item_id: "fin-policy",
+            event_type: "payment_due",
+            due_date: "2026-06-01T01:00:00.000Z",
+            amount: 75,
+            status: "scheduled",
+            is_recurring: true,
+            is_exception: false,
+            completed_at: null,
+            owner_user_id: "owner-1",
+            created_at: "2026-06-01T01:00:00.000Z",
+            updated_at: "2026-06-01T01:00:00.000Z"
+          }
+        ]
+      }
+    };
+
+    const fallbackResult = buildWorkbookModel({ datasets: sharedDatasets });
+    const preferredResult = buildWorkbookModel({
+      datasets: sharedDatasets,
+      exportPreferences: {
+        locale: "en-US",
+        timeZone: "America/Los_Angeles"
+      }
+    });
+
+    const fallbackAsset = fallbackResult.sheets.Assets.rows[0];
+    const fallbackFinancial = fallbackResult.sheets["Financial Contracts"].rows[0];
+    const fallbackEvent = fallbackResult.sheets["Event History"].rows[0];
+
+    expect(fallbackAsset.asset_title).toBe("'=Injected Asset");
+    expect(fallbackAsset.make).toBe("'+Tesla");
+    expect(fallbackAsset.attributes_overflow).toContain("@House Car");
+    expect(fallbackAsset.created_at).toBeInstanceOf(Date);
+    expect(fallbackAsset.year).toBe(2026);
+
+    expect(fallbackFinancial.contract_title).toBe("'-Lease");
+    expect(fallbackFinancial.next_due_date).toBe(EXPLICIT_MARKERS.invalidDate);
+
+    expect(fallbackEvent.due_date).toBe("2026-06-01");
+    expect(preferredResult.sheets["Event History"].rows[0].due_date).toBe("2026-05-31");
+  });
 });

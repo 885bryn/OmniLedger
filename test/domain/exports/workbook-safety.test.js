@@ -51,10 +51,16 @@ describe("workbook safety utilities", () => {
       const utcDate = toExportDateCell("2026-06-01T01:00:00.000Z", { timeZone: "UTC" });
       const losAngelesDate = toExportDateCell("2026-06-01T01:00:00.000Z", { timeZone: "America/Los_Angeles" });
 
-      expect(utcDate).toBeInstanceOf(Date);
-      expect(losAngelesDate).toBeInstanceOf(Date);
-      expect(utcDate.toISOString().slice(0, 10)).toBe("2026-06-01");
-      expect(losAngelesDate.toISOString().slice(0, 10)).toBe("2026-05-31");
+      expect(utcDate).toBe("2026-06-01");
+      expect(losAngelesDate).toBe("2026-05-31");
+    });
+
+    it("preserves Date typing when input is already a Date object", () => {
+      const typedInput = new Date("2026-06-01T01:00:00.000Z");
+      const typedOutput = toExportDateCell(typedInput, { timeZone: "UTC" });
+
+      expect(typedOutput).toBeInstanceOf(Date);
+      expect(typedOutput.toISOString().slice(0, 10)).toBe("2026-06-01");
     });
   });
 });
