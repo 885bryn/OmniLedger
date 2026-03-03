@@ -82,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03 20:50
-Stopped at: Completed 16-03-PLAN.md
-Resume file: None
+Last session: 2026-03-03 13:10
+Stopped at: Phase 17 context gathered
+Resume file: .planning/phases/17-workbook-safety-and-usability-defaults/17-CONTEXT.md
