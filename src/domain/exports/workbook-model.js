@@ -2,7 +2,8 @@
 
 const {
   ASSETS_COLUMNS,
-  FINANCIAL_CONTRACT_COLUMNS
+  FINANCIAL_CONTRACT_COLUMNS,
+  EVENT_HISTORY_COLUMNS
 } = require("./workbook-columns");
 const {
   EXPLICIT_MARKERS,
@@ -40,6 +41,12 @@ function normalizeString(value) {
 function getScopedItems(input) {
   const datasets = input && typeof input === "object" && input.datasets ? input.datasets : input;
   const rows = datasets && datasets.items ? datasets.items.rows : [];
+  return Array.isArray(rows) ? rows : [];
+}
+
+function getScopedEvents(input) {
+  const datasets = input && typeof input === "object" && input.datasets ? input.datasets : input;
+  const rows = datasets && datasets.events ? datasets.events.rows : [];
   return Array.isArray(rows) ? rows : [];
 }
 
@@ -89,6 +96,113 @@ function compareStrings(left, right) {
   const leftValue = normalizeString(left) || "";
   const rightValue = normalizeString(right) || "";
   return leftValue.localeCompare(rightValue);
+}
+
+function toComparableTimestamp(value) {
+  if (!value) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? Number.NEGATIVE_INFINITY : date.getTime();
+}
+
+function formatBooleanIndicator(value) {
+  if (value === true) {
+    return "Yes";
+  }
+
+  if (value === false) {
+    return "No";
+  }
+
+  return EXPLICIT_MARKERS.notAvailable;
+}
+
+function resolveEventReferences(event, itemById) {
+  const eventItem = event && event.item_id ? itemById.get(event.item_id) : null;
+
+  if (!eventItem) {
+    return {
+      contractReference: { id: EXPLICIT_MARKERS.notAvailable, label: EXPLICIT_MARKERS.notAvailable },
+      assetReference: { id: EXPLICIT_MARKERS.notAvailable, label: EXPLICIT_MARKERS.notAvailable }
+    };
+  }
+
+  if (eventItem.item_type === FINANCIAL_ITEM_TYPE) {
+    const contractReference = resolveReadableReference(eventItem.id, eventItem);
+    const linkedAssetId = resolveLinkedAssetItemId(eventItem);
+    const linkedAssetRow = linkedAssetId ? itemById.get(linkedAssetId) : null;
+    const assetReference = resolveReadableReference(linkedAssetId, linkedAssetRow);
+
+    return { contractReference, assetReference };
+  }
+
+  if (ASSET_ITEM_TYPES.has(eventItem.item_type)) {
+    const assetReference = resolveReadableReference(eventItem.id, eventItem);
+
+    const parentId = resolveParentItemId(eventItem);
+    const parentRow = parentId ? itemById.get(parentId) : null;
+    const contractReference = parentRow && parentRow.item_type === FINANCIAL_ITEM_TYPE
+      ? resolveReadableReference(parentId, parentRow)
+      : { id: EXPLICIT_MARKERS.notAvailable, label: EXPLICIT_MARKERS.notAvailable };
+
+    return { contractReference, assetReference };
+  }
+
+  return {
+    contractReference: { id: EXPLICIT_MARKERS.notAvailable, label: EXPLICIT_MARKERS.notAvailable },
+    assetReference: { id: EXPLICIT_MARKERS.notAvailable, label: EXPLICIT_MARKERS.notAvailable }
+  };
+}
+
+function compareEventsByNewestFirst(left, right) {
+  const leftLifecycleTimestamp = Math.max(
+    toComparableTimestamp(left.completed_at),
+    toComparableTimestamp(left.due_date),
+    toComparableTimestamp(left.updated_at),
+    toComparableTimestamp(left.created_at)
+  );
+  const rightLifecycleTimestamp = Math.max(
+    toComparableTimestamp(right.completed_at),
+    toComparableTimestamp(right.due_date),
+    toComparableTimestamp(right.updated_at),
+    toComparableTimestamp(right.created_at)
+  );
+
+  const lifecycleDifference = rightLifecycleTimestamp - leftLifecycleTimestamp;
+  if (lifecycleDifference !== 0) {
+    return lifecycleDifference;
+  }
+
+  return compareStrings(left.id, right.id);
+}
+
+function buildEventRows({ events, itemById }) {
+  return [...events]
+    .sort(compareEventsByNewestFirst)
+    .map((event) => {
+      const references = resolveEventReferences(event, itemById);
+
+      return projectColumns(EVENT_HISTORY_COLUMNS, {
+        status: formatEnumLabel(event.status),
+        event_type: formatEnumLabel(event.event_type),
+        due_date: formatDate(event.due_date),
+        completed_at: formatDate(event.completed_at),
+        amount: formatAmount(event.amount),
+        is_recurring: formatBooleanIndicator(event.is_recurring),
+        is_exception: formatBooleanIndicator(event.is_exception),
+        event_id: event.id,
+        item_id: event.item_id,
+        contract_id: references.contractReference.id,
+        contract_title: references.contractReference.label,
+        asset_id: references.assetReference.id,
+        asset_title: references.assetReference.label,
+        owner_user_id: event.owner_user_id,
+        created_at: formatDate(event.created_at),
+        updated_at: formatDate(event.updated_at)
+      });
+    });
 }
 
 function sortAssets(items) {
@@ -218,6 +332,7 @@ function buildFinancialRows({ financialContracts, itemById }) {
 
 function buildWorkbookModel(input) {
   const items = getScopedItems(input);
+  const events = getScopedEvents(input);
   const itemById = new Map(items.map((item) => [item.id, item]));
 
   const assets = items.filter((item) => ASSET_ITEM_TYPES.has(item.item_type));
@@ -225,6 +340,7 @@ function buildWorkbookModel(input) {
 
   const assetRows = buildAssetsRows({ assets, itemById, financialContracts });
   const financialRows = buildFinancialRows({ financialContracts, itemById });
+  const eventRows = buildEventRows({ events, itemById });
 
   return {
     sheets: {
@@ -237,6 +353,11 @@ function buildWorkbookModel(input) {
         columns: FINANCIAL_CONTRACT_COLUMNS,
         total_count: financialRows.length,
         rows: financialRows
+      },
+      "Event History": {
+        columns: EVENT_HISTORY_COLUMNS,
+        total_count: eventRows.length,
+        rows: eventRows
       }
     }
   };
