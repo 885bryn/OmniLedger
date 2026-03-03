@@ -11,8 +11,9 @@ const {
   formatDate,
   formatEnumLabel
 } = require("../../../src/domain/exports/workbook-formatters");
+const { buildWorkbookModel } = require("../../../src/domain/exports/workbook-model");
 
-describe("workbook column contracts and formatter policy", () => {
+describe("workbook model domain transform", () => {
   it("defines frozen deterministic Assets and Financial Contracts column order", () => {
     expect(Object.isFrozen(ASSETS_COLUMNS)).toBe(true);
     expect(Object.isFrozen(FINANCIAL_CONTRACT_COLUMNS)).toBe(true);
@@ -38,5 +39,209 @@ describe("workbook column contracts and formatter policy", () => {
     expect(formatDate("bad-date")).toBe(EXPLICIT_MARKERS.notAvailable);
     expect(flattened.flattened).toEqual({ address: "11 Oak Lane", vin: null });
     expect(flattened.overflowText).toBe('{"unknownA":"a","unknownZ":"z"}');
+  });
+
+  it("builds deterministic Assets and Financial Contracts rows with relationship and marker fidelity", () => {
+    const result = buildWorkbookModel({
+      datasets: {
+        items: {
+          rows: [
+            {
+              id: "asset-1",
+              user_id: "owner-1",
+              item_type: "RealEstate",
+              title: "Oak House",
+              status: "active",
+              created_at: "2026-01-01T00:00:00.000Z",
+              updated_at: "2026-01-02T00:00:00.000Z",
+              attributes: {
+                address: "11 Oak Lane",
+                estimatedValue: 500000,
+                zip: "10001"
+              }
+            },
+            {
+              id: "asset-3",
+              user_id: "owner-1",
+              item_type: "Vehicle",
+              title: "Audi",
+              status: "active",
+              created_at: "2026-01-01T00:00:00.000Z",
+              updated_at: "2026-01-02T00:00:00.000Z",
+              attributes: {
+                vin: "VIN-3",
+                estimatedValue: 25000
+              }
+            },
+            {
+              id: "asset-2",
+              user_id: "owner-1",
+              item_type: "Vehicle",
+              title: "Audi",
+              status: "active",
+              created_at: "2026-01-01T00:00:00.000Z",
+              updated_at: "2026-01-02T00:00:00.000Z",
+              attributes: {
+                vin: "VIN-2",
+                make: "Audi",
+                model: "Q5",
+                year: 2024,
+                estimatedValue: "30000",
+                nickname: "Family SUV"
+              }
+            },
+            {
+              id: "asset-4",
+              user_id: "owner-1",
+              item_type: "Vehicle",
+              title: "Trailer",
+              parent_item_id: "asset-missing",
+              created_at: "2026-01-01T00:00:00.000Z",
+              updated_at: "2026-01-02T00:00:00.000Z",
+              attributes: {
+                vin: "VIN-4"
+              }
+            },
+            {
+              id: "fin-2",
+              user_id: "owner-1",
+              item_type: "FinancialItem",
+              title: "",
+              type: "Income",
+              frequency: "monthly",
+              status: "Active",
+              created_at: "2026-01-10T00:00:00.000Z",
+              updated_at: "2026-01-11T00:00:00.000Z",
+              attributes: {
+                linkedAssetItemId: "asset-2",
+                dueDate: "2026-03-10",
+                amount: 2000,
+                name: "Rental Income"
+              }
+            },
+            {
+              id: "fin-1",
+              user_id: "owner-1",
+              item_type: "FinancialItem",
+              title: "Mortgage",
+              type: "Commitment",
+              frequency: "monthly",
+              status: "Active",
+              default_amount: 1200,
+              linked_asset_item_id: "asset-1",
+              created_at: "2026-01-10T00:00:00.000Z",
+              updated_at: "2026-01-11T00:00:00.000Z",
+              attributes: {
+                dueDate: "2026-03-10",
+                amount: "1200",
+                lender: "Bank Co"
+              }
+            },
+            {
+              id: "fin-0",
+              user_id: "owner-1",
+              item_type: "FinancialItem",
+              title: "Parking",
+              type: "Commitment",
+              frequency: "monthly",
+              status: "Active",
+              linked_asset_item_id: "asset-2",
+              created_at: "2026-01-10T00:00:00.000Z",
+              updated_at: "2026-01-11T00:00:00.000Z",
+              attributes: {
+                dueDate: "2026-03-10",
+                amount: 40
+              }
+            },
+            {
+              id: "fin-3",
+              user_id: "owner-1",
+              item_type: "FinancialItem",
+              title: "Old Note",
+              type: "Commitment",
+              frequency: "one_time",
+              status: "Closed",
+              parent_item_id: "asset-ghost",
+              created_at: "2026-01-10T00:00:00.000Z",
+              updated_at: "2026-01-11T00:00:00.000Z",
+              attributes: {
+                amount: "oops"
+              }
+            }
+          ]
+        }
+      }
+    });
+
+    const assetRows = result.sheets.Assets.rows;
+    const financialRows = result.sheets["Financial Contracts"].rows;
+
+    expect(assetRows.map((row) => row.asset_id)).toEqual(["asset-1", "asset-2", "asset-3", "asset-4"]);
+    expect(financialRows.map((row) => row.contract_id)).toEqual(["fin-0", "fin-1", "fin-2", "fin-3"]);
+
+    assetRows.forEach((row) => {
+      expect(Object.keys(row)).toEqual(ASSETS_COLUMNS.map((column) => column.key));
+    });
+    financialRows.forEach((row) => {
+      expect(Object.keys(row)).toEqual(FINANCIAL_CONTRACT_COLUMNS.map((column) => column.key));
+    });
+
+    expect(assetRows[0]).toMatchObject({
+      asset_type: "Real Estate",
+      asset_title: "Oak House",
+      linked_contract_ids: "fin-1",
+      linked_contract_titles: "Mortgage",
+      status: "Active",
+      estimated_value: "500000.00",
+      attributes_overflow: '{"zip":"10001"}'
+    });
+
+    expect(assetRows[1]).toMatchObject({
+      linked_contract_ids: "fin-0, fin-2",
+      linked_contract_titles: "Parking | Rental Income",
+      estimated_value: "30000.00",
+      attributes_overflow: '{"nickname":"Family SUV"}'
+    });
+
+    expect(assetRows[3]).toMatchObject({
+      parent_item_id: "asset-missing",
+      parent_item_title: EXPLICIT_MARKERS.unresolved,
+      status: EXPLICIT_MARKERS.notAvailable,
+      estimated_value: EXPLICIT_MARKERS.notAvailable
+    });
+
+    expect(financialRows[0]).toMatchObject({
+      linked_asset_item_id: "asset-2",
+      linked_asset_title: "Audi",
+      contract_subtype: "Commitment",
+      frequency: "Monthly",
+      default_amount: "40.00",
+      next_due_date: "2026-03-10"
+    });
+
+    expect(financialRows[1]).toMatchObject({
+      linked_asset_item_id: "asset-1",
+      linked_asset_title: "Oak House",
+      default_amount: "1200.00",
+      attributes_overflow: '{"lender":"Bank Co"}'
+    });
+
+    expect(financialRows[2]).toMatchObject({
+      contract_title: "Rental Income",
+      contract_subtype: "Income",
+      linked_asset_item_id: "asset-2",
+      linked_asset_title: "Audi",
+      default_amount: "2000.00"
+    });
+
+    expect(financialRows[3]).toMatchObject({
+      linked_asset_item_id: "asset-ghost",
+      linked_asset_title: EXPLICIT_MARKERS.unresolved,
+      parent_item_id: "asset-ghost",
+      parent_item_title: EXPLICIT_MARKERS.unresolved,
+      frequency: "One Time",
+      default_amount: EXPLICIT_MARKERS.notAvailable,
+      next_due_date: EXPLICIT_MARKERS.notAvailable
+    });
   });
 });
