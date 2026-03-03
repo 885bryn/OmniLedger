@@ -117,7 +117,7 @@ export function UserSwitcher() {
         {exportBackup.isSuccess ? <span role="status" className="max-w-48 truncate text-[11px] text-emerald-700">{t('shell.exportBackupSuccess')}</span> : null}
         {exportBackup.isError ? (
           <span role="alert" className="max-w-48 truncate text-[11px] text-destructive">
-            {exportBackup.error?.message || t('shell.exportBackupError')}
+            {t('shell.exportBackupError')}
           </span>
         ) : null}
         {updateError ? <span role="alert" className="max-w-48 truncate text-[11px] text-destructive">{updateError}</span> : null}

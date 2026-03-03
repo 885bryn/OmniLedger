@@ -5,8 +5,8 @@
     "identityLabel": "当前会话",
     "exportBackupAction": "导出备份",
     "exportingBackup": "导出中...",
-    "exportBackupSuccess": "已开始导出。",
-    "exportBackupError": "导出失败，请重试。",
+    "exportBackupSuccess": "备份下载已开始，请检查下载文件夹。",
+    "exportBackupError": "导出失败。请检查网络与登录状态后重试。",
     "logoutAction": "退出登录",
     "loggingOut": "退出中..."
   },

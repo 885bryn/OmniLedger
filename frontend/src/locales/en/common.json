@@ -5,8 +5,8 @@
     "identityLabel": "Signed in as",
     "exportBackupAction": "Export Backup",
     "exportingBackup": "Exporting...",
-    "exportBackupSuccess": "Export started.",
-    "exportBackupError": "Export failed. Try again.",
+    "exportBackupSuccess": "Backup download started. Check your downloads folder.",
+    "exportBackupError": "Export failed. Check your connection and session, then try again.",
     "logoutAction": "Log out",
     "loggingOut": "Logging out..."
   },
