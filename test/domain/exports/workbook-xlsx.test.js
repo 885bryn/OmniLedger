@@ -57,6 +57,8 @@ describe("workbook xlsx serializer", () => {
   });
 
   it("applies frozen headers and auto-filter ranges across all sheets", async () => {
+    const typedDate = new Date("2026-02-01T00:00:00.000Z");
+
     const workbookModel = {
       sheets: {
         Assets: {
@@ -65,7 +67,7 @@ describe("workbook xlsx serializer", () => {
             { key: "updated_at", label: "Updated At", order: 2 }
           ],
           rows: [
-            { asset_id: "asset-1", updated_at: "2026-02-01" },
+            { asset_id: "asset-1", updated_at: typedDate },
             { asset_id: "asset-2", updated_at: "2026-02-02" }
           ]
         },
@@ -87,6 +89,10 @@ describe("workbook xlsx serializer", () => {
     const assetSheet = workbook.getWorksheet("Assets");
     expect(assetSheet.views[0]).toEqual(expect.objectContaining({ state: "frozen", ySplit: 1 }));
     expect(assetSheet.autoFilter).toEqual("A1:B3");
+    expect(assetSheet.getCell("B2").value).toBeInstanceOf(Date);
+    expect(assetSheet.getCell("B2").numFmt).toBe("yyyy-mm-dd");
+    expect(assetSheet.getCell("B3").value).toBe("2026-02-02");
+    expect(assetSheet.getCell("B3").numFmt).toBeUndefined();
 
     const contractSheet = workbook.getWorksheet("Financial Contracts");
     expect(contractSheet.views[0]).toEqual(expect.objectContaining({ state: "frozen", ySplit: 1 }));

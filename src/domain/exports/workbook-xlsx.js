@@ -8,6 +8,8 @@ const SHEET_ORDER = Object.freeze([
   "Event History"
 ]);
 
+const DEFAULT_DATE_NUMBER_FORMAT = "yyyy-mm-dd";
+
 function toColumnLetter(columnIndex) {
   let index = Number(columnIndex);
   let letter = "";
@@ -52,6 +54,14 @@ function applySheetDefaults(worksheet, columnCount, rowCount) {
   worksheet.autoFilter = `A1:${lastColumn}${lastRow}`;
 }
 
+function applyDateCellFormatting(row, values) {
+  values.forEach((value, index) => {
+    if (value instanceof Date) {
+      row.getCell(index + 1).numFmt = DEFAULT_DATE_NUMBER_FORMAT;
+    }
+  });
+}
+
 async function serializeWorkbookToXlsx(workbookModel) {
   const workbook = new ExcelJS.Workbook();
   const sheets = workbookModel && typeof workbookModel === "object" ? workbookModel.sheets : null;
@@ -66,7 +76,9 @@ async function serializeWorkbookToXlsx(workbookModel) {
     }
 
     contract.rows.forEach((row) => {
-      worksheet.addRow(contract.columns.map((column) => row[column.key]));
+      const values = contract.columns.map((column) => row[column.key]);
+      const worksheetRow = worksheet.addRow(values);
+      applyDateCellFormatting(worksheetRow, values);
     });
 
     applySheetDefaults(worksheet, contract.columns.length, contract.rows.length);
