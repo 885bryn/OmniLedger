@@ -4,6 +4,7 @@ const express = require("express");
 const { requireAuth } = require("../auth/require-auth");
 const { exportScopeQuery } = require("../../domain/exports/export-scope-query");
 const { buildWorkbookModel } = require("../../domain/exports/workbook-model");
+const { serializeWorkbookToXlsx } = require("../../domain/exports/workbook-xlsx");
 
 function ignoreClientScopeHints(query, body) {
   const queryPayload = query && typeof query === "object" ? query : {};
@@ -47,12 +48,15 @@ function createExportsRouter() {
       });
 
       const workbook = buildWorkbookModel(scopedDataset.datasets);
+      const xlsxBuffer = await serializeWorkbookToXlsx(workbook);
 
-      res.status(200).json({
-        ...scopedDataset,
-        workbook,
-        sheets: workbook.sheets
-      });
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      const fileName = `hact-backup-${dateStamp}.xlsx`;
+
+      res.status(200);
+      res.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.attachment(fileName);
+      res.send(xlsxBuffer);
     } catch (error) {
       next(error);
     }
