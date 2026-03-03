@@ -65,6 +65,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03 08:04
-Stopped at: Completed 14-02-PLAN.md
-Resume file: None
+Last session: 2026-03-03 08:18
+Stopped at: Phase 15 context gathered
+Resume file: .planning/phases/15-assets-and-contracts-workbook-model/15-CONTEXT.md
