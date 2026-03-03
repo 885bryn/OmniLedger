@@ -16,7 +16,7 @@ v3.0 delivers secure, scope-correct ledger portability as downloadable `.xlsx` b
 - Integer phases (14, 15, 16): Planned milestone work
 - Decimal phases (14.1, 14.2): Urgent insertions if needed
 
-- [ ] **Phase 14: Export Entry and Scope Enforcement** - Establish the user entry point and server-authoritative RBAC export scope.
+- [x] **Phase 14: Export Entry and Scope Enforcement** - Establish the user entry point and server-authoritative RBAC export scope. (completed 2026-03-03)
 - [ ] **Phase 15: Assets and Contracts Workbook Model** - Deliver readable asset and contract sheet contracts with stable relationship references.
 - [ ] **Phase 16: Event History and Downloadable Workbook** - Complete event sheet fidelity and stream final three-sheet workbook download.
 - [ ] **Phase 17: Workbook Safety and Usability Defaults** - Apply spreadsheet-safe sanitization plus usability/date formatting defaults.
@@ -36,8 +36,8 @@ v3.0 delivers secure, scope-correct ledger portability as downloadable `.xlsx` b
 **Plans**: 2 plans
 
 Plans:
-- [ ] 14-01-PLAN.md - Establish server-authoritative export scope route and SCOP regression matrix.
-- [ ] 14-02-PLAN.md - Add shell Export Backup entry action with scope-aware trigger tests.
+- [x] 14-01-PLAN.md - Establish server-authoritative export scope route and SCOP regression matrix.
+- [x] 14-02-PLAN.md - Add shell Export Backup entry action with scope-aware trigger tests.
 
 ### Phase 15: Assets and Contracts Workbook Model
 **Goal**: Users get readable `Assets` and `Financial Contracts` sheets with stable relationship context.
@@ -85,7 +85,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 14. Export Entry and Scope Enforcement | 1/2 | In Progress|  |
+| 14. Export Entry and Scope Enforcement | 2/2 | Complete   | 2026-03-03 |
 | 15. Assets and Contracts Workbook Model | 0/TBD | Not started | - |
 | 16. Event History and Downloadable Workbook | 0/TBD | Not started | - |
 | 17. Workbook Safety and Usability Defaults | 0/TBD | Not started | - |

@@ -37,7 +37,7 @@
 
 ### Frontend UX
 
-- [ ] **UXEX-01**: App exposes an `Export Backup` action in a user-facing management surface.
+- [x] **UXEX-01**: App exposes an `Export Backup` action in a user-facing management surface.
 - [ ] **UXEX-02**: Export flow shows loading/progress, success, and actionable failure states.
 
 ## Future Requirements (Deferred)
@@ -81,7 +81,7 @@ Traceability for milestone v3.0 is mapped to roadmap phases 14-18.
 | XLSX-02 | Phase 17 | Pending |
 | SECU-01 | Phase 17 | Pending |
 | SECU-02 | Phase 18 | Pending |
-| UXEX-01 | Phase 14 | Pending |
+| UXEX-01 | Phase 14 | Complete |
 | UXEX-02 | Phase 18 | Pending |
 
 **Coverage:**
