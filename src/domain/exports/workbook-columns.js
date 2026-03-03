@@ -49,7 +49,27 @@ const FINANCIAL_CONTRACT_COLUMNS = createFrozenColumns([
   { key: "attributes_overflow", label: "Attributes Overflow" }
 ]);
 
+const EVENT_HISTORY_COLUMNS = createFrozenColumns([
+  { key: "status", label: "Status" },
+  { key: "event_type", label: "Event Type" },
+  { key: "due_date", label: "Due Date" },
+  { key: "completed_at", label: "Completed At" },
+  { key: "amount", label: "Amount" },
+  { key: "is_recurring", label: "Is Recurring" },
+  { key: "is_exception", label: "Is Exception" },
+  { key: "event_id", label: "Event ID" },
+  { key: "item_id", label: "Item ID" },
+  { key: "contract_id", label: "Contract ID" },
+  { key: "contract_title", label: "Contract Title" },
+  { key: "asset_id", label: "Asset ID" },
+  { key: "asset_title", label: "Asset Title" },
+  { key: "owner_user_id", label: "Owner User ID" },
+  { key: "created_at", label: "Created At" },
+  { key: "updated_at", label: "Updated At" }
+]);
+
 module.exports = {
   ASSETS_COLUMNS,
-  FINANCIAL_CONTRACT_COLUMNS
+  FINANCIAL_CONTRACT_COLUMNS,
+  EVENT_HISTORY_COLUMNS
 };
