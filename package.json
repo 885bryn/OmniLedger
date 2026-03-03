@@ -4,13 +4,16 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "start": "node src/api/server.js",
-    "start:compose": "node src/scripts/startup.js",
+    "start": "node --env-file=.env src/api/server.js",
+    "dev": "node --env-file=.env src/api/server.js",
+    "start:compose": "node --env-file=.env src/scripts/startup.js",
+    "seed:sandbox-user": "node src/scripts/seed-sandbox-user.js",
     "test": "jest --runInBand"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "connect-session-sequelize": "^8.0.5",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
     "express-session": "^1.19.0",
