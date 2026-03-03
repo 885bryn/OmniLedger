@@ -6,14 +6,14 @@ See: `.planning/PROJECT.md` (updated 2026-03-02)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v3.0 Data Portability execution (Phase 16 next)
+**Current focus:** Milestone v3.0 Data Portability execution (Phase 16 in progress)
 
 ## Current Position
 
 Phase: 16 of 18 (Event History and Downloadable Workbook)
-Plan: 0 of TBD
-Status: Ready to Start
-Last activity: 2026-03-03 - Completed 15-02 workbook route wiring and scope-preserving API regressions
+Plan: 1 of 3
+Status: In Progress
+Last activity: 2026-03-03 - Completed 16-01 Event History workbook model and regression coverage
 
 Progress: [██░░░░░░░░] 18%
 
@@ -40,6 +40,7 @@ Progress: [██░░░░░░░░] 18%
 | Phase 14 P02 | 3 min | 2 tasks | 5 files |
 | Phase 15 P01 | 4 min | 3 tasks | 4 files |
 | Phase 15 P02 | 3 min | 2 tasks | 2 files |
+| Phase 16 P01 | 2 min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,8 @@ Recent decisions affecting current work:
 - [Phase 15]: Expose workbook model additively as workbook/sheets while preserving existing datasets keys for backward compatibility.
 - [Phase 15]: Build workbook payload strictly from exportScopeQuery({ scope: req.scope }) datasets to keep Phase 14 trust boundaries unchanged.
 - [Phase 15]: Lock workbook scope behavior in owner/all/lens modes via export API regression assertions.
+- [Phase 16]: Event History ordering uses a composite lifecycle-date newest-first comparator (completed_at/due_date/updated_at/created_at) with event ID tie-break to guarantee deterministic exports.
+- [Phase 16]: Event rows always include ID plus readable contract/asset references and keep UNLINKED markers when link targets cannot be resolved.
 
 ### Pending Todos
 
@@ -73,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03 12:17
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-event-history-and-downloadable-workbook/16-CONTEXT.md
+Last session: 2026-03-03 20:35
+Stopped at: Completed 16-01-PLAN.md
+Resume file: .planning/phases/16-event-history-and-downloadable-workbook/16-02-PLAN.md

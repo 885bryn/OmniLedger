@@ -8,10 +8,10 @@
 ### Export Core
 
 - [ ] **EXPT-01**: User can trigger a ledger backup export and download a generated `.xlsx` file from the app.
-- [ ] **EXPT-02**: Export workbook includes separate sheets for `Assets`, `Financial Contracts`, and `Event History`.
+- [x] **EXPT-02**: Export workbook includes separate sheets for `Assets`, `Financial Contracts`, and `Event History`.
 - [x] **EXPT-03**: Exported `Assets` sheet presents readable flattened columns for common asset fields and attribute values.
 - [x] **EXPT-04**: Exported `Financial Contracts` sheet includes contract subtype, recurrence fields, status, and linked context fields.
-- [ ] **EXPT-05**: Exported `Event History` sheet includes occurrence/payment lifecycle fields with stable identifiers.
+- [x] **EXPT-05**: Exported `Event History` sheet includes occurrence/payment lifecycle fields with stable identifiers.
 
 ### Scope and RBAC
 
@@ -23,7 +23,7 @@
 ### Relationship Fidelity
 
 - [x] **RELA-01**: Export sheets expose parent-child relationships between assets and linked financial commitments using stable IDs and readable reference columns.
-- [ ] **RELA-02**: Exported event rows include references to related contract and asset records where links exist.
+- [x] **RELA-02**: Exported event rows include references to related contract and asset records where links exist.
 
 ### Workbook Usability
 
@@ -67,16 +67,16 @@ Traceability for milestone v3.0 is mapped to roadmap phases 14-18.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | EXPT-01 | Phase 16 | Pending |
-| EXPT-02 | Phase 16 | Pending |
+| EXPT-02 | Phase 16 | Complete |
 | EXPT-03 | Phase 15 | Complete |
 | EXPT-04 | Phase 15 | Complete |
-| EXPT-05 | Phase 16 | Pending |
+| EXPT-05 | Phase 16 | Complete |
 | SCOP-01 | Phase 14 | Complete |
 | SCOP-02 | Phase 14 | Complete |
 | SCOP-03 | Phase 14 | Complete |
 | SCOP-04 | Phase 14 | Complete |
 | RELA-01 | Phase 15 | Complete |
-| RELA-02 | Phase 16 | Pending |
+| RELA-02 | Phase 16 | Complete |
 | XLSX-01 | Phase 17 | Pending |
 | XLSX-02 | Phase 17 | Pending |
 | SECU-01 | Phase 17 | Pending |

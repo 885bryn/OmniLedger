@@ -62,7 +62,12 @@ Plans:
   2. Workbook contains `Assets`, `Financial Contracts`, and `Event History` as separate sheets.
   3. `Event History` rows include occurrence/payment lifecycle fields with stable identifiers.
   4. Event rows include references to related contract and asset records when links exist.
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 16-01-PLAN.md - Extend workbook model with deterministic Event History sheet and relationship-fidelity transforms.
+- [ ] 16-02-PLAN.md - Add XLSX serializer and binary export-route attachment transport with scope-safe regressions.
+- [ ] 16-03-PLAN.md - Switch frontend export to blob download flow with inline feedback and duplicate-click lock tests.
 
 ### Phase 17: Workbook Safety and Usability Defaults
 **Goal**: Users receive spreadsheet-safe exports with strong default readability and deterministic date behavior.
@@ -91,6 +96,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 14. Export Entry and Scope Enforcement | 2/2 | Complete    | 2026-03-03 |
 | 15. Assets and Contracts Workbook Model | 2/2 | Complete    | 2026-03-03 |
-| 16. Event History and Downloadable Workbook | 0/TBD | Not started | - |
+| 16. Event History and Downloadable Workbook | 1/3 | In Progress|  |
 | 17. Workbook Safety and Usability Defaults | 0/TBD | Not started | - |
 | 18. Export Feedback UX and Audit Visibility | 0/TBD | Not started | - |
