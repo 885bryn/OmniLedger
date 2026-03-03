@@ -2,7 +2,8 @@
 
 const {
   ASSETS_COLUMNS,
-  FINANCIAL_CONTRACT_COLUMNS
+  FINANCIAL_CONTRACT_COLUMNS,
+  EVENT_HISTORY_COLUMNS
 } = require("../../../src/domain/exports/workbook-columns");
 const {
   EXPLICIT_MARKERS,
@@ -14,9 +15,10 @@ const {
 const { buildWorkbookModel } = require("../../../src/domain/exports/workbook-model");
 
 describe("workbook model domain transform", () => {
-  it("defines frozen deterministic Assets and Financial Contracts column order", () => {
+  it("defines frozen deterministic Assets, Financial Contracts, and Event History column order", () => {
     expect(Object.isFrozen(ASSETS_COLUMNS)).toBe(true);
     expect(Object.isFrozen(FINANCIAL_CONTRACT_COLUMNS)).toBe(true);
+    expect(Object.isFrozen(EVENT_HISTORY_COLUMNS)).toBe(true);
     expect(ASSETS_COLUMNS.map((column) => column.order)).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9,
       10, 11, 12, 13, 14, 15, 16, 17, 18
@@ -24,6 +26,10 @@ describe("workbook model domain transform", () => {
     expect(FINANCIAL_CONTRACT_COLUMNS.map((column) => column.order)).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8,
       9, 10, 11, 12, 13, 14, 15
+    ]);
+    expect(EVENT_HISTORY_COLUMNS.map((column) => column.order)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8,
+      9, 10, 11, 12, 13, 14, 15, 16
     ]);
   });
 
@@ -169,21 +175,102 @@ describe("workbook model domain transform", () => {
               }
             }
           ]
+        },
+        events: {
+          rows: [
+            {
+              id: "event-5",
+              item_id: "fin-3",
+              event_type: "payment_due",
+              due_date: "2026-05-01",
+              amount: 50,
+              status: "scheduled",
+              is_recurring: false,
+              is_exception: true,
+              completed_at: null,
+              owner_user_id: "owner-1",
+              created_at: "2026-01-09T00:00:00.000Z",
+              updated_at: "2026-05-01T00:00:00.000Z"
+            },
+            {
+              id: "event-4",
+              item_id: "fin-2",
+              event_type: "payment_complete",
+              due_date: "2026-03-10",
+              amount: 2000,
+              status: "completed",
+              is_recurring: true,
+              is_exception: false,
+              completed_at: "2026-04-20",
+              owner_user_id: "owner-1",
+              created_at: "2026-01-09T00:00:00.000Z",
+              updated_at: "2026-04-20T00:00:00.000Z"
+            },
+            {
+              id: "event-2",
+              item_id: "fin-1",
+              event_type: "payment_due",
+              due_date: "2026-04-15",
+              amount: 1200,
+              status: "due",
+              is_recurring: true,
+              is_exception: false,
+              completed_at: null,
+              owner_user_id: "owner-1",
+              created_at: "2026-01-09T00:00:00.000Z",
+              updated_at: "2026-04-15T00:00:00.000Z"
+            },
+            {
+              id: "event-3",
+              item_id: "asset-2",
+              event_type: "maintenance_due",
+              due_date: "2026-04-15",
+              amount: 75,
+              status: "due",
+              is_recurring: false,
+              is_exception: false,
+              completed_at: null,
+              owner_user_id: "owner-1",
+              created_at: "2026-01-09T00:00:00.000Z",
+              updated_at: "2026-04-15T00:00:00.000Z"
+            },
+            {
+              id: "event-1",
+              item_id: "item-missing",
+              event_type: null,
+              due_date: null,
+              amount: null,
+              status: null,
+              is_recurring: null,
+              is_exception: null,
+              completed_at: null,
+              owner_user_id: "owner-1",
+              created_at: "2026-02-01T00:00:00.000Z",
+              updated_at: "2026-02-01T00:00:00.000Z"
+            }
+          ]
         }
       }
     });
 
     const assetRows = result.sheets.Assets.rows;
     const financialRows = result.sheets["Financial Contracts"].rows;
+    const eventRows = result.sheets["Event History"].rows;
+
+    expect(Object.keys(result.sheets)).toEqual(["Assets", "Financial Contracts", "Event History"]);
 
     expect(assetRows.map((row) => row.asset_id)).toEqual(["asset-1", "asset-2", "asset-3", "asset-4"]);
     expect(financialRows.map((row) => row.contract_id)).toEqual(["fin-0", "fin-1", "fin-2", "fin-3"]);
+    expect(eventRows.map((row) => row.event_id)).toEqual(["event-5", "event-4", "event-2", "event-3", "event-1"]);
 
     assetRows.forEach((row) => {
       expect(Object.keys(row)).toEqual(ASSETS_COLUMNS.map((column) => column.key));
     });
     financialRows.forEach((row) => {
       expect(Object.keys(row)).toEqual(FINANCIAL_CONTRACT_COLUMNS.map((column) => column.key));
+    });
+    eventRows.forEach((row) => {
+      expect(Object.keys(row)).toEqual(EVENT_HISTORY_COLUMNS.map((column) => column.key));
     });
 
     expect(assetRows[0]).toMatchObject({
@@ -242,6 +329,63 @@ describe("workbook model domain transform", () => {
       frequency: "One Time",
       default_amount: EXPLICIT_MARKERS.notAvailable,
       next_due_date: EXPLICIT_MARKERS.notAvailable
+    });
+
+    expect(eventRows[0]).toMatchObject({
+      status: "Scheduled",
+      due_date: "2026-05-01",
+      completed_at: EXPLICIT_MARKERS.notAvailable,
+      amount: "50.00",
+      is_recurring: "No",
+      is_exception: "Yes",
+      item_id: "fin-3",
+      contract_id: "fin-3",
+      contract_title: "Old Note",
+      asset_id: "asset-ghost",
+      asset_title: EXPLICIT_MARKERS.unresolved
+    });
+
+    expect(eventRows[1]).toMatchObject({
+      status: "Completed",
+      due_date: "2026-03-10",
+      completed_at: "2026-04-20",
+      amount: "2000.00",
+      contract_id: "fin-2",
+      contract_title: "Rental Income",
+      asset_id: "asset-2",
+      asset_title: "Audi"
+    });
+
+    expect(eventRows[2]).toMatchObject({
+      event_id: "event-2",
+      due_date: "2026-04-15",
+      contract_id: "fin-1",
+      contract_title: "Mortgage",
+      asset_id: "asset-1",
+      asset_title: "Oak House"
+    });
+
+    expect(eventRows[3]).toMatchObject({
+      event_id: "event-3",
+      contract_id: EXPLICIT_MARKERS.notAvailable,
+      contract_title: EXPLICIT_MARKERS.notAvailable,
+      asset_id: "asset-2",
+      asset_title: "Audi"
+    });
+
+    expect(eventRows[4]).toMatchObject({
+      status: EXPLICIT_MARKERS.notAvailable,
+      event_type: EXPLICIT_MARKERS.notAvailable,
+      due_date: EXPLICIT_MARKERS.notAvailable,
+      completed_at: EXPLICIT_MARKERS.notAvailable,
+      amount: EXPLICIT_MARKERS.notAvailable,
+      is_recurring: EXPLICIT_MARKERS.notAvailable,
+      is_exception: EXPLICIT_MARKERS.notAvailable,
+      item_id: "item-missing",
+      contract_id: EXPLICIT_MARKERS.notAvailable,
+      contract_title: EXPLICIT_MARKERS.notAvailable,
+      asset_id: EXPLICIT_MARKERS.notAvailable,
+      asset_title: EXPLICIT_MARKERS.notAvailable
     });
   });
 });
