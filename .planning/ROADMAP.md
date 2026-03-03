@@ -19,7 +19,7 @@ v3.0 delivers secure, scope-correct ledger portability as downloadable `.xlsx` b
 - [x] **Phase 14: Export Entry and Scope Enforcement** - Establish the user entry point and server-authoritative RBAC export scope. (completed 2026-03-03)
 - [x] **Phase 15: Assets and Contracts Workbook Model** - Deliver readable asset and contract sheet contracts with stable relationship references. (completed 2026-03-03)
 - [x] **Phase 16: Event History and Downloadable Workbook** - Complete event sheet fidelity and stream final three-sheet workbook download. (completed 2026-03-03)
-- [ ] **Phase 17: Workbook Safety and Usability Defaults** - Apply spreadsheet-safe sanitization plus usability/date formatting defaults.
+- [x] **Phase 17: Workbook Safety and Usability Defaults** - Apply spreadsheet-safe sanitization plus usability/date formatting defaults. (completed 2026-03-03)
 - [ ] **Phase 18: Export Feedback UX and Audit Visibility** - Finalize resilient frontend export states and audit attribution traceability.
 
 ## Phase Details
@@ -80,8 +80,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 17-01-PLAN.md - Add centralized export safety and deterministic date policy at workbook model boundary.
-- [ ] 17-02-PLAN.md - Wire preference-aware export context and lock serializer/API workbook usability regressions.
+- [x] 17-01-PLAN.md - Add centralized export safety and deterministic date policy at workbook model boundary.
+- [x] 17-02-PLAN.md - Wire preference-aware export context and lock serializer/API workbook usability regressions.
 
 ### Phase 18: Export Feedback UX and Audit Visibility
 **Goal**: Users get trustworthy export feedback in-app and administrators can trace export actions by actor and lens context.
@@ -101,5 +101,5 @@ Plans:
 | 14. Export Entry and Scope Enforcement | 2/2 | Complete    | 2026-03-03 |
 | 15. Assets and Contracts Workbook Model | 2/2 | Complete    | 2026-03-03 |
 | 16. Event History and Downloadable Workbook | 3/3 | Complete    | 2026-03-03 |
-| 17. Workbook Safety and Usability Defaults | 1/2 | In Progress|  |
+| 17. Workbook Safety and Usability Defaults | 2/2 | Complete   | 2026-03-03 |
 | 18. Export Feedback UX and Audit Visibility | 0/TBD | Not started | - |

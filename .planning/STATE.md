@@ -6,21 +6,21 @@ See: `.planning/PROJECT.md` (updated 2026-03-02)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v3.0 Data Portability execution (Phase 17 in progress)
+**Current focus:** Milestone v3.0 Data Portability execution (Phase 17 complete, Phase 18 next)
 
 ## Current Position
 
 Phase: 17 of 18 (Workbook Safety and Usability Defaults)
-Plan: 1 of 2
-Status: In Progress
-Last activity: 2026-03-03 - Completed 17-01 centralized workbook export safety boundary and deterministic date policy regressions
+Plan: 2 of 2
+Status: Complete
+Last activity: 2026-03-03 - Completed 17-02 preference-aware export context wiring and binary XLSX safety/usability regressions
 
-Progress: [█████░░░░░] 28%
+Progress: [██████░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 37
+- Total plans completed: 38
 - Average duration: 4 min (v2.0)
 - Total execution time: 53 min (v2.0)
 
@@ -44,6 +44,7 @@ Progress: [█████░░░░░] 28%
 | Phase 16 P02 | 4 min | 3 tasks | 6 files |
 | Phase 16 P03 | 3 min | 3 tasks | 5 files |
 | Phase 17 P01 | 5 min | 3 tasks | 5 files |
+| Phase 17 P02 | 2 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 16]: UserSwitcher shows fixed actionable retry guidance for export failures instead of raw transport errors.
 - [Phase 17]: Applied workbook string sanitization at projection-time in projectColumns so every emitted sheet cell follows one formula-hardening policy.
 - [Phase 17]: Resolved export date preferences once per workbook build and applied a deterministic fallback policy when preferences are missing or invalid.
+- [Phase 17]: Resolved export date preferences from request scope/actor/session metadata plus headers, then normalized with resolveExportDatePolicy before workbook model construction.
+- [Phase 17]: Applied explicit yyyy-mm-dd numFmt only for Date-typed serializer values so workbook exports preserve typed cells while remaining first-open readable.
+- [Phase 17]: Centralized API workbook parsing assertions to always verify freeze/filter defaults for every exported sheet in scope regressions.
 
 ### Pending Todos
 
@@ -85,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03 22:25
-Stopped at: Completed 17-01-PLAN.md
+Last session: 2026-03-03 22:33
+Stopped at: Completed 17-02-PLAN.md
 Resume file: None
