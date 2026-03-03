@@ -47,7 +47,11 @@ Plans:
   1. `Assets` sheet shows flattened, human-readable columns for common fields and asset attributes.
   2. `Financial Contracts` sheet includes subtype, recurrence, status, and linked context fields.
   3. Assets and contracts expose parent-child relationship fidelity through stable IDs and readable references.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [x] 15-01-PLAN.md - Build deterministic Assets and Financial Contracts workbook model transforms with relationship-fidelity tests.
+- [ ] 15-02-PLAN.md - Wire workbook model into export route contract and extend scope-preserving API regressions.
 
 ### Phase 16: Event History and Downloadable Workbook
 **Goal**: Users can download a complete workbook containing all required ledger sheets and event relationship fidelity.
@@ -86,7 +90,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 14. Export Entry and Scope Enforcement | 2/2 | Complete    | 2026-03-03 |
-| 15. Assets and Contracts Workbook Model | 0/TBD | Not started | - |
+| 15. Assets and Contracts Workbook Model | 1/2 | In Progress|  |
 | 16. Event History and Downloadable Workbook | 0/TBD | Not started | - |
 | 17. Workbook Safety and Usability Defaults | 0/TBD | Not started | - |
 | 18. Export Feedback UX and Audit Visibility | 0/TBD | Not started | - |

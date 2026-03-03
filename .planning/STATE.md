@@ -6,21 +6,21 @@ See: `.planning/PROJECT.md` (updated 2026-03-02)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v3.0 Data Portability execution (Phase 15 ready)
+**Current focus:** Milestone v3.0 Data Portability execution (Phase 15 in progress)
 
 ## Current Position
 
-Phase: 14 of 18 (Export Entry and Scope Enforcement)
-Plan: 2 of 2
-Status: Complete
-Last activity: 2026-03-03 - Completed 14-02 shell export entry action and admin scope-mode regressions
+Phase: 15 of 18 (Assets and Contracts Workbook Model)
+Plan: 1 of 2
+Status: In Progress
+Last activity: 2026-03-03 - Completed 15-01 deterministic workbook model transforms and relationship-fidelity tests
 
-Progress: [█░░░░░░░░░] 11%
+Progress: [█░░░░░░░░░] 12%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 34
+- Total plans completed: 35
 - Average duration: 4 min (v2.0)
 - Total execution time: 53 min (v2.0)
 
@@ -35,9 +35,10 @@ Progress: [█░░░░░░░░░] 11%
 | 13. Admin Scope Integration Hardening | 3 | 9 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 14-02 (3 min), 14-01 (3 min), 13-03 (4 min), 13-02 (2 min), 13-01 (3 min)
-- Trend: v3.0 phase-14 plans completed on a stable cadence
+- Last 5 plans: 15-01 (4 min), 14-02 (3 min), 14-01 (3 min), 13-03 (4 min), 13-02 (2 min)
+- Trend: v3.0 export planning is proceeding steadily with phase-15 model contracts now in place
 | Phase 14 P02 | 3 min | 2 tasks | 5 files |
+| Phase 15 P01 | 4 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -54,6 +55,9 @@ Recent decisions affecting current work:
 - [Phase 14]: Returned a minimal JSON dataset contract in phase 14 to prove SCOP behavior before workbook shaping phases.
 - [Phase 14]: Placed Export Backup in UserSwitcher to keep actor and lens context visible at click time.
 - [Phase 14]: Kept frontend export requests fixed to GET /exports/backup.xlsx without owner override identifiers.
+- [Phase 15]: Use frozen workbook column definitions with explicit order metadata to guarantee deterministic sheet schemas.
+- [Phase 15]: Resolve parent and linked asset references using canonical fields first, then compatibility attributes, with UNLINKED markers for missing targets.
+- [Phase 15]: Enforce explicit marker and formatting policy: N/A for missing values, fixed two-decimal amounts, and ISO-like dates.
 
 ### Pending Todos
 
@@ -65,6 +69,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03 08:18
-Stopped at: Phase 15 context gathered
-Resume file: .planning/phases/15-assets-and-contracts-workbook-model/15-CONTEXT.md
+Last session: 2026-03-03 19:55
+Stopped at: Completed 15-01-PLAN.md
+Resume file: .planning/phases/15-assets-and-contracts-workbook-model/15-02-PLAN.md
