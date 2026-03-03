@@ -7,7 +7,7 @@
 
 ### Export Core
 
-- [ ] **EXPT-01**: User can trigger a ledger backup export and download a generated `.xlsx` file from the app.
+- [x] **EXPT-01**: User can trigger a ledger backup export and download a generated `.xlsx` file from the app.
 - [x] **EXPT-02**: Export workbook includes separate sheets for `Assets`, `Financial Contracts`, and `Event History`.
 - [x] **EXPT-03**: Exported `Assets` sheet presents readable flattened columns for common asset fields and attribute values.
 - [x] **EXPT-04**: Exported `Financial Contracts` sheet includes contract subtype, recurrence fields, status, and linked context fields.
@@ -66,7 +66,7 @@ Traceability for milestone v3.0 is mapped to roadmap phases 14-18.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EXPT-01 | Phase 16 | Pending |
+| EXPT-01 | Phase 16 | Complete |
 | EXPT-02 | Phase 16 | Complete |
 | EXPT-03 | Phase 15 | Complete |
 | EXPT-04 | Phase 15 | Complete |
