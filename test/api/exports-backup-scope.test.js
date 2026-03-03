@@ -41,6 +41,26 @@ function worksheetRowsAsObjects(worksheet) {
   return rows;
 }
 
+function findHeaderColumnIndex(worksheet, headerName) {
+  const headers = worksheet.getRow(1).values.slice(1);
+  const headerIndex = headers.findIndex((header) => header === headerName);
+  return headerIndex >= 0 ? headerIndex + 1 : -1;
+}
+
+function readDateOnlyCell(worksheet, rowIndex, headerName) {
+  const columnIndex = findHeaderColumnIndex(worksheet, headerName);
+  if (columnIndex < 1) {
+    throw new Error(`Missing worksheet header: ${headerName}`);
+  }
+
+  const cellValue = worksheet.getRow(rowIndex).getCell(columnIndex).value;
+  if (cellValue instanceof Date) {
+    return cellValue.toISOString().slice(0, 10);
+  }
+
+  return cellValue == null ? "" : String(cellValue);
+}
+
 async function parseWorkbookResponse(response) {
   expect(response.headers["content-type"]).toMatch(
     /application\/vnd.openxmlformats-officedocument.spreadsheetml.sheet/
@@ -228,6 +248,49 @@ describe("exports backup scope enforcement", () => {
     );
     expect(new Set(eventRows.map((row) => row["Event ID"]))).toEqual(new Set([ownerEvent.id]));
     expect(new Set(eventRows.map((row) => row["Event ID"]))).not.toContain(outsiderEvent.id);
+  });
+
+  it("uses request locale/timezone preferences when present", async () => {
+    const owner = await createUser({ email: "owner-preference@example.com" });
+    const ownerItem = await createItem(owner.id, { title: "Preference Home" });
+    await createEvent(ownerItem.id, "2026-07-01T00:30:00.000Z");
+
+    const agent = request.agent(app);
+    await signIn(agent, owner.email, owner.password);
+
+    const response = await agent
+      .get("/exports/backup.xlsx")
+      .set("accept-language", "fr-CA,fr;q=0.8")
+      .set("x-timezone", "America/Los_Angeles")
+      .buffer(true)
+      .parse(binaryParser);
+
+    expect(response.status).toBe(200);
+    const workbook = await parseWorkbookResponse(response);
+    const eventSheet = workbook.getWorksheet("Event History");
+
+    expect(readDateOnlyCell(eventSheet, 2, "Due Date")).toBe("2026-06-30");
+  });
+
+  it("uses deterministic fallback date preferences when none are provided", async () => {
+    const owner = await createUser({ email: "owner-fallback@example.com" });
+    const ownerItem = await createItem(owner.id, { title: "Fallback Home" });
+    await createEvent(ownerItem.id, "2026-07-01T00:30:00.000Z");
+
+    const agent = request.agent(app);
+    await signIn(agent, owner.email, owner.password);
+
+    const response = await agent
+      .get("/exports/backup.xlsx")
+      .set("x-timezone", "Not/A_Real_Timezone")
+      .buffer(true)
+      .parse(binaryParser);
+
+    expect(response.status).toBe(200);
+    const workbook = await parseWorkbookResponse(response);
+    const eventSheet = workbook.getWorksheet("Event History");
+
+    expect(readDateOnlyCell(eventSheet, 2, "Due Date")).toBe("2026-07-01");
   });
 
   it("returns cross-owner workbook rows for admin all-data mode", async () => {
