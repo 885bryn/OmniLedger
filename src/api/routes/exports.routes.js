@@ -3,6 +3,7 @@
 const express = require("express");
 const { requireAuth } = require("../auth/require-auth");
 const { exportScopeQuery } = require("../../domain/exports/export-scope-query");
+const { buildWorkbookModel } = require("../../domain/exports/workbook-model");
 
 function ignoreClientScopeHints(query, body) {
   const queryPayload = query && typeof query === "object" ? query : {};
@@ -45,7 +46,13 @@ function createExportsRouter() {
         scope: req.scope
       });
 
-      res.status(200).json(scopedDataset);
+      const workbook = buildWorkbookModel(scopedDataset.datasets);
+
+      res.status(200).json({
+        ...scopedDataset,
+        workbook,
+        sheets: workbook.sheets
+      });
     } catch (error) {
       next(error);
     }
