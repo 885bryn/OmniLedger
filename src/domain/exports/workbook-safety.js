@@ -98,7 +98,16 @@ function toExportDateCell(value, preferences) {
     return policy.emptyDateMarker;
   }
 
-  return toPolicyDate(value, policy);
+  const normalized = toPolicyDate(value, policy);
+  if (!(normalized instanceof Date)) {
+    return normalized;
+  }
+
+  if (value instanceof Date) {
+    return normalized;
+  }
+
+  return normalized.toISOString().slice(0, 10);
 }
 
 module.exports = {

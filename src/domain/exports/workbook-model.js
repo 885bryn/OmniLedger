@@ -9,12 +9,16 @@ const {
   EXPLICIT_MARKERS,
   flattenAttributes,
   formatAmount,
-  formatDate,
   formatEnumLabel,
   normalizeAttributes,
   resolveReadableReference,
   toExplicitMarker
 } = require("./workbook-formatters");
+const {
+  sanitizeWorkbookTextCell,
+  resolveExportDatePolicy,
+  toExportDateCell
+} = require("./workbook-safety");
 
 const ASSET_ITEM_TYPES = new Set(["RealEstate", "Vehicle"]);
 const FINANCIAL_ITEM_TYPE = "FinancialItem";
@@ -178,7 +182,7 @@ function compareEventsByNewestFirst(left, right) {
   return compareStrings(left.id, right.id);
 }
 
-function buildEventRows({ events, itemById }) {
+function buildEventRows({ events, itemById, datePolicy }) {
   return [...events]
     .sort(compareEventsByNewestFirst)
     .map((event) => {
@@ -187,8 +191,8 @@ function buildEventRows({ events, itemById }) {
       return projectColumns(EVENT_HISTORY_COLUMNS, {
         status: formatEnumLabel(event.status),
         event_type: formatEnumLabel(event.event_type),
-        due_date: formatDate(event.due_date),
-        completed_at: formatDate(event.completed_at),
+        due_date: toExportDateCell(event.due_date, datePolicy),
+        completed_at: toExportDateCell(event.completed_at, datePolicy),
         amount: formatAmount(event.amount),
         is_recurring: formatBooleanIndicator(event.is_recurring),
         is_exception: formatBooleanIndicator(event.is_exception),
@@ -199,8 +203,8 @@ function buildEventRows({ events, itemById }) {
         asset_id: references.assetReference.id,
         asset_title: references.assetReference.label,
         owner_user_id: event.owner_user_id,
-        created_at: formatDate(event.created_at),
-        updated_at: formatDate(event.updated_at)
+        created_at: toExportDateCell(event.created_at, datePolicy),
+        updated_at: toExportDateCell(event.updated_at, datePolicy)
       });
     });
 }
@@ -250,12 +254,13 @@ function projectColumns(columns, payload) {
       ? payload[column.key]
       : EXPLICIT_MARKERS.notAvailable;
 
-    row[column.key] = toExplicitMarker(value);
+    const withMarker = toExplicitMarker(value);
+    row[column.key] = sanitizeWorkbookTextCell(withMarker);
     return row;
   }, {});
 }
 
-function buildAssetsRows({ assets, itemById, financialContracts }) {
+function buildAssetsRows({ assets, itemById, financialContracts, datePolicy }) {
   return sortAssets(assets).map((asset) => {
     const attributes = normalizeAttributes(asset.attributes);
     const flattened = flattenAttributes(attributes, ASSET_ATTRIBUTE_BASELINE);
@@ -286,8 +291,8 @@ function buildAssetsRows({ assets, itemById, financialContracts }) {
       linked_contract_ids: linkedContractIds,
       linked_contract_titles: linkedContractTitles,
       status: formatEnumLabel(asset.status),
-      created_at: formatDate(asset.created_at),
-      updated_at: formatDate(asset.updated_at),
+      created_at: toExportDateCell(asset.created_at, datePolicy),
+      updated_at: toExportDateCell(asset.updated_at, datePolicy),
       address: toExplicitMarker(flattened.flattened.address),
       vin: toExplicitMarker(flattened.flattened.vin),
       make: toExplicitMarker(flattened.flattened.make),
@@ -299,7 +304,7 @@ function buildAssetsRows({ assets, itemById, financialContracts }) {
   });
 }
 
-function buildFinancialRows({ financialContracts, itemById }) {
+function buildFinancialRows({ financialContracts, itemById, datePolicy }) {
   return sortFinancialContracts(financialContracts).map((contract) => {
     const attributes = normalizeAttributes(contract.attributes);
     const flattened = flattenAttributes(attributes, FINANCIAL_ATTRIBUTE_BASELINE);
@@ -322,25 +327,47 @@ function buildFinancialRows({ financialContracts, itemById }) {
       status: formatEnumLabel(contract.status),
       frequency: formatEnumLabel(contract.frequency),
       default_amount: formatAmount(contract.default_amount ?? flattened.flattened.amount),
-      next_due_date: formatDate(flattened.flattened.next_due_date),
-      created_at: formatDate(contract.created_at),
-      updated_at: formatDate(contract.updated_at),
+      next_due_date: toExportDateCell(flattened.flattened.next_due_date, datePolicy),
+      created_at: toExportDateCell(contract.created_at, datePolicy),
+      updated_at: toExportDateCell(contract.updated_at, datePolicy),
       attributes_overflow: flattened.overflowText
     });
   });
+}
+
+function resolveInputDatePreferences(input) {
+  if (!input || typeof input !== "object") {
+    return {};
+  }
+
+  const asObject = input;
+  if (asObject.export_preferences && typeof asObject.export_preferences === "object") {
+    return asObject.export_preferences;
+  }
+
+  if (asObject.exportPreferences && typeof asObject.exportPreferences === "object") {
+    return asObject.exportPreferences;
+  }
+
+  if (asObject.preferences && typeof asObject.preferences === "object") {
+    return asObject.preferences;
+  }
+
+  return {};
 }
 
 function buildWorkbookModel(input) {
   const items = getScopedItems(input);
   const events = getScopedEvents(input);
   const itemById = new Map(items.map((item) => [item.id, item]));
+  const datePolicy = resolveExportDatePolicy(resolveInputDatePreferences(input));
 
   const assets = items.filter((item) => ASSET_ITEM_TYPES.has(item.item_type));
   const financialContracts = items.filter((item) => item.item_type === FINANCIAL_ITEM_TYPE);
 
-  const assetRows = buildAssetsRows({ assets, itemById, financialContracts });
-  const financialRows = buildFinancialRows({ financialContracts, itemById });
-  const eventRows = buildEventRows({ events, itemById });
+  const assetRows = buildAssetsRows({ assets, itemById, financialContracts, datePolicy });
+  const financialRows = buildFinancialRows({ financialContracts, itemById, datePolicy });
+  const eventRows = buildEventRows({ events, itemById, datePolicy });
 
   return {
     sheets: {

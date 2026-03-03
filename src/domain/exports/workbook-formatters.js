@@ -1,8 +1,11 @@
 "use strict";
 
+const { toExportDateCell } = require("./workbook-safety");
+
 const EXPLICIT_MARKERS = Object.freeze({
   notAvailable: "N/A",
-  unresolved: "UNLINKED"
+  unresolved: "UNLINKED",
+  invalidDate: "INVALID_DATE"
 });
 
 function isPlainObject(value) {
@@ -54,17 +57,21 @@ function formatAmount(value) {
   return amount.toFixed(2);
 }
 
-function formatDate(value) {
-  if (!value) {
+function formatDate(value, preferences) {
+  const normalized = toExportDateCell(value, preferences);
+  if (normalized instanceof Date) {
+    return normalized.toISOString().slice(0, 10);
+  }
+
+  if (typeof normalized === "string" && /^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return normalized;
+  }
+
+  if (normalized === EXPLICIT_MARKERS.notAvailable) {
     return EXPLICIT_MARKERS.notAvailable;
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return EXPLICIT_MARKERS.notAvailable;
-  }
-
-  return date.toISOString().slice(0, 10);
+  return EXPLICIT_MARKERS.notAvailable;
 }
 
 function normalizeAttributes(attributes) {
