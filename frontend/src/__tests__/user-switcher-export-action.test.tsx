@@ -8,9 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { UserSwitcher } from '../app/shell/user-switcher'
 
-const { logoutMock, apiRequestMock, adminScopeState } = vi.hoisted(() => ({
+const { logoutMock, adminScopeState } = vi.hoisted(() => ({
   logoutMock: vi.fn(async () => undefined),
-  apiRequestMock: vi.fn(),
   adminScopeState: {
     isAdmin: false,
     mode: 'owner' as 'owner' | 'all',
@@ -40,9 +39,9 @@ vi.mock('../features/admin-scope/admin-scope-context', () => ({
   useAdminScope: () => adminScopeState,
 }))
 
-vi.mock('../lib/api-client', () => ({
-  apiRequest: apiRequestMock,
-}))
+const fetchMock = vi.fn<typeof fetch>()
+const createObjectUrlMock = vi.fn(() => 'blob:download-url')
+const revokeObjectUrlMock = vi.fn()
 
 function renderUserSwitcher() {
   const queryClient = new QueryClient({
@@ -74,13 +73,34 @@ describe('user switcher export backup action', () => {
     adminScopeState.isLoadingUsers = false
     adminScopeState.isUpdatingScope = false
     adminScopeState.updateError = null
-    apiRequestMock.mockReset()
-    apiRequestMock.mockResolvedValue({ export: { format: 'backup-xlsx' } })
+
+    fetchMock.mockReset()
+    fetchMock.mockResolvedValue(
+      new Response(new Blob(['xlsx-bytes'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), {
+        status: 200,
+        headers: {
+          'Content-Disposition': 'attachment; filename="backup.xlsx"',
+        },
+      }),
+    )
+
+    vi.stubGlobal('fetch', fetchMock)
+    Object.defineProperty(URL, 'createObjectURL', {
+      writable: true,
+      value: createObjectUrlMock,
+    })
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      writable: true,
+      value: revokeObjectUrlMock,
+    })
   })
 
   afterEach(() => {
     cleanup()
     logoutMock.mockReset()
+    createObjectUrlMock.mockReset()
+    revokeObjectUrlMock.mockReset()
+    vi.unstubAllGlobals()
   })
 
   it('shows export action and triggers export endpoint for a standard user', async () => {
@@ -92,38 +112,54 @@ describe('user switcher export backup action', () => {
     await userEvent.click(exportButton)
 
     await waitFor(() => {
-      expect(apiRequestMock).toHaveBeenCalledWith('/exports/backup.xlsx', {
+      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8080/exports/backup.xlsx', {
         method: 'GET',
+        credentials: 'include',
       })
     })
 
-    expect(screen.getByRole('status').textContent).toContain('Export started.')
+    expect(createObjectUrlMock).toHaveBeenCalledTimes(1)
+    expect(revokeObjectUrlMock).toHaveBeenCalledWith('blob:download-url')
+    expect(screen.getByRole('status').textContent).toContain('Backup download started.')
   })
 
-  it('shows pending and error feedback when export fails', async () => {
+   it('shows pending state immediately and keeps button disabled until request resolves', async () => {
     let release: (() => void) | null = null
-    apiRequestMock.mockImplementationOnce(
+    fetchMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
-          release = () => resolve({ export: { format: 'backup-xlsx' } })
+          release = () =>
+            resolve(
+              new Response(new Blob(['xlsx-bytes']), {
+                status: 200,
+              }),
+            )
         }),
     )
 
     renderUserSwitcher()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Export Backup' }))
-    expect(screen.getByRole('button', { name: 'Exporting...' })).toBeTruthy()
+    const exportButton = screen.getByRole('button', { name: 'Export Backup' })
+    await userEvent.click(exportButton)
+    expect(screen.getByRole('button', { name: 'Exporting...' }).hasAttribute('disabled')).toBe(true)
+    await userEvent.click(screen.getByRole('button', { name: 'Exporting...' }))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
 
     release?.()
     await waitFor(() => {
-      expect(screen.getByRole('status').textContent).toContain('Export started.')
+      expect(screen.getByRole('status').textContent).toContain('Backup download started.')
     })
+  })
 
-    apiRequestMock.mockRejectedValueOnce(new Error('network down'))
+  it('shows actionable retry guidance when export fails', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('network down'))
+
+    renderUserSwitcher()
+
     await userEvent.click(screen.getByRole('button', { name: 'Export Backup' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toContain('network down')
+      expect(screen.getByRole('alert').textContent).toContain('Check your connection and session, then try again.')
     })
   })
 
@@ -141,8 +177,9 @@ describe('user switcher export backup action', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Export Backup' }))
 
     await waitFor(() => {
-      expect(apiRequestMock).toHaveBeenCalledWith('/exports/backup.xlsx', {
+      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8080/exports/backup.xlsx', {
         method: 'GET',
+        credentials: 'include',
       })
     })
   })
@@ -161,12 +198,12 @@ describe('user switcher export backup action', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Export Backup' }))
 
     await waitFor(() => {
-      expect(apiRequestMock).toHaveBeenCalled()
+      expect(fetchMock).toHaveBeenCalled()
     })
 
-    const [path, requestInit] = apiRequestMock.mock.calls[0]
-    expect(path).toBe('/exports/backup.xlsx')
-    expect(requestInit).toEqual({ method: 'GET' })
+    const [path, requestInit] = fetchMock.mock.calls[0]
+    expect(path).toBe('http://localhost:8080/exports/backup.xlsx')
+    expect(requestInit).toEqual({ method: 'GET', credentials: 'include' })
     expect(requestInit).not.toHaveProperty('body')
   })
 })
