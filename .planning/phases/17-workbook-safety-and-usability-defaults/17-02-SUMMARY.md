@@ -65,7 +65,7 @@ Each task was committed atomically:
 2. **Task 2: Tighten XLSX serializer defaults and typed value emission guarantees** - `cd67e19` (feat)
 3. **Task 3: Lock end-to-end workbook safety/usability behavior in binary export regressions** - `079bad8` (test)
 
-**Plan metadata:** `7493271` (docs)
+**Plan metadata:** `153e4db` (docs)
 
 ## Files Created/Modified
 - `src/api/routes/exports.routes.js` - resolves and normalizes export date preferences from request context before workbook-model build.
