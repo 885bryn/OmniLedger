@@ -15,10 +15,10 @@
 
 ### Scope and RBAC
 
-- [ ] **SCOP-01**: Standard users can export only records in their resolved owner scope.
-- [ ] **SCOP-02**: Admin users in all-data mode can export all eligible household records.
-- [ ] **SCOP-03**: Admin users in lens mode can export only records for the selected lens user.
-- [ ] **SCOP-04**: Export scope is derived server-side from authenticated session scope and cannot be overridden by client-provided owner identifiers.
+- [x] **SCOP-01**: Standard users can export only records in their resolved owner scope.
+- [x] **SCOP-02**: Admin users in all-data mode can export all eligible household records.
+- [x] **SCOP-03**: Admin users in lens mode can export only records for the selected lens user.
+- [x] **SCOP-04**: Export scope is derived server-side from authenticated session scope and cannot be overridden by client-provided owner identifiers.
 
 ### Relationship Fidelity
 
@@ -62,32 +62,32 @@
 
 ## Traceability
 
-Traceability for milestone v3.0 will be mapped during roadmap creation.
+Traceability for milestone v3.0 is mapped to roadmap phases 14-18.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EXPT-01 | Phase TBD | Pending |
-| EXPT-02 | Phase TBD | Pending |
-| EXPT-03 | Phase TBD | Pending |
-| EXPT-04 | Phase TBD | Pending |
-| EXPT-05 | Phase TBD | Pending |
-| SCOP-01 | Phase TBD | Pending |
-| SCOP-02 | Phase TBD | Pending |
-| SCOP-03 | Phase TBD | Pending |
-| SCOP-04 | Phase TBD | Pending |
-| RELA-01 | Phase TBD | Pending |
-| RELA-02 | Phase TBD | Pending |
-| XLSX-01 | Phase TBD | Pending |
-| XLSX-02 | Phase TBD | Pending |
-| SECU-01 | Phase TBD | Pending |
-| SECU-02 | Phase TBD | Pending |
-| UXEX-01 | Phase TBD | Pending |
-| UXEX-02 | Phase TBD | Pending |
+| EXPT-01 | Phase 16 | Pending |
+| EXPT-02 | Phase 16 | Pending |
+| EXPT-03 | Phase 15 | Pending |
+| EXPT-04 | Phase 15 | Pending |
+| EXPT-05 | Phase 16 | Pending |
+| SCOP-01 | Phase 14 | Complete |
+| SCOP-02 | Phase 14 | Complete |
+| SCOP-03 | Phase 14 | Complete |
+| SCOP-04 | Phase 14 | Complete |
+| RELA-01 | Phase 15 | Pending |
+| RELA-02 | Phase 16 | Pending |
+| XLSX-01 | Phase 17 | Pending |
+| XLSX-02 | Phase 17 | Pending |
+| SECU-01 | Phase 17 | Pending |
+| SECU-02 | Phase 18 | Pending |
+| UXEX-01 | Phase 14 | Pending |
+| UXEX-02 | Phase 18 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17 ⚠️
+- Mapped to phases: 17
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-02*
