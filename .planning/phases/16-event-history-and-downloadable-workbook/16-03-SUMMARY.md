@@ -65,7 +65,7 @@ Each task was committed atomically:
 2. **Task 2: Tighten inline export feedback and retry guidance copy** - `7318732` (feat)
 3. **Task 3: Update frontend export tests for binary transport expectations** - `8ed78f7` (test)
 
-**Plan metadata:** pending
+**Plan metadata:** `9655d64` (docs)
 
 ## Files Created/Modified
 - `frontend/src/features/export/use-export-backup.ts` - Implements credentialed binary download with filename parsing and object URL cleanup.
