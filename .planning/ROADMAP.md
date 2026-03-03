@@ -17,7 +17,7 @@ v3.0 delivers secure, scope-correct ledger portability as downloadable `.xlsx` b
 - Decimal phases (14.1, 14.2): Urgent insertions if needed
 
 - [x] **Phase 14: Export Entry and Scope Enforcement** - Establish the user entry point and server-authoritative RBAC export scope. (completed 2026-03-03)
-- [ ] **Phase 15: Assets and Contracts Workbook Model** - Deliver readable asset and contract sheet contracts with stable relationship references.
+- [x] **Phase 15: Assets and Contracts Workbook Model** - Deliver readable asset and contract sheet contracts with stable relationship references. (completed 2026-03-03)
 - [ ] **Phase 16: Event History and Downloadable Workbook** - Complete event sheet fidelity and stream final three-sheet workbook download.
 - [ ] **Phase 17: Workbook Safety and Usability Defaults** - Apply spreadsheet-safe sanitization plus usability/date formatting defaults.
 - [ ] **Phase 18: Export Feedback UX and Audit Visibility** - Finalize resilient frontend export states and audit attribution traceability.
@@ -51,7 +51,7 @@ Plans:
 
 Plans:
 - [x] 15-01-PLAN.md - Build deterministic Assets and Financial Contracts workbook model transforms with relationship-fidelity tests.
-- [ ] 15-02-PLAN.md - Wire workbook model into export route contract and extend scope-preserving API regressions.
+- [x] 15-02-PLAN.md - Wire workbook model into export route contract and extend scope-preserving API regressions.
 
 ### Phase 16: Event History and Downloadable Workbook
 **Goal**: Users can download a complete workbook containing all required ledger sheets and event relationship fidelity.
@@ -90,7 +90,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 14. Export Entry and Scope Enforcement | 2/2 | Complete    | 2026-03-03 |
-| 15. Assets and Contracts Workbook Model | 1/2 | In Progress|  |
+| 15. Assets and Contracts Workbook Model | 2/2 | Complete   | 2026-03-03 |
 | 16. Event History and Downloadable Workbook | 0/TBD | Not started | - |
 | 17. Workbook Safety and Usability Defaults | 0/TBD | Not started | - |
 | 18. Export Feedback UX and Audit Visibility | 0/TBD | Not started | - |
