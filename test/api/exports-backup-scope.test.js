@@ -41,6 +41,31 @@ function worksheetRowsAsObjects(worksheet) {
   return rows;
 }
 
+function toColumnLetter(columnIndex) {
+  let index = Number(columnIndex);
+  let letter = "";
+
+  while (index > 0) {
+    const remainder = (index - 1) % 26;
+    letter = String.fromCharCode(65 + remainder) + letter;
+    index = Math.floor((index - 1) / 26);
+  }
+
+  return letter;
+}
+
+function assertWorkbookUsabilityDefaults(workbook) {
+  workbook.worksheets.forEach((worksheet) => {
+    expect(worksheet.views[0]).toEqual(expect.objectContaining({ state: "frozen", ySplit: 1 }));
+
+    if (worksheet.columnCount > 0) {
+      const lastColumn = toColumnLetter(worksheet.columnCount);
+      const lastRow = Math.max(1, worksheet.rowCount);
+      expect(worksheet.autoFilter).toBe(`A1:${lastColumn}${lastRow}`);
+    }
+  });
+}
+
 function findHeaderColumnIndex(worksheet, headerName) {
   const headers = worksheet.getRow(1).values.slice(1);
   const headerIndex = headers.findIndex((header) => header === headerName);
@@ -83,6 +108,8 @@ async function parseWorkbookResponse(response) {
     "Financial Contracts",
     "Event History"
   ]);
+
+  assertWorkbookUsabilityDefaults(workbook);
 
   return workbook;
 }
@@ -291,6 +318,34 @@ describe("exports backup scope enforcement", () => {
     const eventSheet = workbook.getWorksheet("Event History");
 
     expect(readDateOnlyCell(eventSheet, 2, "Due Date")).toBe("2026-07-01");
+  });
+
+  it("keeps workbook text cells sanitized in final binary export values", async () => {
+    const owner = await createUser({ email: "owner-sanitized@example.com" });
+    const ownerItem = await createItem(owner.id, {
+      title: "=SUM(1,2)",
+      model: "@InjectedModel"
+    });
+    const ownerContract = await createFinancialContract(owner.id, {
+      linkedAssetItemId: ownerItem.id,
+      title: "+InjectedContract"
+    });
+    await createEvent(ownerItem.id, "2026-07-01T00:30:00.000Z");
+
+    const agent = request.agent(app);
+    await signIn(agent, owner.email, owner.password);
+
+    const response = await agent.get("/exports/backup.xlsx").buffer(true).parse(binaryParser);
+    expect(response.status).toBe(200);
+
+    const workbook = await parseWorkbookResponse(response);
+    const assetRows = worksheetRowsAsObjects(workbook.getWorksheet("Assets"));
+    const contractRows = worksheetRowsAsObjects(workbook.getWorksheet("Financial Contracts"));
+
+    expect(assetRows.map((row) => row["Asset Title"])).toEqual(["'=SUM(1,2)"]);
+    expect(assetRows.map((row) => row.Model)).toEqual(["'@InjectedModel"]);
+    expect(contractRows.find((row) => row["Contract ID"] === ownerContract.id)["Contract Title"])
+      .toBe("'+InjectedContract");
   });
 
   it("returns cross-owner workbook rows for admin all-data mode", async () => {

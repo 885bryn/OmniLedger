@@ -102,4 +102,44 @@ describe("workbook xlsx serializer", () => {
     expect(eventSheet.views[0]).toEqual(expect.objectContaining({ state: "frozen", ySplit: 1 }));
     expect(eventSheet.autoFilter).toEqual("A1:A2");
   });
+
+  it("preserves sanitized text and typed date cells in workbook bytes", async () => {
+    const workbookModel = {
+      sheets: {
+        Assets: {
+          columns: [
+            { key: "asset_title", label: "Asset Title", order: 1 },
+            { key: "updated_at", label: "Updated At", order: 2 }
+          ],
+          rows: [
+            {
+              asset_title: "'=PotentialFormula",
+              updated_at: new Date("2026-03-01T00:00:00.000Z")
+            }
+          ]
+        },
+        "Financial Contracts": {
+          columns: [{ key: "contract_title", label: "Contract Title", order: 1 }],
+          rows: []
+        },
+        "Event History": {
+          columns: [{ key: "event_type", label: "Event Type", order: 1 }],
+          rows: [{ event_type: "Pending" }]
+        }
+      }
+    };
+
+    const buffer = await serializeWorkbookToXlsx(workbookModel);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+
+    const assetSheet = workbook.getWorksheet("Assets");
+    expect(assetSheet.getCell("A2").value).toBe("'=PotentialFormula");
+    expect(assetSheet.getCell("B2").value).toBeInstanceOf(Date);
+    expect(assetSheet.getCell("B2").numFmt).toBe("yyyy-mm-dd");
+
+    const contractSheet = workbook.getWorksheet("Financial Contracts");
+    expect(contractSheet.views[0]).toEqual(expect.objectContaining({ state: "frozen", ySplit: 1 }));
+    expect(contractSheet.autoFilter).toBe("A1:A1");
+  });
 });
