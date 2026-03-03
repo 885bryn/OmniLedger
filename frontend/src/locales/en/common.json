@@ -3,6 +3,10 @@
     "title": "Household Asset and Commitment Tracker",
     "workspace": "HACT Workspace",
     "identityLabel": "Signed in as",
+    "exportBackupAction": "Export Backup",
+    "exportingBackup": "Exporting...",
+    "exportBackupSuccess": "Export started.",
+    "exportBackupError": "Export failed. Try again.",
     "logoutAction": "Log out",
     "loggingOut": "Logging out..."
   },
@@ -149,7 +153,15 @@
   "items": {
     "title": "Items",
     "subtitle": "{{total}} items in your working set",
-    "createAction": "Create financial item",
+    "createAction": "Create item",
+    "createPicker": {
+      "label": "Add type",
+      "types": {
+        "FinancialItem": "Financial item",
+        "Vehicle": "Vehicle",
+        "RealEstate": "Real estate"
+      }
+    },
     "loadError": "Items could not be loaded. Please refresh and try again.",
     "empty": "No items yet. Create an asset or commitment to begin.",
     "emptyFiltered": "No items match the active filters.",
@@ -168,6 +180,14 @@
           "income": "Income",
           "active": "Active",
           "deleted": "Deleted"
+        },
+        "assetTypes": {
+          "label": "Asset types",
+          "all": "All asset types",
+          "types": {
+            "RealEstate": "Real estate",
+            "Vehicle": "Vehicle"
+          }
         },
         "sortOptions": {
           "recently_updated": "Recently updated",
@@ -247,7 +267,13 @@
       "customFieldExists": "A field with that name already exists."
     },
     "wizard": {
-      "title": "Create financial item",
+      "title": "Create item",
+      "itemTypeLabel": "Item type",
+      "itemTypeOptions": {
+        "FinancialItem": "Financial item",
+        "Vehicle": "Vehicle",
+        "RealEstate": "Real estate"
+      },
       "stepLabel": "Step {{step}} of 3",
       "typeLabel": "Financial subtype",
       "addressLabel": "Address",
@@ -256,6 +282,11 @@
       "amountLabel": "Amount",
       "dueDateLabel": "Due date",
       "billingCycleLabel": "Billing cycle",
+      "dynamicTrackingLabel": "Track progress from completed events",
+      "startingRemainingLabel": "Starting remaining balance (optional)",
+      "startingRemainingHint": "If empty, tracking starts from current remaining/original principal when available.",
+      "startingCollectedLabel": "Starting collected total",
+      "startingCollectedHint": "Defaults to 0. Completed income events are added on top.",
       "parentLabel": "Parent asset",
       "parentOptionalLabel": "Parent asset (optional)",
       "parentPlaceholder": "Select an asset",
@@ -275,10 +306,12 @@
       "nextAction": "Next",
       "backAction": "Back",
       "createAction": "Create financial item",
+      "createVehicleAction": "Create vehicle",
+      "createRealEstateAction": "Create real estate",
       "creating": "Creating...",
       "cancelAction": "Cancel",
       "actorMissing": "Select an active user before creating an item.",
-      "createError": "Financial item could not be created.",
+      "createError": "Item could not be created.",
       "unlinkedWarningTitle": "Create without linked asset?",
       "unlinkedWarningDescription": "This financial item has no linked asset. You can continue, but confirm this intentional unlinked save.",
       "unlinkedConfirmAction": "Create anyway",
@@ -332,8 +365,13 @@
       "interestRate": "Interest rate",
       "originalPrincipal": "Original principal",
       "remainingBalance": "Remaining balance",
+      "trackingStartingRemainingBalance": "Starting remaining balance",
+      "trackingCompletedTotal": "Completed total",
+      "trackingCompletedCount": "Completed count",
+      "trackingLastCompletedDate": "Last completed date",
       "nextPaymentAmount": "Next payment amount",
       "collectedTotal": "Collected total",
+      "trackingStartingCollectedTotal": "Starting collected total",
       "lastCollectedAmount": "Last collected amount",
       "lastCollectedDate": "Last collected date",
       "amount": "Amount",

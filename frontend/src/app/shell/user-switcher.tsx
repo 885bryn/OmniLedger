@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
+import { useExportBackup } from '../../features/export/use-export-backup'
 import { ConfirmationDialog } from '../../features/ui/confirmation-dialog'
 import { actorSensitiveQueryRoots } from '../../lib/query-keys'
 
@@ -14,6 +15,7 @@ export function UserSwitcher() {
   const queryClient = useQueryClient()
   const { session, logout } = useAuth()
   const { isAdmin, mode, lensUserId, users, isLoadingUsers, isUpdatingScope, updateError, setAllUsers, setLensUser } = useAdminScope()
+  const exportBackup = useExportBackup()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [pendingExitLensUserId, setPendingExitLensUserId] = useState<string | null>(null)
 
@@ -82,6 +84,20 @@ export function UserSwitcher() {
         ) : null}
         <button
           type="button"
+          disabled={exportBackup.isPending}
+          onClick={async () => {
+            try {
+              await exportBackup.triggerExport()
+            } catch {
+              return
+            }
+          }}
+          className="rounded border border-border px-2 py-1 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {exportBackup.isPending ? t('shell.exportingBackup') : t('shell.exportBackupAction')}
+        </button>
+        <button
+          type="button"
           disabled={isLoggingOut}
           onClick={async () => {
             setIsLoggingOut(true)
@@ -98,6 +114,12 @@ export function UserSwitcher() {
         >
           {isLoggingOut ? t('shell.loggingOut') : t('shell.logoutAction')}
         </button>
+        {exportBackup.isSuccess ? <span role="status" className="max-w-48 truncate text-[11px] text-emerald-700">{t('shell.exportBackupSuccess')}</span> : null}
+        {exportBackup.isError ? (
+          <span role="alert" className="max-w-48 truncate text-[11px] text-destructive">
+            {exportBackup.error?.message || t('shell.exportBackupError')}
+          </span>
+        ) : null}
         {updateError ? <span role="alert" className="max-w-48 truncate text-[11px] text-destructive">{updateError}</span> : null}
       </div>
       <ConfirmationDialog

@@ -3,6 +3,10 @@
     "title": "家庭资产与承诺追踪器",
     "workspace": "HACT 工作区",
     "identityLabel": "当前会话",
+    "exportBackupAction": "导出备份",
+    "exportingBackup": "导出中...",
+    "exportBackupSuccess": "已开始导出。",
+    "exportBackupError": "导出失败，请重试。",
     "logoutAction": "退出登录",
     "loggingOut": "退出中..."
   },
@@ -149,7 +153,15 @@
   "items": {
     "title": "资产",
     "subtitle": "当前工作集中共有 {{total}} 条资产",
-    "createAction": "创建财务项目",
+    "createAction": "创建项目",
+    "createPicker": {
+      "label": "新增类型",
+      "types": {
+        "FinancialItem": "财务项目",
+        "Vehicle": "车辆",
+        "RealEstate": "房地产"
+      }
+    },
     "loadError": "无法加载资产，请刷新后重试。",
     "empty": "暂无资产。请先创建资产或承诺。",
     "emptyFiltered": "当前筛选条件下没有匹配项。",
@@ -168,6 +180,14 @@
           "income": "收入",
           "active": "有效",
           "deleted": "已删除"
+        },
+        "assetTypes": {
+          "label": "资产类型",
+          "all": "全部资产类型",
+          "types": {
+            "RealEstate": "房地产",
+            "Vehicle": "车辆"
+          }
         },
         "sortOptions": {
           "recently_updated": "最近更新",
@@ -247,7 +267,13 @@
       "customFieldExists": "该字段名称已存在。"
     },
     "wizard": {
-      "title": "创建财务项目",
+      "title": "创建项目",
+      "itemTypeLabel": "项目类型",
+      "itemTypeOptions": {
+        "FinancialItem": "财务项目",
+        "Vehicle": "车辆",
+        "RealEstate": "房地产"
+      },
       "stepLabel": "第 {{step}} 步，共 3 步",
       "typeLabel": "财务子类型",
       "addressLabel": "地址",
@@ -256,6 +282,11 @@
       "amountLabel": "金额",
       "dueDateLabel": "到期日期",
       "billingCycleLabel": "计费周期",
+      "dynamicTrackingLabel": "按已完成事件自动追踪进度",
+      "startingRemainingLabel": "起始剩余金额（可选）",
+      "startingRemainingHint": "留空时，若存在当前剩余/初始本金则从该值开始追踪。",
+      "startingCollectedLabel": "起始累计收入",
+      "startingCollectedHint": "默认 0，后续会叠加所有已完成收入事件。",
       "parentLabel": "父级资产",
       "parentOptionalLabel": "父级资产（可选）",
       "parentPlaceholder": "选择资产",
@@ -275,10 +306,12 @@
       "nextAction": "下一步",
       "backAction": "上一步",
       "createAction": "创建财务项目",
+      "createVehicleAction": "创建车辆",
+      "createRealEstateAction": "创建房地产",
       "creating": "创建中...",
       "cancelAction": "取消",
       "actorMissing": "创建前请先选择当前用户。",
-      "createError": "无法创建财务项目。",
+      "createError": "无法创建项目。",
       "unlinkedWarningTitle": "在未关联资产时创建？",
       "unlinkedWarningDescription": "该财务项目未关联任何资产。你可以继续，但请确认这是有意为之。",
       "unlinkedConfirmAction": "仍要创建",
@@ -332,8 +365,13 @@
       "interestRate": "利率",
       "originalPrincipal": "初始本金",
       "remainingBalance": "剩余本金",
+      "trackingStartingRemainingBalance": "起始剩余金额",
+      "trackingCompletedTotal": "已完成总额",
+      "trackingCompletedCount": "已完成次数",
+      "trackingLastCompletedDate": "最近完成日期",
       "nextPaymentAmount": "下期应付",
       "collectedTotal": "累计收款",
+      "trackingStartingCollectedTotal": "起始累计收入",
       "lastCollectedAmount": "最近收款金额",
       "lastCollectedDate": "最近收款日期",
       "amount": "金额",
