@@ -10,6 +10,7 @@ const {
   mapItemQueryError,
   mapEventQueryError
 } = require("./errors/http-error-mapper");
+const { resolveNetworkTargets } = require("../config/network-targets");
 
 let createItemsRouter = () => express.Router();
 let createEventsRouter = () => express.Router();
@@ -67,25 +68,6 @@ try {
   }
 }
 
-function resolveAllowedOrigins() {
-  if (typeof process.env.FRONTEND_ORIGIN === "string" && process.env.FRONTEND_ORIGIN.trim().length > 0) {
-    const configured = process.env.FRONTEND_ORIGIN.split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-
-    if (configured.length > 0) {
-      return configured;
-    }
-  }
-
-  return [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174"
-  ];
-}
-
 function isDevOriginAllowed(origin) {
   if (typeof origin !== "string" || origin.length === 0) {
     return false;
@@ -111,21 +93,25 @@ function isDevOriginAllowed(origin) {
 
 function createApp() {
   const app = express();
-  const allowedOrigins = new Set(resolveAllowedOrigins());
-  const fallbackOrigin = [...allowedOrigins][0] || "http://localhost:5173";
+  const networkTargets = resolveNetworkTargets();
+  const allowedOrigins = new Set(networkTargets.allowedOrigins);
+  const fallbackOrigin = networkTargets.fallbackOrigin;
   const allowedHeaders = "Content-Type, Accept";
 
   app.disable("x-powered-by");
   app.use((req, res, next) => {
     const requestOrigin = typeof req.headers.origin === "string" ? req.headers.origin : "";
     const hasRequestOrigin = requestOrigin.length > 0;
-    const allowRequestedOrigin = hasRequestOrigin && (allowedOrigins.has(requestOrigin) || isDevOriginAllowed(requestOrigin));
+    const allowRequestedOrigin = hasRequestOrigin && (
+      allowedOrigins.has(requestOrigin) ||
+      (networkTargets.allowDevNetworkOrigins && isDevOriginAllowed(requestOrigin))
+    );
 
     if (allowRequestedOrigin) {
       res.setHeader("Access-Control-Allow-Origin", requestOrigin);
       res.setHeader("Access-Control-Allow-Credentials", "true");
       res.setHeader("Vary", "Origin");
-    } else if (!hasRequestOrigin) {
+    } else if (!hasRequestOrigin && fallbackOrigin) {
       res.setHeader("Access-Control-Allow-Origin", fallbackOrigin);
       res.setHeader("Access-Control-Allow-Credentials", "true");
       res.setHeader("Vary", "Origin");
