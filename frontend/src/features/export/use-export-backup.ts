@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+import { API_BASE_URL } from '../../lib/api-client'
 
 const DEFAULT_DOWNLOAD_FILENAME = 'hact-backup.xlsx'
 const LONG_RUNNING_THRESHOLD_MS = 4000

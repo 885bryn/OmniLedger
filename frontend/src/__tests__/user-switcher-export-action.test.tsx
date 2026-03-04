@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { UserSwitcher } from '../app/shell/user-switcher'
 import { ToastProvider } from '../features/ui/toast-provider'
+import { API_BASE_URL, resolveApiBaseUrl } from '../lib/api-client'
 
 const { logoutMock, adminScopeState } = vi.hoisted(() => ({
   logoutMock: vi.fn(async () => undefined),
@@ -116,7 +117,7 @@ describe('user switcher export backup action', () => {
     await userEvent.click(exportButton)
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8080/exports/backup.xlsx', {
+      expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/exports/backup.xlsx`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -198,7 +199,7 @@ describe('user switcher export backup action', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Export Backup' }))
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8080/exports/backup.xlsx', {
+      expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/exports/backup.xlsx`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -225,8 +226,23 @@ describe('user switcher export backup action', () => {
     })
 
     const [path, requestInit] = fetchMock.mock.calls[0]
-    expect(path).toBe('http://localhost:8080/exports/backup.xlsx')
+    expect(path).toBe(`${API_BASE_URL}/exports/backup.xlsx`)
     expect(requestInit).toEqual({ method: 'GET', credentials: 'include' })
     expect(requestInit).not.toHaveProperty('body')
+  })
+})
+
+describe('resolveApiBaseUrl', () => {
+  it('prefers explicit VITE_API_BASE_URL over all other values', () => {
+    expect(
+      resolveApiBaseUrl({
+        VITE_API_BASE_URL: 'https://hact.example.com/api',
+        VITE_NAS_STATIC_IP: '192.168.1.40',
+      }),
+    ).toBe('https://hact.example.com/api')
+  })
+
+  it('derives production-style target from VITE_NAS_STATIC_IP when explicit base URL is absent', () => {
+    expect(resolveApiBaseUrl({ VITE_NAS_STATIC_IP: '192.168.1.40' })).toBe('http://192.168.1.40:8080')
   })
 })

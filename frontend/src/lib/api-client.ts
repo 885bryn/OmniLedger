@@ -135,7 +135,29 @@ export type TransportItemActivityResponse = {
 
 export const SESSION_EXPIRED_EVENT = 'hact:session-expired'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+function normalizeBaseUrl(value: string | undefined) {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  return value.trim().replace(/\/+$/, '')
+}
+
+export function resolveApiBaseUrl(env: Record<string, string | boolean | undefined> = import.meta.env) {
+  const explicitBaseUrl = normalizeBaseUrl(env.VITE_API_BASE_URL as string | undefined)
+  if (explicitBaseUrl.length > 0) {
+    return explicitBaseUrl
+  }
+
+  const nasStaticIp = normalizeBaseUrl(env.VITE_NAS_STATIC_IP as string | undefined)
+  if (nasStaticIp.length > 0) {
+    return `http://${nasStaticIp}:8080`
+  }
+
+  return 'http://localhost:8080'
+}
+
+export const API_BASE_URL = resolveApiBaseUrl()
 
 async function parseJsonBody(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') || ''
