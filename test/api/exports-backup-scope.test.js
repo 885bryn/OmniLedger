@@ -127,6 +127,21 @@ function binaryParser(res, callback) {
   });
 }
 
+async function fetchLatestExportAudit(action) {
+  return models.AuditLog.findOne({
+    where: {
+      action,
+      entity: "export:backup.xlsx"
+    },
+    order: [["timestamp", "DESC"], ["created_at", "DESC"]]
+  });
+}
+
+function assertAuditTimestamp(timestampValue) {
+  const parsed = Date.parse(String(timestampValue || ""));
+  expect(Number.isNaN(parsed)).toBe(false);
+}
+
 describe("exports backup scope enforcement", () => {
   const app = createApp();
   let userCounter = 0;
@@ -275,6 +290,13 @@ describe("exports backup scope enforcement", () => {
     );
     expect(new Set(eventRows.map((row) => row["Event ID"]))).toEqual(new Set([ownerEvent.id]));
     expect(new Set(eventRows.map((row) => row["Event ID"]))).not.toContain(outsiderEvent.id);
+
+    const auditRow = await fetchLatestExportAudit("export.backup.succeeded");
+    expect(auditRow).not.toBeNull();
+    expect(auditRow.user_id).toBe(owner.id);
+    expect(auditRow.actor_user_id).toBe(owner.id);
+    expect(auditRow.lens_user_id).toBe(owner.id);
+    assertAuditTimestamp(auditRow.timestamp);
   });
 
   it("uses request locale/timezone preferences when present", async () => {
@@ -382,6 +404,13 @@ describe("exports backup scope enforcement", () => {
     expect(new Set(assetRows.map((row) => row["Asset ID"]))).toEqual(new Set([ownerAItem.id, ownerBItem.id]));
     expect(new Set(financialRows.map((row) => row["Contract ID"]))).toEqual(new Set([ownerAContract.id, ownerBContract.id]));
     expect(new Set(eventRows.map((row) => row["Event ID"]))).toEqual(new Set([ownerAEvent.id, ownerBEvent.id]));
+
+    const auditRow = await fetchLatestExportAudit("export.backup.succeeded");
+    expect(auditRow).not.toBeNull();
+    expect(auditRow.user_id).toBe(admin.id);
+    expect(auditRow.actor_user_id).toBe(admin.id);
+    expect(auditRow.lens_user_id).toBeNull();
+    assertAuditTimestamp(auditRow.timestamp);
   });
 
   it("enforces admin owner-lens filtering for workbook rows", async () => {
@@ -519,5 +548,27 @@ describe("exports backup scope enforcement", () => {
     expect(assetRows.map((row) => row["Asset ID"])).toEqual([lensItem.id]);
     expect(financialRows.map((row) => row["Contract ID"])).toEqual([lensContract.id]);
     expect(eventRows.map((row) => row["Event ID"])).toEqual([lensEvent.id]);
+  });
+
+  it("records failed export attempts with scope attribution", async () => {
+    const owner = await createUser({ email: "owner-failed-export@example.com" });
+    await createItem(owner.id, { address: "Failure Lane" });
+
+    const itemFindAllSpy = jest.spyOn(models.Item, "findAll").mockRejectedValueOnce(new Error("db read failed"));
+
+    const agent = request.agent(app);
+    await signIn(agent, owner.email, owner.password);
+
+    const response = await agent.get("/exports/backup.xlsx").buffer(true).parse(binaryParser);
+    expect(response.status).toBe(500);
+
+    itemFindAllSpy.mockRestore();
+
+    const auditRow = await fetchLatestExportAudit("export.backup.failed");
+    expect(auditRow).not.toBeNull();
+    expect(auditRow.user_id).toBe(owner.id);
+    expect(auditRow.actor_user_id).toBe(owner.id);
+    expect(auditRow.lens_user_id).toBe(owner.id);
+    assertAuditTimestamp(auditRow.timestamp);
   });
 });

@@ -6,6 +6,7 @@ const { exportScopeQuery } = require("../../domain/exports/export-scope-query");
 const { buildWorkbookModel } = require("../../domain/exports/workbook-model");
 const { serializeWorkbookToXlsx } = require("../../domain/exports/workbook-xlsx");
 const { resolveExportDatePolicy } = require("../../domain/exports/workbook-safety");
+const { models } = require("../../db");
 
 function ignoreClientScopeHints(query, body) {
   const queryPayload = query && typeof query === "object" ? query : {};
@@ -55,6 +56,11 @@ function createExportsRouter() {
         export_preferences: exportDatePreferences
       });
       const xlsxBuffer = await serializeWorkbookToXlsx(workbook);
+      await createExportAuditLog({
+        scope: req.scope,
+        action: "export.backup.succeeded",
+        timestamp: new Date()
+      });
 
       const dateStamp = new Date().toISOString().slice(0, 10);
       const fileName = `hact-backup-${dateStamp}.xlsx`;
@@ -64,11 +70,52 @@ function createExportsRouter() {
       res.attachment(fileName);
       res.send(xlsxBuffer);
     } catch (error) {
+      await createExportAuditLog({
+        scope: req.scope,
+        action: "export.backup.failed",
+        timestamp: new Date()
+      });
       next(error);
     }
   });
 
   return router;
+}
+
+function normalizeScopeId(value) {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function resolveExportAuditAttribution(scope) {
+  const resolvedScope = scope && typeof scope === "object" ? scope : {};
+  const actorUserId = normalizeScopeId(resolvedScope.actorUserId);
+  const mode = resolvedScope.mode === "all" ? "all" : "owner";
+  const lensUserId = mode === "all" ? null : normalizeScopeId(resolvedScope.lensUserId) || actorUserId;
+  const userId = lensUserId || actorUserId;
+
+  return {
+    userId,
+    actorUserId,
+    lensUserId
+  };
+}
+
+async function createExportAuditLog(input) {
+  const payload = input && typeof input === "object" ? input : {};
+  const attribution = resolveExportAuditAttribution(payload.scope);
+
+  if (!attribution.userId || !attribution.actorUserId) {
+    return;
+  }
+
+  await models.AuditLog.create({
+    user_id: attribution.userId,
+    actor_user_id: attribution.actorUserId,
+    lens_user_id: attribution.lensUserId,
+    action: payload.action,
+    entity: "export:backup.xlsx",
+    timestamp: payload.timestamp || new Date()
+  });
 }
 
 function firstNonEmptyString(values) {
