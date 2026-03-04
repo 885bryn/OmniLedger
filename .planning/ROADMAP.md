@@ -14,7 +14,7 @@ This milestone delivers environment-driven production deployment for Ugreen NAS 
 ## Phases
 
 - [x] **Phase 19: Environment-Driven Production Configuration** - Externalize required network, identity, and database secrets with startup validation for missing values. (completed 2026-03-04)
-- [ ] **Phase 20: Production Container Build and Gateway Routing** - Deliver production-grade backend/frontend images and Nginx API routing driven by NAS address configuration.
+- [x] **Phase 20: Production Container Build and Gateway Routing** - Deliver production-grade backend/frontend images and Nginx API routing driven by NAS address configuration. (completed 2026-03-04)
 - [ ] **Phase 21: Portainer Stack Deployment and Persistence** - Provide deployable three-service production compose stack with Portainer env injection and NAS-backed Postgres persistence.
 - [ ] **Phase 22: Operator Deployment Documentation** - Publish production README guidance that allows operators to deploy successfully using the required Portainer environment values.
 
@@ -45,7 +45,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 20-01-PLAN.md - Add deployment-safe backend `Dockerfile.prod` and reproducible image/runtime verification flow.
-- [ ] 20-02-PLAN.md - Add frontend multi-stage `Dockerfile.prod` with Nginx `/api/*` gateway routing and JSON 502 handling.
+- [x] 20-02-PLAN.md - Add frontend multi-stage `Dockerfile.prod` with Nginx `/api/*` gateway routing and JSON 502 handling.
 
 ### Phase 21: Portainer Stack Deployment and Persistence
 **Goal**: Operators can launch and keep a persistent production stack on Ugreen NAS via Portainer.
@@ -71,6 +71,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 19. Environment-Driven Production Configuration | 2/2 | Complete    | 2026-03-04 |
-| 20. Production Container Build and Gateway Routing | 1/2 | In Progress|  |
+| 20. Production Container Build and Gateway Routing | 2/2 | Complete   | 2026-03-04 |
 | 21. Portainer Stack Deployment and Persistence | 0/TBD | Not started | - |
 | 22. Operator Deployment Documentation | 0/TBD | Not started | - |

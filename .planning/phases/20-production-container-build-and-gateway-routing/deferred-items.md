@@ -1,0 +1,1 @@
+- 2026-03-04: `npm run build` in `frontend/` fails from unrelated pre-existing TypeScript issues in `frontend/src/__tests__/user-switcher-export-action.test.tsx` and existing lint issue `frontend/src/pages/events/events-page.tsx:255` (`todayStart` unused). Deferred as out-of-scope for plan 20-02 container/gateway work.

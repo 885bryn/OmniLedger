@@ -16,8 +16,8 @@
 ### Production Containers and Gateway
 
 - [x] **CONT-01**: Maintainer can build backend production image from `Dockerfile.prod` with runtime behavior suitable for deployment.
-- [ ] **CONT-02**: Maintainer can build frontend production image from a multi-stage `Dockerfile.prod` that serves built assets in container runtime.
-- [ ] **CONT-03**: Frontend API requests are routed through Nginx gateway to backend targets derived from `NAS_STATIC_IP`, preventing production CORS breakage.
+- [x] **CONT-02**: Maintainer can build frontend production image from a multi-stage `Dockerfile.prod` that serves built assets in container runtime.
+- [x] **CONT-03**: Frontend API requests are routed through Nginx gateway to backend targets derived from `NAS_STATIC_IP`, preventing production CORS breakage.
 
 ### Portainer Stack Deployment
 
@@ -55,8 +55,8 @@
 | ENV-03 | Phase 19 | Complete |
 | ENV-04 | Phase 19 | Complete |
 | CONT-01 | Phase 20 | Complete |
-| CONT-02 | Phase 20 | Pending |
-| CONT-03 | Phase 20 | Pending |
+| CONT-02 | Phase 20 | Complete |
+| CONT-03 | Phase 20 | Complete |
 | DEPL-01 | Phase 21 | Pending |
 | DEPL-02 | Phase 21 | Pending |
 | DEPL-03 | Phase 21 | Pending |
