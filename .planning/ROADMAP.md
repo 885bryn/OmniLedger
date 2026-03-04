@@ -92,7 +92,11 @@ Plans:
   2. Successful export shows clear completion feedback to the user.
   3. Failed export shows actionable failure feedback with a clear recovery path.
   4. Export actions are visible in audit history with actor and lens attribution.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [x] 18-01-PLAN.md - Harden inline export feedback with long-running hints, dual success confirmation, and actionable retry/re-auth recovery. (completed 2026-03-04)
+- [ ] 18-02-PLAN.md - Persist export success/failure audits and expose actor/lens-attributed export rows in existing activity history.
 
 ## Progress
 
@@ -102,4 +106,4 @@ Plans:
 | 15. Assets and Contracts Workbook Model | 2/2 | Complete    | 2026-03-03 |
 | 16. Event History and Downloadable Workbook | 3/3 | Complete    | 2026-03-03 |
 | 17. Workbook Safety and Usability Defaults | 2/2 | Complete    | 2026-03-03 |
-| 18. Export Feedback UX and Audit Visibility | 0/TBD | Not started | - |
+| 18. Export Feedback UX and Audit Visibility | 1/2 | In Progress|  |

@@ -6,16 +6,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-02)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v3.0 Data Portability execution (Phase 17 complete, Phase 18 next)
+**Current focus:** Milestone v3.0 Data Portability execution (Phase 18 in progress, 18-02 next)
 
 ## Current Position
 
-Phase: 17 of 18 (Workbook Safety and Usability Defaults)
-Plan: 2 of 2
-Status: Complete
-Last activity: 2026-03-03 - Completed 17-02 preference-aware export context wiring and binary XLSX safety/usability regressions
+Phase: 18 of 18 (Export Feedback UX and Audit Visibility)
+Plan: 1 of 2
+Status: In Progress
+Last activity: 2026-03-04 - Completed 18-01 export feedback state machine, dual success confirmation, and retry guidance hardening
 
-Progress: [██████░░░░] 33%
+Progress: [███████░░░] 35%
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [██████░░░░] 33%
 | Phase 16 P03 | 3 min | 3 tasks | 5 files |
 | Phase 17 P01 | 5 min | 3 tasks | 5 files |
 | Phase 17 P02 | 2 min | 3 tasks | 4 files |
+| Phase 18 P01 | 5 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,9 @@ Recent decisions affecting current work:
 - [Phase 17]: Resolved export date preferences from request scope/actor/session metadata plus headers, then normalized with resolveExportDatePolicy before workbook model construction.
 - [Phase 17]: Applied explicit yyyy-mm-dd numFmt only for Date-typed serializer values so workbook exports preserve typed cells while remaining first-open readable.
 - [Phase 17]: Centralized API workbook parsing assertions to always verify freeze/filter defaults for every exported sheet in scope regressions.
+- [Phase 18]: Classify export failures in hook boundary as network/session/server for deterministic UI guidance.
+- [Phase 18]: Use dual success confirmation (inline + toast) to confirm both completion and download start.
+- [Phase 18]: Escalate export recovery copy after repeated failures while keeping retry in the same action context.
 
 ### Pending Todos
 
@@ -89,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03 15:26
-Stopped at: Phase 18 context gathered
-Resume file: .planning/phases/18-export-feedback-ux-and-audit-visibility/18-CONTEXT.md
+Last session: 2026-03-03 16:10
+Stopped at: Completed 18-01-PLAN.md
+Resume file: .planning/phases/18-export-feedback-ux-and-audit-visibility/18-02-PLAN.md
