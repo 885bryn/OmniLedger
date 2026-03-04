@@ -27,16 +27,7 @@ function normalizeEmail(value) {
 }
 
 function getConfiguredAdminEmail() {
-  const candidates = [process.env.HACT_ADMIN_EMAIL, process.env.ADMIN_EMAIL];
-
-  for (const value of candidates) {
-    const normalized = normalizeEmail(value);
-    if (normalized) {
-      return normalized;
-    }
-  }
-
-  return "";
+  return normalizeEmail(process.env.HACT_ADMIN_EMAIL);
 }
 
 function resolveExpectedRole(rawUser, configuredAdminEmail) {

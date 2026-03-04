@@ -12,6 +12,7 @@ function getDialect() {
 
 function getPostgresConfig() {
   const databaseUrl = process.env.DATABASE_URL;
+  const isProduction = process.env.NODE_ENV === "production";
 
   if (databaseUrl) {
     return {
@@ -24,6 +25,18 @@ function getPostgresConfig() {
         }
       }
     };
+  }
+
+  if (isProduction) {
+    const requiredKeys = ["DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"];
+    const missing = requiredKeys.filter((key) => {
+      const value = process.env[key];
+      return typeof value !== "string" || value.trim() === "";
+    });
+
+    if (missing.length > 0) {
+      throw new Error(`Missing required production postgres env vars: ${missing.join(", ")}`);
+    }
   }
 
   return {

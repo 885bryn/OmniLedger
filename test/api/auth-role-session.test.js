@@ -126,6 +126,22 @@ describe("auth role-aware session behavior", () => {
     expect(standardUser.role).toBe("user");
   });
 
+  it("ignores legacy ADMIN_EMAIL when HACT_ADMIN_EMAIL is unset", async () => {
+    process.env.ADMIN_EMAIL = "legacy-admin@example.com";
+
+    const agent = request.agent(app);
+    const registerResponse = await agent.post("/auth/register").send({
+      email: "legacy-admin@example.com",
+      password: "StrongPass123!"
+    });
+
+    expect(registerResponse.status).toBe(201);
+    expect(registerResponse.body.user.role).toBe("user");
+
+    const persisted = await models.User.findOne({ where: { email_normalized: "legacy-admin@example.com" } });
+    expect(persisted.role).toBe("user");
+  });
+
   it("hydrates login and session role from trusted persisted state", async () => {
     const created = await createUser({ email: "fixture-admin@example.com", role: "admin" });
     const agent = request.agent(app);
