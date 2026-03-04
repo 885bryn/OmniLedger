@@ -6,16 +6,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-02)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v3.0 Data Portability execution (Phase 18 in progress, 18-02 next)
+**Current focus:** Milestone v3.0 Data Portability execution complete (Phase 18 delivered)
 
 ## Current Position
 
 Phase: 18 of 18 (Export Feedback UX and Audit Visibility)
-Plan: 1 of 2
-Status: In Progress
-Last activity: 2026-03-04 - Completed 18-01 export feedback state machine, dual success confirmation, and retry guidance hardening
+Plan: 2 of 2
+Status: Complete
+Last activity: 2026-03-04 - Completed 18-02 export audit persistence and attributed activity-timeline visibility
 
-Progress: [███████░░░] 35%
+Progress: [███████░░░] 37%
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [███████░░░] 35%
 | Phase 17 P01 | 5 min | 3 tasks | 5 files |
 | Phase 17 P02 | 2 min | 3 tasks | 4 files |
 | Phase 18 P01 | 5 min | 3 tasks | 6 files |
+| Phase 18 P02 | 7 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - [Phase 18]: Classify export failures in hook boundary as network/session/server for deterministic UI guidance.
 - [Phase 18]: Use dual success confirmation (inline + toast) to confirm both completion and download start.
 - [Phase 18]: Escalate export recovery copy after repeated failures while keeping retry in the same action context.
+- [Phase 18]: Persist export outcome in audit action values (export.backup.succeeded|failed) to avoid schema changes while keeping verb-style taxonomy.
+- [Phase 18]: Represent all-data lens with lens_user_id null and explicit 'All users' label in activity payload/UI.
+- [Phase 18]: Expose export audits inside existing /items/:id/activity feed by scope relevance instead of creating a dedicated export audit surface.
 
 ### Pending Todos
 
@@ -93,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-03 16:10
-Stopped at: Completed 18-01-PLAN.md
-Resume file: .planning/phases/18-export-feedback-ux-and-audit-visibility/18-02-PLAN.md
+Last session: 2026-03-04 16:13
+Stopped at: Completed 18-02-PLAN.md
+Resume file: None

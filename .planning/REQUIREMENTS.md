@@ -33,7 +33,7 @@
 ### Security and Auditability
 
 - [x] **SECU-01**: Export output sanitizes cell values that could trigger spreadsheet formula execution.
-- [ ] **SECU-02**: Export actions are audit-visible with actor/lens attribution.
+- [x] **SECU-02**: Export actions are audit-visible with actor/lens attribution.
 
 ### Frontend UX
 
@@ -80,7 +80,7 @@ Traceability for milestone v3.0 is mapped to roadmap phases 14-18.
 | XLSX-01 | Phase 17 | Complete |
 | XLSX-02 | Phase 17 | Complete |
 | SECU-01 | Phase 17 | Complete |
-| SECU-02 | Phase 18 | Pending |
+| SECU-02 | Phase 18 | Complete |
 | UXEX-01 | Phase 14 | Complete |
 | UXEX-02 | Phase 18 | Complete |
 

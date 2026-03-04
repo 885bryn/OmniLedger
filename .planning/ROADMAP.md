@@ -20,7 +20,7 @@ v3.0 delivers secure, scope-correct ledger portability as downloadable `.xlsx` b
 - [x] **Phase 15: Assets and Contracts Workbook Model** - Deliver readable asset and contract sheet contracts with stable relationship references. (completed 2026-03-03)
 - [x] **Phase 16: Event History and Downloadable Workbook** - Complete event sheet fidelity and stream final three-sheet workbook download. (completed 2026-03-03)
 - [x] **Phase 17: Workbook Safety and Usability Defaults** - Apply spreadsheet-safe sanitization plus usability/date formatting defaults. (completed 2026-03-03)
-- [ ] **Phase 18: Export Feedback UX and Audit Visibility** - Finalize resilient frontend export states and audit attribution traceability.
+- [x] **Phase 18: Export Feedback UX and Audit Visibility** - Finalize resilient frontend export states and audit attribution traceability. (completed 2026-03-04)
 
 ## Phase Details
 
@@ -96,7 +96,7 @@ Plans:
 
 Plans:
 - [x] 18-01-PLAN.md - Harden inline export feedback with long-running hints, dual success confirmation, and actionable retry/re-auth recovery. (completed 2026-03-04)
-- [ ] 18-02-PLAN.md - Persist export success/failure audits and expose actor/lens-attributed export rows in existing activity history.
+- [x] 18-02-PLAN.md - Persist export success/failure audits and expose actor/lens-attributed export rows in existing activity history. (completed 2026-03-04)
 
 ## Progress
 
@@ -106,4 +106,4 @@ Plans:
 | 15. Assets and Contracts Workbook Model | 2/2 | Complete    | 2026-03-03 |
 | 16. Event History and Downloadable Workbook | 3/3 | Complete    | 2026-03-03 |
 | 17. Workbook Safety and Usability Defaults | 2/2 | Complete    | 2026-03-03 |
-| 18. Export Feedback UX and Audit Visibility | 1/2 | In Progress|  |
+| 18. Export Feedback UX and Audit Visibility | 2/2 | Complete   | 2026-03-04 |
