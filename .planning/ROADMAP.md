@@ -29,7 +29,10 @@ This milestone delivers environment-driven production deployment for Ugreen NAS 
   2. Operator can set `HACT_ADMIN_EMAIL` externally and backend admin/God Mode identity assignment follows that value.
   3. Operator can set `DB_PASSWORD` externally and postgres/backend authentication uses the provided environment secret with no checked-in credential.
   4. Operator sees clear startup validation errors whenever required production environment variables are missing.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 19-01-PLAN.md - Add production env contract validation with fail-fast startup diagnostics and env-driven identity/DB auth.
+- [ ] 19-02-PLAN.md - Externalize backend/frontend network target resolution from NAS env configuration and refresh env template guidance.
 
 ### Phase 20: Production Container Build and Gateway Routing
 **Goal**: Maintainers can build deployable production containers and serve frontend API traffic through Nginx without production CORS breakage.
@@ -64,7 +67,7 @@ This milestone delivers environment-driven production deployment for Ugreen NAS 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 19. Environment-Driven Production Configuration | 0/TBD | Not started | - |
+| 19. Environment-Driven Production Configuration | 0/2 | Not started | - |
 | 20. Production Container Build and Gateway Routing | 0/TBD | Not started | - |
 | 21. Portainer Stack Deployment and Persistence | 0/TBD | Not started | - |
 | 22. Operator Deployment Documentation | 0/TBD | Not started | - |
