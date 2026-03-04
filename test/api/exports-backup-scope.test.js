@@ -161,6 +161,7 @@ describe("exports backup scope enforcement", () => {
 
     return {
       id: created.id,
+      username: created.username,
       email: created.email,
       password
     };
@@ -570,5 +571,65 @@ describe("exports backup scope enforcement", () => {
     expect(auditRow.actor_user_id).toBe(owner.id);
     expect(auditRow.lens_user_id).toBe(owner.id);
     assertAuditTimestamp(auditRow.timestamp);
+  });
+
+  it("surfaces export audit entries in item activity with readable labels and stable IDs", async () => {
+    const owner = await createUser({ email: "owner-activity-export@example.com" });
+    const item = await createItem(owner.id, { address: "Activity Export Home" });
+
+    const itemFindAllSpy = jest.spyOn(models.Item, "findAll").mockRejectedValueOnce(new Error("db read failed"));
+
+    const agent = request.agent(app);
+    await signIn(agent, owner.email, owner.password);
+
+    const failedExport = await agent.get("/exports/backup.xlsx").buffer(true).parse(binaryParser);
+    expect(failedExport.status).toBe(500);
+    itemFindAllSpy.mockRestore();
+
+    const successfulExport = await agent.get("/exports/backup.xlsx").buffer(true).parse(binaryParser);
+    expect(successfulExport.status).toBe(200);
+
+    const activity = await agent.get(`/items/${item.id}/activity`).query({ limit: "10" });
+    expect(activity.status).toBe(200);
+
+    const exportRows = activity.body.activity.filter((row) => row.entity === "export:backup.xlsx");
+    expect(exportRows).toHaveLength(2);
+    expect(new Set(exportRows.map((row) => row.action))).toEqual(
+      new Set(["export.backup.succeeded", "export.backup.failed"])
+    );
+
+    exportRows.forEach((row) => {
+      expect(row.actor_user_id).toBe(owner.id);
+      expect(row.actor_label).toBe(owner.username);
+      expect(row.lens_user_id).toBe(owner.id);
+      expect(row.lens_label).toBe(owner.username);
+      expect(row.lens_attribution_state).toBe("attributed");
+      assertAuditTimestamp(row.timestamp);
+    });
+  });
+
+  it("returns all-data lens exports with explicit all-users label in item activity", async () => {
+    const admin = await createUser({ email: "admin@example.com", role: "admin" });
+    const owner = await createUser({ email: "owner-activity-all@example.com" });
+    const item = await createItem(owner.id, { address: "Admin Activity Home" });
+
+    const adminAgent = request.agent(app);
+    const login = await signIn(adminAgent, admin.email, admin.password);
+    expect(login.body.session.scope.mode).toBe("all");
+
+    const exportResponse = await adminAgent.get("/exports/backup.xlsx").buffer(true).parse(binaryParser);
+    expect(exportResponse.status).toBe(200);
+
+    const activity = await adminAgent.get(`/items/${item.id}/activity`).query({ limit: "10" });
+    expect(activity.status).toBe(200);
+
+    const exportRow = activity.body.activity.find((row) => row.action === "export.backup.succeeded");
+    expect(exportRow).toBeDefined();
+    expect(exportRow.actor_user_id).toBe(admin.id);
+    expect(exportRow.actor_label).toBe(admin.username);
+    expect(exportRow.lens_user_id).toBeNull();
+    expect(exportRow.lens_label).toBe("All users");
+    expect(exportRow.lens_attribution_state).toBe("all_data");
+    assertAuditTimestamp(exportRow.timestamp);
   });
 });

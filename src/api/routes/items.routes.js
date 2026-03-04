@@ -124,6 +124,7 @@ function createItemsRouter() {
       const activity = await getItemActivity({
         itemId: req.params.id,
         actorUserId: req.actor.userId,
+        scope: req.scope,
         limit: req.query.limit
       });
 

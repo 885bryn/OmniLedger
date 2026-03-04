@@ -112,8 +112,10 @@ export type TransportItemActivityRow = {
   id: string
   user_id: string
   actor_user_id: string | null
+  actor_label: string | null
   lens_user_id: string | null
-  lens_attribution_state: 'attributed' | 'legacy_missing'
+  lens_label: string | null
+  lens_attribution_state: 'attributed' | 'legacy_missing' | 'all_data'
   action: string
   entity: string
   entity_type: string | null
