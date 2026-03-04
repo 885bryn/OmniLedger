@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { UserSwitcher } from '../app/shell/user-switcher'
+import { ToastProvider } from '../features/ui/toast-provider'
 
 const { logoutMock, adminScopeState } = vi.hoisted(() => ({
   logoutMock: vi.fn(async () => undefined),
@@ -56,11 +57,13 @@ function renderUserSwitcher() {
   })
 
   return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <UserSwitcher />
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <ToastProvider>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <UserSwitcher />
+        </MemoryRouter>
+      </QueryClientProvider>
+    </ToastProvider>,
   )
 }
 
@@ -101,6 +104,7 @@ describe('user switcher export backup action', () => {
     createObjectUrlMock.mockReset()
     revokeObjectUrlMock.mockReset()
     vi.unstubAllGlobals()
+    vi.useRealTimers()
   })
 
   it('shows export action and triggers export endpoint for a standard user', async () => {
@@ -120,10 +124,11 @@ describe('user switcher export backup action', () => {
 
     expect(createObjectUrlMock).toHaveBeenCalledTimes(1)
     expect(revokeObjectUrlMock).toHaveBeenCalledWith('blob:download-url')
-    expect(screen.getByRole('status').textContent).toContain('Backup download started.')
+    expect(screen.getByText('Backup is ready and download has started.')).toBeTruthy()
+    expect(screen.getByTestId('toast').textContent).toContain('Export complete. Download started.')
   })
 
-   it('shows pending state immediately and keeps button disabled until request resolves', async () => {
+  it('shows pending state immediately, keeps button disabled, and reveals still-working hint', async () => {
     let release: (() => void) | null = null
     fetchMock.mockImplementationOnce(
       () =>
@@ -140,26 +145,42 @@ describe('user switcher export backup action', () => {
     renderUserSwitcher()
 
     const exportButton = screen.getByRole('button', { name: 'Export Backup' })
-    await userEvent.click(exportButton)
-    expect(screen.getByRole('button', { name: 'Exporting...' }).hasAttribute('disabled')).toBe(true)
-    await userEvent.click(screen.getByRole('button', { name: 'Exporting...' }))
+    fireEvent.click(exportButton)
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Exporting...' }).hasAttribute('disabled')).toBe(true)
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Exporting...' }))
     expect(fetchMock).toHaveBeenCalledTimes(1)
+    await waitFor(
+      () => {
+        expect(screen.getByRole('status').textContent).toContain('Still working on your backup. Keep this page open.')
+      },
+      { timeout: 5000 },
+    )
 
     release?.()
     await waitFor(() => {
-      expect(screen.getByRole('status').textContent).toContain('Backup download started.')
+      expect(screen.getByRole('status').textContent).toContain('Backup is ready and download has started.')
     })
-  })
+  }, 10000)
 
-  it('shows actionable retry guidance when export fails', async () => {
+  it('shows session guidance first and escalates recovery copy after repeated failures', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 }))
     fetchMock.mockRejectedValueOnce(new Error('network down'))
 
     renderUserSwitcher()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Export Backup' }))
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Export Backup' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toContain('Check your connection and session, then try again.')
+      expect(screen.getByRole('alert').textContent).toContain('Session expired before export finished. Sign in again, then retry.')
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Retry export' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain('Still failing after retries. Refresh your session, then retry.')
     })
   })
 
@@ -182,6 +203,8 @@ describe('user switcher export backup action', () => {
         credentials: 'include',
       })
     })
+
+    expect(screen.getByText('Export complete for all users. Actor: alpha | Lens: All users.')).toBeTruthy()
   })
 
   it('keeps export request contract unchanged in admin owner-lens mode', async () => {

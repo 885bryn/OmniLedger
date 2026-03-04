@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { useExportBackup } from '../../features/export/use-export-backup'
 import { ConfirmationDialog } from '../../features/ui/confirmation-dialog'
+import { useToast } from '../../features/ui/toast-provider'
 import { actorSensitiveQueryRoots } from '../../lib/query-keys'
 
 export function UserSwitcher() {
@@ -16,8 +17,11 @@ export function UserSwitcher() {
   const { session, logout } = useAuth()
   const { isAdmin, mode, lensUserId, users, isLoadingUsers, isUpdatingScope, updateError, setAllUsers, setLensUser } = useAdminScope()
   const exportBackup = useExportBackup()
+  const { push } = useToast()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [pendingExitLensUserId, setPendingExitLensUserId] = useState<string | null>(null)
+  const feedbackTimerRef = useRef<number | null>(null)
+  const didToastForSuccessRef = useRef(false)
 
   const identity = session?.username || session?.email || '—'
 
@@ -31,6 +35,87 @@ export function UserSwitcher() {
     const matchedUser = users.find((user) => user.id === userId)
     return matchedUser?.username || matchedUser?.email || userId
   }
+
+  const exportSuccessMessage = useMemo(() => {
+    if (isAdmin && mode === 'all') {
+      return t('shell.exportBackupSuccessAdminAll', { actor: identity })
+    }
+
+    if (isAdmin && lensUserId) {
+      return t('shell.exportBackupSuccessAdminLens', { actor: identity, lens: resolveLensLabel(lensUserId) })
+    }
+
+    return t('shell.exportBackupSuccessInline')
+  }, [identity, isAdmin, lensUserId, mode, t, users])
+
+  const exportErrorMessage = useMemo(() => {
+    if (exportBackup.attemptCount >= 2) {
+      return t('shell.exportBackupErrorEscalated')
+    }
+
+    if (exportBackup.errorKind === 'session') {
+      return t('shell.exportBackupErrorSession')
+    }
+
+    if (exportBackup.errorKind === 'server') {
+      return t('shell.exportBackupErrorServer')
+    }
+
+    return t('shell.exportBackupErrorNetwork')
+  }, [exportBackup.attemptCount, exportBackup.errorKind, t])
+
+  const handleExportClick = async () => {
+    try {
+      await exportBackup.triggerExport()
+    } catch {
+      return
+    }
+  }
+
+  useEffect(() => {
+    if (feedbackTimerRef.current) {
+      window.clearTimeout(feedbackTimerRef.current)
+      feedbackTimerRef.current = null
+    }
+
+    if (exportBackup.phase === 'success') {
+      if (!didToastForSuccessRef.current) {
+        push({
+          message: t('shell.exportBackupSuccessToast'),
+          tone: 'success',
+          dedupeKey: 'export-success',
+          durationMs: 4200,
+        })
+        didToastForSuccessRef.current = true
+      }
+
+      feedbackTimerRef.current = window.setTimeout(() => {
+        exportBackup.reset()
+      }, 4200)
+      return
+    }
+
+    if (exportBackup.phase === 'error') {
+      feedbackTimerRef.current = window.setTimeout(() => {
+        exportBackup.reset()
+      }, 4200)
+      return
+    }
+
+    if (exportBackup.phase === 'idle' || exportBackup.phase === 'pending') {
+      didToastForSuccessRef.current = false
+    }
+
+    return undefined
+  }, [exportBackup, push, t])
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        window.clearTimeout(feedbackTimerRef.current)
+      }
+    }
+  }, [])
 
   const confirmAdminExit = async () => {
     if (!pendingExitLensUserId) {
@@ -85,12 +170,8 @@ export function UserSwitcher() {
         <button
           type="button"
           disabled={exportBackup.isPending}
-          onClick={async () => {
-            try {
-              await exportBackup.triggerExport()
-            } catch {
-              return
-            }
+          onClick={() => {
+            void handleExportClick()
           }}
           className="rounded border border-border px-2 py-1 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -114,11 +195,25 @@ export function UserSwitcher() {
         >
           {isLoggingOut ? t('shell.loggingOut') : t('shell.logoutAction')}
         </button>
-        {exportBackup.isSuccess ? <span role="status" className="max-w-48 truncate text-[11px] text-emerald-700">{t('shell.exportBackupSuccess')}</span> : null}
-        {exportBackup.isError ? (
-          <span role="alert" className="max-w-48 truncate text-[11px] text-destructive">
-            {t('shell.exportBackupError')}
+        {exportBackup.phase === 'success' ? <span role="status" className="max-w-80 text-[11px] text-emerald-700">{exportSuccessMessage}</span> : null}
+        {exportBackup.phase === 'pending' && exportBackup.isLongRunning ? (
+          <span role="status" className="max-w-80 text-[11px] text-muted-foreground">
+            {t('shell.exportBackupLongRunning')}
           </span>
+        ) : null}
+        {exportBackup.phase === 'error' ? (
+          <div role="alert" className="flex items-center gap-2 text-[11px] text-destructive">
+            <span className="max-w-80">{exportErrorMessage}</span>
+            <button
+              type="button"
+              onClick={() => {
+                void handleExportClick()
+              }}
+              className="rounded border border-destructive/40 px-2 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/5"
+            >
+              {t('shell.exportBackupRetryAction')}
+            </button>
+          </div>
         ) : null}
         {updateError ? <span role="alert" className="max-w-48 truncate text-[11px] text-destructive">{updateError}</span> : null}
       </div>
