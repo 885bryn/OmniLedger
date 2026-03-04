@@ -42,7 +42,10 @@ Plans:
   1. Maintainer can build and run backend production image from `Dockerfile.prod` with deployment-suitable runtime behavior.
   2. Maintainer can build and run frontend multi-stage production image from `Dockerfile.prod` that serves compiled assets in container runtime.
   3. User-facing frontend API calls route through the Nginx gateway to backend targets derived from `NAS_STATIC_IP` and complete without CORS failures.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 20-01-PLAN.md - Add deployment-safe backend `Dockerfile.prod` and reproducible image/runtime verification flow.
+- [ ] 20-02-PLAN.md - Add frontend multi-stage `Dockerfile.prod` with Nginx `/api/*` gateway routing and JSON 502 handling.
 
 ### Phase 21: Portainer Stack Deployment and Persistence
 **Goal**: Operators can launch and keep a persistent production stack on Ugreen NAS via Portainer.
@@ -68,6 +71,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 19. Environment-Driven Production Configuration | 2/2 | Complete    | 2026-03-04 |
-| 20. Production Container Build and Gateway Routing | 0/TBD | Not started | - |
+| 20. Production Container Build and Gateway Routing | 0/2 | Not started | - |
 | 21. Portainer Stack Deployment and Persistence | 0/TBD | Not started | - |
 | 22. Operator Deployment Documentation | 0/TBD | Not started | - |
