@@ -57,12 +57,35 @@ export function ItemActivityTimeline({ itemId }: ItemActivityTimelineProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
-  const getActorLabel = (row: TransportItemActivityRow) => row.actor_user_id || row.user_id || t('items.activity.attribution.unknownActor')
-  const getLensLabel = (row: TransportItemActivityRow) =>
-    row.lens_user_id ||
-    (row.lens_attribution_state === 'legacy_missing'
+  const getActorLabel = (row: TransportItemActivityRow) =>
+    row.actor_label || row.actor_user_id || row.user_id || t('items.activity.attribution.unknownActor')
+  const getLensLabel = (row: TransportItemActivityRow) => {
+    if (row.lens_label) {
+      return row.lens_label
+    }
+
+    if (row.lens_attribution_state === 'all_data') {
+      return 'All users'
+    }
+
+    return row.lens_user_id || (row.lens_attribution_state === 'legacy_missing'
       ? t('items.activity.attribution.legacyLens')
       : t('items.activity.attribution.unknownActor'))
+  }
+
+  const getStableActorId = (row: TransportItemActivityRow) => row.actor_user_id || row.user_id || 'unknown'
+
+  const getStableLensId = (row: TransportItemActivityRow) => {
+    if (row.lens_user_id) {
+      return row.lens_user_id
+    }
+
+    if (row.lens_attribution_state === 'all_data') {
+      return 'null (all-data)'
+    }
+
+    return 'null (legacy)'
+  }
 
   const activityQuery = useQuery({
     queryKey: queryKeys.items.activity(itemId),
@@ -154,6 +177,10 @@ export function ItemActivityTimeline({ itemId }: ItemActivityTimelineProps) {
                           ? t('items.activity.actions.itemCreated')
                           : row.action === 'item.restored'
                             ? t('items.activity.actions.itemRestored')
+                        : row.action === 'export.backup.succeeded'
+                          ? 'Export backup succeeded'
+                          : row.action === 'export.backup.failed'
+                            ? 'Export backup failed'
                         : row.action}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -170,7 +197,12 @@ export function ItemActivityTimeline({ itemId }: ItemActivityTimelineProps) {
                     dueDate: formatDate(row.event_due_date) || '-',
                     at: formatTimestamp(row.timestamp),
                   })
+                : row.entity_type === 'export'
+                  ? `Export outcome: ${row.action === 'export.backup.failed' ? 'Failed' : 'Succeeded'} - ${formatTimestamp(row.timestamp)}`
                 : t('items.activity.itemMeta', { at: formatTimestamp(row.timestamp) })}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {`Actor ID: ${getStableActorId(row)} | Lens ID: ${getStableLensId(row)}`}
             </p>
 
             {row.entity_type === 'event' && row.entity_id && undoableEventIds.has(row.entity_id) ? (

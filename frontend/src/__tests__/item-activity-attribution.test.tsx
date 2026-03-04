@@ -49,7 +49,9 @@ describe('item activity attribution transport', () => {
             id: 'audit-1',
             user_id: 'legacy-user',
             actor_user_id: 'admin-1',
+            actor_label: 'Admin User',
             lens_user_id: 'owner-1',
+            lens_label: 'Owner Lens',
             lens_attribution_state: 'attributed',
             action: 'item.updated',
             entity: 'item:item-1',
@@ -87,7 +89,9 @@ describe('item activity attribution transport', () => {
             id: 'audit-legacy',
             user_id: 'owner-legacy',
             actor_user_id: null,
+            actor_label: null,
             lens_user_id: null,
+            lens_label: null,
             lens_attribution_state: 'legacy_missing',
             action: 'item.restored',
             entity: 'item:item-1',
@@ -114,7 +118,7 @@ describe('item activity attribution transport', () => {
     expect(result.activity[0].lens_attribution_state).toBe('legacy_missing')
   })
 
-  it('renders actor and lens tuple for attributed and legacy rows', async () => {
+  it('renders export outcomes and attribution tuples with readable labels and stable IDs', async () => {
     globalThis.fetch = vi.fn(async () =>
       createJsonResponse(200, {
         item_id: 'item-1',
@@ -123,7 +127,9 @@ describe('item activity attribution transport', () => {
             id: 'audit-1',
             user_id: 'legacy-user',
             actor_user_id: 'admin-1',
+            actor_label: 'Admin User',
             lens_user_id: 'owner-1',
+            lens_label: 'Owner Lens',
             lens_attribution_state: 'attributed',
             action: 'item.updated',
             entity: 'item:item-1',
@@ -140,7 +146,9 @@ describe('item activity attribution transport', () => {
             id: 'audit-2',
             user_id: 'owner-legacy',
             actor_user_id: null,
+            actor_label: null,
             lens_user_id: null,
+            lens_label: null,
             lens_attribution_state: 'legacy_missing',
             action: 'item.restored',
             entity: 'item:item-1',
@@ -153,14 +161,39 @@ describe('item activity attribution transport', () => {
             event_amount: null,
             event_completed_at: null,
           },
+          {
+            id: 'audit-3',
+            user_id: 'admin-1',
+            actor_user_id: 'admin-1',
+            actor_label: 'Admin User',
+            lens_user_id: null,
+            lens_label: 'All users',
+            lens_attribution_state: 'all_data',
+            action: 'export.backup.failed',
+            entity: 'export:backup.xlsx',
+            entity_type: 'export',
+            entity_id: 'backup.xlsx',
+            timestamp: '2026-02-26T12:11:11.000Z',
+            event_type: null,
+            event_status: null,
+            event_due_date: null,
+            event_amount: null,
+            event_completed_at: null,
+          },
         ],
       }),
     ) as typeof fetch
 
     renderTimeline()
 
-    expect(await screen.findByText('Actor: admin-1 | Lens: owner-1')).toBeTruthy()
+    expect(await screen.findByText('Actor: Admin User | Lens: Owner Lens')).toBeTruthy()
+    expect(await screen.findByText('Actor: Admin User | Lens: All users')).toBeTruthy()
     expect(await screen.findByText('Actor: owner-legacy | Lens: Legacy row (lens unavailable)')).toBeTruthy()
+    expect(await screen.findByText('Export backup failed')).toBeTruthy()
+    expect(
+      await screen.findByText((text) => text.startsWith('Export outcome: Failed -')),
+    ).toBeTruthy()
+    expect(await screen.findByText('Actor ID: admin-1 | Lens ID: null (all-data)')).toBeTruthy()
     expect(await screen.findByText('Item restored')).toBeTruthy()
   })
 })
