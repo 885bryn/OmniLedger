@@ -5,9 +5,12 @@ import { API_SAFETY_TOAST_EVENT, type SafetyToastCode } from '../../lib/api-clie
 type ToastEntry = {
   id: number
   message: string
+  tone: 'safety' | 'neutral' | 'success'
+  testId: string
 }
 
 type ToastContextValue = {
+  push: (options: { message: string; tone?: 'neutral' | 'success'; dedupeKey?: string; durationMs?: number }) => void
   pushSafetyToast: (code: SafetyToastCode) => void
 }
 
@@ -25,24 +28,50 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation()
   const [toasts, setToasts] = useState<ToastEntry[]>([])
   const nextIdRef = useRef(0)
-  const lastEmitRef = useRef<{ code: SafetyToastCode; at: number } | null>(null)
+  const lastEmitRef = useRef<{ key: string; at: number } | null>(null)
 
-  const pushSafetyToast = useCallback(
-    (code: SafetyToastCode) => {
+  const push = useCallback(
+    ({ message, tone = 'neutral', dedupeKey, durationMs = 4200 }: { message: string; tone?: 'neutral' | 'success'; dedupeKey?: string; durationMs?: number }) => {
       const now = Date.now()
+      const key = dedupeKey || `${tone}:${message}`
       const previous = lastEmitRef.current
 
-      if (previous && previous.code === code && now - previous.at < 350) {
+      if (previous && previous.key === key && now - previous.at < 350) {
         return
       }
 
-      lastEmitRef.current = { code, at: now }
+      lastEmitRef.current = { key, at: now }
 
       const id = nextIdRef.current + 1
       nextIdRef.current = id
-      const message = resolveSafetyToastMessage(code, (key) => t(key))
 
-      setToasts((current) => [...current, { id, message }])
+      setToasts((current) => [...current, { id, message, tone, testId: 'toast' }])
+
+      window.setTimeout(() => {
+        setToasts((current) => current.filter((toast) => toast.id !== id))
+      }, durationMs)
+    },
+    [],
+  )
+
+  const pushSafetyToast = useCallback(
+    (code: SafetyToastCode) => {
+      const message = resolveSafetyToastMessage(code, (key) => t(key))
+      const dedupeKey = `safety:${code}`
+
+      const now = Date.now()
+      const previous = lastEmitRef.current
+
+      if (previous && previous.key === dedupeKey && now - previous.at < 350) {
+        return
+      }
+
+      lastEmitRef.current = { key: dedupeKey, at: now }
+
+      const id = nextIdRef.current + 1
+      nextIdRef.current = id
+
+      setToasts((current) => [...current, { id, message, tone: 'safety', testId: 'safety-toast' }])
 
       window.setTimeout(() => {
         setToasts((current) => current.filter((toast) => toast.id !== id))
@@ -73,9 +102,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ToastContextValue>(
     () => ({
+      push,
       pushSafetyToast,
     }),
-    [pushSafetyToast],
+    [push, pushSafetyToast],
   )
 
   return (
@@ -86,8 +116,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            data-testid="safety-toast"
-            className="pointer-events-auto rounded-xl border border-amber-300 bg-amber-100 px-3 py-2 text-sm font-medium text-amber-900 shadow-sm"
+            data-testid={toast.testId}
+            className={
+              toast.tone === 'safety'
+                ? 'pointer-events-auto rounded-xl border border-amber-300 bg-amber-100 px-3 py-2 text-sm font-medium text-amber-900 shadow-sm'
+                : toast.tone === 'success'
+                  ? 'pointer-events-auto rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900 shadow-sm'
+                  : 'pointer-events-auto rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm'
+            }
           >
             {toast.message}
           </div>
@@ -98,5 +134,5 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 export function useToast() {
-  return useContext(ToastContext) ?? { pushSafetyToast: () => undefined }
+  return useContext(ToastContext) ?? { push: () => undefined, pushSafetyToast: () => undefined }
 }
