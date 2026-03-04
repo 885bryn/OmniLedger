@@ -5,19 +5,66 @@
 - ✅ **v1.0 MVP** - Phases 1-7 shipped 2026-02-25 (details: `.planning/milestones/v1.0-ROADMAP.md`)
 - ✅ **v2.0 Auth, Timeline & Data Lifecycle** - Phases 8-13 shipped 2026-03-02 (details: `.planning/milestones/v2.0-ROADMAP.md`, audit: `.planning/milestones/v2.0-MILESTONE-AUDIT.md`)
 - ✅ **v3.0 Data Portability** - Phases 14-18 shipped 2026-03-04 (details: `.planning/milestones/v3.0-ROADMAP.md`, audit: `.planning/milestones/v3.0-MILESTONE-AUDIT.md`)
+- 🚧 **v4.0 Interactive Production Deployment for Ugreen NAS** - Phases 19-22 planned
 
-## Current State
+## Overview
 
-v3.0 is complete and archived. Export scope enforcement, workbook generation/download, workbook safety defaults, and export audit visibility are all shipped.
+This milestone delivers environment-driven production deployment for Ugreen NAS through Portainer by sequencing configuration externalization, production container and gateway behavior, deployable stack wiring with NAS persistence, and operator-ready deployment documentation.
 
-## Next Milestone
+## Phases
 
-- Status: Not started
-- Command: `/gsd-new-milestone`
-- Note: Next milestone starts with fresh requirements definition; phase numbering continues from 19.
+- [ ] **Phase 19: Environment-Driven Production Configuration** - Externalize required network, identity, and database secrets with startup validation for missing values.
+- [ ] **Phase 20: Production Container Build and Gateway Routing** - Deliver production-grade backend/frontend images and Nginx API routing driven by NAS address configuration.
+- [ ] **Phase 21: Portainer Stack Deployment and Persistence** - Provide deployable three-service production compose stack with Portainer env injection and NAS-backed Postgres persistence.
+- [ ] **Phase 22: Operator Deployment Documentation** - Publish production README guidance that allows operators to deploy successfully using the required Portainer environment values.
 
-## Archive References
+## Phase Details
 
-- Milestone summaries: `.planning/MILESTONES.md`
-- Archived roadmaps: `.planning/milestones/`
-- Archived requirements: `.planning/milestones/`
+### Phase 19: Environment-Driven Production Configuration
+**Goal**: Operators can run production configuration entirely through environment variables without hardcoded network or identity values.
+**Depends on**: Phase 18
+**Requirements**: ENV-01, ENV-02, ENV-03, ENV-04
+**Success Criteria** (what must be TRUE):
+  1. Operator can set `NAS_STATIC_IP` externally and frontend/backend resolve production network targets from environment configuration.
+  2. Operator can set `HACT_ADMIN_EMAIL` externally and backend admin/God Mode identity assignment follows that value.
+  3. Operator can set `DB_PASSWORD` externally and postgres/backend authentication uses the provided environment secret with no checked-in credential.
+  4. Operator sees clear startup validation errors whenever required production environment variables are missing.
+**Plans**: TBD
+
+### Phase 20: Production Container Build and Gateway Routing
+**Goal**: Maintainers can build deployable production containers and serve frontend API traffic through Nginx without production CORS breakage.
+**Depends on**: Phase 19
+**Requirements**: CONT-01, CONT-02, CONT-03
+**Success Criteria** (what must be TRUE):
+  1. Maintainer can build and run backend production image from `Dockerfile.prod` with deployment-suitable runtime behavior.
+  2. Maintainer can build and run frontend multi-stage production image from `Dockerfile.prod` that serves compiled assets in container runtime.
+  3. User-facing frontend API calls route through the Nginx gateway to backend targets derived from `NAS_STATIC_IP` and complete without CORS failures.
+**Plans**: TBD
+
+### Phase 21: Portainer Stack Deployment and Persistence
+**Goal**: Operators can launch and keep a persistent production stack on Ugreen NAS via Portainer.
+**Depends on**: Phase 20
+**Requirements**: DEPL-01, DEPL-02, DEPL-03
+**Success Criteria** (what must be TRUE):
+  1. Operator can deploy `frontend`, `backend`, and `postgres` together using `docker-compose.prod.yml` in Portainer.
+  2. Operator can supply host environment variables in Portainer, and compose maps them into services including `API_URL=http://${NAS_STATIC_IP}:8085/api`.
+  3. Postgres data persists in `/volume1/docker/house-erp/db-data` and remains available after service restarts.
+**Plans**: TBD
+
+### Phase 22: Operator Deployment Documentation
+**Goal**: Operators can execute production deployment successfully using a single, explicit README procedure.
+**Depends on**: Phase 21
+**Requirements**: DOCS-01
+**Success Criteria** (what must be TRUE):
+  1. Operator can follow the production deployment README and identify every required Portainer stack environment variable without guessing.
+  2. Operator can complete deployment using only the documented steps and variable list, with no missing-configuration blockers.
+**Plans**: TBD
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 19. Environment-Driven Production Configuration | 0/TBD | Not started | - |
+| 20. Production Container Build and Gateway Routing | 0/TBD | Not started | - |
+| 21. Portainer Stack Deployment and Persistence | 0/TBD | Not started | - |
+| 22. Operator Deployment Documentation | 0/TBD | Not started | - |

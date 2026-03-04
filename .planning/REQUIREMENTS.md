@@ -50,23 +50,23 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ENV-01 | Phase TBD | Pending |
-| ENV-02 | Phase TBD | Pending |
-| ENV-03 | Phase TBD | Pending |
-| ENV-04 | Phase TBD | Pending |
-| CONT-01 | Phase TBD | Pending |
-| CONT-02 | Phase TBD | Pending |
-| CONT-03 | Phase TBD | Pending |
-| DEPL-01 | Phase TBD | Pending |
-| DEPL-02 | Phase TBD | Pending |
-| DEPL-03 | Phase TBD | Pending |
-| DOCS-01 | Phase TBD | Pending |
+| ENV-01 | Phase 19 | Pending |
+| ENV-02 | Phase 19 | Pending |
+| ENV-03 | Phase 19 | Pending |
+| ENV-04 | Phase 19 | Pending |
+| CONT-01 | Phase 20 | Pending |
+| CONT-02 | Phase 20 | Pending |
+| CONT-03 | Phase 20 | Pending |
+| DEPL-01 | Phase 21 | Pending |
+| DEPL-02 | Phase 21 | Pending |
+| DEPL-03 | Phase 21 | Pending |
+| DOCS-01 | Phase 22 | Pending |
 
 **Coverage:**
 - v1 requirements: 11 total
-- Mapped to phases: 0
-- Unmapped: 11 ⚠️
+- Mapped to phases: 11
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after milestone v4.0 requirement definition*
+*Last updated: 2026-03-03 after milestone v4.0 roadmap creation*
