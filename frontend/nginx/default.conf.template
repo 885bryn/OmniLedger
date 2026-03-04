@@ -5,6 +5,10 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    location = /api {
+        return 301 /api/;
+    }
+
     location /api/ {
         proxy_pass ${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
