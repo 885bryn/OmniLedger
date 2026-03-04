@@ -2,20 +2,20 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-03-04)
+See: `.planning/PROJECT.md` (updated 2026-03-03)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Plan next milestone scope and requirements
+**Current focus:** Milestone v4.0 requirement and roadmap definition
 
 ## Current Position
 
-Phase: Milestone complete
-Plan: n/a
-Status: Complete
-Last activity: 2026-03-04 - Completed milestone v3.0 archival and release tagging prep
+Phase: Not started (defining requirements)
+Plan: -
+Status: Defining requirements
+Last activity: 2026-03-03 - Milestone v4.0 started
 
-Progress: [███████░░░] 37%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
