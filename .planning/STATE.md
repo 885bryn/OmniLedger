@@ -70,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04 15:41
-Stopped at: Session resumed, proceeding to Phase 21 context discussion or planning
-Resume file: None
+Last session: 2026-03-04 15:53
+Stopped at: Phase 21 context gathered
+Resume file: .planning/phases/21-portainer-stack-deployment-and-persistence/21-CONTEXT.md
