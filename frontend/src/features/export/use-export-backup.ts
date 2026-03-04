@@ -1,8 +1,39 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 const DEFAULT_DOWNLOAD_FILENAME = 'hact-backup.xlsx'
+const LONG_RUNNING_THRESHOLD_MS = 4000
+
+export type ExportFeedbackPhase = 'idle' | 'pending' | 'success' | 'error'
+export type ExportErrorKind = 'network' | 'session' | 'server'
+
+class ExportRequestError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'ExportRequestError'
+    this.status = status
+  }
+}
+
+function classifyExportError(error: unknown): ExportErrorKind {
+  if (error instanceof ExportRequestError) {
+    if (error.status === 401) {
+      return 'session'
+    }
+
+    if (error.status >= 500) {
+      return 'server'
+    }
+
+    return 'network'
+  }
+
+  return 'network'
+}
 
 function parseFilename(contentDisposition: string | null) {
   if (!contentDisposition) {
@@ -39,6 +70,10 @@ function triggerBrowserDownload(blob: Blob, filename: string) {
 }
 
 export function useExportBackup() {
+  const [attemptCount, setAttemptCount] = useState(0)
+  const [errorKind, setErrorKind] = useState<ExportErrorKind | null>(null)
+  const [isLongRunning, setIsLongRunning] = useState(false)
+
   const mutation = useMutation<void, Error>({
     mutationFn: async () => {
       const response = await fetch(`${API_BASE_URL}/exports/backup.xlsx`, {
@@ -47,7 +82,15 @@ export function useExportBackup() {
       })
 
       if (!response.ok) {
-        throw new Error('Export failed. Retry after checking your connection and session.')
+        if (response.status === 401) {
+          throw new ExportRequestError(401, 'Export failed because the session expired. Sign in again and retry.')
+        }
+
+        if (response.status >= 500) {
+          throw new ExportRequestError(response.status, 'Export failed due to a server error. Retry in a moment.')
+        }
+
+        throw new ExportRequestError(response.status, 'Export failed. Retry after checking your connection and session.')
       }
 
       const blob = await response.blob()
@@ -56,12 +99,69 @@ export function useExportBackup() {
     },
   })
 
+  useEffect(() => {
+    if (!mutation.isPending) {
+      setIsLongRunning(false)
+      return undefined
+    }
+
+    const timer = window.setTimeout(() => {
+      setIsLongRunning(true)
+    }, LONG_RUNNING_THRESHOLD_MS)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [mutation.isPending])
+
+  const triggerExport = useCallback(async () => {
+    mutation.reset()
+    setErrorKind(null)
+    setIsLongRunning(false)
+
+    try {
+      await mutation.mutateAsync()
+      setAttemptCount(0)
+    } catch (error) {
+      setAttemptCount((current) => current + 1)
+      setErrorKind(classifyExportError(error))
+      throw error
+    }
+  }, [mutation])
+
+  const reset = useCallback(() => {
+    mutation.reset()
+    setAttemptCount(0)
+    setErrorKind(null)
+    setIsLongRunning(false)
+  }, [mutation])
+
+  const phase = useMemo<ExportFeedbackPhase>(() => {
+    if (mutation.isPending) {
+      return 'pending'
+    }
+
+    if (mutation.isSuccess) {
+      return 'success'
+    }
+
+    if (mutation.isError) {
+      return 'error'
+    }
+
+    return 'idle'
+  }, [mutation.isError, mutation.isPending, mutation.isSuccess])
+
   return {
-    triggerExport: mutation.mutateAsync,
+    triggerExport,
     isPending: mutation.isPending,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,
     error: mutation.error,
-    reset: mutation.reset,
+    reset,
+    phase,
+    errorKind,
+    attemptCount,
+    isLongRunning,
   }
 }
