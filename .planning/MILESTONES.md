@@ -36,3 +36,19 @@
 - Deferred second-device LAN verification.
 
 ---
+
+## v3.0 Data Portability (Shipped: 2026-03-04)
+
+**Phases completed:** 5 phases (14-18), 11 plans, 30 tasks
+
+**Key accomplishments:**
+- Delivered a full scope-authoritative export pipeline from app trigger to binary `.xlsx` download with owner/all/lens enforcement.
+- Added deterministic workbook modeling across `Assets`, `Financial Contracts`, and `Event History` with stable relationship references.
+- Hardened workbook safety/usability defaults with formula sanitization, deterministic date policy/fallback, and freeze/filter defaults.
+- Shipped resilient export UX states with pending lock, long-running hint, dual success confirmation, and actionable failure recovery.
+- Added export audit traceability and surfaced actor/lens-attributed export outcomes in the existing activity timeline.
+
+**Known deferred checks / debt:**
+- Low-risk timeline-noise risk at high export volume because global export events are merged into per-item activity feed.
+
+---

@@ -2,7 +2,7 @@
 
 ## What This Is
 
-HACT is a full-stack household ledger product with secure multi-user access, role-aware admin scope controls, financial contract/occurrence modeling, deterministic timeline projection, and asset-centric ledger views.
+HACT is a full-stack household ledger product with secure multi-user access, scope-correct export portability, deterministic workbook generation, and actor/lens-attributed audit visibility.
 
 ## Core Value
 
@@ -10,40 +10,30 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ## Current State
 
-- **Latest shipped milestone:** v2.0 Auth, Timeline & Data Lifecycle (2026-03-02)
-- **Archive references:** `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v2.0-REQUIREMENTS.md`, `.planning/milestones/v2.0-MILESTONE-AUDIT.md`
-- **Completion stance:** shipped with accepted tech debt (non-blocking)
+- **Latest shipped milestone:** v3.0 Data Portability (2026-03-04)
+- **Archive references:** `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v3.0-REQUIREMENTS.md`, `.planning/milestones/v3.0-MILESTONE-AUDIT.md`
+- **Completion stance:** shipped; no blocker gaps, with one low-risk deferred UX-noise item in activity timeline context
 
-## Current Milestone: v3.0 Data Portability
+## Next Milestone Goals
 
-**Goal:** Implement a secure, RBAC-aware data portability module that exports clean multi-sheet Excel backups of ledger data.
-
-**Target features:**
-- Server-side `.xlsx` generation and download streaming for ledger backup export.
-- Multi-sheet workbook output for Assets, Financial Contracts, and Event History with readable flattened columns.
-- Scope-correct export behavior for standard users and admin all-data/lens modes.
-- Frontend export action with loading/progress UX and resilient error handling.
-- Usability defaults in exported workbook (frozen headers, auto-filters, date formatting aligned to locale/timezone where available).
-
-## Active Priorities
-
-- [ ] Define and finalize v3.0 requirements for data portability export scope.
-- [ ] Create phased roadmap for implementation and verification.
-- [ ] Decide which carried v2.0 debt items are in-scope for v3.0 versus deferred.
+- Define next milestone problem statement and value target via `/gsd-new-milestone`
+- Create fresh milestone-scoped `REQUIREMENTS.md`
+- Build a new phased roadmap continuing numbering from Phase 19
+- Decide whether export activity-feed noise mitigation should be in-scope or backlog
 
 ## Constraints
 
-- **Stack continuity:** Node.js + Express + Sequelize + React architecture remains baseline unless explicitly replatformed.
+- **Stack continuity:** Node.js + Express + Sequelize + React remains baseline unless explicitly replatformed.
 - **Data integrity:** UUID keys, owner-scoped RBAC behavior, and audit visibility guarantees remain mandatory.
-- **Execution model:** Phase planning/execution continues through GSD workflows and milestone archives.
+- **Execution model:** Continue milestone/phase planning through GSD workflows with archive-first documentation hygiene.
 
 <details>
-<summary>Archived Prior Project Detail (pre-v2.0 completion snapshot)</summary>
+<summary>Archived Prior Milestone Snapshot</summary>
 
-- Legacy PROJECT.md requirement buckets, context notes, and historical decision table were superseded at v2.0 completion.
-- See milestone archives and phase summaries for full historical implementation detail.
+Previous in-progress v3 kickoff context and interim planning notes were superseded at v3.0 completion.
+See milestone archives and phase summaries for implementation history.
 
 </details>
 
 ---
-*Last updated: 2026-03-02 after v3.0 milestone kickoff*
+*Last updated: 2026-03-04 after v3.0 milestone completion*

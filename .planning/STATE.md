@@ -2,18 +2,18 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-03-02)
-Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`
+See: `.planning/PROJECT.md` (updated 2026-03-04)
+Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v3.0 Data Portability execution complete (Phase 18 delivered)
+**Current focus:** Plan next milestone scope and requirements
 
 ## Current Position
 
-Phase: 18 of 18 (Export Feedback UX and Audit Visibility)
-Plan: 2 of 2
+Phase: Milestone complete
+Plan: n/a
 Status: Complete
-Last activity: 2026-03-04 - Completed 18-02 export audit persistence and attributed activity-timeline visibility
+Last activity: 2026-03-04 - Completed milestone v3.0 archival and release tagging prep
 
 Progress: [███████░░░] 37%
 
