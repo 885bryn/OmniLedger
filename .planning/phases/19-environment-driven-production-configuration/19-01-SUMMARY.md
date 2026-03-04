@@ -68,7 +68,7 @@ Each task was committed atomically:
 2. **Task 2: Wire startup fail-fast gate and explicit validation logs** - `d22756e` (feat)
 3. **Task 3: Enforce env-driven admin identity and production DB auth paths** - `c07946d` (fix)
 
-**Plan metadata:** Pending
+**Plan metadata:** `f58d077` (docs)
 
 ## Files Created/Modified
 - `src/config/production-env.js` - Central production env parser and validation error type.
