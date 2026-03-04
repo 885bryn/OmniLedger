@@ -13,8 +13,14 @@ RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime
 
+RUN apk add --no-cache gettext
+
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY docker-entrypoint.sh /usr/local/bin/hact-frontend-entrypoint.sh
+
+RUN chmod +x /usr/local/bin/hact-frontend-entrypoint.sh
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/usr/local/bin/hact-frontend-entrypoint.sh"]
