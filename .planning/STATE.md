@@ -11,18 +11,18 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 19 of 22 (Environment-Driven Production Configuration)
-Plan: 1 of 2
-Status: In progress
-Last activity: 2026-03-04 - completed 19-01 production env contract and startup fail-fast wiring
+Plan: 2 of 2
+Status: Complete
+Last activity: 2026-03-04 - completed 19-02 env-driven backend/frontend network target resolution and env template refresh
 
-Progress: [█████░░░░░] 50%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 49
+- Total plans completed: 50
 - Average duration: 4 min
-- Total execution time: 3.8 hours
+- Total execution time: 3.9 hours
 
 **By Phase:**
 
@@ -34,6 +34,7 @@ Progress: [█████░░░░░] 50%
 - Last 5 plans: 18-02 (7 min), 18-01 (5 min), 17-02 (2 min), 17-01 (5 min), 16-03 (3 min)
 - Trend: Stable delivery cadence with final v3.0 closure complete
 - Phase 19 P01: 3 min, 3 tasks, 7 files
+- Phase 19 P02: 2 min, 3 tasks, 7 files
 
 ## Accumulated Context
 
@@ -48,6 +49,8 @@ Recent decisions affecting current work:
 - [Phase 19]: Validation reports all missing or invalid required production env vars in one deterministic, Portainer-focused payload.
 - [Phase 19]: Startup now runs production env preflight before DB readiness, migrations, or server spawn to guarantee fail-fast behavior.
 - [Phase 19]: Admin identity mapping uses HACT_ADMIN_EMAIL as the sole configured source; legacy ADMIN_EMAIL fallback is ignored.
+- [Phase 19]: Production backend CORS allowlist now resolves FRONTEND_ORIGIN first, then NAS_STATIC_IP + FRONTEND_PORT for deterministic env-driven targeting.
+- [Phase 19]: Frontend API base URL now resolves from VITE_API_BASE_URL override, then VITE_NAS_STATIC_IP, preserving localhost fallback only for non-configured dev flows.
 
 ### Pending Todos
 
@@ -59,6 +62,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04 22:04
-Stopped at: Completed 19-01-PLAN.md
-Resume file: .planning/phases/19-environment-driven-production-configuration/19-02-PLAN.md
+Last session: 2026-03-04 22:12
+Stopped at: Completed 19-02-PLAN.md
+Resume file: None

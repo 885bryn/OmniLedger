@@ -8,7 +8,7 @@
 
 ### Environment Configuration
 
-- [ ] **ENV-01**: Operator can configure `NAS_STATIC_IP` externally, and frontend/backend network targets resolve from environment variables instead of hardcoded host values.
+- [x] **ENV-01**: Operator can configure `NAS_STATIC_IP` externally, and frontend/backend network targets resolve from environment variables instead of hardcoded host values.
 - [x] **ENV-02**: Operator can configure `HACT_ADMIN_EMAIL` externally, and backend admin/God Mode identity assignment uses that environment variable.
 - [x] **ENV-03**: Operator can configure `DB_PASSWORD` externally, and postgres/backend connection auth uses the environment variable without checked-in secrets.
 - [x] **ENV-04**: Operator receives clear startup validation errors when required production environment variables are missing.
@@ -50,7 +50,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ENV-01 | Phase 19 | Pending |
+| ENV-01 | Phase 19 | Complete |
 | ENV-02 | Phase 19 | Complete |
 | ENV-03 | Phase 19 | Complete |
 | ENV-04 | Phase 19 | Complete |
