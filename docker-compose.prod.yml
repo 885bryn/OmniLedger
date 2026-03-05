@@ -2,11 +2,7 @@ name: house-erp-prod
 
 services:
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    image: ghcr.io/${GHCR_OWNER:?GHCR_OWNER is required}/house-erp-frontend:${IMAGE_TAG:?IMAGE_TAG is required}
     restart: unless-stopped
     environment:
       NAS_STATIC_IP: ${NAS_STATIC_IP:?NAS_STATIC_IP is required}
@@ -26,9 +22,7 @@ services:
         condition: service_healthy
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
+    image: ghcr.io/${GHCR_OWNER:?GHCR_OWNER is required}/house-erp-backend:${IMAGE_TAG:?IMAGE_TAG is required}
     restart: unless-stopped
     environment:
       NODE_ENV: production
