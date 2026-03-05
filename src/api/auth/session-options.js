@@ -34,6 +34,34 @@ function resolveCookieMaxAgeMs() {
   return ONE_WEEK_MS;
 }
 
+function parseBooleanEnv(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "true" || normalized === "1" || normalized === "yes") {
+    return true;
+  }
+
+  if (normalized === "false" || normalized === "0" || normalized === "no") {
+    return false;
+  }
+
+  return null;
+}
+
+function resolveCookieSecure() {
+  const override = parseBooleanEnv(process.env.SESSION_COOKIE_SECURE);
+
+  if (override !== null) {
+    return override;
+  }
+
+  return process.env.NODE_ENV === "production";
+}
+
 function getSessionStore() {
   if (!isSequelizeCompatible(sequelize)) {
     return null;
@@ -71,7 +99,7 @@ function createSessionOptions() {
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: resolveCookieSecure(),
       maxAge
     }
   };

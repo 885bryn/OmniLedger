@@ -74,6 +74,7 @@ None yet.
 ### Blockers/Concerns
 
 - Existing unrelated deferred frontend lint item remains: `frontend/src/pages/events/events-page.tsx:255` (TS6133 unused `todayStart`).
+- Deployment tech debt: production LAN currently depends on `SESSION_COOKIE_SECURE=false` for HTTP access; migrate frontend entrypoint to HTTPS/TLS and restore secure cookies to `true`.
 - Docker verification commands for plan 20-02 were blocked in this environment because Docker daemon pipe `dockerDesktopLinuxEngine` was unavailable.
 - Docker persistence probe for plan 21-01 also requires rerun on NAS/host with Docker daemon available.
 - Plan 21-02 pull-first runtime verification remains diagnosed in this executor for the same Docker daemon gap and must be rerun on NAS/host for live DEPL-03 persistence evidence.
