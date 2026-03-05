@@ -13,7 +13,7 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 Phase: 22 of 22 (Operator Deployment Documentation)
 Plan: 1 of TBD
 Status: Ready
-Last activity: 2026-03-04 - completed 21-01 Portainer stack compose contract, env mapping, and NAS persistence wiring
+Last activity: 2026-03-05 - completed 21-02 GHCR publish automation and image-only Portainer compose deployment contract
 
 Progress: [███████░░░] 75%
 
@@ -31,13 +31,14 @@ Progress: [███████░░░] 75%
 | 14-18 (v3.0) | 11 | 46 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 21-01 (2 min), 20-02 (3 min), 20-01 (1 min), 19-02 (2 min), 19-01 (3 min)
-- Trend: Stable delivery cadence through Phase 21 completion
+- Last 5 plans: 21-02 (7 min), 21-01 (2 min), 20-02 (3 min), 20-01 (1 min), 19-02 (2 min)
+- Trend: Stable delivery cadence; Phase 21 closure required extra verification diagnostics due Docker runtime limits
 - Phase 19 P01: 3 min, 3 tasks, 7 files
 - Phase 19 P02: 2 min, 3 tasks, 7 files
 - Phase 20 P01: 1 min, 3 tasks, 2 files
 - Phase 20 P02: 3 min, 3 tasks, 3 files
 | Phase 21 P01 | 2 min | 3 tasks | 2 files |
+| Phase 21 P02 | 7 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,9 @@ Recent decisions affecting current work:
 - [Phase 21]: Compose stack identity is fixed to house-erp-prod for in-place Portainer updates.
 - [Phase 21]: Critical stack variables use compose required interpolation to fail fast on missing deployment secrets and NAS identity.
 - [Phase 21]: Postgres persistence is locked to /volume1/docker/house-erp/db-data via bind mount for restart continuity.
+- [Phase 21]: Use GHCR as the only production registry target with one canonical frontend/backend image tag contract across CI and CLI.
+- [Phase 21]: Require GHCR_OWNER and IMAGE_TAG in compose interpolation so Portainer deploys fail fast when image coordinates are missing.
+- [Phase 21]: Mark verification as diagnosed when Docker runtime is unavailable while preserving DEPL traceability and NAS rerun steps.
 
 ### Pending Todos
 
@@ -72,9 +76,10 @@ None yet.
 - Existing unrelated deferred frontend lint item remains: `frontend/src/pages/events/events-page.tsx:255` (TS6133 unused `todayStart`).
 - Docker verification commands for plan 20-02 were blocked in this environment because Docker daemon pipe `dockerDesktopLinuxEngine` was unavailable.
 - Docker persistence probe for plan 21-01 also requires rerun on NAS/host with Docker daemon available.
+- Plan 21-02 pull-first runtime verification remains diagnosed in this executor for the same Docker daemon gap and must be rerun on NAS/host for live DEPL-03 persistence evidence.
 
 ## Session Continuity
 
-Last session: 2026-03-04 16:06
-Stopped at: Completed 21-01-PLAN.md
+Last session: 2026-03-05 00:35
+Stopped at: Completed 21-02-PLAN.md
 Resume file: None

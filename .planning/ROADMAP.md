@@ -55,9 +55,10 @@ Plans:
   1. Operator can deploy `frontend`, `backend`, and `postgres` together using `docker-compose.prod.yml` in Portainer.
   2. Operator can supply host environment variables in Portainer, and compose maps them into services including `API_URL=http://${NAS_STATIC_IP}:8085/api`.
   3. Postgres data persists in `/volume1/docker/house-erp/db-data` and remains available after service restarts.
-**Plans**: 1 plans
+**Plans**: 2 plans
 Plans:
 - [x] 21-01-PLAN.md - Create Portainer-ready production compose stack with env injection and NAS Postgres persistence verification.
+- [x] 21-02-PLAN.md - Close GHCR-first deployment gap by publishing frontend/backend images, switching compose to `image:` tags, and recording pull-based persistence verification evidence.
 
 ### Phase 22: Operator Deployment Documentation
 **Goal**: Operators can execute production deployment successfully using a single, explicit README procedure.
@@ -74,5 +75,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 19. Environment-Driven Production Configuration | 2/2 | Complete    | 2026-03-04 |
 | 20. Production Container Build and Gateway Routing | 2/2 | Complete   | 2026-03-04 |
-| 21. Portainer Stack Deployment and Persistence | 1/1 | Complete   | 2026-03-05 |
+| 21. Portainer Stack Deployment and Persistence | 2/2 | Complete   | 2026-03-05 |
 | 22. Operator Deployment Documentation | 0/TBD | Not started | - |
