@@ -1,0 +1,73 @@
+name: house-erp-prod
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    restart: unless-stopped
+    environment:
+      NAS_STATIC_IP: ${NAS_STATIC_IP:?NAS_STATIC_IP is required}
+      API_URL: http://${NAS_STATIC_IP}:8085/api
+    ports:
+      - "${FRONTEND_PORT:-8085}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-hact_prod}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-hact_prod}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      HACT_ADMIN_EMAIL: ${HACT_ADMIN_EMAIL:?HACT_ADMIN_EMAIL is required}
+      FRONTEND_ORIGIN: http://${NAS_STATIC_IP:?NAS_STATIC_IP is required}:${FRONTEND_PORT:-8085}
+      STARTUP_DB_MAX_RETRIES: ${STARTUP_DB_MAX_RETRIES:-30}
+      STARTUP_DB_RETRY_MS: ${STARTUP_DB_RETRY_MS:-2000}
+      API_URL: http://${NAS_STATIC_IP:?NAS_STATIC_IP is required}:8085/api
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8080/health').then((response)=>{if(!response.ok){process.exit(1);}}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-hact_prod}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - /volume1/docker/house-erp/db-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      interval: 5s
+      timeout: 5s
+      retries: 12
