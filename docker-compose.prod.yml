@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     environment:
       NAS_STATIC_IP: ${NAS_STATIC_IP:?NAS_STATIC_IP is required}
-      API_URL: http://${NAS_STATIC_IP}:8085/api
+      API_URL: http://${NAS_STATIC_IP:?NAS_STATIC_IP is required}:8085/api
     ports:
       - "${FRONTEND_PORT:-8085}:80"
     depends_on:
