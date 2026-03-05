@@ -44,12 +44,12 @@ jobs:
           IMAGE_TAG="${{ inputs.image_tag }}"
           OWNER_LOWER="$(printf '%s' "${GHCR_OWNER}" | tr '[:upper:]' '[:lower:]')"
 
-          BACKEND_TAGS="ghcr.io/${OWNER_LOWER}/house-erp-backend:${IMAGE_TAG}"
-          FRONTEND_TAGS="ghcr.io/${OWNER_LOWER}/house-erp-frontend:${IMAGE_TAG}"
+          BACKEND_TAGS="ghcr.io/${OWNER_LOWER}/omniledger-backend:${IMAGE_TAG}"
+          FRONTEND_TAGS="ghcr.io/${OWNER_LOWER}/omniledger-frontend:${IMAGE_TAG}"
 
           if [ "${{ inputs.include_latest }}" = "true" ]; then
-            BACKEND_TAGS="${BACKEND_TAGS},ghcr.io/${OWNER_LOWER}/house-erp-backend:latest"
-            FRONTEND_TAGS="${FRONTEND_TAGS},ghcr.io/${OWNER_LOWER}/house-erp-frontend:latest"
+            BACKEND_TAGS="${BACKEND_TAGS},ghcr.io/${OWNER_LOWER}/omniledger-backend:latest"
+            FRONTEND_TAGS="${FRONTEND_TAGS},ghcr.io/${OWNER_LOWER}/omniledger-frontend:latest"
           fi
 
           {

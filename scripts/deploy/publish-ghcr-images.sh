@@ -43,8 +43,8 @@ done
 : "${IMAGE_TAG:?IMAGE_TAG is required}"
 
 OWNER_LOWER="$(printf '%s' "${GHCR_OWNER}" | tr '[:upper:]' '[:lower:]')"
-BACKEND_IMAGE="ghcr.io/${OWNER_LOWER}/house-erp-backend"
-FRONTEND_IMAGE="ghcr.io/${OWNER_LOWER}/house-erp-frontend"
+BACKEND_IMAGE="ghcr.io/${OWNER_LOWER}/omniledger-backend"
+FRONTEND_IMAGE="ghcr.io/${OWNER_LOWER}/omniledger-frontend"
 GHCR_USERNAME="${GHCR_USERNAME:-${GHCR_OWNER}}"
 
 BACKEND_TAG_ARGS=(--tag "${BACKEND_IMAGE}:${IMAGE_TAG}")
