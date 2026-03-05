@@ -8,14 +8,51 @@ import { TargetUserChip, resolveTargetUserAttribution } from '../../features/adm
 import { ConfirmationDialog } from '../../features/ui/confirmation-dialog'
 import { useToast } from '../../features/ui/toast-provider'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
-import { getItemDisplayName } from '../../lib/item-display'
+import { getItemDisplayName, isHiddenAttributeKey } from '../../lib/item-display'
 import { useUnsavedChangesGuard } from '../../features/items/use-unsaved-changes-guard'
 import { queryKeys } from '../../lib/query-keys'
 
 type ItemRow = {
   id: string
   item_type: string
+  type?: string | null
+  frequency?: string | null
   attributes: Record<string, unknown>
+}
+
+type FinancialSubtype = 'Commitment' | 'Income'
+type FinancialFrequency = 'one_time' | 'weekly' | 'monthly' | 'yearly'
+
+const FINANCIAL_FREQUENCY_OPTIONS: FinancialFrequency[] = ['one_time', 'weekly', 'monthly', 'yearly']
+
+function resolveFinancialSubtype(item: ItemRow): FinancialSubtype {
+  if (item.type === 'Income') {
+    return 'Income'
+  }
+
+  if (item.type === 'Commitment') {
+    return 'Commitment'
+  }
+
+  if (item.attributes?.financialSubtype === 'Income') {
+    return 'Income'
+  }
+
+  return 'Commitment'
+}
+
+function resolveFinancialFrequency(item: ItemRow): FinancialFrequency {
+  const explicit = item.frequency
+  if (explicit === 'one_time' || explicit === 'weekly' || explicit === 'monthly' || explicit === 'yearly') {
+    return explicit
+  }
+
+  const fromAttributes = item.attributes?.billingCycle
+  if (fromAttributes === 'one_time' || fromAttributes === 'weekly' || fromAttributes === 'monthly' || fromAttributes === 'yearly') {
+    return fromAttributes
+  }
+
+  return 'monthly'
 }
 
 type ItemsResponse = {
@@ -35,11 +72,57 @@ function convertForSave(current: Record<string, unknown>, initial: Record<string
     }
 
     const raw = output[key]
-    const parsed = Number(raw)
+    const parsed = typeof raw === 'string' ? Number(raw.replace(/[$,\s]/g, '')) : Number(raw)
     output[key] = Number.isFinite(parsed) ? parsed : initialValue
   }
 
   return output
+}
+
+function normalizeCurrencyInput(value: string) {
+  const sanitized = value.replace(/[^0-9.]/g, '')
+  if (!sanitized) {
+    return ''
+  }
+
+  const [wholePartRaw, ...decimalParts] = sanitized.split('.')
+  const wholePart = wholePartRaw.replace(/^0+(?=\d)/, '') || '0'
+  const decimals = decimalParts.join('').slice(0, 2)
+
+  return decimals.length > 0 ? `${wholePart}.${decimals}` : wholePart
+}
+
+function formatCurrencyInput(value: string | number) {
+  const normalized = normalizeCurrencyInput(String(value))
+  if (!normalized) {
+    return ''
+  }
+
+  const [wholePart, decimals = ''] = normalized.split('.')
+  const groupedWhole = Number(wholePart).toLocaleString()
+
+  if (decimals.length > 0) {
+    return `$${groupedWhole}.${decimals}`
+  }
+
+  return `$${groupedWhole}`
+}
+
+function isMoneyField(key: string) {
+  const normalized = key.toLowerCase()
+  return [
+    'amount',
+    'estimatedvalue',
+    'remainingbalance',
+    'originalprincipal',
+    'monthlyrent',
+    'collectedtotal',
+    'trackingstartingremainingbalance',
+    'trackingstartingcollectedtotal',
+    'trackingcompletedtotal',
+    'lastpaymentamount',
+    'lastcollectedamount',
+  ].includes(normalized)
 }
 
 export function ItemEditPage() {
@@ -55,6 +138,10 @@ export function ItemEditPage() {
   const [initialAttributes, setInitialAttributes] = useState<Record<string, unknown>>({})
   const [draftAttributes, setDraftAttributes] = useState<Record<string, unknown>>({})
   const [showTechnical, setShowTechnical] = useState(false)
+  const [initialFinancialSubtype, setInitialFinancialSubtype] = useState<FinancialSubtype>('Commitment')
+  const [draftFinancialSubtype, setDraftFinancialSubtype] = useState<FinancialSubtype>('Commitment')
+  const [initialFinancialFrequency, setInitialFinancialFrequency] = useState<FinancialFrequency>('monthly')
+  const [draftFinancialFrequency, setDraftFinancialFrequency] = useState<FinancialFrequency>('monthly')
   const [newFieldKey, setNewFieldKey] = useState('')
   const [newFieldValue, setNewFieldValue] = useState('')
   const [fieldError, setFieldError] = useState<string | null>(null)
@@ -81,7 +168,13 @@ export function ItemEditPage() {
     },
   })
 
-  const hasUnsavedChanges = useMemo(() => JSON.stringify(draftAttributes) !== JSON.stringify(initialAttributes), [draftAttributes, initialAttributes])
+  const hasUnsavedChanges = useMemo(
+    () =>
+      JSON.stringify(draftAttributes) !== JSON.stringify(initialAttributes) ||
+      draftFinancialSubtype !== initialFinancialSubtype ||
+      draftFinancialFrequency !== initialFinancialFrequency,
+    [draftAttributes, draftFinancialFrequency, draftFinancialSubtype, initialAttributes, initialFinancialFrequency, initialFinancialSubtype],
+  )
 
   const attribution = resolveTargetUserAttribution({
     isAdmin,
@@ -101,6 +194,12 @@ export function ItemEditPage() {
 
     setInitialAttributes(itemQuery.data.attributes)
     setDraftAttributes(itemQuery.data.attributes)
+    const subtype = resolveFinancialSubtype(itemQuery.data)
+    setInitialFinancialSubtype(subtype)
+    setDraftFinancialSubtype(subtype)
+    const frequency = resolveFinancialFrequency(itemQuery.data)
+    setInitialFinancialFrequency(frequency)
+    setDraftFinancialFrequency(frequency)
   }, [itemQuery.data])
 
   const updateMutation = useMutation({
@@ -109,7 +208,15 @@ export function ItemEditPage() {
 
       return apiRequest<ItemRow>(`/items/${itemId}`, {
         method: 'PATCH',
-        body: { attributes: payload },
+        body: {
+          attributes: payload,
+          ...(itemQuery.data?.item_type === 'FinancialItem'
+            ? {
+                type: draftFinancialSubtype,
+                frequency: draftFinancialFrequency,
+              }
+            : {}),
+        },
       })
     },
     onMutate: () => {
@@ -126,6 +233,14 @@ export function ItemEditPage() {
 
       setInitialAttributes(updated.attributes)
       setDraftAttributes(updated.attributes)
+      if (updated.item_type === 'FinancialItem') {
+        const subtype = resolveFinancialSubtype(updated)
+        setInitialFinancialSubtype(subtype)
+        setDraftFinancialSubtype(subtype)
+        const frequency = resolveFinancialFrequency(updated)
+        setInitialFinancialFrequency(frequency)
+        setDraftFinancialFrequency(frequency)
+      }
       unsavedGuard.allowNextNavigation()
       navigate(`/items/${itemId}`)
     },
@@ -147,10 +262,33 @@ export function ItemEditPage() {
   const editableEntries = useMemo(
     () =>
       Object.entries(draftAttributes)
-        .filter(([key, value]) => !key.startsWith('_') && isEditablePrimitive(value))
+        .filter(([key, value]) => {
+          if (itemQuery.data?.item_type === 'FinancialItem' && (key === 'financialSubtype' || key === 'billingCycle')) {
+            return false
+          }
+
+          if (itemQuery.data?.item_type === 'FinancialItem' && key === 'nextPaymentAmount') {
+            return false
+          }
+
+          return !isHiddenAttributeKey(key) && isEditablePrimitive(value)
+        })
         .sort(([a], [b]) => a.localeCompare(b)),
-    [draftAttributes],
+    [draftAttributes, itemQuery.data?.item_type],
   )
+
+  const technicalSnapshot = useMemo(() => {
+    const sanitized = Object.entries(draftAttributes).reduce<Record<string, unknown>>((output, [key, value]) => {
+      if (isHiddenAttributeKey(key)) {
+        return output
+      }
+
+      output[key] = value
+      return output
+    }, {})
+
+    return JSON.stringify(sanitized, null, 2)
+  }, [draftAttributes])
 
   const errorText = useMemo(() => {
     if (fieldError) {
@@ -224,12 +362,44 @@ export function ItemEditPage() {
         className="animate-fade-up space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
       >
         <div className="grid gap-3 md:grid-cols-2">
+          {currentItem.item_type === 'FinancialItem' ? (
+            <label className="space-y-1 md:col-span-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.wizard.typeLabel')}</span>
+              <select
+                value={draftFinancialSubtype}
+                onChange={(event) => setDraftFinancialSubtype(event.target.value as FinancialSubtype)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="Commitment">Commitment</option>
+                <option value="Income">Income</option>
+              </select>
+            </label>
+          ) : null}
+
+          {currentItem.item_type === 'FinancialItem' ? (
+            <label className="space-y-1 md:col-span-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.billingCycle')}</span>
+              <select
+                value={draftFinancialFrequency}
+                onChange={(event) => setDraftFinancialFrequency(event.target.value as FinancialFrequency)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              >
+                {FINANCIAL_FREQUENCY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {t(`items.detail.recurrence.${option === 'one_time' ? 'oneTime' : option}`, { defaultValue: option })}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
           {editableEntries.map(([key, value]) => {
             const initialValue = initialAttributes[key]
             const isDescription = key.toLowerCase().includes('description')
             const isDate = key.toLowerCase().includes('date')
             const isNumber = typeof initialValue === 'number'
             const isBoolean = typeof initialValue === 'boolean'
+            const isMoney = isMoneyField(key)
 
             return (
               <label key={key} className={isDescription ? 'space-y-1 md:col-span-2' : 'space-y-1'}>
@@ -250,6 +420,19 @@ export function ItemEditPage() {
                         checked={Boolean(value)}
                         onChange={(inputEvent) => setDraftAttributes((current) => ({ ...current, [key]: inputEvent.target.checked }))}
                         className="h-4 w-4 rounded border-border"
+                      />
+                    ) : isMoney ? (
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={typeof value === 'string' || typeof value === 'number' ? formatCurrencyInput(value) : ''}
+                        onChange={(inputEvent) =>
+                          setDraftAttributes((current) => ({
+                            ...current,
+                            [key]: normalizeCurrencyInput(inputEvent.target.value),
+                          }))
+                        }
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       />
                     ) : (
                       <input
@@ -315,12 +498,14 @@ export function ItemEditPage() {
           </button>
         </div>
 
-        {showTechnical ? (
-          <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.edit.technicalSnapshot')}</p>
-            <pre className="overflow-x-auto rounded-lg border border-border bg-background p-3 text-xs">{JSON.stringify(draftAttributes, null, 2)}</pre>
-          </div>
-        ) : null}
+        <div className="ui-expand" data-open={showTechnical}>
+          {showTechnical ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.edit.technicalSnapshot')}</p>
+              <pre className="overflow-x-auto rounded-lg border border-border bg-background p-3 text-xs">{technicalSnapshot}</pre>
+            </div>
+          ) : null}
+        </div>
 
         {errorText ? <p className="text-xs text-destructive">{errorText}</p> : null}
 

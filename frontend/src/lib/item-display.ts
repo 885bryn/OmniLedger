@@ -20,19 +20,36 @@ export function getFinancialSubtype(item: ItemShape) {
     return attributeSubtype
   }
 
-  if (item.item_type === 'FinancialCommitment') {
-    return 'Commitment'
-  }
-
-  if (item.item_type === 'FinancialIncome') {
-    return 'Income'
-  }
-
   return null
 }
 
+export function isIncomeItem(item: ItemShape) {
+  return getFinancialSubtype(item) === 'Income'
+}
+
+export function isHiddenAttributeKey(key: string) {
+  if (!key) {
+    return true
+  }
+
+  if (key.startsWith('_')) {
+    return true
+  }
+
+  const normalized = key.toLowerCase()
+  if (normalized === 'id' || normalized === 'userid' || normalized === 'user_id') {
+    return true
+  }
+
+  if (normalized.endsWith('_id')) {
+    return true
+  }
+
+  return /(?:item|asset|parent|linked|user|owner|actor|lens)id$/i.test(key)
+}
+
 export function getItemTypeLabel(item: ItemShape) {
-  if (item.item_type === 'FinancialItem' || item.item_type === 'FinancialCommitment' || item.item_type === 'FinancialIncome') {
+  if (item.item_type === 'FinancialItem') {
     return 'Financial item'
   }
 

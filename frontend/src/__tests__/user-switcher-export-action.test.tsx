@@ -15,8 +15,8 @@ const { logoutMock, adminScopeState } = vi.hoisted(() => ({
   adminScopeState: {
     isAdmin: false,
     mode: 'owner' as 'owner' | 'all',
-    lensUserId: 'user-1',
-    users: [],
+    lensUserId: 'user-1' as string | null,
+    users: [] as Array<{ id: string; username: string; email: string }>,
     isLoadingUsers: false,
     isUpdatingScope: false,
     updateError: null as string | null,
@@ -130,7 +130,7 @@ describe('user switcher export backup action', () => {
   })
 
   it('shows pending state immediately, keeps button disabled, and reveals still-working hint', async () => {
-    let release: (() => void) | null = null
+    let release: () => void = () => {}
     fetchMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -159,7 +159,7 @@ describe('user switcher export backup action', () => {
       { timeout: 5000 },
     )
 
-    release?.()
+    release()
     await waitFor(() => {
       expect(screen.getByRole('status').textContent).toContain('Backup is ready and download has started.')
     })

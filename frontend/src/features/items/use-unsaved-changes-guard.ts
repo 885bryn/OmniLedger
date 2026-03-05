@@ -1,16 +1,15 @@
-import { useBeforeUnload, useBlocker } from 'react-router-dom'
+import { useMemo, useRef } from 'react'
+import { useBlocker } from 'react-router-dom'
 
-export function useUnsavedChangesGuard(isDirty: boolean, message: string) {
-  useBeforeUnload((event) => {
-    if (!isDirty) {
-      return
+export function useUnsavedChangesGuard(isDirty: boolean) {
+  const allowNextNavigationRef = useRef(false)
+
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (allowNextNavigationRef.current) {
+      allowNextNavigationRef.current = false
+      return false
     }
 
-    event.preventDefault()
-    event.returnValue = message
-  })
-
-  useBlocker(({ currentLocation, nextLocation }) => {
     if (!isDirty) {
       return false
     }
@@ -19,6 +18,22 @@ export function useUnsavedChangesGuard(isDirty: boolean, message: string) {
       return false
     }
 
-    return !window.confirm(message)
+    return true
   })
+
+  return useMemo(
+    () => ({
+      open: blocker.state === 'blocked',
+      proceed: () => {
+        blocker.proceed?.()
+      },
+      stay: () => {
+        blocker.reset?.()
+      },
+      allowNextNavigation: () => {
+        allowNextNavigationRef.current = true
+      },
+    }),
+    [blocker],
+  )
 }

@@ -12,11 +12,22 @@ type ItemSoftDeleteDialogProps = {
   itemLabel: string
   pending?: boolean
   errorText?: string | null
+  relatedItems?: Array<{ id: string; label: string; checked: boolean }>
+  onToggleRelatedItem?: (itemId: string, checked: boolean) => void
   onCancel: () => void
   onConfirm: () => void
 }
 
-export function ItemSoftDeleteDialog({ open, itemLabel, pending = false, errorText = null, onCancel, onConfirm }: ItemSoftDeleteDialogProps) {
+export function ItemSoftDeleteDialog({
+  open,
+  itemLabel,
+  pending = false,
+  errorText = null,
+  relatedItems = [],
+  onToggleRelatedItem,
+  onCancel,
+  onConfirm,
+}: ItemSoftDeleteDialogProps) {
   const { t } = useTranslation()
   const { session } = useAuth()
   const { isAdmin, mode, lensUserId, users } = useAdminScope()
@@ -51,6 +62,32 @@ export function ItemSoftDeleteDialog({ open, itemLabel, pending = false, errorTe
       <div className="dialog-card w-full max-w-xl rounded-2xl border border-border bg-white p-6 text-foreground shadow-[0_24px_60px_-28px_rgba(15,23,42,0.45)]">
         <h2 className="text-lg font-semibold leading-tight">{t('items.deleteDialog.title')}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{t('items.deleteDialog.description', { itemLabel })}</p>
+        {relatedItems.length > 0 ? (
+          <div className="mt-3 rounded-lg border border-border bg-background p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('items.deleteDialog.relatedTitle', { defaultValue: 'Also delete linked commitments' })}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t('items.deleteDialog.relatedDescription', {
+                defaultValue: 'Select which linked commitments to delete together with this item. Unchecked commitments will be kept.',
+              })}
+            </p>
+            <ul className="mt-2 space-y-1">
+              {relatedItems.map((related) => (
+                <li key={related.id}>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-muted/60">
+                    <input
+                      type="checkbox"
+                      checked={related.checked}
+                      onChange={(event) => onToggleRelatedItem?.(related.id, event.target.checked)}
+                      disabled={pending}
+                      className="h-4 w-4"
+                    />
+                    <span>{related.label}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {attribution ? <TargetUserChip actorLabel={attribution.actorLabel} lensLabel={attribution.lensLabel} className="mt-3" /> : null}
         {displayErrorText ? <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{displayErrorText}</p> : null}
         <div className="mt-5 flex justify-end gap-2">

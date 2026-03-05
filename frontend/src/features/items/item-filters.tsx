@@ -1,7 +1,12 @@
 import { useTranslation } from 'react-i18next'
 
-export type ItemFilterValue = 'all' | 'assets' | 'commitments' | 'active' | 'deleted'
-export type ItemSortValue = 'recently_updated' | 'oldest_updated' | 'due_soon'
+export type ItemFilterValue = 'all' | 'assets' | 'commitments' | 'income' | 'active' | 'deleted'
+export type ItemSortValue = 'recently_updated' | 'oldest_updated' | 'due_soon' | 'alphabetical' | 'amount_high_to_low' | 'amount_low_to_high'
+
+export type AssetTypeOption = {
+  value: string
+  label: string
+}
 
 type ItemFiltersProps = {
   search: string
@@ -10,12 +15,27 @@ type ItemFiltersProps = {
   onSearchChange: (value: string) => void
   onFilterChange: (value: ItemFilterValue) => void
   onSortChange: (value: ItemSortValue) => void
+  assetTypeOptions: AssetTypeOption[]
+  selectedAssetType: string | null
+  onAssetTypeChange: (value: string | null) => void
+  sortOptions: ItemSortValue[]
 }
 
-const FILTER_CHIPS: ItemFilterValue[] = ['all', 'assets', 'commitments', 'active', 'deleted']
-const SORT_OPTIONS: ItemSortValue[] = ['recently_updated', 'oldest_updated', 'due_soon']
+const PRIMARY_FILTER_CHIPS: ItemFilterValue[] = ['all', 'assets', 'commitments', 'income']
+const VISIBILITY_CHIPS: ItemFilterValue[] = ['active', 'deleted']
 
-export function ItemFilters({ search, filter, sort, onSearchChange, onFilterChange, onSortChange }: ItemFiltersProps) {
+export function ItemFilters({
+  search,
+  filter,
+  sort,
+  onSearchChange,
+  onFilterChange,
+  onSortChange,
+  assetTypeOptions,
+  selectedAssetType,
+  onAssetTypeChange,
+  sortOptions,
+}: ItemFiltersProps) {
   const { t } = useTranslation()
 
   return (
@@ -37,7 +57,7 @@ export function ItemFilters({ search, filter, sort, onSearchChange, onFilterChan
             onChange={(event) => onSortChange(event.target.value as ItemSortValue)}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
           >
-            {SORT_OPTIONS.map((value) => (
+            {sortOptions.map((value) => (
               <option key={value} value={value}>
                 {t(`items.filters.sortOptions.${value}`)}
               </option>
@@ -46,26 +66,91 @@ export function ItemFilters({ search, filter, sort, onSearchChange, onFilterChan
         </label>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {FILTER_CHIPS.map((value) => {
-          const active = filter === value
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {PRIMARY_FILTER_CHIPS.map((value) => {
+            const active = filter === value
 
-          return (
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onFilterChange(value)}
+                className={[
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                  active
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                ].join(' ')}
+              >
+                {t(`items.filters.chips.${value}`)}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-2">
+          {VISIBILITY_CHIPS.map((value) => {
+            const active = filter === value
+
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onFilterChange(value)}
+                className={[
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                  active
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                ].join(' ')}
+              >
+                {t(`items.filters.chips.${value}`)}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="ui-expand space-y-2 rounded-xl border border-border/70 bg-background/80 p-3" data-open={filter === 'assets'}>
+        {filter === 'assets' ? (
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t('items.filters.assetTypes.label')}</p>
+        ) : null}
+        {filter === 'assets' ? (
+          <div className="flex flex-wrap gap-2">
             <button
-              key={value}
               type="button"
-              onClick={() => onFilterChange(value)}
+              onClick={() => onAssetTypeChange(null)}
               className={[
                 'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                active
+                selectedAssetType === null
                   ? 'border-primary bg-primary text-primary-foreground'
                   : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
               ].join(' ')}
             >
-              {t(`items.filters.chips.${value}`)}
+              {t('items.filters.assetTypes.all')}
             </button>
-          )
-        })}
+            {assetTypeOptions.map((option) => {
+              const active = selectedAssetType === option.value
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onAssetTypeChange(option.value)}
+                  className={[
+                    'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                    active
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                  ].join(' ')}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
       </div>
     </section>
   )

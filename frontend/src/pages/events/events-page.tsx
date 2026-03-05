@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
@@ -118,6 +118,14 @@ function isProjectedEvent(event: EventRow) {
   return event.id.startsWith('projected-')
 }
 
+function isCompletedEvent(event: EventRow) {
+  return event.status.trim().toLowerCase() === 'completed'
+}
+
+function isOverdueEvent(event: EventRow, todayStart: number) {
+  return isCompletedEvent(event) === false && new Date(event.due_date).getTime() < todayStart
+}
+
 function getFrequencyLabel(value: string | null | undefined, t: (key: string) => string) {
   switch (value) {
     case 'weekly':
@@ -216,6 +224,7 @@ export function EventsPage() {
   const { t } = useTranslation()
   const location = useLocation()
   const { mode, lensUserId } = useAdminScope()
+  const [activeTab, setActiveTab] = useState<'present' | 'history'>('present')
 
   const lensScope = useMemo(
     () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
@@ -243,15 +252,18 @@ export function EventsPage() {
   const groupedSections = useMemo(() => {
     const source = eventsQuery.data?.groups ?? []
     const merged = source.flatMap((group) => group.events)
-    const todayStart = toStartOfTodayUtc()
-    const upcoming = merged.filter((event) => new Date(event.due_date).getTime() >= todayStart)
-    const history = merged.filter((event) => new Date(event.due_date).getTime() < todayStart)
+    const present = merged.filter((event) => isCompletedEvent(event) === false)
+    const history = merged.filter((event) => isCompletedEvent(event))
 
     return {
-      upcoming: toGroupedEvents(upcoming).sort(compareGroupsByNearestDue),
+      present: toGroupedEvents(present).sort(compareGroupsByNearestDue),
       history: toGroupedEvents(history).sort((left, right) => right.due_date.localeCompare(left.due_date)),
     }
   }, [eventsQuery.data])
+
+  const presentCount = useMemo(() => groupedSections.present.reduce((total, group) => total + group.events.length, 0), [groupedSections.present])
+  const historyCount = useMemo(() => groupedSections.history.reduce((total, group) => total + group.events.length, 0), [groupedSections.history])
+  const todayStart = useMemo(() => toStartOfTodayUtc(), [])
 
   const itemById = useMemo(() => {
     const rows = itemsQuery.data?.items ?? []
@@ -268,6 +280,7 @@ export function EventsPage() {
     const merged = source.flatMap((group) => group.events)
     const todayStart = toStartOfTodayUtc()
     const upcoming = merged
+      .filter((event) => isCompletedEvent(event) === false)
       .filter((event) => new Date(event.due_date).getTime() >= todayStart)
       .sort((left, right) => left.due_date.localeCompare(right.due_date))
 
@@ -293,7 +306,7 @@ export function EventsPage() {
     )
   }
 
-  if (groupedSections.upcoming.length === 0 && groupedSections.history.length === 0) {
+  if (groupedSections.present.length === 0 && groupedSections.history.length === 0) {
     return <EventsEmptyState />
   }
 
@@ -302,32 +315,58 @@ export function EventsPage() {
       <header className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t('events.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t('events.subtitle')}</p>
+        <div className="mt-3 inline-flex rounded-lg border border-border bg-background p-1 text-sm">
+          <button
+            type="button"
+            onClick={() => setActiveTab('present')}
+            className={`rounded-md px-3 py-1 font-medium ${
+              activeTab === 'present' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t('events.upcomingTitle')} ({presentCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('history')}
+            className={`rounded-md px-3 py-1 font-medium ${
+              activeTab === 'history' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t('events.historyTitle')} ({historyCount})
+          </button>
+        </div>
       </header>
 
-      <section className="space-y-3">
+      {activeTab === 'present' ? <section className="space-y-3">
         <div className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('events.upcomingTitle')}</h2>
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
             <span>{t('events.stateLegend.label')}</span>
             <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{t('events.stateLegend.projected')}</span>
             <span className="rounded-full border border-border bg-background px-2 py-0.5 font-medium text-foreground">{t('events.stateLegend.persisted')}</span>
+            <span className="rounded-full border border-red-300 bg-red-50 px-2 py-0.5 font-medium text-red-700">{t('dashboard.overdue')}</span>
           </div>
         </div>
-        {groupedSections.upcoming.length === 0 ? (
+        {groupedSections.present.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border bg-card/70 px-4 py-3 text-sm text-muted-foreground">{t('events.noUpcoming')}</p>
         ) : (
-          groupedSections.upcoming.map((group) => (
+          groupedSections.present.map((group) => (
             <section key={`upcoming-${group.due_date}`} className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h3 className="text-sm font-semibold text-foreground">{formatDueLabel(group.due_date)}</h3>
               <ul className="mt-3 space-y-2">
                 {group.events.map((event) => {
                   const projected = isProjectedEvent(event)
+                  const overdue = isOverdueEvent(event, todayStart)
 
                   return (
                   <li
                     key={event.id}
                     className={`hover-lift flex flex-col gap-2 rounded-xl border p-3 md:flex-row md:items-center md:justify-between ${
-                      projected ? 'border-sky-200 bg-sky-50/40' : 'border-border bg-background/80'
+                      overdue
+                        ? 'border-red-300 bg-red-50/60'
+                        : projected
+                          ? 'border-sky-200 bg-sky-50/40'
+                          : 'border-border bg-background/80'
                     }`}
                   >
                     <div>
@@ -343,6 +382,11 @@ export function EventsPage() {
                           {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
                         </span>
                         <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
+                        {overdue ? (
+                          <span className="rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
+                            {t('dashboard.overdue')}
+                          </span>
+                        ) : null}
                         {event.is_exception ? (
                           <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
                             {t('events.stateLegend.editedOccurrence')}
@@ -376,9 +420,9 @@ export function EventsPage() {
             </section>
           ))
         )}
-      </section>
+      </section> : null}
 
-      <section className="space-y-3">
+      {activeTab === 'history' ? <section className="space-y-3">
         <div className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('events.historyTitle')}</h2>
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
@@ -450,7 +494,7 @@ export function EventsPage() {
             </section>
           ))
         )}
-      </section>
+      </section> : null}
     </section>
   )
 }
