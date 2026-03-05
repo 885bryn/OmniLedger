@@ -21,9 +21,9 @@
 
 ### Portainer Stack Deployment
 
-- [ ] **DEPL-01**: Operator can deploy a three-service production stack (`frontend`, `backend`, `postgres`) using `docker-compose.prod.yml`.
-- [ ] **DEPL-02**: Operator can provide host environment variables in Portainer, and compose maps them into services including `API_URL=http://${NAS_STATIC_IP}:8085/api`.
-- [ ] **DEPL-03**: Postgres data persists to NAS storage via `/volume1/docker/house-erp/db-data` volume mapping.
+- [x] **DEPL-01**: Operator can deploy a three-service production stack (`frontend`, `backend`, `postgres`) using `docker-compose.prod.yml`.
+- [x] **DEPL-02**: Operator can provide host environment variables in Portainer, and compose maps them into services including `API_URL=http://${NAS_STATIC_IP}:8085/api`.
+- [x] **DEPL-03**: Postgres data persists to NAS storage via `/volume1/docker/house-erp/db-data` volume mapping.
 
 ### Deployment Documentation
 
@@ -57,9 +57,9 @@
 | CONT-01 | Phase 20 | Complete |
 | CONT-02 | Phase 20 | Complete |
 | CONT-03 | Phase 20 | Complete |
-| DEPL-01 | Phase 21 | Pending |
-| DEPL-02 | Phase 21 | Pending |
-| DEPL-03 | Phase 21 | Pending |
+| DEPL-01 | Phase 21 | Complete |
+| DEPL-02 | Phase 21 | Complete |
+| DEPL-03 | Phase 21 | Complete |
 | DOCS-01 | Phase 22 | Pending |
 
 **Coverage:**

@@ -6,21 +6,21 @@ See: `.planning/PROJECT.md` (updated 2026-03-04)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 21 - Portainer Stack Deployment and Persistence
+**Current focus:** Phase 22 - Operator Deployment Documentation
 
 ## Current Position
 
-Phase: 21 of 22 (Portainer Stack Deployment and Persistence)
+Phase: 22 of 22 (Operator Deployment Documentation)
 Plan: 1 of TBD
 Status: Ready
-Last activity: 2026-03-04 - completed 20-02 frontend production container and strict NAS-driven Nginx gateway routing
+Last activity: 2026-03-04 - completed 21-01 Portainer stack compose contract, env mapping, and NAS persistence wiring
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 52
+- Total plans completed: 53
 - Average duration: 4 min
 - Total execution time: 4.1 hours
 
@@ -31,12 +31,13 @@ Progress: [░░░░░░░░░░] 0%
 | 14-18 (v3.0) | 11 | 46 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 20-02 (3 min), 20-01 (1 min), 19-02 (2 min), 19-01 (3 min), 18-02 (7 min)
-- Trend: Stable delivery cadence through Phase 20 completion
+- Last 5 plans: 21-01 (2 min), 20-02 (3 min), 20-01 (1 min), 19-02 (2 min), 19-01 (3 min)
+- Trend: Stable delivery cadence through Phase 21 completion
 - Phase 19 P01: 3 min, 3 tasks, 7 files
 - Phase 19 P02: 2 min, 3 tasks, 7 files
 - Phase 20 P01: 1 min, 3 tasks, 2 files
 - Phase 20 P02: 3 min, 3 tasks, 3 files
+| Phase 21 P01 | 2 min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,9 @@ Recent decisions affecting current work:
 - [Phase 20]: Container contract includes an explicit /health probe on port 8080 for runtime readiness checks.
 - [Phase 20]: Frontend production builds now default VITE_API_BASE_URL to /api while preserving explicit override support.
 - [Phase 20]: Frontend gateway startup hard-fails unless NAS_STATIC_IP is present and valid IPv4, preventing localhost fallback in production.
+- [Phase 21]: Compose stack identity is fixed to house-erp-prod for in-place Portainer updates.
+- [Phase 21]: Critical stack variables use compose required interpolation to fail fast on missing deployment secrets and NAS identity.
+- [Phase 21]: Postgres persistence is locked to /volume1/docker/house-erp/db-data via bind mount for restart continuity.
 
 ### Pending Todos
 
@@ -67,9 +71,10 @@ None yet.
 
 - Existing unrelated deferred frontend lint item remains: `frontend/src/pages/events/events-page.tsx:255` (TS6133 unused `todayStart`).
 - Docker verification commands for plan 20-02 were blocked in this environment because Docker daemon pipe `dockerDesktopLinuxEngine` was unavailable.
+- Docker persistence probe for plan 21-01 also requires rerun on NAS/host with Docker daemon available.
 
 ## Session Continuity
 
-Last session: 2026-03-04 15:53
-Stopped at: Phase 21 context gathered
-Resume file: .planning/phases/21-portainer-stack-deployment-and-persistence/21-CONTEXT.md
+Last session: 2026-03-04 16:06
+Stopped at: Completed 21-01-PLAN.md
+Resume file: None

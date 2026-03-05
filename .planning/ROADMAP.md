@@ -15,7 +15,7 @@ This milestone delivers environment-driven production deployment for Ugreen NAS 
 
 - [x] **Phase 19: Environment-Driven Production Configuration** - Externalize required network, identity, and database secrets with startup validation for missing values. (completed 2026-03-04)
 - [x] **Phase 20: Production Container Build and Gateway Routing** - Deliver production-grade backend/frontend images and Nginx API routing driven by NAS address configuration. (completed 2026-03-04)
-- [ ] **Phase 21: Portainer Stack Deployment and Persistence** - Provide deployable three-service production compose stack with Portainer env injection and NAS-backed Postgres persistence.
+- [x] **Phase 21: Portainer Stack Deployment and Persistence** - Provide deployable three-service production compose stack with Portainer env injection and NAS-backed Postgres persistence. (completed 2026-03-05)
 - [ ] **Phase 22: Operator Deployment Documentation** - Publish production README guidance that allows operators to deploy successfully using the required Portainer environment values.
 
 ## Phase Details
@@ -55,7 +55,9 @@ Plans:
   1. Operator can deploy `frontend`, `backend`, and `postgres` together using `docker-compose.prod.yml` in Portainer.
   2. Operator can supply host environment variables in Portainer, and compose maps them into services including `API_URL=http://${NAS_STATIC_IP}:8085/api`.
   3. Postgres data persists in `/volume1/docker/house-erp/db-data` and remains available after service restarts.
-**Plans**: TBD
+**Plans**: 1 plans
+Plans:
+- [x] 21-01-PLAN.md - Create Portainer-ready production compose stack with env injection and NAS Postgres persistence verification.
 
 ### Phase 22: Operator Deployment Documentation
 **Goal**: Operators can execute production deployment successfully using a single, explicit README procedure.
@@ -72,5 +74,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 19. Environment-Driven Production Configuration | 2/2 | Complete    | 2026-03-04 |
 | 20. Production Container Build and Gateway Routing | 2/2 | Complete   | 2026-03-04 |
-| 21. Portainer Stack Deployment and Persistence | 0/TBD | Not started | - |
+| 21. Portainer Stack Deployment and Persistence | 1/1 | Complete   | 2026-03-05 |
 | 22. Operator Deployment Documentation | 0/TBD | Not started | - |
