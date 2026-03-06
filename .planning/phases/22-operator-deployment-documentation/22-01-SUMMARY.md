@@ -89,14 +89,22 @@ Each task was committed atomically:
 - **Verification:** All required pattern checks completed successfully against `README.md`.
 - **Committed in:** `0a3dc50`
 
+**2. [Rule 3 - Blocking] Applied manual STATE.md position/session update after helper parse failure**
+- **Found during:** Post-task state update commands
+- **Issue:** `state advance-plan` and `state record-session` could not parse current `STATE.md` layout.
+- **Fix:** Updated current position and session continuity fields directly in `STATE.md` and continued automated roadmap/requirements updates.
+- **Files modified:** `.planning/STATE.md`
+- **Verification:** `STATE.md` now reflects `Plan: 2 of 2` with `Stopped at: Completed 22-01-PLAN.md`.
+- **Committed in:** `41c70cd`
+
 ---
 
-**Total deviations:** 1 auto-fixed (1 blocking)
-**Impact on plan:** No scope change; only verification command path changed due local CLI availability.
+**Total deviations:** 2 auto-fixed (2 blocking)
+**Impact on plan:** No scope change; deviations were tooling/environment compatibility fixes required to complete verification and metadata updates.
 
 ## Authentication Gates
 
-None.
+- `state advance-plan` and `state record-session` helper commands failed to parse the current `STATE.md` format, so position/session fields were updated manually while keeping roadmap and requirements automation intact.
 
 ## Issues Encountered
 
