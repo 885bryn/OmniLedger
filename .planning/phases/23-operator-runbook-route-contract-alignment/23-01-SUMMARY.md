@@ -83,10 +83,18 @@ Each task was committed atomically:
 - **Verification:** `STATE.md` now reflects Phase 23 / Plan 1 completion state and `Stopped at: Completed 23-01-PLAN.md`.
 - **Committed in:** Plan metadata commit.
 
+**2. [Rule 3 - Blocking] Used direct git metadata commit after helper command argument parsing failure**
+- **Found during:** Final metadata commit step.
+- **Issue:** `gsd-tools commit` parsed commit-message tokens as file pathspecs and failed to create the docs commit.
+- **Fix:** Staged target planning files explicitly and committed with native `git commit` using the required docs message format.
+- **Files modified:** `.planning/phases/23-operator-runbook-route-contract-alignment/23-01-SUMMARY.md`, `.planning/STATE.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`
+- **Verification:** Metadata commit exists as `35f0249` with summary/state/roadmap/requirements updates.
+- **Committed in:** `35f0249`
+
 ---
 
-**Total deviations:** 1 auto-fixed (1 blocking)
-**Impact on plan:** No scope change; manual state-field update was required to preserve execution continuity metadata.
+**Total deviations:** 2 auto-fixed (2 blocking)
+**Impact on plan:** No scope change; both deviations were tooling-command fallbacks required to complete planning metadata updates.
 
 ## Issues Encountered
 
