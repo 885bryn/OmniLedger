@@ -5,7 +5,7 @@
 - ✅ **v1.0 MVP** - Phases 1-7 shipped 2026-02-25 (details: `.planning/milestones/v1.0-ROADMAP.md`)
 - ✅ **v2.0 Auth, Timeline & Data Lifecycle** - Phases 8-13 shipped 2026-03-02 (details: `.planning/milestones/v2.0-ROADMAP.md`, audit: `.planning/milestones/v2.0-MILESTONE-AUDIT.md`)
 - ✅ **v3.0 Data Portability** - Phases 14-18 shipped 2026-03-04 (details: `.planning/milestones/v3.0-ROADMAP.md`, audit: `.planning/milestones/v3.0-MILESTONE-AUDIT.md`)
-- 🚧 **v4.0 Interactive Production Deployment for Ugreen NAS** - Phases 19-22 planned
+- 🚧 **v4.0 Interactive Production Deployment for Ugreen NAS** - Phases 19-23 planned
 
 ## Overview
 
@@ -17,6 +17,7 @@ This milestone delivers environment-driven production deployment for Ugreen NAS 
 - [x] **Phase 20: Production Container Build and Gateway Routing** - Deliver production-grade backend/frontend images and Nginx API routing driven by NAS address configuration. (completed 2026-03-04)
 - [x] **Phase 21: Portainer Stack Deployment and Persistence** - Provide deployable three-service production compose stack with Portainer env injection and NAS-backed Postgres persistence. (completed 2026-03-05)
 - [x] **Phase 22: Operator Deployment Documentation** - Publish production README guidance that allows operators to deploy successfully using the required Portainer environment values. (completed 2026-03-06)
+- [ ] **Phase 23: Operator Runbook Route Contract Alignment** - Close DOCS-01 audit gaps by aligning README verification/troubleshooting endpoint commands with live backend route contracts and re-verifying operator flows.
 
 ## Phase Details
 
@@ -72,6 +73,17 @@ Plans:
 - [x] 22-01-PLAN.md - Build the single production README runbook with explicit Portainer variable contract and first-time/update/rollback flows.
 - [x] 22-02-PLAN.md - Add symptom-first troubleshooting and gate-based deployment verification with stop/rollback criteria.
 
+### Phase 23: Operator Runbook Route Contract Alignment
+**Goal**: Operators can run README verification/troubleshooting commands end-to-end without false failures caused by route-path mismatches.
+**Depends on**: Phase 22
+**Requirements**: DOCS-01
+**Gap Closure**: Closes milestone audit gaps from `.planning/v4.0-MILESTONE-AUDIT.md` (DOCS-01 unsatisfied + broken verification flows).
+**Success Criteria** (what must be TRUE):
+  1. Backend-direct README checks use live backend route mounts (`/auth/*`, `/items`) rather than frontend gateway-prefixed `/api/*` paths on backend port.
+  2. README verification and troubleshooting flow commands no longer produce false route-not-found outcomes when deployment is healthy.
+  3. DOCS-01 is re-verified as satisfied in phase verification and milestone re-audit.
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -80,3 +92,4 @@ Plans:
 | 20. Production Container Build and Gateway Routing | 2/2 | Complete   | 2026-03-04 |
 | 21. Portainer Stack Deployment and Persistence | 2/2 | Complete   | 2026-03-05 |
 | 22. Operator Deployment Documentation | 2/2 | Complete    | 2026-03-06 |
+| 23. Operator Runbook Route Contract Alignment | 0/TBD | Not started | - |
