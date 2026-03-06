@@ -11,9 +11,9 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 22 of 22 (Operator Deployment Documentation)
-Plan: 1 of TBD
-Status: Ready
-Last activity: 2026-03-05 - completed 21-02 GHCR publish automation and image-only Portainer compose deployment contract
+Plan: 2 of 2
+Status: In Progress
+Last activity: 2026-03-06 - completed 22-01 production operator runbook with publish-first deploy/update/rollback guidance
 
 Progress: [███████░░░] 75%
 
@@ -39,6 +39,7 @@ Progress: [███████░░░] 75%
 - Phase 20 P02: 3 min, 3 tasks, 3 files
 | Phase 21 P01 | 2 min | 3 tasks | 2 files |
 | Phase 21 P02 | 7 min | 3 tasks | 5 files |
+| Phase 22 P01 | 2 min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,9 @@ Recent decisions affecting current work:
 - [Ops 2026-03-06]: Local HTTP LAN deploy must set `SESSION_COOKIE_SECURE=false`; otherwise login succeeds but browser drops session cookie and protected routes return `401`.
 - [Ops 2026-03-06]: `Route not found` on `/items` can be caused by backend route load failure when `src/domain/items/financial-metrics.js` is missing from image. Resolution: include module (`b68333c`), publish new backend/frontend images, redeploy pinned tag in Portainer.
 - [Ops 2026-03-06]: Avoid floating `latest` for recovery deploys; pin frontend and backend to the same explicit GHCR tag for deterministic runtime behavior.
+- [Phase 22]: README now defines one canonical publish-first deployment runbook for Ugreen NAS + Portainer using pinned GHCR tags only.
+- [Phase 22]: Portainer stack inputs are documented as required core, optional tuning, and derived values with one placeholder-only canonical env block.
+- [Phase 22]: Operator procedures now separate first-time deployment, update/redeploy, and rollback to previous known-good IMAGE_TAG values.
 
 ### Pending Todos
 
@@ -85,5 +89,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Phase 22 context gathered
-Resume file: .planning/phases/22-operator-deployment-documentation/22-CONTEXT.md
+Stopped at: Completed 22-01-PLAN.md
+Resume file: .planning/phases/22-operator-deployment-documentation/22-02-PLAN.md

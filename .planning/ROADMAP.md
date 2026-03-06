@@ -67,7 +67,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Operator can follow the production deployment README and identify every required Portainer stack environment variable without guessing.
   2. Operator can complete deployment using only the documented steps and variable list, with no missing-configuration blockers.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 22-01-PLAN.md - Build the single production README runbook with explicit Portainer variable contract and first-time/update/rollback flows.
+- [ ] 22-02-PLAN.md - Add symptom-first troubleshooting and gate-based deployment verification with stop/rollback criteria.
 
 ## Progress
 
@@ -76,4 +79,4 @@ Plans:
 | 19. Environment-Driven Production Configuration | 2/2 | Complete    | 2026-03-04 |
 | 20. Production Container Build and Gateway Routing | 2/2 | Complete   | 2026-03-04 |
 | 21. Portainer Stack Deployment and Persistence | 2/2 | Complete   | 2026-03-05 |
-| 22. Operator Deployment Documentation | 0/TBD | Not started | - |
+| 22. Operator Deployment Documentation | 1/2 | In Progress|  |
