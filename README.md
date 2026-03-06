@@ -165,3 +165,112 @@ Use rollback when a newly deployed tag is not healthy or breaks required flows.
    - frontend login + protected route access
 
 Rollback rule: always move between previously published pinned tags; never apply runtime hotfix edits directly in the Portainer compose editor.
+
+## Troubleshooting (Symptom -> Checks -> Fixes)
+
+Use this section when a deployment or post-deploy validation fails. For each incident: run checks in order, confirm expected signatures, then apply the permanent fix.
+
+### 1) Login succeeds, then session drops and protected routes return 401
+
+**Symptom signature**
+
+- Login call returns success (`200`), but next protected request returns `401`.
+- Browser receives a session cookie but does not send it back on HTTP LAN traffic.
+
+**Cause checks**
+
+1. Capture login and protected-route behavior with one cookie jar:
+   - `curl -i -c cookies.txt -H "Content-Type: application/json" -d '{"email":"<admin-email>","password":"<password>"}' http://<NAS_STATIC_IP>:8080/api/auth/login`
+   - `curl -i -b cookies.txt http://<NAS_STATIC_IP>:8080/api/items`
+2. Inspect backend runtime env value:
+   - `docker inspect house-erp-prod-backend-1 --format "{{range .Config.Env}}{{println .}}{{end}}" | grep SESSION_COOKIE_SECURE`
+
+**Expected signatures**
+
+- Login response includes `Set-Cookie` and may include `Secure` attribute.
+- Protected call response is `401 Unauthorized`.
+- Runtime env shows `SESSION_COOKIE_SECURE=true` while deployment is still HTTP.
+
+**Permanent fix**
+
+1. For current HTTP LAN runtime, set `SESSION_COOKIE_SECURE=false` in Portainer stack environment.
+2. Click **Update the stack** and re-run login + protected-route checks.
+3. Long-term hardening path: migrate frontend entrypoint to HTTPS/TLS, then set `SESSION_COOKIE_SECURE=true` and keep it true.
+
+### 2) `/items` returns `Route not found`
+
+**Symptom signature**
+
+- `GET /api/items` or UI `/items` flow fails with `Route not found`.
+
+**Cause checks**
+
+1. Confirm API failure payload:
+   - `curl -i http://<NAS_STATIC_IP>:8080/api/items`
+2. Check backend logs for missing module or route registration failure:
+   - `docker logs house-erp-prod-backend-1 --tail 200`
+3. Confirm the required backend module exists in the running image:
+   - `docker exec house-erp-prod-backend-1 sh -lc "ls -l /app/src/domain/items/financial-metrics.js"`
+
+**Expected signatures**
+
+- API response contains `Route not found` or `404` for `/api/items`.
+- Backend logs include a load failure similar to `Cannot find module ... financial-metrics.js`.
+- File check reports missing `/app/src/domain/items/financial-metrics.js`.
+
+**Permanent fix**
+
+1. Publish a corrected backend image that includes `src/domain/items/financial-metrics.js`.
+2. Publish frontend and backend with the same new pinned `IMAGE_TAG`.
+3. Update Portainer stack `IMAGE_TAG` only, redeploy, then re-run `/api/items` check.
+
+### 3) Portainer deploy/update returns `500`
+
+**Symptom signature**
+
+- Portainer stack deploy/update action fails with HTTP `500`.
+
+**Cause checks**
+
+1. Validate compose interpolation before retrying Portainer:
+   - `docker compose -f docker-compose.prod.yml config`
+2. Verify required stack env values are present and non-empty in Portainer:
+   - `GHCR_OWNER`, `IMAGE_TAG`, `NAS_STATIC_IP`, `DB_PASSWORD`, `JWT_SECRET`, `SESSION_SECRET`, `HACT_ADMIN_EMAIL`, `DATABASE_URL`
+3. Re-check `DATABASE_URL` encoding when password contains reserved characters (`!`, `@`, `#`, `%`, etc.).
+
+**Expected signatures**
+
+- `docker compose ... config` fails with a required variable/interpolation error, or an invalid URL/parse signature.
+- Portainer failure occurs before services become healthy.
+
+**Permanent fix**
+
+1. Correct missing/invalid env values in Portainer using this README's canonical variable block.
+2. Ensure `DATABASE_URL` has percent-encoded password characters (for example `!` -> `%21`).
+3. Re-run deploy/update only after `docker compose -f docker-compose.prod.yml config` renders successfully.
+
+### 4) Image-tag drift between frontend and backend
+
+**Symptom signature**
+
+- UI and API behavior mismatch after deploy (for example: one side shows new features while the other still returns old contract errors).
+- Incidents can include auth/session oddities, `/items` route mismatch, or schema/contract errors.
+
+**Cause checks**
+
+1. Inspect running image tags:
+   - `docker ps --format "table {{.Names}}\t{{.Image}}" | grep omniledger-`
+2. Confirm both services use the same `<IMAGE_TAG>`:
+   - frontend: `ghcr.io/<owner>/omniledger-frontend:<tag>`
+   - backend: `ghcr.io/<owner>/omniledger-backend:<tag>`
+3. In Portainer stack editor, confirm only one shared `IMAGE_TAG` variable is used for both images.
+
+**Expected signatures**
+
+- Frontend and backend show different tags, or one service still uses an older image.
+
+**Permanent fix**
+
+1. Publish both images for one explicit release tag.
+2. Set Portainer `IMAGE_TAG=<same-tag-for-both-services>` and redeploy.
+3. Re-run verification gates; if failures persist, rollback to previous known-good pinned tag.
