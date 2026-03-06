@@ -87,10 +87,26 @@ Each task was committed atomically:
 - **Verification:** Required troubleshooting and gate patterns were confirmed present after each task and at plan completion.
 - **Committed in:** `1974426`, `4d50ebc`
 
+**2. [Rule 3 - Blocking] Applied manual STATE.md position/session updates after helper parse failures**
+- **Found during:** Post-task state update commands.
+- **Issue:** `state advance-plan`, `state update-progress`, and `state record-session` could not parse current `STATE.md` layout.
+- **Fix:** Updated `Current Position` and `Session Continuity` fields directly in `STATE.md`; retained automated metric and decision updates.
+- **Files modified:** `.planning/STATE.md`
+- **Verification:** `STATE.md` now reflects plan completion (`Status: Complete`, `Progress: 100%`, `Stopped at: Completed 22-02-PLAN.md`).
+- **Committed in:** `9fd2223`
+
+**3. [Rule 3 - Blocking] Used direct git metadata commit after helper commit command argument parsing failure**
+- **Found during:** Final metadata commit step.
+- **Issue:** `gsd-tools commit` parsed the message incorrectly and failed with git `pathspec` errors.
+- **Fix:** Staged metadata files explicitly and committed with native git using the required docs commit format.
+- **Files modified:** `.planning/phases/22-operator-deployment-documentation/22-02-SUMMARY.md`, `.planning/STATE.md`, `.planning/ROADMAP.md`
+- **Verification:** Metadata commit exists as `9fd2223` and includes summary/state/roadmap updates.
+- **Committed in:** `9fd2223`
+
 ---
 
-**Total deviations:** 1 auto-fixed (1 blocking)
-**Impact on plan:** No scope change; compatibility workaround only for verification command availability.
+**Total deviations:** 3 auto-fixed (3 blocking)
+**Impact on plan:** No scope change; all deviations were tooling compatibility fallbacks needed to complete verification and metadata recording.
 
 ## Issues Encountered
 
