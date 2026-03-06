@@ -85,5 +85,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Session resumed via /resume-project workflow; awaiting next action selection
-Resume file: None
+Stopped at: Phase 22 context gathered
+Resume file: .planning/phases/22-operator-deployment-documentation/22-CONTEXT.md
