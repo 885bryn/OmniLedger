@@ -69,8 +69,8 @@ Plans:
   2. Operator can complete deployment using only the documented steps and variable list, with no missing-configuration blockers.
 **Plans**: 2 plans
 Plans:
-- [ ] 22-01-PLAN.md - Build the single production README runbook with explicit Portainer variable contract and first-time/update/rollback flows.
-- [ ] 22-02-PLAN.md - Add symptom-first troubleshooting and gate-based deployment verification with stop/rollback criteria.
+- [x] 22-01-PLAN.md - Build the single production README runbook with explicit Portainer variable contract and first-time/update/rollback flows.
+- [x] 22-02-PLAN.md - Add symptom-first troubleshooting and gate-based deployment verification with stop/rollback criteria.
 
 ## Progress
 
