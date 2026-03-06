@@ -1,73 +1,51 @@
-# Household Asset & Commitment Tracker (HACT) Local Runtime
+# Household Asset & Commitment Tracker (HACT)
 
-Run the API and PostgreSQL together with Docker Compose using one repeatable path.
+This document is the canonical production runbook for deploying House ERP to a Ugreen NAS with Portainer.
 
-## Quickstart
+## Production Deployment (Ugreen NAS + Portainer)
 
-1. Copy the environment template:
-   - `cp .env.example .env`
-2. Start the full stack:
-   - `docker compose up -d`
-3. Verify service health:
-   - `docker compose ps`
-   - `curl http://localhost:8080/health`
-4. Verify local-network access from another device on your LAN:
-   - Open `http://<HOST_LAN_IP>:8080/health`
-   - Example host IP discovery:
-     - macOS/Linux: `ip addr` or `ifconfig`
-     - Windows (PowerShell): `ipconfig`
-5. Stop the stack when done:
-   - `docker compose down`
+Use this path only for production operations.
 
-## Runtime Contract
+- Always publish pinned GHCR image tags first, then deploy the same tag in Portainer.
+- Never use floating `latest` for deployment, recovery, or rollback decisions.
+- Keep frontend and backend on the same explicit `IMAGE_TAG` for deterministic behavior.
 
-- Services: `api`, `db`
-- API host port: `8080`
-- PostgreSQL host port: `5433` (container port `5432`)
-- API readiness endpoint: `/health`
-- Database data persistence: named volume `hact-postgres-data`
+### Deployment Scope
 
-## Troubleshooting
+- Target stack file: `docker-compose.prod.yml`
+- Registry target: GHCR only (`ghcr.io`)
+- Publish entry points:
+  - GitHub Actions workflow: `.github/workflows/publish-prod-images.yml`
+  - Local CLI helper: `scripts/deploy/publish-ghcr-images.sh`
 
-### 1) Port conflicts (8080 or 5433 already in use)
+### Publish Production Images (Do This First)
 
-- Symptom: `docker compose up -d` fails with a port binding error.
-- Check listeners:
-  - macOS/Linux: `lsof -i :8080` and `lsof -i :5433`
-  - Windows (PowerShell): `netstat -ano | findstr :8080` and `netstat -ano | findstr :5433`
-- Fix: stop the conflicting process or change host ports in `docker-compose.yml` and keep docs aligned.
+Publish images before touching the Portainer stack.
 
-### 2) Missing or invalid environment values
+#### Option A: GitHub Actions (recommended)
 
-- Symptom: API container exits early, migration fails, or DB auth errors appear in logs.
-- Check env file:
-  - `cp .env.example .env` (if missing)
-  - Confirm `DATABASE_URL`, `DB_PASSWORD`, and `JWT_SECRET` are set.
-- Check logs:
-  - `docker compose logs api`
-  - `docker compose logs db`
+1. Open Actions -> `Publish Production Images`.
+2. Run workflow with:
+   - `image_tag`: release tag (for example `2026.03.06-1`)
+   - `include_latest`: `false`
+3. Wait for the workflow to complete successfully.
 
-### 3) Delayed database readiness on first boot
+#### Option B: Local CLI publish
 
-- Symptom: API takes longer to become healthy immediately after `up -d`.
-- Why: PostgreSQL initialization can take extra time before accepting connections.
-- Check progress:
-  - `docker compose ps`
-  - `docker compose logs -f db`
-- Wait until `db` is healthy, then re-check:
-  - `curl http://localhost:8080/health`
+1. Export required variables:
+   - `GHCR_OWNER`
+   - `IMAGE_TAG`
+   - `GHCR_TOKEN`
+2. Run:
+   - `bash scripts/deploy/publish-ghcr-images.sh`
+3. Optional dry-run:
+   - `bash scripts/deploy/publish-ghcr-images.sh --dry-run`
 
-## Frontend Workspace
+#### Verify pushed images
 
-Phase 6 introduces a dedicated React + TypeScript + Vite workspace at `frontend/` with a Tailwind baseline for upcoming UI plans.
+Confirm both images exist for the same tag:
 
-Run the frontend commands from the repository root using the `npm --prefix frontend` pattern:
+- `ghcr.io/<ghcr_owner>/omniledger-backend:<image_tag>`
+- `ghcr.io/<ghcr_owner>/omniledger-frontend:<image_tag>`
 
-1. Install frontend dependencies:
-   - `npm --prefix frontend install`
-2. Start frontend dev server:
-   - `npm --prefix frontend run dev`
-3. Build frontend for production:
-   - `npm --prefix frontend run build`
-4. Run frontend tests (baseline command):
-   - `npm --prefix frontend run test`
+Do not continue to Portainer until both image tags are available.
