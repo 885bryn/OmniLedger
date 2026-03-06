@@ -12,10 +12,10 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 
 Phase: 22 of 22 (Operator Deployment Documentation)
 Plan: 2 of 2
-Status: In Progress
-Last activity: 2026-03-06 - completed 22-01 production operator runbook with publish-first deploy/update/rollback guidance
+Status: Complete
+Last activity: 2026-03-06 - completed 22-02 troubleshooting + verification-gate operator runbook updates with explicit stop/rollback criteria
 
-Progress: [███████░░░] 75%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -40,6 +40,7 @@ Progress: [███████░░░] 75%
 | Phase 21 P01 | 2 min | 3 tasks | 2 files |
 | Phase 21 P02 | 7 min | 3 tasks | 5 files |
 | Phase 22 P01 | 2 min | 3 tasks | 1 files |
+| Phase 22 P02 | 1 min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ Recent decisions affecting current work:
 - [Phase 22]: README now defines one canonical publish-first deployment runbook for Ugreen NAS + Portainer using pinned GHCR tags only.
 - [Phase 22]: Portainer stack inputs are documented as required core, optional tuning, and derived values with one placeholder-only canonical env block.
 - [Phase 22]: Operator procedures now separate first-time deployment, update/redeploy, and rollback to previous known-good IMAGE_TAG values.
+- [Phase 22]: Operators must stop rollout on any failed gate and trigger rollback to a previous known-good pinned IMAGE_TAG after one correction attempt.
+- [Phase 22]: Deployment acceptance now requires gate-based request/response verification with explicit failure interpretation for auth, health, items, and persistence checks.
+- [Phase 22]: Troubleshooting runbook entries must be symptom-first with exact diagnostic commands, expected signatures, and permanent remediation steps.
 
 ### Pending Todos
 
@@ -89,5 +93,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 22-01-PLAN.md
-Resume file: .planning/phases/22-operator-deployment-documentation/22-02-PLAN.md
+Stopped at: Completed 22-02-PLAN.md
+Resume file: None

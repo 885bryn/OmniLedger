@@ -16,7 +16,7 @@ This milestone delivers environment-driven production deployment for Ugreen NAS 
 - [x] **Phase 19: Environment-Driven Production Configuration** - Externalize required network, identity, and database secrets with startup validation for missing values. (completed 2026-03-04)
 - [x] **Phase 20: Production Container Build and Gateway Routing** - Deliver production-grade backend/frontend images and Nginx API routing driven by NAS address configuration. (completed 2026-03-04)
 - [x] **Phase 21: Portainer Stack Deployment and Persistence** - Provide deployable three-service production compose stack with Portainer env injection and NAS-backed Postgres persistence. (completed 2026-03-05)
-- [ ] **Phase 22: Operator Deployment Documentation** - Publish production README guidance that allows operators to deploy successfully using the required Portainer environment values.
+- [x] **Phase 22: Operator Deployment Documentation** - Publish production README guidance that allows operators to deploy successfully using the required Portainer environment values. (completed 2026-03-06)
 
 ## Phase Details
 
@@ -79,4 +79,4 @@ Plans:
 | 19. Environment-Driven Production Configuration | 2/2 | Complete    | 2026-03-04 |
 | 20. Production Container Build and Gateway Routing | 2/2 | Complete   | 2026-03-04 |
 | 21. Portainer Stack Deployment and Persistence | 2/2 | Complete   | 2026-03-05 |
-| 22. Operator Deployment Documentation | 1/2 | In Progress|  |
+| 22. Operator Deployment Documentation | 2/2 | Complete   | 2026-03-06 |
