@@ -27,7 +27,7 @@
 
 ### Deployment Documentation
 
-- [ ] **DOCS-01**: Operator can follow a production deployment README that lists exact Portainer stack environment variables required for successful deployment.
+- [x] **DOCS-01**: Operator can follow a production deployment README that lists exact Portainer stack environment variables required for successful deployment.
 
 ## Future Requirements (Deferred)
 
@@ -60,7 +60,7 @@
 | DEPL-01 | Phase 21 | Complete |
 | DEPL-02 | Phase 21 | Complete |
 | DEPL-03 | Phase 21 | Complete |
-| DOCS-01 | Phase 23 | Pending |
+| DOCS-01 | Phase 23 | Complete |
 
 **Coverage:**
 - v1 requirements: 11 total

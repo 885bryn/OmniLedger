@@ -6,16 +6,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-04)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 22 - Operator Deployment Documentation
+**Current focus:** Phase 23 - Operator Runbook Route Contract Alignment
 
 ## Current Position
 
-Phase: 22 of 22 (Operator Deployment Documentation)
-Plan: 2 of 2
-Status: Complete
-Last activity: 2026-03-06 - completed 22-02 troubleshooting + verification-gate operator runbook updates with explicit stop/rollback criteria
+Phase: 23 of 23 (Operator Runbook Route Contract Alignment)
+Plan: 1 of 2
+Status: In Progress
+Last activity: 2026-03-06 - completed 23-01 README route-contract command alignment for backend-direct and gateway checks
 
-Progress: [██████████] 100%
+Progress: [█████████░] 95%
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Progress: [██████████] 100%
 | Phase 21 P02 | 7 min | 3 tasks | 5 files |
 | Phase 22 P01 | 2 min | 3 tasks | 1 files |
 | Phase 22 P02 | 1 min | 2 tasks | 1 files |
+| Phase 23 P01 | 1 min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,8 @@ Recent decisions affecting current work:
 - [Phase 22]: Operators must stop rollout on any failed gate and trigger rollback to a previous known-good pinned IMAGE_TAG after one correction attempt.
 - [Phase 22]: Deployment acceptance now requires gate-based request/response verification with explicit failure interpretation for auth, health, items, and persistence checks.
 - [Phase 22]: Troubleshooting runbook entries must be symptom-first with exact diagnostic commands, expected signatures, and permanent remediation steps.
+- [Phase 23]: Backend-direct checks on :8080 use live /auth/login and /items mounts only.
+- [Phase 23]: Frontend gateway checks on :8085 retain /api/* paths and are documented separately.
 
 ### Pending Todos
 
@@ -93,5 +96,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 22-02-PLAN.md
+Stopped at: Completed 23-01-PLAN.md
 Resume file: None
