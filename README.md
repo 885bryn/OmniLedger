@@ -170,6 +170,12 @@ Rollback rule: always move between previously published pinned tags; never apply
 
 Use this section when a deployment or post-deploy validation fails. For each incident: run checks in order, confirm expected signatures, then apply the permanent fix.
 
+### Route contract for operator checks
+
+- Backend-direct checks to `http://<NAS_STATIC_IP>:8080` must use live backend mounts: `POST /auth/login`, `GET/POST /items` (no `/api/*` prefix).
+- Frontend-gateway checks to `http://<NAS_STATIC_IP>:8085` keep the gateway prefix: `/api/*`.
+- If a backend-direct check uses `:8080/api/*`, treat it as a documentation/path mismatch, not an immediate service outage.
+
 ### 1) Login succeeds, then session drops and protected routes return 401
 
 **Symptom signature**
