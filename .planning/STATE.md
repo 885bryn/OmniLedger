@@ -66,6 +66,9 @@ Recent decisions affecting current work:
 - [Phase 21]: Use GHCR as the only production registry target with one canonical frontend/backend image tag contract across CI and CLI.
 - [Phase 21]: Require GHCR_OWNER and IMAGE_TAG in compose interpolation so Portainer deploys fail fast when image coordinates are missing.
 - [Phase 21]: Mark verification as diagnosed when Docker runtime is unavailable while preserving DEPL traceability and NAS rerun steps.
+- [Ops 2026-03-06]: Local HTTP LAN deploy must set `SESSION_COOKIE_SECURE=false`; otherwise login succeeds but browser drops session cookie and protected routes return `401`.
+- [Ops 2026-03-06]: `Route not found` on `/items` can be caused by backend route load failure when `src/domain/items/financial-metrics.js` is missing from image. Resolution: include module (`b68333c`), publish new backend/frontend images, redeploy pinned tag in Portainer.
+- [Ops 2026-03-06]: Avoid floating `latest` for recovery deploys; pin frontend and backend to the same explicit GHCR tag for deterministic runtime behavior.
 
 ### Pending Todos
 
