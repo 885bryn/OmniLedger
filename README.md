@@ -174,7 +174,7 @@ Use this section when a deployment or post-deploy validation fails. For each inc
 
 - Backend-direct checks to `http://<NAS_STATIC_IP>:8080` must use live backend mounts: `POST /auth/login`, `GET/POST /items` (no `/api/*` prefix).
 - Frontend-gateway checks to `http://<NAS_STATIC_IP>:8085` keep the gateway prefix: `/api/*`.
-- If a backend-direct check uses `:8080/api/*`, treat it as a documentation/path mismatch, not an immediate service outage.
+- If a backend-direct check uses an `/api/*` path on port `:8080`, treat it as a documentation/path mismatch, not an immediate service outage.
 
 ### 1) Login succeeds, then session drops and protected routes return 401
 
@@ -186,8 +186,8 @@ Use this section when a deployment or post-deploy validation fails. For each inc
 **Cause checks**
 
 1. Capture login and protected-route behavior with one cookie jar:
-   - `curl -i -c cookies.txt -H "Content-Type: application/json" -d '{"email":"<admin-email>","password":"<password>"}' http://<NAS_STATIC_IP>:8080/api/auth/login`
-   - `curl -i -b cookies.txt http://<NAS_STATIC_IP>:8080/api/items`
+   - `curl -i -c cookies.txt -H "Content-Type: application/json" -d '{"email":"<admin-email>","password":"<password>"}' http://<NAS_STATIC_IP>:8080/auth/login`
+   - `curl -i -b cookies.txt http://<NAS_STATIC_IP>:8080/items`
 2. Inspect backend runtime env value:
    - `docker inspect house-erp-prod-backend-1 --format "{{range .Config.Env}}{{println .}}{{end}}" | grep SESSION_COOKIE_SECURE`
 
@@ -207,12 +207,12 @@ Use this section when a deployment or post-deploy validation fails. For each inc
 
 **Symptom signature**
 
-- `GET /api/items` or UI `/items` flow fails with `Route not found`.
+- Backend-direct `GET /items` or UI `/items` flow fails with `Route not found`.
 
 **Cause checks**
 
 1. Confirm API failure payload:
-   - `curl -i http://<NAS_STATIC_IP>:8080/api/items`
+   - `curl -i http://<NAS_STATIC_IP>:8080/items`
 2. Check backend logs for missing module or route registration failure:
    - `docker logs house-erp-prod-backend-1 --tail 200`
 3. Confirm the required backend module exists in the running image:
@@ -220,7 +220,7 @@ Use this section when a deployment or post-deploy validation fails. For each inc
 
 **Expected signatures**
 
-- API response contains `Route not found` or `404` for `/api/items`.
+- API response contains `Route not found` or `404` for `/items`.
 - Backend logs include a load failure similar to `Cannot find module ... financial-metrics.js`.
 - File check reports missing `/app/src/domain/items/financial-metrics.js`.
 
@@ -228,7 +228,7 @@ Use this section when a deployment or post-deploy validation fails. For each inc
 
 1. Publish a corrected backend image that includes `src/domain/items/financial-metrics.js`.
 2. Publish frontend and backend with the same new pinned `IMAGE_TAG`.
-3. Update Portainer stack `IMAGE_TAG` only, redeploy, then re-run `/api/items` check.
+3. Update Portainer stack `IMAGE_TAG` only, redeploy, then re-run `/items` check.
 
 ### 3) Portainer deploy/update returns `500`
 
@@ -288,9 +288,9 @@ Run these gates after every first-time deployment, update, or rollback. Do not d
 | Gate | Request | Expected (status + body signature) | Failure interpretation |
 | --- | --- | --- | --- |
 | Backend health | `curl -i http://<NAS_STATIC_IP>:8080/health` | `200 OK`; body includes `"status":"ok"` (or equivalent healthy signature) | Backend container is not healthy, startup validation failed, or backend is unreachable from NAS port mapping. |
-| Auth + session persistence | `curl -i -c cookies.txt -H "Content-Type: application/json" -d '{"email":"<admin-email>","password":"<password>"}' http://<NAS_STATIC_IP>:8080/api/auth/login` then repeat protected call with same cookie jar | Login returns `200`; response includes `Set-Cookie`; second protected call with `-b cookies.txt` stays authorized (`200`/non-401) | Session cookie is not persisted/sent (often `SESSION_COOKIE_SECURE` mismatch for HTTP runtime), or auth/session middleware is broken in deployed image. |
-| Protected-route expectation | `curl -i -b cookies.txt http://<NAS_STATIC_IP>:8080/api/items` and `curl -i http://<NAS_STATIC_IP>:8080/api/items` | Authenticated request succeeds (`200`); unauthenticated request returns expected denial (`401`/`403`) | Auth boundary is misconfigured if anonymous requests pass, or route stack is broken if authenticated request fails. |
-| Item create functional check | `curl -i -b cookies.txt -H "Content-Type: application/json" -d '{"name":"Verification Item","category":"Asset"}' http://<NAS_STATIC_IP>:8080/api/items` then `curl -i -b cookies.txt http://<NAS_STATIC_IP>:8080/api/items` | Create call returns success (`200`/`201`) with created item id; follow-up list includes the new item | Item domain route or dependent module load failed (for example `Route not found`, missing `financial-metrics.js`, or backend/frontend contract drift). |
+| Auth + session persistence | `curl -i -c cookies.txt -H "Content-Type: application/json" -d '{"email":"<admin-email>","password":"<password>"}' http://<NAS_STATIC_IP>:8080/auth/login` then repeat protected call with same cookie jar | Login returns `200`; response includes `Set-Cookie`; second protected call with `-b cookies.txt` stays authorized (`200`/non-401) | Session cookie is not persisted/sent (often `SESSION_COOKIE_SECURE` mismatch for HTTP runtime), or auth/session middleware is broken in deployed image. |
+| Protected-route expectation | `curl -i -b cookies.txt http://<NAS_STATIC_IP>:8080/items` and `curl -i http://<NAS_STATIC_IP>:8080/items` | Authenticated request succeeds (`200`); unauthenticated request returns expected denial (`401`/`403`) | Auth boundary is misconfigured if anonymous requests pass, or route stack is broken if authenticated request fails. |
+| Item create functional check | `curl -i -b cookies.txt -H "Content-Type: application/json" -d '{"name":"Verification Item","category":"Asset"}' http://<NAS_STATIC_IP>:8080/items` then `curl -i -b cookies.txt http://<NAS_STATIC_IP>:8080/items` | Create call returns success (`200`/`201`) with created item id; follow-up list includes the new item | Item domain route or dependent module load failed (for example `Route not found`, missing `financial-metrics.js`, or backend/frontend contract drift). |
 | Persistence restart check | Insert a sentinel item or row, restart only `postgres`, then fetch sentinel again. Example: `docker compose -f docker-compose.prod.yml restart postgres` followed by the same read request | Sentinel data remains present after restart; health and item list checks continue to pass | Postgres persistence mount/config is wrong (`/volume1/docker/house-erp/db-data` not effective), or startup ordering fails after restart. |
 
 ### Stop conditions
@@ -298,8 +298,8 @@ Run these gates after every first-time deployment, update, or rollback. Do not d
 Stop rollout and keep the release out of service if any condition below is true:
 
 1. `/health` does not return a healthy `200` signature.
-2. `/api/auth/login` succeeds but session does not persist (protected follow-up returns `401`).
-3. Authenticated `/api/items` or item-create checks fail with route/module errors.
+2. `/auth/login` succeeds but session does not persist (protected follow-up returns `401`).
+3. Authenticated `/items` or item-create checks fail with route/module errors.
 4. Persistence restart check loses sentinel data or causes repeated backend health failures.
 5. Frontend/backend image tags are not the same pinned `IMAGE_TAG`.
 
