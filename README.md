@@ -274,3 +274,37 @@ Use this section when a deployment or post-deploy validation fails. For each inc
 1. Publish both images for one explicit release tag.
 2. Set Portainer `IMAGE_TAG=<same-tag-for-both-services>` and redeploy.
 3. Re-run verification gates; if failures persist, rollback to previous known-good pinned tag.
+
+## Verification gates (go-live required)
+
+Run these gates after every first-time deployment, update, or rollback. Do not declare deployment successful until every gate passes.
+
+| Gate | Request | Expected (status + body signature) | Failure interpretation |
+| --- | --- | --- | --- |
+| Backend health | `curl -i http://<NAS_STATIC_IP>:8080/health` | `200 OK`; body includes `"status":"ok"` (or equivalent healthy signature) | Backend container is not healthy, startup validation failed, or backend is unreachable from NAS port mapping. |
+| Auth + session persistence | `curl -i -c cookies.txt -H "Content-Type: application/json" -d '{"email":"<admin-email>","password":"<password>"}' http://<NAS_STATIC_IP>:8080/api/auth/login` then repeat protected call with same cookie jar | Login returns `200`; response includes `Set-Cookie`; second protected call with `-b cookies.txt` stays authorized (`200`/non-401) | Session cookie is not persisted/sent (often `SESSION_COOKIE_SECURE` mismatch for HTTP runtime), or auth/session middleware is broken in deployed image. |
+| Protected-route expectation | `curl -i -b cookies.txt http://<NAS_STATIC_IP>:8080/api/items` and `curl -i http://<NAS_STATIC_IP>:8080/api/items` | Authenticated request succeeds (`200`); unauthenticated request returns expected denial (`401`/`403`) | Auth boundary is misconfigured if anonymous requests pass, or route stack is broken if authenticated request fails. |
+| Item create functional check | `curl -i -b cookies.txt -H "Content-Type: application/json" -d '{"name":"Verification Item","category":"Asset"}' http://<NAS_STATIC_IP>:8080/api/items` then `curl -i -b cookies.txt http://<NAS_STATIC_IP>:8080/api/items` | Create call returns success (`200`/`201`) with created item id; follow-up list includes the new item | Item domain route or dependent module load failed (for example `Route not found`, missing `financial-metrics.js`, or backend/frontend contract drift). |
+| Persistence restart check | Insert a sentinel item or row, restart only `postgres`, then fetch sentinel again. Example: `docker compose -f docker-compose.prod.yml restart postgres` followed by the same read request | Sentinel data remains present after restart; health and item list checks continue to pass | Postgres persistence mount/config is wrong (`/volume1/docker/house-erp/db-data` not effective), or startup ordering fails after restart. |
+
+### Stop conditions
+
+Stop rollout and keep the release out of service if any condition below is true:
+
+1. `/health` does not return a healthy `200` signature.
+2. `/api/auth/login` succeeds but session does not persist (protected follow-up returns `401`).
+3. Authenticated `/api/items` or item-create checks fail with route/module errors.
+4. Persistence restart check loses sentinel data or causes repeated backend health failures.
+5. Frontend/backend image tags are not the same pinned `IMAGE_TAG`.
+
+### Rollback trigger criteria
+
+Trigger rollback immediately when a stop condition persists after one configuration correction attempt.
+
+Rollback trigger:
+
+1. Set `IMAGE_TAG=<previous-known-good-tag>` in Portainer.
+2. Click **Update the stack**.
+3. Re-run all verification gates above and record pass/fail outcomes.
+
+Rollback is complete only when all gates pass on the known-good tag.
