@@ -1,0 +1,1 @@
+- 2026-03-07: `npm --prefix frontend run typecheck` is currently blocked by an unrelated pre-existing assertion typing error in `frontend/src/__tests__/items-workflows.test.tsx:627` (`toHaveAttribute` missing on `Assertion<HTMLElement | null>`). Left untouched because it is outside plan 26-02 scope.

@@ -195,6 +195,8 @@ describe('dashboard/events completion flow', () => {
     renderEventsPage()
 
     await screen.findByText('Mortgage')
+    expect(screen.getByText('Mortgage').closest('[data-event-row-id="event-1"]')).toBeTruthy()
+    expect(document.querySelector('[data-event-group-id="upcoming-2026-02-26"]')).toBeTruthy()
     expect(screen.getByText('Current and upcoming')).toBeTruthy()
     expect(screen.getByRole('button', { name: /History/i })).toBeTruthy()
     expect(screen.getByText(/Monthly, (next on|no upcoming date)/)).toBeTruthy()
@@ -653,6 +655,7 @@ describe('dashboard/events completion flow', () => {
     await waitFor(() => {
       expect(screen.getByText('Edited occurrence')).toBeTruthy()
     })
+    expect(document.querySelector('[data-event-row-id="event-1"]')).toBeTruthy()
     expect(screen.queryByText('Saving this projected occurrence creates a persisted exception for this date.')).toBeNull()
   })
 })

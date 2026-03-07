@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
+import { MotionPanelList } from '@/components/ui/motion-panel-list'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { EditEventRowAction } from '../../features/events/edit-event-row-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
@@ -350,75 +351,86 @@ export function EventsPage() {
         {groupedSections.present.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border bg-card/70 px-4 py-3 text-sm text-muted-foreground">{t('events.noUpcoming')}</p>
         ) : (
-          groupedSections.present.map((group) => (
-            <section key={`upcoming-${group.due_date}`} className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-foreground">{formatDueLabel(group.due_date)}</h3>
-              <ul className="mt-3 space-y-2">
-                {group.events.map((event) => {
-                  const projected = isProjectedEvent(event)
-                  const overdue = isOverdueEvent(event, todayStart)
+          <MotionPanelList
+            items={groupedSections.present}
+            getItemKey={(group) => `upcoming-${group.due_date}`}
+            className="space-y-3"
+            itemClassName="rounded-2xl"
+            renderItem={(group) => (
+              <section data-event-group-id={`upcoming-${group.due_date}`} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-foreground">{formatDueLabel(group.due_date)}</h3>
+                <MotionPanelList
+                  items={group.events}
+                  getItemKey={(event) => event.id}
+                  className="mt-3 space-y-2"
+                  itemClassName="overflow-hidden rounded-xl"
+                  renderItem={(event) => {
+                    const projected = isProjectedEvent(event)
+                    const overdue = isOverdueEvent(event, todayStart)
 
-                  return (
-                  <li
-                    key={event.id}
-                    className={`hover-lift flex flex-col gap-2 rounded-xl border p-3 md:flex-row md:items-center md:justify-between ${
-                      overdue
-                        ? 'border-red-300 bg-red-50/60'
-                        : projected
-                          ? 'border-sky-200 bg-sky-50/40'
-                          : 'border-border bg-background/80'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-medium">{event.type}</p>
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-                            projected
-                              ? 'border-sky-300 bg-sky-50 text-sky-700'
-                              : 'border-border bg-background text-foreground'
-                          }`}
-                        >
-                          {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
-                        </span>
-                        <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
-                        {overdue ? (
-                          <span className="rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
-                            {t('dashboard.overdue')}
-                          </span>
-                        ) : null}
-                        {event.is_exception ? (
-                          <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                            {t('events.stateLegend.editedOccurrence')}
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
-                          {itemNameById.get(event.item_id) ?? t('events.itemLabel', { itemId: event.item_id })}
-                        </Link>
-                      </p>
-                      {getRecurrenceText(itemById.get(event.item_id), event, nextDueByItemId, t) ? (
-                        <p className="mt-1 text-xs text-muted-foreground">{getRecurrenceText(itemById.get(event.item_id), event, nextDueByItemId, t)}</p>
-                      ) : null}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm font-medium">{formatEventAmount(event, itemById.get(event.item_id)) ?? t('events.amountPending')}</div>
-                      <EditEventRowAction
-                        eventId={event.id}
-                        itemId={event.item_id}
-                        eventStatus={event.status}
-                        dueDate={event.due_date}
-                        amount={event.amount}
-                        isProjected={projected}
-                      />
-                      <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
-                    </div>
-                  </li>
-                )})}
-              </ul>
-            </section>
-          ))
+                    return (
+                      <li
+                        data-event-row-id={event.id}
+                        className={`hover-lift flex list-none flex-col gap-2 rounded-xl border p-3 md:flex-row md:items-center md:justify-between ${
+                          overdue
+                            ? 'border-red-300 bg-red-50/45'
+                            : projected
+                              ? 'border-sky-200 bg-sky-50/25'
+                              : 'border-border bg-background/70'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-medium">{event.type}</p>
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                                projected
+                                  ? 'border-sky-300 bg-sky-50 text-sky-700'
+                                  : 'border-border bg-background text-foreground'
+                              }`}
+                            >
+                              {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
+                            </span>
+                            <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
+                            {overdue ? (
+                              <span className="rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
+                                {t('dashboard.overdue')}
+                              </span>
+                            ) : null}
+                            {event.is_exception ? (
+                              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                                {t('events.stateLegend.editedOccurrence')}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
+                              {itemNameById.get(event.item_id) ?? t('events.itemLabel', { itemId: event.item_id })}
+                            </Link>
+                          </p>
+                          {getRecurrenceText(itemById.get(event.item_id), event, nextDueByItemId, t) ? (
+                            <p className="mt-1 text-xs text-muted-foreground">{getRecurrenceText(itemById.get(event.item_id), event, nextDueByItemId, t)}</p>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium">{formatEventAmount(event, itemById.get(event.item_id)) ?? t('events.amountPending')}</div>
+                          <EditEventRowAction
+                            eventId={event.id}
+                            itemId={event.item_id}
+                            eventStatus={event.status}
+                            dueDate={event.due_date}
+                            amount={event.amount}
+                            isProjected={projected}
+                          />
+                          <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
+                        </div>
+                      </li>
+                    )
+                  }}
+                />
+              </section>
+            )}
+          />
         )}
       </section> : null}
 
@@ -434,65 +446,76 @@ export function EventsPage() {
         {groupedSections.history.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border bg-card/70 px-4 py-3 text-sm text-muted-foreground">{t('events.noHistory')}</p>
         ) : (
-          groupedSections.history.map((group) => (
-            <section key={`history-${group.due_date}`} className="animate-fade-up rounded-2xl border border-border bg-card/80 p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-foreground">{formatDueLabel(group.due_date)}</h3>
-              <ul className="mt-3 space-y-2">
-                {group.events.map((event) => {
-                  const projected = isProjectedEvent(event)
+          <MotionPanelList
+            items={groupedSections.history}
+            getItemKey={(group) => `history-${group.due_date}`}
+            className="space-y-3"
+            itemClassName="rounded-2xl"
+            renderItem={(group) => (
+              <section data-event-group-id={`history-${group.due_date}`} className="rounded-2xl border border-border bg-card/80 p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-foreground">{formatDueLabel(group.due_date)}</h3>
+                <MotionPanelList
+                  items={group.events}
+                  getItemKey={(event) => event.id}
+                  className="mt-3 space-y-2"
+                  itemClassName="overflow-hidden rounded-xl"
+                  renderItem={(event) => {
+                    const projected = isProjectedEvent(event)
 
-                  return (
-                  <li
-                    key={event.id}
-                    className={`hover-lift flex flex-col gap-2 rounded-xl border p-3 md:flex-row md:items-center md:justify-between ${
-                      projected ? 'border-sky-200 bg-sky-50/35' : 'border-border bg-background/70'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-medium">{event.type}</p>
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-                            projected
-                              ? 'border-sky-300 bg-sky-50 text-sky-700'
-                              : 'border-border bg-background text-foreground'
-                          }`}
-                        >
-                          {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
-                        </span>
-                        <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
-                        {event.is_exception ? (
-                          <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                            {t('events.stateLegend.editedOccurrence')}
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
-                          {itemNameById.get(event.item_id) ?? t('events.itemLabel', { itemId: event.item_id })}
-                        </Link>
-                      </p>
-                      {getRecurrenceText(itemById.get(event.item_id), event, nextDueByItemId, t) ? (
-                        <p className="mt-1 text-xs text-muted-foreground">{getRecurrenceText(itemById.get(event.item_id), event, nextDueByItemId, t)}</p>
-                      ) : null}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm font-medium">{formatEventAmount(event, itemById.get(event.item_id)) ?? t('events.amountPending')}</div>
-                      <EditEventRowAction
-                        eventId={event.id}
-                        itemId={event.item_id}
-                        eventStatus={event.status}
-                        dueDate={event.due_date}
-                        amount={event.amount}
-                        isProjected={projected}
-                      />
-                      <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
-                    </div>
-                  </li>
-                )})}
-              </ul>
-            </section>
-          ))
+                    return (
+                      <li
+                        data-event-row-id={event.id}
+                        className={`hover-lift flex list-none flex-col gap-2 rounded-xl border p-3 md:flex-row md:items-center md:justify-between ${
+                          projected ? 'border-sky-200 bg-sky-50/20' : 'border-border bg-background/65'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-medium">{event.type}</p>
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                                projected
+                                  ? 'border-sky-300 bg-sky-50 text-sky-700'
+                                  : 'border-border bg-background text-foreground'
+                              }`}
+                            >
+                              {projected ? t('events.stateLegend.projected') : t('events.stateLegend.persisted')}
+                            </span>
+                            <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{event.status}</span>
+                            {event.is_exception ? (
+                              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                                {t('events.stateLegend.editedOccurrence')}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
+                              {itemNameById.get(event.item_id) ?? t('events.itemLabel', { itemId: event.item_id })}
+                            </Link>
+                          </p>
+                          {getRecurrenceText(itemById.get(event.item_id), event, nextDueByItemId, t) ? (
+                            <p className="mt-1 text-xs text-muted-foreground">{getRecurrenceText(itemById.get(event.item_id), event, nextDueByItemId, t)}</p>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium">{formatEventAmount(event, itemById.get(event.item_id)) ?? t('events.amountPending')}</div>
+                          <EditEventRowAction
+                            eventId={event.id}
+                            itemId={event.item_id}
+                            eventStatus={event.status}
+                            dueDate={event.due_date}
+                            amount={event.amount}
+                            isProjected={projected}
+                          />
+                          <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
+                        </div>
+                      </li>
+                    )
+                  }}
+                />
+              </section>
+            )}
+          />
         )}
       </section> : null}
     </section>

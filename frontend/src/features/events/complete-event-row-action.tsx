@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Pressable } from '@/components/ui/pressable'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../admin-scope/target-user-chip'
@@ -88,27 +89,29 @@ export function CompleteEventRowAction({ eventId, itemId, eventStatus }: Complet
   return (
     <div className="flex items-center gap-2">
       {attribution ? <TargetUserChip actorLabel={attribution.actorLabel} lensLabel={attribution.lensLabel} /> : null}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={completionMutation.isPending}
-        onClick={() => {
-          if (blockWhenLensInvalid()) {
-            return
-          }
+      <Pressable>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={completionMutation.isPending}
+          onClick={() => {
+            if (blockWhenLensInvalid()) {
+              return
+            }
 
-          setConfirmOpen(true)
-        }}
-      >
-        {completionMutation.isPending
-          ? isCompleted
-            ? t('events.completeAction.undoPending')
-            : t('events.completeAction.pending')
-          : isCompleted
-            ? t('events.completeAction.undoButton')
-            : t('events.completeAction.button')}
-      </Button>
+            setConfirmOpen(true)
+          }}
+        >
+          {completionMutation.isPending
+            ? isCompleted
+              ? t('events.completeAction.undoPending')
+              : t('events.completeAction.pending')
+            : isCompleted
+              ? t('events.completeAction.undoButton')
+              : t('events.completeAction.button')}
+        </Button>
+      </Pressable>
 
       {showSuccess ? <p className="text-xs font-medium text-emerald-600">{t('events.completeAction.completed')}</p> : null}
       {failureText ? <p className="text-xs font-medium text-destructive">{failureText}</p> : null}

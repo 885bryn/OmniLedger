@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Pressable } from '@/components/ui/pressable'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../admin-scope/target-user-chip'
@@ -138,23 +139,25 @@ export function EditEventRowAction({ eventId, itemId, eventStatus, dueDate, amou
 
   return (
     <div className="flex items-center gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => {
-          if (blockWhenLensInvalid()) {
-            return
-          }
+      <Pressable>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (blockWhenLensInvalid()) {
+              return
+            }
 
-          setDraftDueDate(originalDueDate)
-          setDraftAmount(originalAmount)
-          setConfirmOpen(true)
-        }}
-        disabled={editMutation.isPending}
-      >
-        {editMutation.isPending ? t('events.editAction.pending') : t('events.editAction.button')}
-      </Button>
+            setDraftDueDate(originalDueDate)
+            setDraftAmount(originalAmount)
+            setConfirmOpen(true)
+          }}
+          disabled={editMutation.isPending}
+        >
+          {editMutation.isPending ? t('events.editAction.pending') : t('events.editAction.button')}
+        </Button>
+      </Pressable>
 
       {failureText ? <p className="text-xs font-medium text-destructive">{failureText}</p> : null}
 
