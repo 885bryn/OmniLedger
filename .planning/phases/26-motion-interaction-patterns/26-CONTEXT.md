@@ -19,6 +19,11 @@ Layer MacOS-style motion onto the shadcn-based OmniLedger surface system so user
 - Use one mostly consistent motion language across the product, with only small emphasis differences for more important state changes.
 - In-shell view changes can use a subtle content shift, but not large or cinematic route transitions.
 
+### Exit feel consistency (gap-closure update)
+- Exit motion should start immediately after user action while still landing smoothly.
+- Destructive exits can have only slight extra emphasis, while still preserving one shared motion language.
+- Gap-closure changes should preserve continuity in dense data views and avoid abrupt, dramatic exits.
+
 ### Create feedback
 - New rows or cards should arrive with a fade-up and slight lift rather than a strong slide-in.
 - Newly created content should briefly show a subtle tint flash that reads as confirmation, not selection.
@@ -35,6 +40,8 @@ Layer MacOS-style motion onto the shadcn-based OmniLedger surface system so user
 - Exact motion durations and timing values, as long as they preserve the restrained premium feel.
 - Which existing screens receive the subtle in-shell content shift first.
 - Exact tint color and highlight implementation for creation feedback, provided it stays brief and subtle.
+- Exact energy balance between enter and exit motion, within the same shared spring personality.
+- Whether exit emphasis should visually favor layout continuity or removed-item visibility, as long as it stays subtle and consistent.
 
 </decisions>
 
@@ -44,6 +51,7 @@ Layer MacOS-style motion onto the shadcn-based OmniLedger surface system so user
 - The desired feel is MacOS-style utility motion: polished, quick, and legible under dense data.
 - Motion should support the shadcn surface system from Phase 25 rather than compete with it.
 - New-item confirmation should read as a gentle lift plus tint flash, not a dramatic insertion animation.
+- Gap closure should remove abruptness from exits while keeping interaction feedback immediate.
 
 </specifics>
 

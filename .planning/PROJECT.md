@@ -20,9 +20,9 @@ Users can see each asset together with its linked obligations and timeline statu
 
 **Target features:**
 - Strict light-mode default theme system that ignores OS preference until the user explicitly toggles themes.
-- High-contrast dashboard canvas, card surfaces, borders, text hierarchy, spacing, and radius tokens across the core UI shell.
-- Framer Motion layout, mount/unmount, and tactile press interactions for cards, list items, and record creation states.
-- A reusable layout wrapper plus exemplar Data Card and List Item motion patterns for rollout across the dashboard.
+- High-contrast dashboard canvas, shadcn/ui Nova surfaces, crisp borders, text hierarchy, spacing, and radius tokens across the core UI shell.
+- Framer Motion layout, mount/unmount, and tactile press interactions layered onto shadcn-based cards, forms, dialogs, and list items.
+- A reusable layout wrapper plus exemplar shadcn-based Data Card, Form, Toast, and List Item patterns for rollout across the dashboard.
 
 ## Requirements
 
@@ -37,9 +37,9 @@ Users can see each asset together with its linked obligations and timeline statu
 
 - [ ] Users see the OmniLedger dashboard in light mode on first render, regardless of OS or browser theme preference.
 - [ ] Users can explicitly toggle between high-contrast light and dark themes, with their chosen theme persisted locally.
-- [ ] Users interact with cards, controls, and list/grid layouts that use consistent radii, generous spacing, crisp borders, and subtle light-mode elevation.
+- [ ] Users interact with shadcn-based cards, controls, forms, and list/grid layouts that use consistent radii, generous spacing, crisp borders, and subtle light-mode elevation.
 - [ ] Users see physics-based motion when records appear, disappear, or shift position so layout changes stay visually legible.
-- [ ] Engineers have a reusable layout wrapper, theme toggle pattern, Tailwind updates, and Framer Motion examples to apply across the dashboard.
+- [ ] Engineers have a reusable layout wrapper, shadcn/ui primitive patterns, theme toggle pattern, and Framer Motion examples to apply across the dashboard.
 
 ### Out of Scope
 
@@ -57,6 +57,7 @@ Users can see each asset together with its linked obligations and timeline statu
 - **Theme behavior:** Initial render must be locked to light mode and ignore OS/browser preference until the user uses the theme toggle.
 - **Visual language:** Preserve a structured, high-contrast, developer-tool dashboard aesthetic rather than a marketing-style redesign.
 - **Motion model:** Layout changes should use Framer Motion spring physics instead of generic linear CSS transitions where the UI reflows.
+- **UI primitives:** Use shadcn/ui Nova components from `@/components/ui` for buttons, cards, forms, dialogs, tabs, and toast surfaces instead of bespoke Tailwind primitives.
 
 <details>
 <summary>Archived Prior Milestone Snapshot (v4.0 In-Progress Framing)</summary>
