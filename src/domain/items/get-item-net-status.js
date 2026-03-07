@@ -23,6 +23,13 @@ const CANONICAL_ITEM_FIELDS = Object.freeze([
 
 const ROOT_ITEM_TYPES = new Set(["RealEstate", "Vehicle"]);
 const CASHFLOW_ITEM_TYPES = new Set(["FinancialItem"]);
+const ONE_TIME_FREQUENCY = "one_time";
+const ONE_TIME_RULE_DESCRIPTOR = Object.freeze({
+  frequency: ONE_TIME_FREQUENCY,
+  inclusion: "due_date_inside_active_period",
+  boundary: "inclusive",
+  excludes: ["outside_active_period", "missing_or_invalid_due_date", "invalid_or_zero_amount"]
+});
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
@@ -86,6 +93,43 @@ function deriveDueDateKey(item) {
   return time;
 }
 
+function deriveDueDateDayKey(item) {
+  const time = deriveDueDateKey(item);
+  if (time === null) {
+    return null;
+  }
+
+  const parsed = new Date(time);
+  return Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
+}
+
+function formatDateFromUtcDayKey(dayKey) {
+  return new Date(dayKey).toISOString().slice(0, 10);
+}
+
+function resolveActiveMonthlyPeriod(referenceDate = new Date()) {
+  const year = referenceDate.getUTCFullYear();
+  const month = referenceDate.getUTCMonth();
+  const date = referenceDate.getUTCDate();
+
+  const startDayKey = Date.UTC(year, month, 1);
+  const endDayKey = Date.UTC(year, month + 1, 0);
+  const referenceDayKey = Date.UTC(year, month, date);
+
+  return {
+    startDayKey,
+    endDayKey,
+    referenceDayKey,
+    metadata: {
+      cadence: "monthly",
+      start_date: formatDateFromUtcDayKey(startDayKey),
+      end_date: formatDateFromUtcDayKey(endDayKey),
+      reference_date: formatDateFromUtcDayKey(referenceDayKey),
+      boundary: "inclusive"
+    }
+  };
+}
+
 function sortChildCommitments(items) {
   return [...items].sort((left, right) => {
     const leftDueDate = deriveDueDateKey(left);
@@ -145,6 +189,10 @@ function normalizeLower(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
+function isOneTimeItem(child) {
+  return normalizeLower(child && child.frequency) === ONE_TIME_FREQUENCY;
+}
+
 function isIncomeItem(child) {
   if (!child) {
     return false;
@@ -190,31 +238,48 @@ function resolveParentLinkId(item) {
 }
 
 function buildSummary(childCommitments) {
-  return childCommitments.reduce(
-    (summary, child) => {
+  const activePeriod = resolveActiveMonthlyPeriod();
+  const summary = childCommitments.reduce(
+    (accumulator, child) => {
       const amount = resolveSummaryAmount(child);
 
-      if (amount === null) {
-        summary.excluded_row_count += 1;
-        return summary;
+      if (amount === null || amount === 0) {
+        accumulator.excluded_row_count += 1;
+        return accumulator;
+      }
+
+      if (isOneTimeItem(child)) {
+        const dueDateDayKey = deriveDueDateDayKey(child);
+        const isInsideActivePeriod = dueDateDayKey !== null
+          && dueDateDayKey >= activePeriod.startDayKey
+          && dueDateDayKey <= activePeriod.endDayKey;
+
+        if (!isInsideActivePeriod) {
+          accumulator.excluded_row_count += 1;
+          return accumulator;
+        }
       }
 
       if (isIncomeItem(child)) {
-        summary.monthly_income_total += amount;
+        accumulator.monthly_income_total += amount;
       } else {
-        summary.monthly_obligation_total += amount;
+        accumulator.monthly_obligation_total += amount;
       }
 
-      summary.net_monthly_cashflow = summary.monthly_income_total - summary.monthly_obligation_total;
-      return summary;
+      return accumulator;
     },
     {
       monthly_obligation_total: 0,
       monthly_income_total: 0,
       net_monthly_cashflow: 0,
-      excluded_row_count: 0
+      excluded_row_count: 0,
+      active_period: activePeriod.metadata,
+      one_time_rule: ONE_TIME_RULE_DESCRIPTOR
     }
   );
+
+  summary.net_monthly_cashflow = summary.monthly_income_total - summary.monthly_obligation_total;
+  return summary;
 }
 
 function throwNotFound(itemId) {
