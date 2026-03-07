@@ -15,10 +15,10 @@
 
 ### Visual System
 
-- [ ] **VIS-01**: User sees the default light theme with `bg-neutral-50` canvas, `bg-white` card surfaces, `border-neutral-200`, `text-neutral-900` primary text, `text-neutral-500` secondary text, and subtle `shadow-sm` card elevation.
-- [ ] **VIS-02**: User sees the dark theme with `dark:bg-neutral-950` canvas, `dark:bg-neutral-900` card surfaces, `dark:border-neutral-800`, `dark:text-neutral-100` primary text, `dark:text-neutral-400` secondary text, and border-only separation without card shadows.
-- [ ] **VIS-03**: User sees consistent `rounded-xl` main cards and `rounded-lg` interactive controls across the updated dashboard shell.
-- [ ] **VIS-04**: User sees generous in-card spacing that keeps dense financial data readable.
+- [x] **VIS-01**: User sees the default light theme with `bg-neutral-50` canvas, `bg-white` shadcn surfaces, `border-neutral-200`, `text-neutral-900` primary text, `text-neutral-500` secondary text, and subtle `shadow-sm` card elevation.
+- [x] **VIS-02**: User sees the dark theme with `dark:bg-neutral-950` canvas, `dark:bg-neutral-900` shadcn surfaces, `dark:border-neutral-800`, `dark:text-neutral-100` primary text, `dark:text-neutral-400` secondary text, and border-only separation without card shadows.
+- [x] **VIS-03**: User sees official shadcn cards use `rounded-xl` styling and shadcn interactive controls use `rounded-lg` styling consistently across the updated dashboard shell.
+- [ ] **VIS-04**: User sees generous spacing across cards, forms, and dense data panels so financial information stays readable.
 
 ### Motion and Feedback
 
@@ -31,14 +31,14 @@
 
 - [x] **IMPL-01**: Engineer has a reusable layout wrapper/provider that enforces light mode as the initial theme and exposes a manual theme toggle.
 - [x] **IMPL-02**: Engineer has the Tailwind and/or theme-provider configuration needed to support the milestone's dual-theme token system.
-- [ ] **IMPL-03**: Engineer has an example Data Card pattern showing the required surface styling and motion props.
-- [ ] **IMPL-04**: Engineer has an example List Item pattern showing layout animation, spring behavior, and creation feedback.
+- [x] **IMPL-03**: Engineer has a shadcn-based Data Card pattern using official `@/components/ui` primitives and milestone surface tokens.
+- [ ] **IMPL-04**: Engineer has a Framer Motion example showing how shadcn-based list items or panels use layout animation, spring behavior, and creation feedback.
 
 ## Future Requirements (Deferred)
 
 ### Design System Rollout
 
-- **DSYS-01**: User sees the same theme and motion system rolled out across remaining legacy screens beyond the first-pass dashboard surfaces.
+- **DSYS-01**: User sees the same shadcn-based theme and motion system rolled out across remaining legacy screens beyond the first-pass dashboard surfaces.
 
 ### Expanded Motion
 
@@ -66,9 +66,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | THEME-02 | Phase 24 | Complete |
 | THEME-03 | Phase 24 | Complete |
 | THEME-04 | Phase 24 | Complete |
-| VIS-01 | Phase 25 | Pending |
-| VIS-02 | Phase 25 | Pending |
-| VIS-03 | Phase 25 | Pending |
+| VIS-01 | Phase 25 | Complete |
+| VIS-02 | Phase 25 | Complete |
+| VIS-03 | Phase 25 | Complete |
 | VIS-04 | Phase 25 | Pending |
 | MOTION-01 | Phase 26 | Pending |
 | MOTION-02 | Phase 26 | Pending |
@@ -76,7 +76,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOTION-04 | Phase 26 | Pending |
 | IMPL-01 | Phase 24 | Complete |
 | IMPL-02 | Phase 24 | Complete |
-| IMPL-03 | Phase 25 | Pending |
+| IMPL-03 | Phase 25 | Complete |
 | IMPL-04 | Phase 26 | Pending |
 
 **Coverage:**
@@ -86,4 +86,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after completing phase 24 requirements*
+*Last updated: 2026-03-07 after completing plan 25-01 requirements*

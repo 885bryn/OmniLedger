@@ -6,7 +6,7 @@
 - ✅ **v2.0 Auth, Timeline & Data Lifecycle** - Phases 8-13 shipped 2026-03-02 (`.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v2.0-MILESTONE-AUDIT.md`)
 - ✅ **v3.0 Data Portability** - Phases 14-18 shipped 2026-03-04 (`.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v3.0-MILESTONE-AUDIT.md`)
 - ✅ **v4.0 Interactive Production Deployment for Ugreen NAS** - Phases 19-23 shipped 2026-03-07 (`.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.0-REQUIREMENTS.md`, `.planning/milestones/v4.0-MILESTONE-AUDIT.md`)
-- 🚧 **v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion** - Phase 24 shipped; Phase 25 is next
+- 🚧 **v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion** - Phase 24 shipped; Phase 25 is in progress
 
 ## Phases
 
@@ -58,7 +58,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] `25-01-PLAN.md` - Establish the Phase 25 surface tokens, shell styling, and reusable dashboard data-card pattern.
+- [x] `25-01-PLAN.md` - Establish the Phase 25 surface tokens, shell styling, and reusable dashboard data-card pattern.
 - [ ] `25-02-PLAN.md` - Migrate auth entry, dialogs, and toast presentation to shadcn-aligned surfaces.
 - [ ] `25-03-PLAN.md` - Roll the shared shadcn form system across first-pass item-management and admin action surfaces.
 
@@ -79,8 +79,8 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 24. Theme Foundation | v4.1 | 2/2 | Complete | 2026-03-07 |
-| 25. Dashboard Surface System | v4.1 | 0/3 | Not started | - |
+| 25. Dashboard Surface System | v4.1 | 1/3 | In Progress | - |
 | 26. Motion Interaction Patterns | v4.1 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-03-07 after planning phase 25*
+*Last updated: 2026-03-07 after completing plan 25-01*

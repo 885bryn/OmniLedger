@@ -11,16 +11,16 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 25 of 26 (Dashboard Surface System)
-Plan: 00 of TBD
-Status: Ready to plan
-Last activity: 2026-03-07 - Completed 24-02 theme foundation plan
+Plan: 01 of 03
+Status: In progress
+Last activity: 2026-03-07 - Completed 25-01 dashboard surface system plan
 
-Progress: [======░░░░] 54%
+Progress: [======░░░░] 55%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 56
+- Total plans completed: 57
 - Average duration: 4 min
 - Total execution time: 4.4 hours
 
@@ -37,6 +37,7 @@ Progress: [======░░░░] 54%
 - Trend: Theme foundation closed cleanly with fast execution; next work shifts from theme behavior to dashboard surface-system rollout.
 | Phase 24-theme-foundation P01 | 3 min | 2 tasks | 4 files |
 | Phase 24 P02 | 2 min | 2 tasks | 5 files |
+| Phase 25 P01 | 1 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -52,6 +53,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 24-theme-foundation]: Sync theme state onto document.documentElement with both the dark class and data-theme attribute for shared CSS control.
 - [Phase 24]: Keep the reusable theme control as a compact icon button with the icon reflecting the active theme while the accessible label describes the next action.
 - [Phase 24]: Expose mobile theme switching from the off-canvas menu row instead of the visible mobile header to preserve a cleaner authenticated chrome.
+- [Phase 25]: Use warmer neutral light tokens with restrained light-only shadows while keeping dark mode border-first and near-black.
+- [Phase 25]: Introduce a reusable DataCard wrapper around shadcn Card primitives so dashboard metrics, empty states, and grouped sections share one surface pattern.
 
 ### Pending Todos
 
@@ -66,5 +69,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Phase 25 context gathered after UI pivot
-Resume file: `.planning/phases/25-dashboard-surface-system/25-CONTEXT.md`
+Stopped at: Completed 25-01-PLAN.md
+Resume file: None
