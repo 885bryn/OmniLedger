@@ -11,11 +11,11 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 26 of 26 (Motion Interaction Patterns)
-Plan: 04 of 04
+Plan: 05 of 05
 Status: Complete
-Last activity: 2026-03-07 - Completed 26-03 motion interaction patterns plan
+Last activity: 2026-03-07 - Completed 26-05 motion interaction patterns gap-closure plan
 
-Progress: [======░░░░] 60%
+Progress: [==========] 100%
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Progress: [======░░░░] 60%
 | Phase 26 P04 | 3 min | 2 tasks | 5 files |
 | Phase 26-motion-interaction-patterns P03 | 8 min | 1 tasks | 5 files |
 | Phase 26-motion-interaction-patterns P02 | 4 min | 2 tasks | 7 files |
+| Phase 26 P05 | 1 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 26-motion-interaction-patterns]: Use MotionPanelList at both panel and row levels so dashboard and events surfaces inherit one consistent spring, stagger, layout, and highlight language.
 - [Phase 26-motion-interaction-patterns]: Wrap existing dashboard tile links and event row action buttons in Pressable so tactile feedback stays additive and does not change existing behavior contracts.
 - [Phase 26-motion-interaction-patterns]: Let subtle shared highlight tint show through slightly translucent row backgrounds instead of adding a stronger bespoke flash.
+- [Phase 26]: Use shared motionSpring for all phase-26 exit transitions so exits begin immediately while preserving the restrained spring landing feel.
+- [Phase 26]: Mount the events header through shared Framer Motion variants and lock regression coverage against reintroducing animate-fade-up.
 
 ### Pending Todos
 
@@ -90,5 +93,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 26-03-PLAN.md
+Stopped at: Completed 26-05-PLAN.md
 Resume file: `None`
