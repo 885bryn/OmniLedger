@@ -204,6 +204,13 @@ describe('items workflows', () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('filter=commitments'), expect.anything())
     })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Deleted' }))
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('filter=deleted'), expect.anything())
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('include_deleted=true'), expect.anything())
+    })
   })
 
   it('creates a financial item using session identity without actor header injection', async () => {
@@ -245,9 +252,9 @@ describe('items workflows', () => {
 
     renderWithMemoryRouter(<ItemCreateWizardPage />)
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /financial subtype/i }), 'Commitment')
+    expect(screen.getByRole('combobox', { name: /financial subtype/i }).textContent).toContain('Commitment')
     await userEvent.type(screen.getByRole('textbox', { name: /Name/i }), 'Loan')
-    await userEvent.type(screen.getByRole('spinbutton', { name: /Amount/i }), '1200')
+    await userEvent.type(screen.getByRole('textbox', { name: /Amount/i }), '1200')
     await userEvent.type(screen.getByLabelText(/Due date/i), '2026-03-01')
     await userEvent.click(screen.getByRole('button', { name: 'Create financial item' }))
 
@@ -269,14 +276,26 @@ describe('items workflows', () => {
       item_type?: string
       type?: string
       frequency?: string
+      parent_item_id?: string | null
       confirm_unlinked_asset?: boolean
+      attributes?: {
+        name?: string
+        financialSubtype?: string
+        amount?: number
+        billingCycle?: string
+      }
     }
 
     expect(createBody.user_id).toBeUndefined()
     expect(createBody.item_type).toBe('FinancialItem')
     expect(createBody.type).toBe('Commitment')
     expect(createBody.frequency).toBe('monthly')
+    expect(createBody.parent_item_id).toBeNull()
     expect(createBody.confirm_unlinked_asset).toBe(true)
+    expect(createBody.attributes?.name).toBe('Loan')
+    expect(createBody.attributes?.financialSubtype).toBe('Commitment')
+    expect(createBody.attributes?.amount).toBe(1200)
+    expect(createBody.attributes?.billingCycle).toBe('monthly')
   })
 
   it('keeps legacy wizard route functional and uses the guided single form', async () => {
@@ -322,11 +341,7 @@ describe('items workflows', () => {
       expect(screen.queryByText(/Step \d+ of \d+/i)).toBeNull()
     })
 
-    expect(screen.getByDisplayValue('Income')).toBeTruthy()
-    expect(screen.getByRole('option', { name: 'One-time' })).toBeTruthy()
-    expect(screen.getByRole('option', { name: 'Weekly' })).toBeTruthy()
-    expect(screen.getByRole('option', { name: 'Monthly' })).toBeTruthy()
-    expect(screen.getByRole('option', { name: 'Yearly' })).toBeTruthy()
+    expect(screen.getByRole('combobox', { name: /billing cycle/i })).toBeTruthy()
   })
 
   it('shows edit error feedback when update API returns issue envelope', async () => {
@@ -371,8 +386,8 @@ describe('items workflows', () => {
     renderEditRoute()
 
     await screen.findByText('Edit item')
-    await userEvent.clear(screen.getByRole('spinbutton', { name: /Estimated value/i }))
-    await userEvent.type(screen.getByRole('spinbutton', { name: /Estimated value/i }), '9500')
+    await userEvent.clear(screen.getByRole('textbox', { name: /Estimated value/i }))
+    await userEvent.type(screen.getByRole('textbox', { name: /Estimated value/i }), '9500')
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await userEvent.click(screen.getAllByRole('button', { name: 'Save changes' })[1])
 
@@ -407,6 +422,23 @@ describe('items workflows', () => {
         return createResponse({ status: 200, json: { id: 'item-1', is_deleted: true } })
       }
 
+      if (url.includes('/items/item-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'item-1',
+            item_type: 'RealEstate',
+            child_commitments: [],
+            summary: {
+              monthly_obligation_total: 0,
+              monthly_income_total: 0,
+              net_monthly_cashflow: 0,
+              excluded_row_count: 0,
+            },
+          },
+        })
+      }
+
       throw new Error(`Unhandled request: ${method} ${url}`)
     })
 
@@ -421,6 +453,161 @@ describe('items workflows', () => {
 
     await waitFor(() => {
       expect(listCalls).toBeGreaterThan(1)
+    })
+  })
+
+  it('deletes selected linked commitments when deleting an asset parent', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items?') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'asset-1',
+                item_type: 'RealEstate',
+                attributes: { address: 'Sandbox Family SUV' },
+                updated_at: '2026-02-24T00:00:00.000Z',
+              },
+            ],
+            total_count: 1,
+          },
+        })
+      }
+
+      if (url.includes('/items/asset-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'asset-1',
+            item_type: 'RealEstate',
+            child_commitments: [
+              {
+                id: 'item-commitment-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                attributes: { name: 'Sandbox auto insurance', amount: 350 },
+                updated_at: '2026-02-24T00:00:00.000Z',
+              },
+            ],
+            summary: {
+              monthly_obligation_total: 350,
+              monthly_income_total: 0,
+              net_monthly_cashflow: -350,
+              excluded_row_count: 0,
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items/asset-1') && method === 'DELETE') {
+        return createResponse({ status: 200, json: { id: 'asset-1', is_deleted: true } })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderWithMemoryRouter(<ItemListPage />)
+
+    await screen.findByText('Sandbox Family SUV')
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await screen.findByText('Sandbox auto insurance')
+
+    const deleteButtons = screen.getAllByRole('button', { name: 'Delete' })
+    await userEvent.click(deleteButtons[1])
+
+    await waitFor(() => {
+      const deleteCall = fetchMock.mock.calls.find(
+        ([input, init]) => String(input).includes('/items/asset-1') && (init?.method ?? 'GET') === 'DELETE',
+      )
+
+      expect(deleteCall).toBeTruthy()
+      const rawBody = deleteCall?.[1]?.body
+      const body = typeof rawBody === 'string' ? JSON.parse(rawBody) : {}
+      expect(body.cascade_delete_ids).toEqual(['item-commitment-1'])
+    })
+  })
+
+  it('restores deleted item from deleted filter list', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items?') && method === 'GET') {
+        const isDeletedFilter = url.includes('filter=deleted')
+        const isCommitmentFilter = url.includes('filter=commitments')
+        return createResponse({
+          status: 200,
+          json: {
+            items: isDeletedFilter
+              ? [
+                  {
+                    id: 'item-1',
+                    item_type: 'FinancialItem',
+                    title: 'Condo water',
+                    type: 'Commitment',
+                    linked_asset_item_id: 'asset-1',
+                    attributes: { name: 'Condo water', financialSubtype: 'Commitment', _deleted_at: '2026-02-24T00:00:00.000Z' },
+                    updated_at: '2026-02-24T00:00:00.000Z',
+                  },
+                ]
+              : isCommitmentFilter
+                ? [
+                    {
+                      id: 'item-1',
+                      item_type: 'FinancialItem',
+                      title: 'Condo water',
+                      type: 'Commitment',
+                      linked_asset_item_id: 'asset-1',
+                      attributes: { name: 'Condo water', financialSubtype: 'Commitment' },
+                      updated_at: '2026-02-24T00:00:00.000Z',
+                    },
+                  ]
+                : [],
+            total_count: isDeletedFilter || isCommitmentFilter ? 1 : 0,
+          },
+        })
+      }
+
+      if (url.includes('/items/item-1/restore') && method === 'PATCH') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'item-1',
+            item_type: 'FinancialItem',
+            title: 'Condo water',
+            type: 'Commitment',
+            linked_asset_item_id: 'asset-1',
+            attributes: { name: 'Condo water', financialSubtype: 'Commitment' },
+            was_deleted: true,
+            restored_at: '2026-02-26T00:00:00.000Z',
+            updated_at: '2026-02-26T00:00:00.000Z',
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderWithMemoryRouter(<ItemListPage />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Deleted' }))
+    await screen.findByText('Condo water')
+    await userEvent.click(screen.getByRole('button', { name: 'Restore' }))
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/items/item-1/restore'), expect.objectContaining({ method: 'PATCH' }))
+    })
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('filter=commitments'), expect.anything())
     })
   })
 

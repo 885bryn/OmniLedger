@@ -1,7 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../../features/admin-scope/target-user-chip'
@@ -123,6 +129,13 @@ function isMoneyField(key: string) {
     'lastpaymentamount',
     'lastcollectedamount',
   ].includes(normalized)
+}
+
+const editFieldLabelClassName = 'text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground'
+const editFieldHintClassName = 'text-xs leading-relaxed text-muted-foreground'
+
+function EditFieldShell({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <div className={`space-y-2 ${className}`.trim()}>{children}</div>
 }
 
 export function ItemEditPage() {
@@ -326,7 +339,7 @@ export function ItemEditPage() {
 
   if (itemQuery.isLoading) {
     return (
-      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm" aria-label="Loading item edit">
+      <section className="rounded-xl border border-border bg-card p-5 shadow-sm shadow-black/5 dark:shadow-none" aria-label="Loading item edit">
         <div className="h-20 animate-pulse rounded-xl bg-muted/80" />
       </section>
     )
@@ -343,11 +356,14 @@ export function ItemEditPage() {
   const currentItem = itemQuery.data
 
   return (
-    <section className="space-y-4">
-      <header className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">{t('items.edit.title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{getItemDisplayName(currentItem)}</p>
-      </header>
+    <section className="space-y-6">
+      <Card className="animate-fade-up border border-border bg-card/95 shadow-sm shadow-black/5 dark:shadow-none">
+        <CardHeader className="gap-3 border-b border-border/70">
+          <CardDescription className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Edit surface</CardDescription>
+          <CardTitle className="text-2xl font-semibold tracking-tight">{t('items.edit.title')}</CardTitle>
+          <CardDescription>{getItemDisplayName(currentItem)}</CardDescription>
+        </CardHeader>
+      </Card>
 
       <form
         onSubmit={(event) => {
@@ -359,38 +375,46 @@ export function ItemEditPage() {
 
           setSaveConfirmOpen(true)
         }}
-        className="animate-fade-up space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
+        className="animate-fade-up space-y-6"
       >
-        <div className="grid gap-3 md:grid-cols-2">
+        <Card className="border border-border bg-card/95 shadow-sm shadow-black/5 dark:shadow-none">
+          <CardHeader className="gap-2 border-b border-border/70">
+            <CardTitle className="text-base">Primary fields</CardTitle>
+            <CardDescription>Keep high-value edits, custom fields, and technical review in separate readable zones.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
+            <div className="grid gap-4 md:grid-cols-2">
           {currentItem.item_type === 'FinancialItem' ? (
-            <label className="space-y-1 md:col-span-2">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.wizard.typeLabel')}</span>
-              <select
-                value={draftFinancialSubtype}
-                onChange={(event) => setDraftFinancialSubtype(event.target.value as FinancialSubtype)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="Commitment">Commitment</option>
-                <option value="Income">Income</option>
-              </select>
-            </label>
+            <EditFieldShell className="md:col-span-2">
+              <Label htmlFor="edit-financial-subtype" className={editFieldLabelClassName}>{t('items.wizard.typeLabel')}</Label>
+              <Select value={draftFinancialSubtype} onValueChange={(value) => setDraftFinancialSubtype(value as FinancialSubtype)}>
+                <SelectTrigger id="edit-financial-subtype" aria-label={t('items.wizard.typeLabel')} className="h-10 w-full bg-background/90 px-3 py-2 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Commitment">Commitment</SelectItem>
+                  <SelectItem value="Income">Income</SelectItem>
+                </SelectContent>
+              </Select>
+            </EditFieldShell>
           ) : null}
 
           {currentItem.item_type === 'FinancialItem' ? (
-            <label className="space-y-1 md:col-span-2">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.billingCycle')}</span>
-              <select
-                value={draftFinancialFrequency}
-                onChange={(event) => setDraftFinancialFrequency(event.target.value as FinancialFrequency)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              >
-                {FINANCIAL_FREQUENCY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {t(`items.detail.recurrence.${option === 'one_time' ? 'oneTime' : option}`, { defaultValue: option })}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <EditFieldShell className="md:col-span-2">
+              <Label htmlFor="edit-financial-frequency" className={editFieldLabelClassName}>{t('items.fields.billingCycle')}</Label>
+              <Select value={draftFinancialFrequency} onValueChange={(value) => setDraftFinancialFrequency(value as FinancialFrequency)}>
+                <SelectTrigger id="edit-financial-frequency" aria-label={t('items.fields.billingCycle')} className="h-10 w-full bg-background/90 px-3 py-2 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FINANCIAL_FREQUENCY_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {t(`items.detail.recurrence.${option === 'one_time' ? 'oneTime' : option}`, { defaultValue: option })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </EditFieldShell>
           ) : null}
 
           {editableEntries.map(([key, value]) => {
@@ -402,27 +426,27 @@ export function ItemEditPage() {
             const isMoney = isMoneyField(key)
 
             return (
-              <label key={key} className={isDescription ? 'space-y-1 md:col-span-2' : 'space-y-1'}>
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t(`items.fields.${key}`, { defaultValue: key })}</span>
+              <EditFieldShell key={key} className={isDescription ? 'md:col-span-2' : ''}>
+                <Label htmlFor={`item-edit-${key}`} className={editFieldLabelClassName}>{t(`items.fields.${key}`, { defaultValue: key })}</Label>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-start gap-3">
                   <div className="flex-1">
                     {isDescription ? (
-                      <textarea
+                      <Textarea
+                        id={`item-edit-${key}`}
                         rows={3}
                         value={typeof value === 'string' ? value : String(value ?? '')}
                         onChange={(inputEvent) => setDraftAttributes((current) => ({ ...current, [key]: inputEvent.target.value }))}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        className="min-h-28 bg-background/90 px-3 py-2 text-sm"
                       />
                     ) : isBoolean ? (
-                      <input
-                        type="checkbox"
-                        checked={Boolean(value)}
-                        onChange={(inputEvent) => setDraftAttributes((current) => ({ ...current, [key]: inputEvent.target.checked }))}
-                        className="h-4 w-4 rounded border-border"
-                      />
+                      <label className="flex items-start gap-3 rounded-lg border border-border/70 bg-background/70 px-4 py-3">
+                        <input id={`item-edit-${key}`} type="checkbox" checked={Boolean(value)} onChange={(inputEvent) => setDraftAttributes((current) => ({ ...current, [key]: inputEvent.target.checked }))} className="mt-0.5 h-4 w-4 rounded border-border" />
+                        <span className={editFieldHintClassName}>Toggle this flag directly from the edit surface.</span>
+                      </label>
                     ) : isMoney ? (
-                      <input
+                      <Input
+                        id={`item-edit-${key}`}
                         type="text"
                         inputMode="decimal"
                         value={typeof value === 'string' || typeof value === 'number' ? formatCurrencyInput(value) : ''}
@@ -432,10 +456,11 @@ export function ItemEditPage() {
                             [key]: normalizeCurrencyInput(inputEvent.target.value),
                           }))
                         }
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        className="h-10 w-full bg-background/90 px-3 py-2 text-sm"
                       />
                     ) : (
-                      <input
+                      <Input
+                        id={`item-edit-${key}`}
                         type={isDate ? 'date' : isNumber ? 'number' : 'text'}
                         step={isNumber ? 'any' : undefined}
                         value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
@@ -445,14 +470,16 @@ export function ItemEditPage() {
                             [key]: inputEvent.target.value,
                           }))
                         }
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        className="h-10 w-full bg-background/90 px-3 py-2 text-sm"
                       />
                     )}
                   </div>
 
                   {!['amount', 'dueDate', 'billingCycle', 'address', 'estimatedValue', 'vin'].includes(key) ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="destructive"
+                      size="sm"
                       onClick={() => {
                         setDraftAttributes((current) => {
                           const next = { ...current }
@@ -460,69 +487,70 @@ export function ItemEditPage() {
                           return next
                         })
                       }}
-                      className="rounded border border-destructive/30 px-2 py-1 text-xs text-destructive"
                     >
                       {t('items.edit.removeField')}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
-              </label>
+              </EditFieldShell>
             )
           })}
-        </div>
+            </div>
 
-        <section className="rounded-xl border border-border bg-background/70 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.edit.customFieldsTitle')}</p>
-          <div className="mt-2 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-            <input
+            <section className="rounded-xl border border-border bg-background/70 p-4">
+              <p className={editFieldLabelClassName}>{t('items.edit.customFieldsTitle')}</p>
+              <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+            <Input
               value={newFieldKey}
               onChange={(event) => setNewFieldKey(event.target.value)}
               placeholder={t('items.edit.customFieldNamePlaceholder')}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="h-10 bg-background/90 px-3 py-2 text-sm"
             />
-            <input
+            <Input
               value={newFieldValue}
               onChange={(event) => setNewFieldValue(event.target.value)}
               placeholder={t('items.edit.customFieldValuePlaceholder')}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="h-10 bg-background/90 px-3 py-2 text-sm"
             />
-            <button type="button" onClick={addCustomField} className="hover-lift rounded-lg border border-border px-3 py-2 text-sm font-medium">
+            <Button type="button" variant="outline" className="hover-lift px-4" onClick={addCustomField}>
               {t('items.edit.addCustomField')}
-            </button>
+            </Button>
           </div>
         </section>
 
-        <div>
-          <button type="button" onClick={() => setShowTechnical((value) => !value)} className="rounded-lg border border-border px-3 py-2 text-xs font-medium">
+        <div className="space-y-3">
+          <Button type="button" variant="outline" className="w-full justify-between sm:w-auto" onClick={() => setShowTechnical((value) => !value)}>
             {showTechnical ? t('items.edit.hideTechnical') : t('items.edit.showTechnical')}
-          </button>
+          </Button>
         </div>
 
         <div className="ui-expand" data-open={showTechnical}>
           {showTechnical ? (
             <div className="space-y-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.edit.technicalSnapshot')}</p>
+              <p className={editFieldLabelClassName}>{t('items.edit.technicalSnapshot')}</p>
               <pre className="overflow-x-auto rounded-lg border border-border bg-background p-3 text-xs">{technicalSnapshot}</pre>
             </div>
           ) : null}
         </div>
 
-        {errorText ? <p className="text-xs text-destructive">{errorText}</p> : null}
+        {errorText ? <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{errorText}</p> : null}
 
         {attribution ? <TargetUserChip actorLabel={attribution.actorLabel} lensLabel={attribution.lensLabel} /> : null}
 
-        <div className="flex flex-wrap gap-2">
-          <button
+        <div className="flex flex-wrap gap-3">
+          <Button
             type="submit"
             disabled={updateMutation.isPending || !hasUnsavedChanges}
-            className="hover-lift rounded-lg border border-primary/25 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+            className="hover-lift px-4"
           >
             {updateMutation.isPending ? t('items.edit.saving') : t('items.edit.saveAction')}
-          </button>
-          <Link to={`/items/${itemId}`} className="rounded-lg border border-border px-4 py-2 text-sm font-medium">
-            {t('items.edit.cancelAction')}
-          </Link>
+          </Button>
+          <Button asChild variant="outline" className="px-4">
+            <Link to={`/items/${itemId}`}>{t('items.edit.cancelAction')}</Link>
+          </Button>
         </div>
+          </CardContent>
+        </Card>
       </form>
 
       <ConfirmationDialog

@@ -1,7 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { ConfirmationDialog } from '../../features/ui/confirmation-dialog'
 import { ApiClientError, type ApiIssue, apiRequest } from '../../lib/api-client'
 import { getItemDisplayName } from '../../lib/item-display'
@@ -229,6 +235,23 @@ function collectIssueMessages(issues: ApiIssue[]) {
   return Array.from(values)
 }
 
+const fieldLabelClassName = 'text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground'
+const fieldErrorClassName = 'text-xs text-destructive'
+const fieldHintClassName = 'text-xs leading-relaxed text-muted-foreground'
+
+function FormFieldShell({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <div className={`space-y-2 ${className}`.trim()}>{children}</div>
+}
+
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 py-3 first:pt-0 last:border-b-0 last:pb-0">
+      <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
+      <span className="max-w-full text-right text-sm font-medium text-foreground">{value}</span>
+    </div>
+  )
+}
+
 export function ItemCreateWizardPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -453,7 +476,7 @@ export function ItemCreateWizardPage() {
   const unsavedGuard = useUnsavedChangesGuard(dirty && !suppressUnsavedGuard)
 
   const inputClassName = (field: FormField) =>
-    `w-full rounded-lg border bg-background px-3 py-2 text-sm ${fieldErrors[field] ? 'border-destructive ring-1 ring-destructive/30' : 'border-border'}`
+    `h-10 w-full bg-background/90 px-3 py-2 text-sm shadow-none ${fieldErrors[field] ? 'aria-invalid:border-destructive aria-invalid:ring-destructive/20' : ''}`
 
   function updateField<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
@@ -566,21 +589,24 @@ export function ItemCreateWizardPage() {
   }
 
   return (
-    <section className="space-y-4">
-      <header className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">{t('items.wizard.title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{createLabel}</p>
-      </header>
+    <section className="space-y-6">
+      <Card className="animate-fade-up border border-border bg-card/95 shadow-sm shadow-black/5 dark:shadow-none">
+        <CardHeader className="gap-3 border-b border-border/70">
+          <CardDescription className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">{t('items.wizard.reviewLabel')}</CardDescription>
+          <CardTitle className="text-2xl font-semibold tracking-tight">{t('items.wizard.title')}</CardTitle>
+          <CardDescription>{createLabel}</CardDescription>
+        </CardHeader>
+      </Card>
 
       <form
         onSubmit={(event) => {
           event.preventDefault()
           submitForm(false)
         }}
-        className="animate-fade-up space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
+        className="animate-fade-up space-y-6"
       >
         {summaryErrors.length > 0 ? (
-          <section className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <section className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             <p className="font-medium">{t('items.wizard.requiredMissing')}</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {summaryErrors.map((issue) => (
@@ -590,244 +616,264 @@ export function ItemCreateWizardPage() {
           </section>
         ) : null}
 
-        <label className="space-y-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.wizard.itemTypeLabel')} *</span>
-          <select value={values.item_type} onChange={(event) => updateField('item_type', event.target.value as CreateItemType)} className={inputClassName('item_type')}>
-            <option value="FinancialItem">{t('items.wizard.itemTypeOptions.FinancialItem')}</option>
-            <option value="Vehicle">{t('items.wizard.itemTypeOptions.Vehicle')}</option>
-            <option value="RealEstate">{t('items.wizard.itemTypeOptions.RealEstate')}</option>
-          </select>
-          {fieldErrors.item_type ? <p className="text-xs text-destructive">{fieldErrors.item_type}</p> : null}
-        </label>
+        <Card className="border border-border bg-card/95 shadow-sm shadow-black/5 dark:shadow-none">
+          <CardHeader className="gap-2 border-b border-border/70">
+            <CardTitle className="text-base">{t('items.wizard.itemTypeLabel')}</CardTitle>
+            <CardDescription>Choose the asset or financial surface first so the rest of the form stays focused.</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <FormFieldShell>
+              <Label htmlFor="item-type" className={fieldLabelClassName}>
+                {t('items.wizard.itemTypeLabel')} *
+              </Label>
+              <Select value={values.item_type} onValueChange={(value) => updateField('item_type', value as CreateItemType)}>
+                <SelectTrigger id="item-type" aria-label={t('items.wizard.itemTypeLabel')} className={inputClassName('item_type')} aria-invalid={fieldErrors.item_type ? 'true' : 'false'}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FinancialItem">{t('items.wizard.itemTypeOptions.FinancialItem')}</SelectItem>
+                  <SelectItem value="Vehicle">{t('items.wizard.itemTypeOptions.Vehicle')}</SelectItem>
+                  <SelectItem value="RealEstate">{t('items.wizard.itemTypeOptions.RealEstate')}</SelectItem>
+                </SelectContent>
+              </Select>
+              {fieldErrors.item_type ? <p className={fieldErrorClassName}>{fieldErrors.item_type}</p> : null}
+            </FormFieldShell>
+          </CardContent>
+        </Card>
 
         {isFinancial ? (
-          <>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.name')} *</span>
-                <input value={values.title} onChange={(event) => updateField('title', event.target.value)} className={inputClassName('title')} />
-                {fieldErrors.title ? <p className="text-xs text-destructive">{fieldErrors.title}</p> : null}
-              </label>
+          <Card className="border border-border bg-card/95 shadow-sm shadow-black/5 dark:shadow-none">
+            <CardHeader className="gap-2 border-b border-border/70">
+              <CardTitle className="text-base">Financial item details</CardTitle>
+              <CardDescription>Group core money fields, schedule details, and tracking context so recurring obligations stay readable.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormFieldShell>
+                  <Label htmlFor="financial-title" className={fieldLabelClassName}>{t('items.fields.name')} *</Label>
+                  <Input id="financial-title" value={values.title} onChange={(event) => updateField('title', event.target.value)} className={inputClassName('title')} aria-invalid={fieldErrors.title ? 'true' : 'false'} />
+                  {fieldErrors.title ? <p className={fieldErrorClassName}>{fieldErrors.title}</p> : null}
+                </FormFieldShell>
 
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.wizard.typeLabel')} *</span>
-                <select value={values.type} onChange={(event) => updateField('type', event.target.value as FinancialSubtype)} className={inputClassName('type')}>
-                  <option value="Commitment">Commitment</option>
-                  <option value="Income">Income</option>
-                </select>
-                {fieldErrors.type ? <p className="text-xs text-destructive">{fieldErrors.type}</p> : null}
-              </label>
-            </div>
+                <FormFieldShell>
+                  <Label htmlFor="financial-subtype" className={fieldLabelClassName}>{t('items.wizard.typeLabel')} *</Label>
+                  <Select value={values.type} onValueChange={(value) => updateField('type', value as FinancialSubtype)}>
+                    <SelectTrigger id="financial-subtype" aria-label="Financial subtype" className={inputClassName('type')} aria-invalid={fieldErrors.type ? 'true' : 'false'}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Commitment">Commitment</SelectItem>
+                      <SelectItem value="Income">Income</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {fieldErrors.type ? <p className={fieldErrorClassName}>{fieldErrors.type}</p> : null}
+                </FormFieldShell>
+              </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.billingCycle')} *</span>
-                <select value={values.frequency} onChange={(event) => updateField('frequency', event.target.value as FinancialFrequency)} className={inputClassName('frequency')}>
-                  {FREQUENCY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {FREQUENCY_LABELS[option]}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.frequency ? <p className="text-xs text-destructive">{fieldErrors.frequency}</p> : null}
-              </label>
+              <div className="grid gap-4 md:grid-cols-3">
+                <FormFieldShell>
+                  <Label htmlFor="financial-frequency" className={fieldLabelClassName}>{t('items.fields.billingCycle')} *</Label>
+                  <Select value={values.frequency} onValueChange={(value) => updateField('frequency', value as FinancialFrequency)}>
+                    <SelectTrigger id="financial-frequency" aria-label={t('items.fields.billingCycle')} className={inputClassName('frequency')} aria-invalid={fieldErrors.frequency ? 'true' : 'false'}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FREQUENCY_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>{FREQUENCY_LABELS[option]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldErrors.frequency ? <p className={fieldErrorClassName}>{fieldErrors.frequency}</p> : null}
+                </FormFieldShell>
 
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.amount')} *</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={formatCurrencyInput(values.default_amount)}
-                  onChange={(event) => updateField('default_amount', normalizeCurrencyInput(event.target.value))}
-                  className={inputClassName('default_amount')}
-                />
-                {fieldErrors.default_amount ? <p className="text-xs text-destructive">{fieldErrors.default_amount}</p> : null}
-              </label>
+                <FormFieldShell>
+                  <Label htmlFor="financial-amount" className={fieldLabelClassName}>{t('items.fields.amount')} *</Label>
+                  <Input id="financial-amount" type="text" inputMode="decimal" value={formatCurrencyInput(values.default_amount)} onChange={(event) => updateField('default_amount', normalizeCurrencyInput(event.target.value))} className={inputClassName('default_amount')} aria-invalid={fieldErrors.default_amount ? 'true' : 'false'} />
+                  {fieldErrors.default_amount ? <p className={fieldErrorClassName}>{fieldErrors.default_amount}</p> : null}
+                </FormFieldShell>
 
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status *</span>
-                <select value={values.status} onChange={(event) => updateField('status', event.target.value as FinancialStatus)} className={inputClassName('status')}>
-                  <option value="Active">Active</option>
-                  <option value="Closed">Closed</option>
-                </select>
-                {fieldErrors.status ? <p className="text-xs text-destructive">{fieldErrors.status}</p> : null}
-              </label>
-            </div>
+                <FormFieldShell>
+                  <Label htmlFor="financial-status" className={fieldLabelClassName}>Status *</Label>
+                  <Select value={values.status} onValueChange={(value) => updateField('status', value as FinancialStatus)}>
+                    <SelectTrigger id="financial-status" aria-label="Status" className={inputClassName('status')} aria-invalid={fieldErrors.status ? 'true' : 'false'}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {fieldErrors.status ? <p className={fieldErrorClassName}>{fieldErrors.status}</p> : null}
+                </FormFieldShell>
+              </div>
 
-            <section className="rounded-xl border border-border bg-background/60 p-3 text-xs text-muted-foreground">
-              {isRecurring ? t('items.fields.billingCycle') + ': ' + FREQUENCY_LABELS[values.frequency] : t('items.fields.billingCycle') + ': ' + FREQUENCY_LABELS.one_time}
-            </section>
+              <div className="rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                {isRecurring ? `${t('items.fields.billingCycle')}: ${FREQUENCY_LABELS[values.frequency]}` : `${t('items.fields.billingCycle')}: ${FREQUENCY_LABELS.one_time}`}
+              </div>
 
-            {isRecurring ? (
-              <section className="space-y-3 rounded-xl border border-border bg-background/60 p-3">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={values.dynamicTrackingEnabled}
-                    onChange={(event) => updateField('dynamicTrackingEnabled', event.target.checked)}
-                    className="h-4 w-4 rounded border-border"
-                  />
-                  <span className="font-medium text-foreground">{t('items.wizard.dynamicTrackingLabel')}</span>
-                </label>
-
-                {values.dynamicTrackingEnabled && values.type === 'Commitment' ? (
-                  <label className="space-y-1">
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.wizard.startingRemainingLabel')}</span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={formatCurrencyInput(values.trackingStartingRemainingBalance)}
-                      onChange={(event) => updateField('trackingStartingRemainingBalance', normalizeCurrencyInput(event.target.value))}
-                      className={inputClassName('trackingStartingRemainingBalance')}
-                    />
-                    <p className="text-xs text-muted-foreground">{t('items.wizard.startingRemainingHint')}</p>
+              {isRecurring ? (
+                <section className="space-y-4 rounded-xl border border-border bg-background/70 p-4">
+                  <label className="flex items-start gap-3 rounded-lg border border-border/70 bg-card/80 px-4 py-3">
+                    <input type="checkbox" checked={values.dynamicTrackingEnabled} onChange={(event) => updateField('dynamicTrackingEnabled', event.target.checked)} className="mt-0.5 h-4 w-4 rounded border-border" />
+                    <span className="space-y-1">
+                      <span className="block text-sm font-medium text-foreground">{t('items.wizard.dynamicTrackingLabel')}</span>
+                      <span className={fieldHintClassName}>Keep running totals visible when this record repeats over time.</span>
+                    </span>
                   </label>
-                ) : null}
 
-                {values.dynamicTrackingEnabled && values.type === 'Income' ? (
-                  <label className="space-y-1">
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.wizard.startingCollectedLabel')}</span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={formatCurrencyInput(values.trackingStartingCollectedTotal)}
-                      onChange={(event) => updateField('trackingStartingCollectedTotal', normalizeCurrencyInput(event.target.value))}
-                      className={inputClassName('trackingStartingCollectedTotal')}
-                    />
-                    <p className="text-xs text-muted-foreground">{t('items.wizard.startingCollectedHint')}</p>
-                  </label>
-                ) : null}
-              </section>
-            ) : null}
+                  {values.dynamicTrackingEnabled && values.type === 'Commitment' ? (
+                    <FormFieldShell>
+                      <Label htmlFor="starting-remaining" className={fieldLabelClassName}>{t('items.wizard.startingRemainingLabel')}</Label>
+                      <Input id="starting-remaining" type="text" inputMode="decimal" value={formatCurrencyInput(values.trackingStartingRemainingBalance)} onChange={(event) => updateField('trackingStartingRemainingBalance', normalizeCurrencyInput(event.target.value))} className={inputClassName('trackingStartingRemainingBalance')} />
+                      <p className={fieldHintClassName}>{t('items.wizard.startingRemainingHint')}</p>
+                    </FormFieldShell>
+                  ) : null}
 
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{isRecurring ? t('items.fields.dueDate') : t('items.wizard.dueDateLabel')} *</span>
-                <input type="date" value={values.dueDate} onChange={(event) => updateField('dueDate', event.target.value)} className={inputClassName('dueDate')} />
-                {fieldErrors.dueDate ? <p className="text-xs text-destructive">{fieldErrors.dueDate}</p> : null}
-              </label>
+                  {values.dynamicTrackingEnabled && values.type === 'Income' ? (
+                    <FormFieldShell>
+                      <Label htmlFor="starting-collected" className={fieldLabelClassName}>{t('items.wizard.startingCollectedLabel')}</Label>
+                      <Input id="starting-collected" type="text" inputMode="decimal" value={formatCurrencyInput(values.trackingStartingCollectedTotal)} onChange={(event) => updateField('trackingStartingCollectedTotal', normalizeCurrencyInput(event.target.value))} className={inputClassName('trackingStartingCollectedTotal')} />
+                      <p className={fieldHintClassName}>{t('items.wizard.startingCollectedHint')}</p>
+                    </FormFieldShell>
+                  ) : null}
+                </section>
+              ) : null}
 
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.wizard.parentOptionalLabel')}</span>
-                <select
-                  value={values.linked_asset_item_id}
-                  onChange={(event) => updateField('linked_asset_item_id', event.target.value)}
-                  className={`w-full rounded-lg border bg-background px-3 py-2 text-sm ${fieldErrors.linked_asset_item_id ? 'border-destructive ring-1 ring-destructive/30' : 'border-border'}`}
-                >
-                  <option value="">{t('items.wizard.parentPlaceholder')}</option>
-                  {(assetsQuery.data?.items ?? []).map((asset) => (
-                    <option key={asset.id} value={asset.id}>
-                      {getItemDisplayName(asset)}
-                    </option>
-                  ))}
-                </select>
-                {isCommitment ? <p className="text-xs text-muted-foreground">{t('items.wizard.parentOptionalLabel')}</p> : null}
-                {fieldErrors.linked_asset_item_id ? <p className="text-xs text-destructive">{fieldErrors.linked_asset_item_id}</p> : null}
-              </label>
-            </div>
-          </>
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormFieldShell>
+                  <Label htmlFor="financial-due-date" className={fieldLabelClassName}>{isRecurring ? t('items.fields.dueDate') : t('items.wizard.dueDateLabel')} *</Label>
+                  <Input id="financial-due-date" type="date" value={values.dueDate} onChange={(event) => updateField('dueDate', event.target.value)} className={inputClassName('dueDate')} aria-invalid={fieldErrors.dueDate ? 'true' : 'false'} />
+                  {fieldErrors.dueDate ? <p className={fieldErrorClassName}>{fieldErrors.dueDate}</p> : null}
+                </FormFieldShell>
+
+                <FormFieldShell>
+                  <Label htmlFor="linked-asset" className={fieldLabelClassName}>{t('items.wizard.parentOptionalLabel')}</Label>
+                  <Select value={values.linked_asset_item_id || '__none__'} onValueChange={(value) => updateField('linked_asset_item_id', value === '__none__' ? '' : value)}>
+                    <SelectTrigger id="linked-asset" aria-label={t('items.wizard.parentOptionalLabel')} className={inputClassName('linked_asset_item_id')} aria-invalid={fieldErrors.linked_asset_item_id ? 'true' : 'false'}>
+                      <SelectValue placeholder={t('items.wizard.parentPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">{t('items.wizard.parentPlaceholder')}</SelectItem>
+                      {(assetsQuery.data?.items ?? []).map((asset) => (
+                        <SelectItem key={asset.id} value={asset.id}>{getItemDisplayName(asset)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isCommitment ? <p className={fieldHintClassName}>{t('items.wizard.parentOptionalLabel')}</p> : null}
+                  {fieldErrors.linked_asset_item_id ? <p className={fieldErrorClassName}>{fieldErrors.linked_asset_item_id}</p> : null}
+                </FormFieldShell>
+              </div>
+            </CardContent>
+          </Card>
         ) : null}
 
         {isVehicle ? (
-          <>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.name')}</span>
-                <input value={values.title} onChange={(event) => updateField('title', event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.vin')} *</span>
-                <input value={values.vin} onChange={(event) => updateField('vin', event.target.value)} className={inputClassName('vin')} />
-                {fieldErrors.vin ? <p className="text-xs text-destructive">{fieldErrors.vin}</p> : null}
-              </label>
-            </div>
+          <Card className="border border-border bg-card/95 shadow-sm shadow-black/5 dark:shadow-none">
+            <CardHeader className="gap-2 border-b border-border/70">
+              <CardTitle className="text-base">Vehicle details</CardTitle>
+              <CardDescription>Keep identifying and valuation fields close together for faster review.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormFieldShell>
+                  <Label htmlFor="vehicle-name" className={fieldLabelClassName}>{t('items.fields.name')}</Label>
+                  <Input id="vehicle-name" value={values.title} onChange={(event) => updateField('title', event.target.value)} className={inputClassName('title')} />
+                </FormFieldShell>
+                <FormFieldShell>
+                  <Label htmlFor="vehicle-vin" className={fieldLabelClassName}>{t('items.fields.vin')} *</Label>
+                  <Input id="vehicle-vin" value={values.vin} onChange={(event) => updateField('vin', event.target.value)} className={inputClassName('vin')} aria-invalid={fieldErrors.vin ? 'true' : 'false'} />
+                  {fieldErrors.vin ? <p className={fieldErrorClassName}>{fieldErrors.vin}</p> : null}
+                </FormFieldShell>
+              </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.estimatedValue')} *</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={formatCurrencyInput(values.estimatedValue)}
-                  onChange={(event) => updateField('estimatedValue', normalizeCurrencyInput(event.target.value))}
-                  className={inputClassName('estimatedValue')}
-                />
-                {fieldErrors.estimatedValue ? <p className="text-xs text-destructive">{fieldErrors.estimatedValue}</p> : null}
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.make')}</span>
-                <input value={values.make} onChange={(event) => updateField('make', event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.model')}</span>
-                <input value={values.model} onChange={(event) => updateField('model', event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-              </label>
-            </div>
-          </>
+              <div className="grid gap-4 md:grid-cols-3">
+                <FormFieldShell>
+                  <Label htmlFor="vehicle-estimated-value" className={fieldLabelClassName}>{t('items.fields.estimatedValue')} *</Label>
+                  <Input id="vehicle-estimated-value" type="text" inputMode="decimal" value={formatCurrencyInput(values.estimatedValue)} onChange={(event) => updateField('estimatedValue', normalizeCurrencyInput(event.target.value))} className={inputClassName('estimatedValue')} aria-invalid={fieldErrors.estimatedValue ? 'true' : 'false'} />
+                  {fieldErrors.estimatedValue ? <p className={fieldErrorClassName}>{fieldErrors.estimatedValue}</p> : null}
+                </FormFieldShell>
+                <FormFieldShell>
+                  <Label htmlFor="vehicle-make" className={fieldLabelClassName}>{t('items.fields.make')}</Label>
+                  <Input id="vehicle-make" value={values.make} onChange={(event) => updateField('make', event.target.value)} className={inputClassName('item_type')} />
+                </FormFieldShell>
+                <FormFieldShell>
+                  <Label htmlFor="vehicle-model" className={fieldLabelClassName}>{t('items.fields.model')}</Label>
+                  <Input id="vehicle-model" value={values.model} onChange={(event) => updateField('model', event.target.value)} className={inputClassName('item_type')} />
+                </FormFieldShell>
+              </div>
+            </CardContent>
+          </Card>
         ) : null}
 
         {isRealEstate ? (
-          <>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.name')}</span>
-                <input value={values.title} onChange={(event) => updateField('title', event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.address')} *</span>
-                <input value={values.address} onChange={(event) => updateField('address', event.target.value)} className={inputClassName('address')} />
-                {fieldErrors.address ? <p className="text-xs text-destructive">{fieldErrors.address}</p> : null}
-              </label>
-            </div>
-            <label className="space-y-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.estimatedValue')} *</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={formatCurrencyInput(values.estimatedValue)}
-                onChange={(event) => updateField('estimatedValue', normalizeCurrencyInput(event.target.value))}
-                className={inputClassName('estimatedValue')}
-              />
-              {fieldErrors.estimatedValue ? <p className="text-xs text-destructive">{fieldErrors.estimatedValue}</p> : null}
-            </label>
-          </>
+          <Card className="border border-border bg-card/95 shadow-sm shadow-black/5 dark:shadow-none">
+            <CardHeader className="gap-2 border-b border-border/70">
+              <CardTitle className="text-base">Property details</CardTitle>
+              <CardDescription>Keep address and valuation details in one readable block for quick verification.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormFieldShell>
+                  <Label htmlFor="property-name" className={fieldLabelClassName}>{t('items.fields.name')}</Label>
+                  <Input id="property-name" value={values.title} onChange={(event) => updateField('title', event.target.value)} className={inputClassName('title')} />
+                </FormFieldShell>
+                <FormFieldShell>
+                  <Label htmlFor="property-address" className={fieldLabelClassName}>{t('items.fields.address')} *</Label>
+                  <Input id="property-address" value={values.address} onChange={(event) => updateField('address', event.target.value)} className={inputClassName('address')} aria-invalid={fieldErrors.address ? 'true' : 'false'} />
+                  {fieldErrors.address ? <p className={fieldErrorClassName}>{fieldErrors.address}</p> : null}
+                </FormFieldShell>
+              </div>
+              <FormFieldShell>
+                <Label htmlFor="property-estimated-value" className={fieldLabelClassName}>{t('items.fields.estimatedValue')} *</Label>
+                <Input id="property-estimated-value" type="text" inputMode="decimal" value={formatCurrencyInput(values.estimatedValue)} onChange={(event) => updateField('estimatedValue', normalizeCurrencyInput(event.target.value))} className={inputClassName('estimatedValue')} aria-invalid={fieldErrors.estimatedValue ? 'true' : 'false'} />
+                {fieldErrors.estimatedValue ? <p className={fieldErrorClassName}>{fieldErrors.estimatedValue}</p> : null}
+              </FormFieldShell>
+            </CardContent>
+          </Card>
         ) : null}
 
-        <label className="space-y-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.fields.description')}</span>
-          <textarea rows={2} value={values.description} onChange={(event) => updateField('description', event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-        </label>
+        <Card className="border border-border bg-card/95 shadow-sm shadow-black/5 dark:shadow-none">
+          <CardHeader className="gap-2 border-b border-border/70">
+            <CardTitle className="text-base">Notes and review</CardTitle>
+            <CardDescription>Capture context and validate the payload before you submit.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
+            <FormFieldShell>
+              <Label htmlFor="item-description" className={fieldLabelClassName}>{t('items.fields.description')}</Label>
+              <Textarea id="item-description" rows={3} value={values.description} onChange={(event) => updateField('description', event.target.value)} className="min-h-24 bg-background/90 px-3 py-2 text-sm" />
+            </FormFieldShell>
 
-        <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.wizard.reviewLabel')}</p>
-          <div className="space-y-2 rounded-xl border border-border bg-background/70 p-3">
-            {reviewRows.map((row) => (
-              <div key={row.label} className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2 last:border-b-0 last:pb-0">
-                <span className="text-xs text-muted-foreground">{row.label}</span>
-                <span className="text-sm font-medium">{row.value}</span>
+            <div className="space-y-3">
+              <p className={fieldLabelClassName}>{t('items.wizard.reviewLabel')}</p>
+              <div className="rounded-xl border border-border bg-background/70 px-4 py-1">
+                {reviewRows.map((row) => (
+                  <ReviewRow key={row.label} label={row.label} value={row.value} />
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
 
-          <button type="button" onClick={() => setShowTechnicalReview((value) => !value)} className="rounded-lg border border-border px-3 py-2 text-xs font-medium">
-            {showTechnicalReview ? t('items.wizard.hideTechnicalReview') : t('items.wizard.showTechnicalReview')}
-          </button>
+            <div className="space-y-3">
+              <Button type="button" variant="outline" className="w-full justify-between sm:w-auto" onClick={() => setShowTechnicalReview((value) => !value)}>
+                {showTechnicalReview ? t('items.wizard.hideTechnicalReview') : t('items.wizard.showTechnicalReview')}
+              </Button>
 
-          <div className="ui-expand" data-open={showTechnicalReview}>
-            {showTechnicalReview ? <textarea value={technicalSummary} readOnly rows={12} className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm" /> : null}
-          </div>
-        </div>
+              <div className="ui-expand" data-open={showTechnicalReview}>
+                {showTechnicalReview ? <Textarea value={technicalSummary} readOnly rows={12} className="min-h-56 bg-background px-3 py-3 font-mono text-sm" /> : null}
+              </div>
+            </div>
 
-        {errorText ? <p className="text-xs text-destructive">{errorText}</p> : null}
+            {errorText ? <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{errorText}</p> : null}
 
-        <div className="flex flex-wrap gap-2">
-          <button type="submit" disabled={createMutation.isPending} className="hover-lift rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60">
-            {createMutation.isPending ? t('items.wizard.creating') : createLabel}
-          </button>
-          <Link to="/items" className="hover-lift rounded-lg border border-border px-4 py-2 text-sm font-medium">
-            {t('items.wizard.cancelAction')}
-          </Link>
-        </div>
+            <div className="flex flex-wrap gap-3">
+              <Button type="submit" disabled={createMutation.isPending} className="hover-lift px-4">
+                {createMutation.isPending ? t('items.wizard.creating') : createLabel}
+              </Button>
+              <Button asChild type="button" variant="outline" className="hover-lift px-4">
+                <Link to="/items">{t('items.wizard.cancelAction')}</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </form>
 
       <ConfirmationDialog
