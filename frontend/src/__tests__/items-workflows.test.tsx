@@ -81,12 +81,17 @@ function createTestQueryClient() {
 }
 
 function renderWithMemoryRouter(ui: ReactNode) {
+  function DetailRouteState() {
+    const location = useLocation()
+    return <div data-testid="detail-route-state">detail route {JSON.stringify(location.state ?? null)}</div>
+  }
+
   const queryClient = createTestQueryClient()
   const router = createMemoryRouter(
     [
       { path: '/', element: ui },
       { path: '/items', element: <div>items route</div> },
-      { path: '/items/:itemId', element: <div>detail route</div> },
+      { path: '/items/:itemId', element: <DetailRouteState /> },
       { path: '/items/:itemId/edit', element: <div>edit route</div> },
     ],
     { initialEntries: ['/'] },
@@ -105,6 +110,11 @@ function renderCreateRoute(initialPath: string) {
     return <Navigate to={`/items/create${location.search}`} replace />
   }
 
+  function DetailRouteState() {
+    const location = useLocation()
+    return <div data-testid="detail-route-state">detail route {JSON.stringify(location.state ?? null)}</div>
+  }
+
   const queryClient = createTestQueryClient()
   const router = createMemoryRouter(
     [
@@ -113,7 +123,7 @@ function renderCreateRoute(initialPath: string) {
         path: '/items/create/wizard',
         element: <LegacyCreateWizardRedirect />,
       },
-      { path: '/items/:itemId', element: <div>detail route</div> },
+      { path: '/items/:itemId', element: <DetailRouteState /> },
     ],
     { initialEntries: [initialPath] },
   )
@@ -263,7 +273,10 @@ describe('items workflows', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Create anyway' }))
 
-    await screen.findByText('detail route')
+    await screen.findByTestId('detail-route-state')
+    expect(screen.getByTestId('detail-route-state').textContent).toContain('"highlightItemId":"created-item"')
+    expect(screen.getByTestId('detail-route-state').textContent).toContain('"highlightSource":"created"')
+    expect(screen.getByTestId('detail-route-state').textContent).toContain('"from":"/items"')
 
     const createCall = fetchMock.mock.calls.find(([input, init]) => String(input).endsWith('/items') && (init?.method ?? 'GET') === 'POST')
     const createInit = createCall?.[1]
@@ -608,6 +621,10 @@ describe('items workflows', () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('filter=commitments'), expect.anything())
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('Condo water').closest('article')?.getAttribute('data-highlighted')).toBe('true')
     })
   })
 

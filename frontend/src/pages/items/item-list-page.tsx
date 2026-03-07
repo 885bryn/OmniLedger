@@ -1,12 +1,16 @@
+import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
+import { MotionPanelList } from '@/components/ui/motion-panel-list'
+import { Pressable } from '@/components/ui/pressable'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { ItemFilters, type AssetTypeOption, type ItemFilterValue, type ItemSortValue } from '../../features/items/item-filters'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
 import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel, isIncomeItem } from '../../lib/item-display'
+import { motionSpring, pressScale } from '../../lib/motion'
 import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type ItemRow = {
@@ -32,6 +36,13 @@ type NetStatusResponse = {
 }
 
 type CreateItemType = 'FinancialItem' | 'Vehicle' | 'RealEstate'
+type ItemPageState = {
+  from?: string
+  highlightItemId?: string
+  highlightSource?: 'created' | 'restored'
+}
+
+const HIGHLIGHT_DURATION_MS = 1600
 
 function isAssetItemType(itemType: string) {
   return itemType === 'RealEstate' || itemType === 'Vehicle'
@@ -106,6 +117,7 @@ export function ItemListPage() {
   const location = useLocation()
   const queryClient = useQueryClient()
   const { mode, lensUserId } = useAdminScope()
+  const locationState = (typeof location.state === 'object' && location.state !== null ? location.state : null) as ItemPageState | null
 
   const [searchInput, setSearchInput] = useState('')
   const [filter, setFilter] = useState<ItemFilterValue>('assets')
@@ -115,6 +127,7 @@ export function ItemListPage() {
   const [deleteTarget, setDeleteTarget] = useState<ItemRow | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [selectedCascadeIds, setSelectedCascadeIds] = useState<string[]>([])
+  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(locationState?.highlightItemId ?? null)
   const debouncedSearch = useDebouncedValue(searchInput, 350)
   const lensScope = useMemo(
     () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
@@ -210,8 +223,30 @@ export function ItemListPage() {
         setFilter('all')
         setSelectedAssetType(null)
       }
+
+      setHighlightedItemId(restoredItem.id)
     },
   })
+
+  useEffect(() => {
+    if (!locationState?.highlightItemId) {
+      return
+    }
+
+    setHighlightedItemId(locationState.highlightItemId)
+  }, [locationState?.highlightItemId])
+
+  useEffect(() => {
+    if (!highlightedItemId) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHighlightedItemId((current) => (current === highlightedItemId ? null : current))
+    }, HIGHLIGHT_DURATION_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [highlightedItemId])
 
   const deleteDependenciesQuery = useQuery({
     queryKey: queryKeys.items.detail(`${deleteTarget?.id ?? 'none'}-delete-dependencies`),
@@ -294,8 +329,8 @@ export function ItemListPage() {
   }, [hasFilters, t])
 
   return (
-    <section className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <motion.section layout className="space-y-4">
+      <motion.header layout className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div>
           <h1 className="text-xl font-semibold">{t('items.title')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t('items.subtitle', { total: totalCount })}</p>
@@ -313,11 +348,15 @@ export function ItemListPage() {
               <option value="RealEstate">{t('items.createPicker.types.RealEstate')}</option>
             </select>
           </label>
-          <Link to={`/items/create?item_type=${createItemType}`} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
-            {t('items.createAction')}
-          </Link>
+          <Pressable className="rounded-lg">
+            <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+              <Link to={`/items/create?item_type=${createItemType}`} className="block rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+                {t('items.createAction')}
+              </Link>
+            </motion.div>
+          </Pressable>
         </div>
-      </header>
+      </motion.header>
 
       <ItemFilters
         search={searchInput}
@@ -338,31 +377,43 @@ export function ItemListPage() {
       />
 
       {listQuery.isLoading ? (
-        <section className="space-y-2 rounded-2xl border border-border bg-card p-4 shadow-sm" aria-label="Loading items">
+        <motion.section layout className="space-y-2 rounded-2xl border border-border bg-card p-4 shadow-sm" aria-label="Loading items">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="h-14 animate-pulse rounded-xl bg-muted/80" />
           ))}
-        </section>
+        </motion.section>
       ) : null}
 
       {listQuery.isError ? (
-        <section className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <motion.section layout className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           {t('items.loadError')}
-        </section>
+        </motion.section>
       ) : null}
 
       {!listQuery.isLoading && !listQuery.isError && visibleItems.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-border bg-card/70 p-8 text-center text-sm text-muted-foreground">{emptyMessage}</section>
+        <motion.section layout className="rounded-2xl border border-dashed border-border bg-card/70 p-8 text-center text-sm text-muted-foreground">{emptyMessage}</motion.section>
       ) : null}
 
       {!listQuery.isLoading && !listQuery.isError && visibleItems.length > 0 ? (
-        <section className="space-y-2">
-          {visibleItems.map((item) => {
+        <MotionPanelList
+          items={visibleItems}
+          getItemKey={(item) => item.id}
+          highlightedKeys={highlightedItemId ? [highlightedItemId] : []}
+          className="space-y-2"
+          renderItem={(item) => {
             const financialAmount = getFinancialAmount(item)
             const subtype = getFinancialSubtype(item)
+            const isHighlighted = highlightedItemId === item.id
 
             return (
-              <article key={item.id} className="hover-lift animate-fade-up flow-card flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+              <article
+                className={[
+                  'flow-card flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-[box-shadow,border-color]',
+                  'md:flex-row md:items-center md:justify-between',
+                  isHighlighted ? 'border-slate-400/60 shadow-md shadow-slate-300/30 dark:border-slate-500/40 dark:shadow-none' : 'hover-lift',
+                ].join(' ')}
+                data-highlighted={isHighlighted ? 'true' : 'false'}
+              >
                 <div>
                   <Link to={`/items/${item.id}`} state={{ from: location.pathname + location.search }} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
                     {getItemDisplayName(item)}
@@ -378,39 +429,55 @@ export function ItemListPage() {
                   ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Link to={`/items/${item.id}`} state={{ from: location.pathname + location.search }} className="rounded-lg border border-border px-3 py-2 text-xs font-medium">
-                    {t('items.viewAction')}
-                  </Link>
-                  <Link to={`/items/${item.id}/edit`} className="rounded-lg border border-border px-3 py-2 text-xs font-medium">
-                    {t('items.editAction')}
-                  </Link>
+                  <Pressable className="rounded-lg">
+                    <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+                      <Link to={`/items/${item.id}`} state={{ from: location.pathname + location.search }} className="block rounded-lg border border-border px-3 py-2 text-xs font-medium">
+                        {t('items.viewAction')}
+                      </Link>
+                    </motion.div>
+                  </Pressable>
+                  <Pressable className="rounded-lg">
+                    <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+                      <Link to={`/items/${item.id}/edit`} className="block rounded-lg border border-border px-3 py-2 text-xs font-medium">
+                        {t('items.editAction')}
+                      </Link>
+                    </motion.div>
+                  </Pressable>
                   {filter === 'deleted' ? (
-                    <button
-                      type="button"
-                      disabled={restoreMutation.isPending}
-                      onClick={() => {
-                        restoreMutation.mutate({ itemId: item.id })
-                      }}
-                      className="rounded-lg border border-emerald-600/30 px-3 py-2 text-xs font-medium text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {restoreMutation.isPending ? t('items.edit.saving', { defaultValue: 'Restoring...' }) : t('items.restoreAction', { defaultValue: 'Restore' })}
-                    </button>
+                    <Pressable className="rounded-lg">
+                      <motion.button
+                        type="button"
+                        disabled={restoreMutation.isPending}
+                        onClick={() => {
+                          restoreMutation.mutate({ itemId: item.id })
+                        }}
+                        transition={motionSpring}
+                        whileTap={{ scale: pressScale }}
+                        className="rounded-lg border border-emerald-600/30 px-3 py-2 text-xs font-medium text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {restoreMutation.isPending ? t('items.edit.saving', { defaultValue: 'Restoring...' }) : t('items.restoreAction', { defaultValue: 'Restore' })}
+                      </motion.button>
+                    </Pressable>
                   ) : null}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDeleteError(null)
-                      setDeleteTarget(item)
-                    }}
-                    className="rounded-lg border border-destructive/40 px-3 py-2 text-xs font-medium text-destructive"
-                  >
-                    {t('items.deleteAction')}
-                  </button>
+                  <Pressable className="rounded-lg">
+                    <motion.button
+                      type="button"
+                      onClick={() => {
+                        setDeleteError(null)
+                        setDeleteTarget(item)
+                      }}
+                      transition={motionSpring}
+                      whileTap={{ scale: pressScale }}
+                      className="rounded-lg border border-destructive/40 px-3 py-2 text-xs font-medium text-destructive"
+                    >
+                      {t('items.deleteAction')}
+                    </motion.button>
+                  </Pressable>
                 </div>
               </article>
             )
-          })}
-        </section>
+          }}
+        />
       ) : null}
 
       <ItemSoftDeleteDialog
@@ -437,6 +504,6 @@ export function ItemListPage() {
           deleteMutation.mutate({ itemId: deleteTarget.id, cascadeDeleteIds: selectedCascadeIds })
         }}
       />
-    </section>
+    </motion.section>
   )
 }

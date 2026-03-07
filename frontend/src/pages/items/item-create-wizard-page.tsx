@@ -456,7 +456,13 @@ export function ItemCreateWizardPage() {
         queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
       ])
-      navigate(`/items/${created.id}`)
+      navigate(`/items/${created.id}`, {
+        state: {
+          from: '/items',
+          highlightItemId: created.id,
+          highlightSource: 'created',
+        },
+      })
     },
     onError: () => {
       setSuppressUnsavedGuard(false)

@@ -1,7 +1,10 @@
+import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { MotionPanelList } from '@/components/ui/motion-panel-list'
+import { Pressable } from '@/components/ui/pressable'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { ItemActivityTimeline } from '../../features/audit/item-activity-timeline'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
@@ -10,6 +13,7 @@ import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dial
 import { ApiClientError, apiRequest } from '../../lib/api-client'
 import { compareByNearestDue } from '../../lib/date-ordering'
 import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel, isHiddenAttributeKey, isIncomeItem } from '../../lib/item-display'
+import { motionSpring, panelItemVariants, pressScale } from '../../lib/motion'
 import { eventListParams, lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type ItemRow = {
@@ -66,6 +70,13 @@ type EventsResponse = {
 
 type DetailTab = 'overview' | 'commitments' | 'activity'
 type FinancialEventsTab = 'present' | 'history'
+type ItemDetailLocationState = {
+  from?: string
+  highlightItemId?: string
+  highlightSource?: 'created' | 'restored'
+}
+
+const HIGHLIGHT_DURATION_MS = 1600
 
 const DETAIL_KEY_ORDER = [
   'name',
@@ -357,7 +368,9 @@ export function ItemDetailPage() {
   const [selectedParentCascadeIds, setSelectedParentCascadeIds] = useState<string[]>([])
   const [childDeleteTarget, setChildDeleteTarget] = useState<ItemRow | null>(null)
   const [childDeleteError, setChildDeleteError] = useState<string | null>(null)
-  const returnTo = typeof location.state === 'object' && location.state !== null && 'from' in location.state ? String((location.state as { from?: string }).from ?? '') : ''
+  const locationState = (typeof location.state === 'object' && location.state !== null ? location.state : null) as ItemDetailLocationState | null
+  const returnTo = String(locationState?.from ?? '')
+  const [highlightHeader, setHighlightHeader] = useState(locationState?.highlightItemId === itemId)
   const lensScope = useMemo(
     () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
     [lensUserId, mode],
@@ -605,29 +618,49 @@ export function ItemDetailPage() {
     setActiveFinancialEventsTab('present')
   }, [itemId])
 
+  useEffect(() => {
+    setHighlightHeader(locationState?.highlightItemId === itemId)
+  }, [itemId, locationState?.highlightItemId])
+
+  useEffect(() => {
+    if (!highlightHeader) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => setHighlightHeader(false), HIGHLIGHT_DURATION_MS)
+    return () => window.clearTimeout(timeoutId)
+  }, [highlightHeader])
+
   if (netStatusQuery.isLoading || itemsLookupQuery.isLoading) {
     return (
-      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm" aria-label="Loading item detail">
+      <motion.section layout className="rounded-2xl border border-border bg-card p-5 shadow-sm" aria-label="Loading item detail">
         <div className="space-y-3">
           <div className="h-6 w-52 animate-pulse rounded bg-muted" />
           <div className="h-14 animate-pulse rounded-xl bg-muted/80" />
           <div className="h-14 animate-pulse rounded-xl bg-muted/80" />
         </div>
-      </section>
+      </motion.section>
     )
   }
 
   if ((netStatusQuery.isError && !wrongRootType) || !detail) {
     return (
-      <section className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
+      <motion.section layout className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
         {t('items.detail.loadError')}
-      </section>
+      </motion.section>
     )
   }
 
   return (
-    <section className="space-y-4">
-      <header className="animate-fade-up flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <motion.section layout className="space-y-4">
+      <motion.header
+        layout
+        initial="initial"
+        animate={highlightHeader ? 'highlight' : 'animate'}
+        variants={panelItemVariants}
+        className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card p-4 shadow-sm"
+        data-highlighted={highlightHeader ? 'true' : 'false'}
+      >
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-semibold">{detail ? getItemDisplayName(detail) : ''}</h1>
@@ -637,50 +670,66 @@ export function ItemDetailPage() {
           {recurrenceSummary ? <p className="mt-1 text-xs text-muted-foreground">{recurrenceSummary}</p> : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setShowTechnical((value) => !value)}
-            className="rounded-lg border border-border px-3 py-2 text-xs font-medium"
-          >
-            {showTechnical ? t('items.detail.hideTechnical') : t('items.detail.showTechnical')}
-          </button>
-          <Link to={`/items/${itemId}/edit`} className="rounded-lg border border-border px-3 py-2 text-xs font-medium">
-            {t('items.editAction')}
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setDeleteError(null)
-              setDeleteOpen(true)
-            }}
-            className="rounded-lg border border-destructive/40 px-3 py-2 text-xs font-medium text-destructive"
-          >
-            {t('items.deleteAction')}
-          </button>
+          <Pressable className="rounded-lg">
+            <motion.button
+              type="button"
+              onClick={() => setShowTechnical((value) => !value)}
+              transition={motionSpring}
+              whileTap={{ scale: pressScale }}
+              className="rounded-lg border border-border px-3 py-2 text-xs font-medium"
+            >
+              {showTechnical ? t('items.detail.hideTechnical') : t('items.detail.showTechnical')}
+            </motion.button>
+          </Pressable>
+          <Pressable className="rounded-lg">
+            <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+              <Link to={`/items/${itemId}/edit`} className="block rounded-lg border border-border px-3 py-2 text-xs font-medium">
+                {t('items.editAction')}
+              </Link>
+            </motion.div>
+          </Pressable>
+          <Pressable className="rounded-lg">
+            <motion.button
+              type="button"
+              onClick={() => {
+                setDeleteError(null)
+                setDeleteOpen(true)
+              }}
+              transition={motionSpring}
+              whileTap={{ scale: pressScale }}
+              className="rounded-lg border border-destructive/40 px-3 py-2 text-xs font-medium text-destructive"
+            >
+              {t('items.deleteAction')}
+            </motion.button>
+          </Pressable>
         </div>
-      </header>
+      </motion.header>
 
-      <nav className="animate-fade-up flex flex-wrap gap-2">
+      <motion.nav layout className="flex flex-wrap gap-2">
         {tabs.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            className={[
-              'rounded-full border px-3 py-1 text-xs font-medium',
-              activeTab === tab ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground',
-            ].join(' ')}
-          >
-            {t(`items.detail.tabs.${tab}`)}
-          </button>
+          <Pressable key={tab} className="rounded-full">
+            <motion.button
+              layout
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              transition={motionSpring}
+              whileTap={{ scale: pressScale }}
+              className={[
+                'rounded-full border px-3 py-1 text-xs font-medium',
+                activeTab === tab ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground',
+              ].join(' ')}
+            >
+              {t(`items.detail.tabs.${tab}`)}
+            </motion.button>
+          </Pressable>
         ))}
-      </nav>
+      </motion.nav>
 
       {activeTab === 'overview' ? (
         wrongRootType ? (
-          <div className="animate-fade-up space-y-3">
-            <section className="grid gap-3 md:grid-cols-3">
-              <article className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <motion.div layout className="space-y-3">
+            <motion.section layout className="grid gap-3 md:grid-cols-3">
+              <motion.article layout className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {isFinancialDetail ? t('items.fields.amount') : t('items.fields.nextPaymentAmount')}
                 </p>
@@ -693,8 +742,8 @@ export function ItemDetailPage() {
                     ),
                   )}
                 </p>
-              </article>
-              <article className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
+              </motion.article>
+              <motion.article layout className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {isFinancialDetail ? t('items.fields.billingCycle') : t('items.fields.remainingBalance')}
                 </p>
@@ -703,35 +752,43 @@ export function ItemDetailPage() {
                     ? recurrenceFrequencyLabel(resolvedFinancialFrequency, t)
                     : formatCurrency(toNumberOrZero(rootAttributes.remainingBalance))}
                 </p>
-              </article>
-              <article className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
+              </motion.article>
+              <motion.article layout className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.fields.dueDate')}</p>
                 <p className="mt-2 text-2xl font-semibold">{String(rootAttributes.dueDate ?? rootAttributes.nextDueDate ?? '-')}</p>
-              </article>
-            </section>
+              </motion.article>
+            </motion.section>
 
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <motion.section layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h2 className="text-sm font-semibold">{t('items.detail.keyDetails')}</h2>
-              <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+              <motion.dl layout className="mt-3 grid gap-2 sm:grid-cols-2">
                 {getDisplayEntries(rootAttributes).map((entry) => (
-                  <div key={entry.key} className="rounded-lg border border-border bg-background/80 px-3 py-2">
+                  <motion.div layout key={entry.key} className="rounded-lg border border-border bg-background/80 px-3 py-2">
                     <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{t(`items.fields.${entry.key}`, { defaultValue: entry.key })}</dt>
                     <dd className="mt-1 text-sm font-medium text-foreground">{toFriendlyValue(entry.key, entry.value)}</dd>
-                  </div>
+                  </motion.div>
                 ))}
-              </dl>
-            </section>
+              </motion.dl>
+            </motion.section>
 
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <motion.section layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h2 className="text-sm font-semibold">{t('items.detail.linkedItemsTitle')}</h2>
 
               {parentItem ? (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {t('items.detail.linkedParentLabel')}{' '}
-                  <Link to={`/items/${parentItem.id}`} state={{ from: location.pathname + location.search }} className="font-medium text-primary underline-offset-2 hover:underline">
-                    {getItemDisplayName(parentItem)}
-                  </Link>
-                </p>
+                <div className="mt-3">
+                  <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.linkedParentLabel')}</p>
+                  <Pressable className="w-full rounded-xl">
+                    <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+                      <Link
+                        to={`/items/${parentItem.id}`}
+                        state={{ from: location.pathname + location.search }}
+                        className="block rounded-xl border border-border bg-background/80 px-3 py-3 text-sm font-medium text-foreground shadow-sm"
+                      >
+                        <span className="text-primary underline-offset-2 hover:underline">{getItemDisplayName(parentItem)}</span>
+                      </Link>
+                    </motion.div>
+                  </Pressable>
+                </div>
               ) : (
                 <p className="mt-2 text-sm text-muted-foreground">{t('items.detail.noLinkedParent')}</p>
               )}
@@ -739,15 +796,24 @@ export function ItemDetailPage() {
               {siblingItems.length > 0 ? (
                 <div className="mt-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.relatedCommitments')}</p>
-                  <ul className="mt-2 space-y-1">
-                    {siblingItems.map((sibling) => (
-                      <li key={sibling.id}>
-                        <Link to={`/items/${sibling.id}`} state={{ from: location.pathname + location.search }} className="text-sm text-primary underline-offset-2 hover:underline">
-                          {getItemDisplayName(sibling)}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                  <MotionPanelList
+                    items={siblingItems}
+                    getItemKey={(sibling) => sibling.id}
+                    className="mt-2 space-y-2"
+                    renderItem={(sibling) => (
+                      <Pressable className="w-full rounded-xl">
+                        <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+                          <Link
+                            to={`/items/${sibling.id}`}
+                            state={{ from: location.pathname + location.search }}
+                            className="block rounded-xl border border-border bg-background/80 px-3 py-3 text-sm font-medium text-primary underline-offset-2 hover:underline"
+                          >
+                            {getItemDisplayName(sibling)}
+                          </Link>
+                        </motion.div>
+                      </Pressable>
+                    )}
+                  />
                 </div>
               ) : null}
 
@@ -757,39 +823,39 @@ export function ItemDetailPage() {
                   <pre className="overflow-x-auto rounded-lg border border-border bg-background p-3 text-xs text-foreground">{JSON.stringify(rootAttributes, null, 2)}</pre>
                 </div>
               ) : null}
-            </section>
-          </div>
+            </motion.section>
+          </motion.div>
         ) : (
-          <div className="animate-fade-up space-y-3">
-            <section className="grid gap-3 md:grid-cols-4">
-              <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <motion.div layout className="space-y-3">
+            <motion.section layout className="grid gap-3 md:grid-cols-4">
+              <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryMonthly')}</p>
                 <p className="mt-2 text-2xl font-semibold">{formatCurrency(effectiveSummary.monthly_obligation_total)}</p>
-              </article>
-              <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              </motion.article>
+              <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryIncome')}</p>
                 <p className="mt-2 text-2xl font-semibold text-emerald-700">{formatCurrency(effectiveSummary.monthly_income_total)}</p>
-              </article>
-              <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              </motion.article>
+              <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryNet')}</p>
                 <p className="mt-2 text-2xl font-semibold">{formatCurrency(effectiveSummary.net_monthly_cashflow)}</p>
-              </article>
-              <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              </motion.article>
+              <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryLinked')}</p>
                 <p className="mt-2 text-2xl font-semibold">{commitments.length}</p>
-              </article>
-            </section>
+              </motion.article>
+            </motion.section>
 
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <motion.section layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h2 className="text-sm font-semibold">{t('items.detail.keyDetails')}</h2>
-              <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+              <motion.dl layout className="mt-3 grid gap-2 sm:grid-cols-2">
                 {getDisplayEntries(rootAttributes).map((entry) => (
-                  <div key={entry.key} className="rounded-lg border border-border bg-background/80 px-3 py-2">
+                  <motion.div layout key={entry.key} className="rounded-lg border border-border bg-background/80 px-3 py-2">
                     <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{t(`items.fields.${entry.key}`, { defaultValue: entry.key })}</dt>
                     <dd className="mt-1 text-sm font-medium text-foreground">{toFriendlyValue(entry.key, entry.value)}</dd>
-                  </div>
+                  </motion.div>
                 ))}
-              </dl>
+              </motion.dl>
 
               {showTechnical ? (
                 <div className="mt-3">
@@ -797,37 +863,48 @@ export function ItemDetailPage() {
                   <pre className="overflow-x-auto rounded-lg border border-border bg-background p-3 text-xs text-foreground">{JSON.stringify(rootAttributes, null, 2)}</pre>
                 </div>
               ) : null}
-            </section>
-          </div>
+            </motion.section>
+          </motion.div>
         )
       ) : null}
 
       {activeTab === 'commitments' ? (
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <motion.section layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           {!wrongRootType ? (
             <div className="mb-3 flex flex-wrap justify-end gap-2">
-              <Link
-                to={`/items/create?item_type=Commitment&parent_item_id=${itemId}`}
-                className="hover-lift rounded-lg border border-border px-3 py-2 text-xs font-medium"
-              >
-                {t('items.detail.addLinkedCommitment')}
-              </Link>
-              <Link
-                to={`/items/create?item_type=Income&parent_item_id=${itemId}`}
-                className="hover-lift rounded-lg border border-border px-3 py-2 text-xs font-medium"
-              >
-                {t('items.detail.addLinkedIncome')}
-              </Link>
+              <Pressable className="rounded-lg">
+                <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+                  <Link
+                    to={`/items/create?item_type=Commitment&parent_item_id=${itemId}`}
+                    className="block rounded-lg border border-border px-3 py-2 text-xs font-medium"
+                  >
+                    {t('items.detail.addLinkedCommitment')}
+                  </Link>
+                </motion.div>
+              </Pressable>
+              <Pressable className="rounded-lg">
+                <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+                  <Link
+                    to={`/items/create?item_type=Income&parent_item_id=${itemId}`}
+                    className="block rounded-lg border border-border px-3 py-2 text-xs font-medium"
+                  >
+                    {t('items.detail.addLinkedIncome')}
+                  </Link>
+                </motion.div>
+              </Pressable>
             </div>
           ) : null}
 
           {!isFinancialDetail && commitments.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('items.detail.noCommitments')}</p>
           ) : (
-            <div className="space-y-4">
+            <motion.div layout className="space-y-4">
               {!isFinancialDetail ? (
-                <ul className="space-y-2">
-                  {commitments.map((commitment) => {
+                <MotionPanelList
+                  items={commitments}
+                  getItemKey={(commitment) => commitment.id}
+                  className="space-y-2"
+                  renderItem={(commitment) => {
                     const attributes = isRecord(commitment.attributes) ? commitment.attributes : {}
                     const frequency = resolveFinancialFrequency(commitment, attributes)
                     const status = resolveFinancialStatus(commitment, attributes)
@@ -836,11 +913,15 @@ export function ItemDetailPage() {
                     const subtypeLabel = getFinancialSubtype(commitment)
 
                     return (
-                      <li key={commitment.id} className="rounded-xl border border-border bg-background/80 px-3 py-3">
+                      <div className="rounded-xl border border-border bg-background/80 px-3 py-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <Link to={`/items/${commitment.id}`} state={{ from: location.pathname + location.search }} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
-                            {getItemDisplayName(commitment)}
-                          </Link>
+                          <Pressable className="rounded-lg">
+                            <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+                              <Link to={`/items/${commitment.id}`} state={{ from: location.pathname + location.search }} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
+                                {getItemDisplayName(commitment)}
+                              </Link>
+                            </motion.div>
+                          </Pressable>
                           <div className="flex items-center gap-2">
                             {subtypeLabel ? <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{subtypeLabel}</span> : null}
                             <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">{recurrenceFrequencyLabel(frequency, t)}</span>
@@ -853,26 +934,34 @@ export function ItemDetailPage() {
                           {t('items.fields.dueDate')}: <span className="font-medium text-foreground">{formatDateLabel(dueDate)}</span>
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <Link to={`/items/${commitment.id}/edit`} className="rounded-lg border border-border px-3 py-1 text-xs font-medium">
-                            {t('items.editAction')}
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setChildDeleteError(null)
-                              setChildDeleteTarget(commitment)
-                            }}
-                            className="rounded-lg border border-destructive/40 px-3 py-1 text-xs font-medium text-destructive"
-                          >
-                            {t('items.deleteAction')}
-                          </button>
+                          <Pressable className="rounded-lg">
+                            <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
+                              <Link to={`/items/${commitment.id}/edit`} className="block rounded-lg border border-border px-3 py-1 text-xs font-medium">
+                                {t('items.editAction')}
+                              </Link>
+                            </motion.div>
+                          </Pressable>
+                          <Pressable className="rounded-lg">
+                            <motion.button
+                              type="button"
+                              onClick={() => {
+                                setChildDeleteError(null)
+                                setChildDeleteTarget(commitment)
+                              }}
+                              transition={motionSpring}
+                              whileTap={{ scale: pressScale }}
+                              className="rounded-lg border border-destructive/40 px-3 py-1 text-xs font-medium text-destructive"
+                            >
+                              {t('items.deleteAction')}
+                            </motion.button>
+                          </Pressable>
                         </div>
-                      </li>
+                      </div>
                     )
-                  })}
-                </ul>
+                  }}
+                />
               ) : (
-                <div className="space-y-3">
+                <motion.div layout className="space-y-3">
                   <div className="inline-flex rounded-lg border border-border bg-background p-1 text-sm">
                     <button
                       type="button"
@@ -911,14 +1000,16 @@ export function ItemDetailPage() {
                       {activeFinancialEventsTab === 'present' ? t('items.detail.ledger.currentUpcomingEmpty') : t('items.detail.ledger.historicalEmpty')}
                     </p>
                   ) : (
-                    <ul className="space-y-2">
-                      {(activeFinancialEventsTab === 'present' ? financialTimelineSections.present : financialTimelineSections.history).map((event) => {
+                    <MotionPanelList
+                      items={activeFinancialEventsTab === 'present' ? financialTimelineSections.present : financialTimelineSections.history}
+                      getItemKey={(event) => event.id}
+                      className="space-y-2"
+                      renderItem={(event) => {
                         const projected = isProjectedEvent(event)
                         const overdue = isOverduePendingEvent(event, toStartOfTodayUtc())
 
                         return (
-                          <li
-                            key={event.id}
+                          <div
                             className={`rounded-xl border px-3 py-2 ${
                               overdue
                                 ? 'border-red-300 bg-red-50/60'
@@ -957,16 +1048,16 @@ export function ItemDetailPage() {
                                 <CompleteEventRowAction eventId={event.id} itemId={event.item_id} eventStatus={event.status} />
                               </div>
                             </div>
-                          </li>
+                          </div>
                         )
-                      })}
-                    </ul>
+                      }}
+                    />
                   )}
-                </div>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           )}
-        </section>
+        </motion.section>
       ) : null}
 
       {activeTab === 'activity' ? <ItemActivityTimeline itemId={itemId} /> : null}
@@ -1004,6 +1095,6 @@ export function ItemDetailPage() {
           childDeleteMutation.mutate(childDeleteTarget)
         }}
       />
-    </section>
+    </motion.section>
   )
 }

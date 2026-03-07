@@ -1,3 +1,6 @@
+import { motion } from 'framer-motion'
+import { Pressable } from '@/components/ui/pressable'
+import { motionSpring, pressScale } from '@/lib/motion'
 import { useTranslation } from 'react-i18next'
 
 export type ItemFilterValue = 'all' | 'assets' | 'commitments' | 'income' | 'active' | 'deleted'
@@ -39,7 +42,7 @@ export function ItemFilters({
   const { t } = useTranslation()
 
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <motion.section layout className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="grid gap-3 md:grid-cols-[1fr_220px]">
         <label className="space-y-1">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('items.filters.searchLabel')}</span>
@@ -72,19 +75,23 @@ export function ItemFilters({
             const active = filter === value
 
             return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onFilterChange(value)}
-                className={[
-                  'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                  active
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                ].join(' ')}
-              >
-                {t(`items.filters.chips.${value}`)}
-              </button>
+              <Pressable key={value} className="rounded-full">
+                <motion.button
+                  layout
+                  type="button"
+                  onClick={() => onFilterChange(value)}
+                  transition={motionSpring}
+                  whileTap={{ scale: pressScale }}
+                  className={[
+                    'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                    active
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                  ].join(' ')}
+                >
+                  {t(`items.filters.chips.${value}`)}
+                </motion.button>
+              </Pressable>
             )
           })}
         </div>
@@ -94,50 +101,13 @@ export function ItemFilters({
             const active = filter === value
 
             return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onFilterChange(value)}
-                className={[
-                  'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                  active
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                ].join(' ')}
-              >
-                {t(`items.filters.chips.${value}`)}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="ui-expand space-y-2 rounded-xl border border-border/70 bg-background/80 p-3" data-open={filter === 'assets'}>
-        {filter === 'assets' ? (
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t('items.filters.assetTypes.label')}</p>
-        ) : null}
-        {filter === 'assets' ? (
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => onAssetTypeChange(null)}
-              className={[
-                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                selectedAssetType === null
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-              ].join(' ')}
-            >
-              {t('items.filters.assetTypes.all')}
-            </button>
-            {assetTypeOptions.map((option) => {
-              const active = selectedAssetType === option.value
-
-              return (
-                <button
-                  key={option.value}
+              <Pressable key={value} className="rounded-full">
+                <motion.button
+                  layout
                   type="button"
-                  onClick={() => onAssetTypeChange(option.value)}
+                  onClick={() => onFilterChange(value)}
+                  transition={motionSpring}
+                  whileTap={{ scale: pressScale }}
                   className={[
                     'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
                     active
@@ -145,13 +115,63 @@ export function ItemFilters({
                       : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
                   ].join(' ')}
                 >
-                  {option.label}
-                </button>
+                  {t(`items.filters.chips.${value}`)}
+                </motion.button>
+              </Pressable>
+            )
+          })}
+        </div>
+      </div>
+
+      <motion.div layout className="ui-expand space-y-2 rounded-xl border border-border/70 bg-background/80 p-3" data-open={filter === 'assets'}>
+        {filter === 'assets' ? (
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t('items.filters.assetTypes.label')}</p>
+        ) : null}
+        {filter === 'assets' ? (
+          <div className="flex flex-wrap gap-2">
+            <Pressable className="rounded-full">
+              <motion.button
+                layout
+                type="button"
+                onClick={() => onAssetTypeChange(null)}
+                transition={motionSpring}
+                whileTap={{ scale: pressScale }}
+                className={[
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                  selectedAssetType === null
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                ].join(' ')}
+              >
+                {t('items.filters.assetTypes.all')}
+              </motion.button>
+            </Pressable>
+            {assetTypeOptions.map((option) => {
+              const active = selectedAssetType === option.value
+
+              return (
+                <Pressable key={option.value} className="rounded-full">
+                  <motion.button
+                    layout
+                    type="button"
+                    onClick={() => onAssetTypeChange(option.value)}
+                    transition={motionSpring}
+                    whileTap={{ scale: pressScale }}
+                    className={[
+                      'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                      active
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                    ].join(' ')}
+                  >
+                    {option.label}
+                  </motion.button>
+                </Pressable>
               )
             })}
           </div>
         ) : null}
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   )
 }
