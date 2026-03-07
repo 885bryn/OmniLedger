@@ -6,7 +6,7 @@ HACT (OmniLedger) is a household financial operations platform I orchestrated en
 
 This project helps a household manage assets, commitments, income, and timeline events in one place with clear audit history and predictable workflows.
 
-It is designed to answer practical operational questions, not just store records:
+It is designed to answer practical operational questions:
 - What is due this week?
 - Which commitments are linked to which assets?
 - What changed, when, and by whom?
@@ -14,7 +14,9 @@ It is designed to answer practical operational questions, not just store records
 
 ## Why I Built It
 
-I built this with my mom as the primary stakeholder and real-world user. I led discovery with her use cases, translated non-technical needs into a technical product scope, and then delivered the system through phased milestones.
+My mom wanted it. 
+
+I led discovery with her use cases, translated her non-technical needs into a technical product scope, and then delivered the system through phased milestones.
 
 This was intentionally run like a production program rather than a simple side project:
 - Defined milestone/phase scope and execution workflow
