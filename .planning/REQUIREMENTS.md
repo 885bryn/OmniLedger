@@ -1,0 +1,68 @@
+# Requirements: Household Asset & Commitment Tracker (HACT)
+
+**Defined:** 2026-03-07
+**Core Value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
+
+## v1 Requirements
+
+Requirements for milestone v4.2 cashflow frequency normalization and cadence clarity.
+
+### Cashflow Normalization
+
+- [ ] **CASH-01**: User sees per-asset obligation totals converted to the selected cadence (weekly/monthly/yearly) using each financial item's billing frequency.
+- [ ] **CASH-02**: User sees per-asset income totals converted to the selected cadence (weekly/monthly/yearly) using each financial item's billing frequency.
+- [ ] **CASH-03**: User sees per-asset net cashflow computed from cadence-normalized obligation and income totals rather than monthly-only assumptions.
+- [ ] **CASH-04**: User sees non-recurring (`one_time`) financial items handled with a clear, consistent rule so recurring cadence totals remain predictable.
+
+### Cadence Controls & Clarity
+
+- [ ] **VIEW-01**: User can switch asset-summary cadence between weekly, monthly, and yearly.
+- [ ] **VIEW-02**: User sees obligations, income, and net cashflow cards update in sync whenever cadence changes.
+- [ ] **VIEW-03**: User sees summary labels/units that clearly match the selected cadence.
+
+### Compatibility Guardrail
+
+- [ ] **SAFE-01**: User retains existing item/event workflows while only the asset-summary rollup calculations and cadence controls are changed.
+
+## v2 Requirements
+
+Deferred to a future milestone.
+
+### Extended Cadence Options
+
+- **VIEW-04**: User can view quarter-based cadence outputs.
+- **VIEW-05**: User can choose independent cadence per summary card instead of one shared selector.
+
+### Advanced Calculation Preferences
+
+- **CASH-05**: User can choose how one-time items contribute to cadence rollups (exclude, prorate, or period-bounded include).
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Full dashboard redesign | Milestone is targeted to cashflow rollup correctness and clarity only |
+| Financial-item schema redesign | Existing model supports required frequency-aware calculations |
+| Changes to RBAC/audit/deployment architecture | Must preserve current production guarantees |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CASH-01 | Phase TBD | Pending |
+| CASH-02 | Phase TBD | Pending |
+| CASH-03 | Phase TBD | Pending |
+| CASH-04 | Phase TBD | Pending |
+| VIEW-01 | Phase TBD | Pending |
+| VIEW-02 | Phase TBD | Pending |
+| VIEW-03 | Phase TBD | Pending |
+| SAFE-01 | Phase TBD | Pending |
+
+**Coverage:**
+- v1 requirements: 8 total
+- Mapped to phases: 0
+- Unmapped: 8 ⚠️
+
+---
+*Requirements defined: 2026-03-07*
+*Last updated: 2026-03-07 after milestone v4.2 requirement definition*
