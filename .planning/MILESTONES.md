@@ -82,3 +82,31 @@
 **What's next:** Start next milestone discovery and define fresh requirements/roadmap with `/gsd-new-milestone`.
 
 ---
+
+## v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion (Shipped: 2026-03-07)
+
+**Delivered:** A full frontend design-system refresh with strict light-first theme behavior, high-contrast shadcn surface patterns, and shared Framer Motion interaction language.
+
+**Phases completed:** 3 phases (24-26), 10 plans, 19 tasks
+
+**Key accomplishments:**
+- Enforced deterministic light-first theme boot and persisted manual light/dark toggling without OS preference drift.
+- Rolled out shared shadcn-aligned shell, card, form, dialog, and toast surfaces with consistent contrast, spacing, and radius language.
+- Introduced shared motion primitives for spring entry/exit, tactile press feedback, stagger, and create-highlight confirmation.
+- Applied consistent motion and tactile behavior across dashboard, events, item list/detail, dialogs, and shell controls.
+- Closed final verification gaps by moving all phase-26 exits to the shared spring baseline and removing legacy events header CSS animation.
+
+**Stats:**
+- 66 files changed in milestone commit range
+- 3 phases, 10 plans, 19 tasks
+- Timeline: 2026-03-06 23:43 to 2026-03-07 12:45 (~13 hours)
+
+**Known deferred checks / debt:**
+- Phase 24 responsive placement and first-paint transition polish still require human browser confirmation.
+- Phase 26 experiential motion-feel validation across dashboard, events, and items remains human-needed.
+
+**Git range:** `feat(24-01)` -> `feat(26-05)`
+
+**What's next:** Start next milestone discovery and define fresh requirements/roadmap with `/gsd-new-milestone`.
+
+---

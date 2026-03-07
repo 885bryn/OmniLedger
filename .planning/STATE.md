@@ -3,17 +3,17 @@
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-03-07)
-Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`
+Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 26 - Motion Interaction Patterns
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 26 of 26 (Motion Interaction Patterns)
-Plan: 05 of 05
-Status: Complete
-Last activity: 2026-03-07 - Completed 26-05 motion interaction patterns gap-closure plan
+Phase: Complete through 26 (Milestone v4.1 archived)
+Plan: Complete
+Status: Milestone complete
+Last activity: 2026-03-07 - Archived milestone v4.1 and prepared next milestone handoff
 
 Progress: [==========] 100%
 
