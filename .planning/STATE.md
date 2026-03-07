@@ -11,11 +11,11 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 26 of 26 (Motion Interaction Patterns)
-Plan: 01 of 04
+Plan: 04 of 04
 Status: In progress
-Last activity: 2026-03-07 - Completed 26-01 motion interaction patterns plan
+Last activity: 2026-03-07 - Completed 26-04 motion interaction patterns plan
 
-Progress: [======░░░░] 59%
+Progress: [======░░░░] 60%
 
 ## Performance Metrics
 
@@ -33,14 +33,15 @@ Progress: [======░░░░] 59%
 | 24 (v4.1) | 2 | 5 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 26-01 (5 min), 25-03 (8 min), 25-02 (4 min), 25-01 (1 min), 24-02 (2 min)
-- Trend: Phase 26 has started with shared motion tokens, reusable animated surface primitives, and subtle in-shell route shifts.
+- Last 5 plans: 26-04 (3 min), 26-01 (5 min), 25-03 (8 min), 25-02 (4 min), 25-01 (1 min)
+- Trend: Phase 26 now covers shared motion tokens, animated surfaces, subtle route shifts, and tactile press feedback across dialogs and shell controls.
 | Phase 24-theme-foundation P01 | 3 min | 2 tasks | 4 files |
 | Phase 24 P02 | 2 min | 2 tasks | 5 files |
 | Phase 25 P01 | 1 min | 2 tasks | 7 files |
 | Phase 25-dashboard-surface-system P02 | 4 min | 2 tasks | 6 files |
 | Phase 25 P03 | 8 min | 2 tasks | 7 files |
 | Phase 26 P01 | 5 min | 2 tasks | 5 files |
+| Phase 26 P04 | 3 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 25]: Keep compact event and admin controls on shared Button variants so rounded-lg actions match the shell.
 - [Phase 26]: Lock the motion baseline in one shared module with spring stiffness 400, damping 30, press scale 0.97, and shared create-entry presets.
 - [Phase 26]: Keep authenticated route motion to a subtle in-shell opacity and vertical shift keyed by location.pathname instead of adding cinematic page transitions.
+- [Phase 26]: Reused the shared Pressable wrapper from plan 26-01 so dialog and shell controls inherit the same motion tuning.
+- [Phase 26]: Kept destructive dialog actions on the same subtle press scale as other controls to preserve one tactile personality.
 
 ### Pending Todos
 
@@ -79,5 +82,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 26-01-PLAN.md
+Stopped at: Completed 26-04-PLAN.md
 Resume file: `None`
