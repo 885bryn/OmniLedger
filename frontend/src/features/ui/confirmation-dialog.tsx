@@ -2,6 +2,7 @@ import { type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Pressable } from '@/components/ui/pressable'
 
 type ConfirmationDialogProps = {
   open: boolean
@@ -36,12 +37,16 @@ export function ConfirmationDialog({
         </CardHeader>
         <CardContent className="pt-5 text-sm text-muted-foreground">{description}</CardContent>
         <CardFooter className="justify-end gap-2 border-t border-border/70 bg-muted/30">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
-            {cancelLabel}
-          </Button>
-          <Button type="button" onClick={onConfirm} disabled={pending}>
-            {confirmLabel}
-          </Button>
+          <Pressable whileTap={pending ? { scale: 1 } : undefined}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+              {cancelLabel}
+            </Button>
+          </Pressable>
+          <Pressable whileTap={pending ? { scale: 1 } : undefined}>
+            <Button type="button" onClick={onConfirm} disabled={pending}>
+              {confirmLabel}
+            </Button>
+          </Pressable>
         </CardFooter>
       </Card>
     </div>,
