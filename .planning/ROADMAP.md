@@ -79,7 +79,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 24. Theme Foundation | v4.1 | 2/2 | Complete | 2026-03-07 |
-| 25. Dashboard Surface System | v4.1 | 3/3 | Complete | 2026-03-07 |
+| 25. Dashboard Surface System | v4.1 | Complete    | 2026-03-07 | 2026-03-07 |
 | 26. Motion Interaction Patterns | v4.1 | 0/TBD | Not started | - |
 
 ---
