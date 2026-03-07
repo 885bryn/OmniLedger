@@ -28,10 +28,7 @@ export const createEntryVariants = {
   exit: {
     opacity: 0,
     y: -6,
-    transition: {
-      duration: 0.16,
-      ease: 'easeOut',
-    },
+    transition: motionSpring,
   },
 } satisfies Variants
 
@@ -78,9 +75,6 @@ export const subtlePageShiftVariants = {
   exit: {
     opacity: 0,
     y: -6,
-    transition: {
-      duration: 0.16,
-      ease: 'easeOut',
-    },
+    transition: motionSpring,
   },
 } satisfies Variants
