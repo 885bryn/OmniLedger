@@ -1,19 +1,17 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../admin-scope/target-user-chip'
 import { ConfirmationDialog } from '../ui/confirmation-dialog'
 import { useToast } from '../ui/toast-provider'
-import { FollowUpModal } from './follow-up-modal'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
 import { queryKeys } from '../../lib/query-keys'
 
 type CompletionPayload = {
   id: string
-  prompt_next_date: boolean
 }
 
 type CompleteEventRowActionProps = {
@@ -24,14 +22,12 @@ type CompleteEventRowActionProps = {
 
 export function CompleteEventRowAction({ eventId, itemId, eventStatus }: CompleteEventRowActionProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { session } = useAuth()
   const { isAdmin, mode, lensUserId, users } = useAdminScope()
   const { pushSafetyToast } = useToast()
   const queryClient = useQueryClient()
   const [showSuccess, setShowSuccess] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [showFollowUp, setShowFollowUp] = useState(false)
   const [failureText, setFailureText] = useState<string | null>(null)
   const isCompleted = eventStatus === 'Completed'
   const hasInvalidLensSelection = isAdmin && mode === 'owner' && (!lensUserId || !users.some((user) => user.id === lensUserId))
@@ -65,9 +61,8 @@ export function CompleteEventRowAction({ eventId, itemId, eventStatus }: Complet
       setFailureText(null)
       setShowSuccess(false)
     },
-    onSuccess: async (payload) => {
+    onSuccess: async () => {
       setShowSuccess(true)
-      setShowFollowUp(!isCompleted && payload.prompt_next_date)
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
@@ -93,8 +88,10 @@ export function CompleteEventRowAction({ eventId, itemId, eventStatus }: Complet
   return (
     <div className="flex items-center gap-2">
       {attribution ? <TargetUserChip actorLabel={attribution.actorLabel} lensLabel={attribution.lensLabel} /> : null}
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         disabled={completionMutation.isPending}
         onClick={() => {
           if (blockWhenLensInvalid()) {
@@ -103,7 +100,6 @@ export function CompleteEventRowAction({ eventId, itemId, eventStatus }: Complet
 
           setConfirmOpen(true)
         }}
-        className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-60"
       >
         {completionMutation.isPending
           ? isCompleted
@@ -112,7 +108,7 @@ export function CompleteEventRowAction({ eventId, itemId, eventStatus }: Complet
           : isCompleted
             ? t('events.completeAction.undoButton')
             : t('events.completeAction.button')}
-      </button>
+      </Button>
 
       {showSuccess ? <p className="text-xs font-medium text-emerald-600">{t('events.completeAction.completed')}</p> : null}
       {failureText ? <p className="text-xs font-medium text-destructive">{failureText}</p> : null}
@@ -146,23 +142,6 @@ export function CompleteEventRowAction({ eventId, itemId, eventStatus }: Complet
 
           completionMutation.mutate()
           setConfirmOpen(false)
-        }}
-      />
-
-      <FollowUpModal
-        open={showFollowUp}
-        onNotNow={() => {
-          setShowFollowUp(false)
-        }}
-        onScheduleNow={() => {
-          setShowFollowUp(false)
-
-          if (itemId) {
-            navigate(`/items/${itemId}/edit`)
-            return
-          }
-
-          navigate('/items')
         }}
       />
     </div>

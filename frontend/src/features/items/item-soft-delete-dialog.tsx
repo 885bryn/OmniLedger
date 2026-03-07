@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../admin-scope/target-user-chip'
@@ -59,11 +61,14 @@ export function ItemSoftDeleteDialog({
 
   return createPortal(
     <div className="dialog-overlay fixed inset-0 z-[90] grid place-items-center bg-black/15 p-4" role="dialog" aria-modal="true">
-      <div className="dialog-card w-full max-w-xl rounded-2xl border border-border bg-white p-6 text-foreground shadow-[0_24px_60px_-28px_rgba(15,23,42,0.45)]">
-        <h2 className="text-lg font-semibold leading-tight">{t('items.deleteDialog.title')}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">{t('items.deleteDialog.description', { itemLabel })}</p>
+      <Card className="dialog-card w-full max-w-xl border border-border bg-card shadow-[var(--shadow-surface-strong)]">
+        <CardHeader className="gap-2 border-b border-border/70">
+          <CardTitle className="text-lg leading-tight">{t('items.deleteDialog.title')}</CardTitle>
+          <p className="text-sm text-muted-foreground">{t('items.deleteDialog.description', { itemLabel })}</p>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-5">
         {relatedItems.length > 0 ? (
-          <div className="mt-3 rounded-lg border border-border bg-background p-3">
+          <div className="rounded-xl border border-border bg-background p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('items.deleteDialog.relatedTitle', { defaultValue: 'Also delete linked commitments' })}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {t('items.deleteDialog.relatedDescription', {
@@ -73,7 +78,7 @@ export function ItemSoftDeleteDialog({
             <ul className="mt-2 space-y-1">
               {relatedItems.map((related) => (
                 <li key={related.id}>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-muted/60">
+                  <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm hover:bg-muted/60">
                     <input
                       type="checkbox"
                       checked={related.checked}
@@ -89,21 +94,23 @@ export function ItemSoftDeleteDialog({
           </div>
         ) : null}
         {attribution ? <TargetUserChip actorLabel={attribution.actorLabel} lensLabel={attribution.lensLabel} className="mt-3" /> : null}
-        {displayErrorText ? <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{displayErrorText}</p> : null}
-        <div className="mt-5 flex justify-end gap-2">
-          <button
+        {displayErrorText ? <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{displayErrorText}</p> : null}
+        </CardContent>
+        <CardFooter className="mt-0 justify-end gap-2 border-t border-border/70 bg-muted/30">
+          <Button
             type="button"
+            variant="outline"
             onClick={() => {
               setLocalErrorText(null)
               onCancel()
             }}
             disabled={pending}
-            className="rounded-lg border border-border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
             {t('items.deleteDialog.cancel')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="destructive"
             onClick={() => {
               if (hasInvalidLensSelection) {
                 const message = t('safety.invalidLens')
@@ -116,12 +123,11 @@ export function ItemSoftDeleteDialog({
               onConfirm()
             }}
             disabled={pending}
-            className="rounded-lg bg-destructive px-3 py-2 text-sm font-medium text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             {pending ? t('items.deleteDialog.pending') : t('items.deleteDialog.confirm')}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>,
     document.body,
   )

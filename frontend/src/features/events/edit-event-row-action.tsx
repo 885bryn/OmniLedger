@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../admin-scope/target-user-chip'
@@ -135,8 +138,10 @@ export function EditEventRowAction({ eventId, itemId, eventStatus, dueDate, amou
 
   return (
     <div className="flex items-center gap-2">
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         onClick={() => {
           if (blockWhenLensInvalid()) {
             return
@@ -147,10 +152,9 @@ export function EditEventRowAction({ eventId, itemId, eventStatus, dueDate, amou
           setConfirmOpen(true)
         }}
         disabled={editMutation.isPending}
-        className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-60"
       >
         {editMutation.isPending ? t('events.editAction.pending') : t('events.editAction.button')}
-      </button>
+      </Button>
 
       {failureText ? <p className="text-xs font-medium text-destructive">{failureText}</p> : null}
 
@@ -158,28 +162,34 @@ export function EditEventRowAction({ eventId, itemId, eventStatus, dueDate, amou
         open={confirmOpen}
         title={t('events.editAction.confirmTitle')}
         description={
-          <span className="space-y-3">
-            <span className="block text-xs text-muted-foreground">{isProjected ? t('events.editAction.projectedConfirm') : t('events.editAction.persistedConfirm')}</span>
-            <label className="block text-xs font-medium text-foreground">
-              {t('events.editAction.fields.date')}
-              <input
-                type="date"
-                value={draftDueDate}
-                onChange={(event) => setDraftDueDate(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
-              />
-            </label>
-            <label className="block text-xs font-medium text-foreground">
-              {t('events.editAction.fields.amount')}
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={draftAmount}
-                onChange={(event) => setDraftAmount(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
-              />
-            </label>
+            <span className="space-y-3">
+              <span className="block text-xs text-muted-foreground">{isProjected ? t('events.editAction.projectedConfirm') : t('events.editAction.persistedConfirm')}</span>
+              <div className="space-y-2">
+                <Label htmlFor={`event-${eventId}-date`} className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {t('events.editAction.fields.date')}
+                </Label>
+                <Input
+                  id={`event-${eventId}-date`}
+                  type="date"
+                  value={draftDueDate}
+                  onChange={(event) => setDraftDueDate(event.target.value)}
+                  className="h-10 w-full bg-background/90 px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`event-${eventId}-amount`} className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {t('events.editAction.fields.amount')}
+                </Label>
+                <Input
+                  id={`event-${eventId}-amount`}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={draftAmount}
+                  onChange={(event) => setDraftAmount(event.target.value)}
+                  className="h-10 w-full bg-background/90 px-3 py-2 text-sm"
+                />
+              </div>
             {showChangeSummary ? (
               <span className="block rounded-lg border border-border bg-muted/40 px-2 py-2 text-xs text-foreground">
                 {t('events.editAction.changeSummaryDate', { oldValue: originalDueDate, newValue: draftDueDate })}

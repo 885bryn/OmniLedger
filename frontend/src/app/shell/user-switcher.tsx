@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { useExportBackup } from '../../features/export/use-export-backup'
@@ -129,18 +130,18 @@ export function UserSwitcher() {
 
   return (
     <>
-      <div className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground">
-        <span>{t('shell.identityLabel')}</span>
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/80 bg-card/90 px-3 py-2 text-xs text-muted-foreground shadow-sm shadow-black/5 dark:shadow-none">
+        <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('shell.identityLabel')}</span>
         <span className="max-w-36 truncate font-medium text-foreground" title={session?.email || identity}>
           {identity}
         </span>
         {isAdmin ? (
-          <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <label className="flex items-center gap-2 rounded-lg border border-border/70 bg-background/80 px-2.5 py-1.5 text-[11px] text-muted-foreground">
             <span>Lens</span>
             <select
               aria-label="Admin lens"
               disabled={isLoadingUsers || isUpdatingScope}
-              className="min-w-28 rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
+              className="min-w-28 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
               value={mode === 'all' ? 'all' : lensUserId ?? 'all'}
               onChange={async (event) => {
                 if (event.target.value === 'all') {
@@ -167,18 +168,21 @@ export function UserSwitcher() {
             </select>
           </label>
         ) : null}
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           disabled={exportBackup.isPending}
           onClick={() => {
             void handleExportClick()
           }}
-          className="rounded border border-border px-2 py-1 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-60"
         >
           {exportBackup.isPending ? t('shell.exportingBackup') : t('shell.exportBackupAction')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           disabled={isLoggingOut}
           onClick={async () => {
             setIsLoggingOut(true)
@@ -191,10 +195,9 @@ export function UserSwitcher() {
               setIsLoggingOut(false)
             }
           }}
-          className="rounded border border-border px-2 py-1 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoggingOut ? t('shell.loggingOut') : t('shell.logoutAction')}
-        </button>
+        </Button>
         {exportBackup.phase === 'success' ? <span role="status" className="max-w-80 text-[11px] text-emerald-700">{exportSuccessMessage}</span> : null}
         {exportBackup.phase === 'pending' && exportBackup.isLongRunning ? (
           <span role="status" className="max-w-80 text-[11px] text-muted-foreground">
@@ -202,17 +205,18 @@ export function UserSwitcher() {
           </span>
         ) : null}
         {exportBackup.phase === 'error' ? (
-          <div role="alert" className="flex items-center gap-2 text-[11px] text-destructive">
+          <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-2.5 py-1.5 text-[11px] text-destructive">
             <span className="max-w-80">{exportErrorMessage}</span>
-            <button
+            <Button
               type="button"
+              variant="destructive"
+              size="sm"
               onClick={() => {
                 void handleExportClick()
               }}
-              className="rounded border border-destructive/40 px-2 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/5"
             >
               {t('shell.exportBackupRetryAction')}
-            </button>
+            </Button>
           </div>
         ) : null}
         {updateError ? <span role="alert" className="max-w-48 truncate text-[11px] text-destructive">{updateError}</span> : null}
