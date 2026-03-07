@@ -14,11 +14,20 @@ Users can see each asset together with its linked obligations and timeline statu
 - **Archive references:** `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.1-REQUIREMENTS.md`, `.planning/milestones/v4.1-MILESTONE-AUDIT.md`
 - **Completion stance:** shipped with non-blocking UX validation debt tracked in milestone audit (`status: tech_debt`)
 
+## Current Milestone: v4.2 Cashflow Frequency Normalization & Cadence Toggle
+
+**Goal:** Make per-asset cashflow summaries mathematically correct and easier to understand by honoring each financial item's billing frequency and letting users switch rollups between weekly, monthly, and yearly views.
+
+**Target features:**
+- Normalize commitment and income amounts by frequency (`weekly`, `monthly`, `yearly`) before rendering rollup cards.
+- Add a cadence selector on the asset page so users can view obligations, income, and net cashflow in weekly/monthly/yearly terms.
+- Apply one shared calculation contract to all three summary fields so numbers stay internally consistent.
+
 ## Next Milestone Goals
 
-- Define the next product outcome after the v4.1 UI/UX overhaul (new capability set, not polish-only carryover).
-- Convert deferred items (`DSYS-01`, `MOTION-05`, `ACCS-01`) into explicit in-scope vs out-of-scope decisions.
-- Re-baseline requirements and roadmap around user value, preserving existing RBAC, audit, and deployment guarantees.
+- Correct asset-summary cadence math so yearly and weekly financial items no longer display as monthly values by default.
+- Make summary values user-legible by introducing a visible cadence switcher (weekly/monthly/yearly) on the asset summary surface.
+- Preserve existing RBAC, audit visibility, and deployment contracts while changing only rollup logic + summary UX clarity.
 
 ## Requirements
 
@@ -36,7 +45,10 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ### Active
 
-- [ ] No active milestone requirements yet. Define these with `/gsd-new-milestone`.
+- [ ] Users can view obligations with totals normalized to the selected cadence (weekly/monthly/yearly) rather than forced-monthly assumptions.
+- [ ] Users can view income with totals normalized to the selected cadence (weekly/monthly/yearly) rather than forced-monthly assumptions.
+- [ ] Users can view net cashflow computed from cadence-normalized obligation and income totals.
+- [ ] Users can switch cadence on the asset summary surface and see all three summary cards update in sync.
 
 ### Out of Scope
 
@@ -88,4 +100,4 @@ Users can see each asset together with its linked obligations and timeline statu
 </details>
 
 ---
-*Last updated: 2026-03-07 after completing milestone v4.1*
+*Last updated: 2026-03-07 after starting milestone v4.2*
