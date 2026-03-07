@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 type DataCardProps = ComponentPropsWithoutRef<'div'> & {
   action?: ReactNode
   as?: 'article' | 'div' | 'section'
+  cardClassName?: string
   contentClassName?: string
   description?: ReactNode
   eyebrow?: ReactNode
@@ -17,6 +18,7 @@ export function DataCard({
   as: Comp = 'div',
   children,
   className,
+  cardClassName,
   contentClassName,
   description,
   eyebrow,
@@ -26,7 +28,7 @@ export function DataCard({
 }: DataCardProps) {
   return (
     <Comp className={className} {...props}>
-      <Card className="h-full border border-border bg-card/95 shadow-sm shadow-black/5 dark:bg-card dark:shadow-none">
+      <Card className={cn('h-full border border-border bg-card/95 shadow-sm shadow-black/5 dark:bg-card dark:shadow-none', cardClassName)}>
         {eyebrow || title || description || action || value ? (
           <CardHeader className="gap-3">
             {(eyebrow || action) && (

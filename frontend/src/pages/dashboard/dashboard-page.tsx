@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
+import { MotionPanelList } from '@/components/ui/motion-panel-list'
+import { Pressable } from '@/components/ui/pressable'
 import { Button } from '@/components/ui/button'
 import { DataCard } from '../../features/dashboard/data-card'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
@@ -154,7 +156,6 @@ function DashboardEmptyState() {
   return (
     <DataCard
       as="section"
-      className="animate-fade-up"
       contentClassName="pt-0"
       description={t('dashboard.noDueEventsDescription')}
       title={t('dashboard.noDueEventsTitle')}
@@ -254,14 +255,13 @@ export function DashboardPage() {
   }, [allEvents, itemById])
 
   const metricCards = [
-    { key: 'totalDue', label: t('dashboard.dueEvents'), value: metrics.totalDue, delay: '0ms' },
-    { key: 'overdue', label: t('dashboard.overdue'), value: metrics.overdue, delay: '40ms', valueClassName: 'text-destructive' },
-    { key: 'thisWeekCount', label: t('dashboard.dueInWeek'), value: metrics.thisWeekCount, delay: '80ms' },
+    { key: 'totalDue', label: t('dashboard.dueEvents'), value: metrics.totalDue },
+    { key: 'overdue', label: t('dashboard.overdue'), value: metrics.overdue, valueClassName: 'text-destructive' },
+    { key: 'thisWeekCount', label: t('dashboard.dueInWeek'), value: metrics.thisWeekCount },
     {
       key: 'dueAmount',
       label: t('dashboard.upcomingAmount'),
       value: formatCurrency(metrics.dueAmount),
-      delay: '120ms',
       description: metrics.dueRange ? t('dashboard.upcomingRange', { range: metrics.dueRange }) : t('dashboard.upcomingRangeMissing'),
     },
   ]
@@ -272,7 +272,7 @@ export function DashboardPage() {
 
   if (eventsQuery.isError || assetsQuery.isError || itemLookupQuery.isError) {
     return (
-      <DataCard as="section" className="animate-fade-up" title={t('dashboard.loadError')}>
+      <DataCard as="section" title={t('dashboard.loadError')}>
         <p className="text-sm text-destructive">{t('dashboard.loadError')}</p>
       </DataCard>
     )
@@ -280,20 +280,24 @@ export function DashboardPage() {
 
   return (
     <section className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metricCards.map((metric) => (
+      <MotionPanelList
+        items={metricCards}
+        getItemKey={(metric) => metric.key}
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        itemClassName="h-full"
+        highlightOnMount
+        renderItem={(metric) => (
           <DataCard
-            key={metric.key}
             as="article"
-            className="hover-lift animate-fade-up"
+            cardClassName="hover-lift"
+            className="h-full"
             data-dashboard-metric-card="true"
             description={metric.description}
             eyebrow={metric.label}
-            style={{ animationDelay: metric.delay }}
             value={<span className={metric.valueClassName}>{metric.value}</span>}
           />
-        ))}
-      </div>
+        )}
+      />
 
       <DataCard
         as="section"
@@ -302,46 +306,56 @@ export function DashboardPage() {
             <Link to="/items?filter=assets">{t('dashboard.viewAllItems')}</Link>
           </Button>
         }
-        className="animate-fade-up"
         eyebrow={t('dashboard.assetsTitle')}
-        style={{ animationDelay: '160ms' }}
       >
         {assets.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('dashboard.assetsEmpty')}</p>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {assets.map((asset) => (
-              <li key={asset.id} className="hover-lift rounded-xl border border-border bg-background/80 p-4 shadow-sm shadow-black/5 dark:shadow-none">
-                <Link to={`/items/${asset.id}`} state={{ from: location.pathname + location.search }} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
-                  {getItemDisplayName(asset)}
+          <MotionPanelList
+            items={assets}
+            getItemKey={(asset) => asset.id}
+            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+            itemClassName="h-full"
+            renderItem={(asset) => (
+              <Pressable className="h-full w-full">
+                <Link
+                  to={`/items/${asset.id}`}
+                  state={{ from: location.pathname + location.search }}
+                  className="hover-lift block h-full rounded-xl border border-border bg-background/80 p-4 shadow-sm shadow-black/5 dark:shadow-none"
+                >
+                  <span className="text-sm font-semibold text-primary underline-offset-2 hover:underline">{getItemDisplayName(asset)}</span>
+                  <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{asset.item_type}</p>
                 </Link>
-                <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{asset.item_type}</p>
-              </li>
-            ))}
-          </ul>
+              </Pressable>
+            )}
+          />
         )}
       </DataCard>
 
       {grouped.length === 0 ? (
         <DashboardEmptyState />
       ) : (
-        <div className="space-y-4">
-          {grouped.map((group) => (
+        <MotionPanelList
+          items={grouped}
+          getItemKey={(group) => group.due_date}
+          className="space-y-4"
+          renderItem={(group) => (
             <DataCard
-              key={group.due_date}
               as="section"
               action={
                 <Button asChild size="sm" variant="ghost">
                   <Link to="/events">{t('dashboard.openEvents')}</Link>
                 </Button>
               }
-              className="animate-fade-up"
               contentClassName="pt-0"
               eyebrow={formatDueLabel(group.due_date)}
             >
-              <ul className="space-y-2">
-                {group.events.slice(0, 4).map((event) => (
-                  <li key={event.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3.5 shadow-sm shadow-black/5 dark:shadow-none md:flex-row md:items-center md:justify-between">
+              <MotionPanelList
+                items={group.events.slice(0, 4)}
+                getItemKey={(event) => event.id}
+                className="space-y-2"
+                renderItem={(event) => (
+                  <div className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3.5 shadow-sm shadow-black/5 dark:shadow-none md:flex-row md:items-center md:justify-between">
                     <div>
                       <p className="text-sm font-medium">{event.type}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -352,12 +366,12 @@ export function DashboardPage() {
                       </p>
                     </div>
                     <CompleteEventRowAction eventId={event.id} itemId={event.item_id} />
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                )}
+              />
             </DataCard>
-          ))}
-        </div>
+          )}
+        />
       )}
     </section>
   )
