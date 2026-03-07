@@ -60,7 +60,7 @@
 | DEPL-01 | Phase 21 | Complete |
 | DEPL-02 | Phase 21 | Complete |
 | DEPL-03 | Phase 21 | Complete |
-| DOCS-01 | Phase 23 | Complete |
+| DOCS-01 | Phase 23 | Complete (re-verified in 23-VERIFICATION) |
 
 **Coverage:**
 - v1 requirements: 11 total
@@ -69,4 +69,4 @@
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after milestone v4.0 roadmap creation*
+*Last updated: 2026-03-07 after Phase 23 DOCS-01 route-contract closure verification*
