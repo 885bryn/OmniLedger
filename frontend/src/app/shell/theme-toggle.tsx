@@ -1,5 +1,7 @@
 import { Moon, Sun } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import { Pressable } from '@/components/ui/pressable'
 import { useTheme } from '../../features/theme/theme-provider'
 
 export function ThemeToggle() {
@@ -10,17 +12,21 @@ export function ThemeToggle() {
   const Icon = isDark ? Moon : Sun
 
   return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      aria-label={label}
-      title={label}
-      aria-pressed={isDark}
-      data-active-theme={theme}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-muted-foreground shadow-sm transition-colors duration-150 hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-    >
-      <Icon className="h-4 w-4 transition-transform duration-150" aria-hidden="true" />
-      <span className="sr-only">{label}</span>
-    </button>
+    <Pressable>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-lg"
+        onClick={toggleTheme}
+        aria-label={label}
+        title={label}
+        aria-pressed={isDark}
+        data-active-theme={theme}
+        className="h-9 w-9 rounded-lg border-border bg-card text-muted-foreground shadow-sm hover:bg-secondary hover:text-foreground dark:bg-card dark:shadow-none"
+      >
+        <Icon className="h-4 w-4" aria-hidden="true" />
+        <span className="sr-only">{label}</span>
+      </Button>
+    </Pressable>
   )
 }

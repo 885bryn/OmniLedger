@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { Pressable } from '@/components/ui/pressable'
 import { useAuth } from '../../auth/auth-context'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { useExportBackup } from '../../features/export/use-export-backup'
@@ -168,36 +169,40 @@ export function UserSwitcher() {
             </select>
           </label>
         ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={exportBackup.isPending}
-          onClick={() => {
-            void handleExportClick()
-          }}
-        >
-          {exportBackup.isPending ? t('shell.exportingBackup') : t('shell.exportBackupAction')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={isLoggingOut}
-          onClick={async () => {
-            setIsLoggingOut(true)
+        <Pressable whileTap={exportBackup.isPending ? { scale: 1 } : undefined}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={exportBackup.isPending}
+            onClick={() => {
+              void handleExportClick()
+            }}
+          >
+            {exportBackup.isPending ? t('shell.exportingBackup') : t('shell.exportBackupAction')}
+          </Button>
+        </Pressable>
+        <Pressable whileTap={isLoggingOut ? { scale: 1 } : undefined}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isLoggingOut}
+            onClick={async () => {
+              setIsLoggingOut(true)
 
-            try {
-              await logout()
-              queryClient.clear()
-              navigate('/login', { replace: true })
-            } finally {
-              setIsLoggingOut(false)
-            }
-          }}
-        >
-          {isLoggingOut ? t('shell.loggingOut') : t('shell.logoutAction')}
-        </Button>
+              try {
+                await logout()
+                queryClient.clear()
+                navigate('/login', { replace: true })
+              } finally {
+                setIsLoggingOut(false)
+              }
+            }}
+          >
+            {isLoggingOut ? t('shell.loggingOut') : t('shell.logoutAction')}
+          </Button>
+        </Pressable>
         {exportBackup.phase === 'success' ? <span role="status" className="max-w-80 text-[11px] text-emerald-700">{exportSuccessMessage}</span> : null}
         {exportBackup.phase === 'pending' && exportBackup.isLongRunning ? (
           <span role="status" className="max-w-80 text-[11px] text-muted-foreground">
@@ -207,16 +212,18 @@ export function UserSwitcher() {
         {exportBackup.phase === 'error' ? (
           <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-2.5 py-1.5 text-[11px] text-destructive">
             <span className="max-w-80">{exportErrorMessage}</span>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                void handleExportClick()
-              }}
-            >
-              {t('shell.exportBackupRetryAction')}
-            </Button>
+            <Pressable>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  void handleExportClick()
+                }}
+              >
+                {t('shell.exportBackupRetryAction')}
+              </Button>
+            </Pressable>
           </div>
         ) : null}
         {updateError ? <span role="alert" className="max-w-48 truncate text-[11px] text-destructive">{updateError}</span> : null}
