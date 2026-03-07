@@ -12,8 +12,8 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 
 Phase: 26 of 26 (Motion Interaction Patterns)
 Plan: 04 of 04
-Status: In progress
-Last activity: 2026-03-07 - Completed 26-04 motion interaction patterns plan
+Status: Complete
+Last activity: 2026-03-07 - Completed 26-03 motion interaction patterns plan
 
 Progress: [======░░░░] 60%
 
@@ -42,6 +42,8 @@ Progress: [======░░░░] 60%
 | Phase 25 P03 | 8 min | 2 tasks | 7 files |
 | Phase 26 P01 | 5 min | 2 tasks | 5 files |
 | Phase 26 P04 | 3 min | 2 tasks | 5 files |
+| Phase 26-motion-interaction-patterns P03 | 8 min | 1 tasks | 5 files |
+| Phase 26-motion-interaction-patterns P02 | 4 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -68,6 +70,12 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 26]: Keep authenticated route motion to a subtle in-shell opacity and vertical shift keyed by location.pathname instead of adding cinematic page transitions.
 - [Phase 26]: Reused the shared Pressable wrapper from plan 26-01 so dialog and shell controls inherit the same motion tuning.
 - [Phase 26]: Kept destructive dialog actions on the same subtle press scale as other controls to preserve one tactile personality.
+- [Phase 26-motion-interaction-patterns]: Carry created-item confirmation through router state so the first detail header can animate without changing item payloads.
+- [Phase 26-motion-interaction-patterns]: Use MotionPanelList plus layout wrappers on item collections so filters, deletes, and linked-record updates reflow smoothly.
+- [Phase 26-motion-interaction-patterns]: Keep chips, item actions, and linked-record cards on the shared Pressable tactile scale instead of introducing a second interaction style.
+- [Phase 26-motion-interaction-patterns]: Use MotionPanelList at both panel and row levels so dashboard and events surfaces inherit one consistent spring, stagger, layout, and highlight language.
+- [Phase 26-motion-interaction-patterns]: Wrap existing dashboard tile links and event row action buttons in Pressable so tactile feedback stays additive and does not change existing behavior contracts.
+- [Phase 26-motion-interaction-patterns]: Let subtle shared highlight tint show through slightly translucent row backgrounds instead of adding a stronger bespoke flash.
 
 ### Pending Todos
 
@@ -82,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 26-04-PLAN.md
+Stopped at: Completed 26-03-PLAN.md
 Resume file: `None`

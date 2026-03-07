@@ -23,9 +23,9 @@
 ### Motion and Feedback
 
 - [x] **MOTION-01**: User sees mounts and unmounts use a shared Framer Motion spring transition with `type: "spring"`, `stiffness: 400`, and `damping: 30`.
-- [ ] **MOTION-02**: User sees surrounding cards or rows fluidly reposition when list or grid items are added, removed, or reordered.
+- [x] **MOTION-02**: User sees surrounding cards or rows fluidly reposition when list or grid items are added, removed, or reordered.
 - [x] **MOTION-03**: User sees interactive cards and primary buttons provide tactile press feedback with `whileTap={{ scale: 0.97 }}`.
-- [ ] **MOTION-04**: User sees newly created rows or cards animate in from `opacity: 0, y: 10` to `opacity: 1, y: 0` and briefly highlight to confirm the addition.
+- [x] **MOTION-04**: User sees newly created rows or cards animate in from `opacity: 0, y: 10` to `opacity: 1, y: 0` and briefly highlight to confirm the addition.
 
 ### Implementation Delivery
 
@@ -71,9 +71,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-03 | Phase 25 | Complete |
 | VIS-04 | Phase 25 | Complete |
 | MOTION-01 | Phase 26 | Complete |
-| MOTION-02 | Phase 26 | Pending |
+| MOTION-02 | Phase 26 | Complete |
 | MOTION-03 | Phase 26 | Complete |
-| MOTION-04 | Phase 26 | Pending |
+| MOTION-04 | Phase 26 | Complete |
 | IMPL-01 | Phase 24 | Complete |
 | IMPL-02 | Phase 24 | Complete |
 | IMPL-03 | Phase 25 | Complete |
