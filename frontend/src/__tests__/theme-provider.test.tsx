@@ -37,7 +37,11 @@ describe('theme provider boot and persistence', () => {
         value: originalMatchMedia,
       })
     } else {
-      delete (window as Window & typeof globalThis & { matchMedia?: Window['matchMedia'] }).matchMedia
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      })
     }
   })
 
