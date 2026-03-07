@@ -52,3 +52,33 @@
 - Low-risk timeline-noise risk at high export volume because global export events are merged into per-item activity feed.
 
 ---
+
+## v4.0 Interactive Production Deployment for Ugreen NAS (Shipped: 2026-03-07)
+
+**Delivered:** Environment-driven NAS production deployment with deterministic Portainer operations, image publish/deploy contracts, and operator runbook closure.
+
+**Phases completed:** 5 phases (19-23), 10 plans, 27 tasks
+
+**Key accomplishments:**
+- Externalized production network, identity, and DB configuration with startup fail-fast validation and deterministic diagnostics.
+- Shipped backend/frontend production container contracts with strict NAS-driven gateway routing behavior.
+- Delivered Portainer-ready three-service stack wiring with GHCR publish/pull deployment flow and NAS persistence mapping.
+- Published a single operator deployment runbook with explicit env-variable contract, first-time/update/rollback procedures, and gate-based verification.
+- Closed DOCS-01 audit blocker by aligning backend-direct runbook commands to live backend route mounts and re-verifying milestone closure.
+
+**Stats:**
+- 62 files changed in milestone commit range (`08c757f` -> `5ac6e67`)
+- 59 commits in milestone execution range
+- 5 phases, 10 plans, 27 tasks
+- Timeline: 2026-03-04 to 2026-03-06 (~2 days)
+
+**Known deferred checks / debt:**
+- Runtime/container/browser verification remains human-needed for phases 20-21 in live NAS Docker environment.
+- Live operator drills remain human-needed for phases 22-23 to fully close runtime confidence.
+- `API_URL` contract surface should be clarified/reduced to avoid compose/runbook ambiguity.
+
+**Git range:** `08c757f` -> `5ac6e67`
+
+**What's next:** Start next milestone discovery and define fresh requirements/roadmap with `/gsd-new-milestone`.
+
+---

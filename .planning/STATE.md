@@ -2,18 +2,18 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-03-04)
-Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`
+See: `.planning/PROJECT.md` (updated 2026-03-07)
+Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 23 complete - Operator Runbook Route Contract Alignment
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 23 of 23 (Operator Runbook Route Contract Alignment)
-Plan: 2 of 2
-Status: Complete
-Last activity: 2026-03-07 - completed 23-02 DOCS-01 closure verification, milestone re-audit, and requirements traceability refresh
+Phase: Milestone v4.0 archived
+Plan: Complete
+Status: Ready for next milestone definition
+Last activity: 2026-03-07 - archived v4.0 roadmap/requirements/audit and prepared project for next milestone
 
 Progress: [██████████] 100%
 

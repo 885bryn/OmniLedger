@@ -10,9 +10,26 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ## Current State
 
-- **Latest shipped milestone:** v3.0 Data Portability (2026-03-04)
-- **Archive references:** `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v3.0-REQUIREMENTS.md`, `.planning/milestones/v3.0-MILESTONE-AUDIT.md`
-- **Completion stance:** shipped; no blocker gaps, with one low-risk deferred UX-noise item in activity timeline context
+- **Latest shipped milestone:** v4.0 Interactive Production Deployment for Ugreen NAS (2026-03-07)
+- **Archive references:** `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.0-REQUIREMENTS.md`, `.planning/milestones/v4.0-MILESTONE-AUDIT.md`
+- **Completion stance:** shipped; requirements satisfied with remaining non-blocking runtime verification debt tracked in milestone audit
+
+## Next Milestone Goals
+
+- Define next milestone scope through fresh requirements and roadmap planning.
+- Decide whether to prioritize operational hardening (HTTPS/TLS, runtime verification debt closure) or product-surface enhancements.
+- Keep deployability and audit traceability as non-negotiable release constraints.
+
+## Constraints
+
+- **Stack continuity:** Node.js + Express + Sequelize + React remains baseline unless explicitly replatformed.
+- **Data integrity:** UUID keys, owner-scoped RBAC behavior, and audit visibility guarantees remain mandatory.
+- **Execution model:** Continue milestone/phase planning through GSD workflows with archive-first documentation hygiene.
+- **Deployment target:** Ugreen NAS + Portainer remains the production operating baseline.
+- **Configuration security:** Network and identity settings must be externalized via environment variables; no hardcoded values.
+
+<details>
+<summary>Archived Prior Milestone Snapshot (v4.0 In-Progress Framing)</summary>
 
 ## Current Milestone: v4.0 Interactive Production Deployment for Ugreen NAS
 
@@ -25,21 +42,7 @@ Users can see each asset together with its linked obligations and timeline statu
 - Portainer-ready `docker-compose.prod.yml` defining frontend/backend/postgres and host env mappings.
 - PostgreSQL persistence mapped to `/volume1/docker/house-erp/db-data` on the NAS host.
 
-## Constraints
-
-- **Stack continuity:** Node.js + Express + Sequelize + React remains baseline unless explicitly replatformed.
-- **Data integrity:** UUID keys, owner-scoped RBAC behavior, and audit visibility guarantees remain mandatory.
-- **Execution model:** Continue milestone/phase planning through GSD workflows with archive-first documentation hygiene.
-- **Deployment target:** Ugreen NAS + Portainer stack deployment is the production path for this milestone.
-- **Configuration security:** Network and identity settings must be externalized via environment variables; no hardcoded values.
-
-<details>
-<summary>Archived Prior Milestone Snapshot</summary>
-
-Previous in-progress v3 kickoff context and interim planning notes were superseded at v3.0 completion.
-See milestone archives and phase summaries for implementation history.
-
 </details>
 
 ---
-*Last updated: 2026-03-04 after starting milestone v4.0*
+*Last updated: 2026-03-07 after completing milestone v4.0*
