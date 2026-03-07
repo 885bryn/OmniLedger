@@ -8,10 +8,10 @@
 
 ### Theme System
 
-- [ ] **THEME-01**: User sees the OmniLedger dashboard in light mode on first render when no saved theme exists.
+- [x] **THEME-01**: User sees the OmniLedger dashboard in light mode on first render when no saved theme exists.
 - [ ] **THEME-02**: User can explicitly toggle the dashboard between light and dark themes.
-- [ ] **THEME-03**: User's explicit theme choice persists across refreshes using local storage.
-- [ ] **THEME-04**: User theme selection ignores OS/browser `prefers-color-scheme` and changes only from saved choice or direct toggle interaction.
+- [x] **THEME-03**: User's explicit theme choice persists across refreshes using local storage.
+- [x] **THEME-04**: User theme selection ignores OS/browser `prefers-color-scheme` and changes only from saved choice or direct toggle interaction.
 
 ### Visual System
 
@@ -29,8 +29,8 @@
 
 ### Implementation Delivery
 
-- [ ] **IMPL-01**: Engineer has a reusable layout wrapper/provider that enforces light mode as the initial theme and exposes a manual theme toggle.
-- [ ] **IMPL-02**: Engineer has the Tailwind and/or theme-provider configuration needed to support the milestone's dual-theme token system.
+- [x] **IMPL-01**: Engineer has a reusable layout wrapper/provider that enforces light mode as the initial theme and exposes a manual theme toggle.
+- [x] **IMPL-02**: Engineer has the Tailwind and/or theme-provider configuration needed to support the milestone's dual-theme token system.
 - [ ] **IMPL-03**: Engineer has an example Data Card pattern showing the required surface styling and motion props.
 - [ ] **IMPL-04**: Engineer has an example List Item pattern showing layout animation, spring behavior, and creation feedback.
 
@@ -62,10 +62,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| THEME-01 | Phase 24 | Pending |
+| THEME-01 | Phase 24 | Complete |
 | THEME-02 | Phase 24 | Pending |
-| THEME-03 | Phase 24 | Pending |
-| THEME-04 | Phase 24 | Pending |
+| THEME-03 | Phase 24 | Complete |
+| THEME-04 | Phase 24 | Complete |
 | VIS-01 | Phase 25 | Pending |
 | VIS-02 | Phase 25 | Pending |
 | VIS-03 | Phase 25 | Pending |
@@ -74,8 +74,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOTION-02 | Phase 26 | Pending |
 | MOTION-03 | Phase 26 | Pending |
 | MOTION-04 | Phase 26 | Pending |
-| IMPL-01 | Phase 24 | Pending |
-| IMPL-02 | Phase 24 | Pending |
+| IMPL-01 | Phase 24 | Complete |
+| IMPL-02 | Phase 24 | Complete |
 | IMPL-03 | Phase 25 | Pending |
 | IMPL-04 | Phase 26 | Pending |
 
