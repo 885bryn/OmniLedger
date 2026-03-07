@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { subtlePageShiftVariants } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { useAuth } from '../../auth/auth-context'
 import { AdminSafetyBanner } from '../../features/admin-scope/admin-safety-banner'
@@ -112,9 +114,11 @@ function LayoutFrame() {
 
           <main className="flex-1 px-1 pb-6 md:px-0 md:pb-8">
             {sessionExpired ? <SessionExpiredBanner /> : null}
-            <div key={location.pathname} className="page-transition">
-              <Outlet />
-            </div>
+            <AnimatePresence initial={false} mode="wait">
+              <motion.div key={location.pathname} initial="initial" animate="animate" exit="exit" variants={subtlePageShiftVariants}>
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </main>
         </div>
       </div>
