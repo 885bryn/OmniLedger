@@ -77,7 +77,20 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] Manually updated STATE.md after gsd-tools state parser mismatch**
+- **Found during:** Post-task metadata/state update
+- **Issue:** `state advance-plan`, `state update-progress`, and `state record-session` could not parse the existing STATE.md position/session format.
+- **Fix:** Applied manual STATE.md updates for current plan position, progress, last activity, total plans completed, and session stop marker after running successful `state record-metric` and `state add-decision` commands.
+- **Files modified:** `.planning/STATE.md`
+- **Verification:** STATE now reflects Phase 27 Plan 1/2 progress and latest session stop point.
+- **Committed in:** `af695ce` (metadata/docs commit)
+
+---
+
+**Total deviations:** 1 auto-fixed (1 blocking)
+**Impact on plan:** Metadata tracking completed without changing product code scope.
 
 ## Issues Encountered
 
