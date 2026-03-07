@@ -11,16 +11,16 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 27 of 29 (Frequency Rule Contract)
-Plan: 0 of TBD
-Status: Ready to plan
-Last activity: 2026-03-07 - Created v4.2 roadmap and requirement traceability mappings
+Plan: 1 of 2
+Status: In progress
+Last activity: 2026-03-07 - Completed 27-01 backend one-time monthly contract + API regressions
 
-Progress: [----------] 0%
+Progress: [#####-----] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 60
+- Total plans completed: 61
 - Average duration: 4 min
 - Total execution time: 4.7 hours
 
@@ -35,6 +35,7 @@ Progress: [----------] 0%
 **Recent Trend:**
 - Last 5 plans: 26-05 (1 min), 26-04 (3 min), 26-03 (8 min), 26-02 (4 min), 26-01 (5 min)
 - Trend: Stable execution cadence with short, focused plan loops.
+| Phase 27 P01 | 0 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -45,6 +46,9 @@ Decisions are logged in `.planning/PROJECT.md`.
 - v4.2 scope is limited to rollup calculation correctness and cadence selector clarity.
 - Existing RBAC, audit visibility, and deployment guarantees remain unchanged in this milestone.
 - No broad redesign or schema replatforming is allowed in v4.2 scope.
+- [Phase 27]: Use one shared one-time inclusion path for both commitment and income rows with inclusive active-month due-date checks.
+- [Phase 27]: Expose summary.active_period and summary.one_time_rule metadata so UI copy consumes backend period context without recomputation.
+- [Phase 27]: Exclude malformed, null, and zero amounts before subtype allocation so net cashflow remains symmetric and predictable.
 
 ### Pending Todos
 
@@ -58,5 +62,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Milestone v4.2 roadmap created (phases 27-29)
+Stopped at: Completed 27-01-PLAN.md
 Resume file: `None`

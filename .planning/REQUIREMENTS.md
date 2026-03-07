@@ -12,7 +12,7 @@ Requirements for milestone v4.2 cashflow frequency normalization and cadence cla
 - [ ] **CASH-01**: User sees per-asset obligation totals converted to the selected cadence (weekly/monthly/yearly) using each financial item's billing frequency.
 - [ ] **CASH-02**: User sees per-asset income totals converted to the selected cadence (weekly/monthly/yearly) using each financial item's billing frequency.
 - [ ] **CASH-03**: User sees per-asset net cashflow computed from cadence-normalized obligation and income totals rather than monthly-only assumptions.
-- [ ] **CASH-04**: User sees non-recurring (`one_time`) financial items handled with a clear, consistent rule so recurring cadence totals remain predictable.
+- [x] **CASH-04**: User sees non-recurring (`one_time`) financial items handled with a clear, consistent rule so recurring cadence totals remain predictable.
 
 ### Cadence Controls & Clarity
 
@@ -52,7 +52,7 @@ Deferred to a future milestone.
 | CASH-01 | Phase 28 | Pending |
 | CASH-02 | Phase 28 | Pending |
 | CASH-03 | Phase 29 | Pending |
-| CASH-04 | Phase 27 | Pending |
+| CASH-04 | Phase 27 | Complete |
 | VIEW-01 | Phase 29 | Pending |
 | VIEW-02 | Phase 29 | Pending |
 | VIEW-03 | Phase 29 | Pending |

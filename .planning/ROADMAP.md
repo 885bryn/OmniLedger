@@ -71,7 +71,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 27. Frequency Rule Contract | 0/2 | Not started | - |
+| 27. Frequency Rule Contract | 1/2 | In Progress|  |
 | 28. Cadence-Normalized Totals | 0/TBD | Not started | - |
 | 29. Cadence Toggle & Synced Cashflow View | 0/TBD | Not started | - |
 
