@@ -1,5 +1,7 @@
 import { type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
 type ConfirmationDialogProps = {
   open: boolean
@@ -28,28 +30,20 @@ export function ConfirmationDialog({
 
   return createPortal(
     <div className="dialog-overlay fixed inset-0 z-[95] grid place-items-center bg-black/25 p-4" role="dialog" aria-modal="true">
-      <div className="dialog-card w-full max-w-md rounded-2xl border border-border bg-white p-5 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.45)]">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="mt-2 text-sm text-muted-foreground">{description}</p>
-        <div className="mt-5 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={pending}
-            className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-          >
+      <Card className="dialog-card w-full max-w-md border border-border/80 bg-card shadow-[var(--shadow-surface-strong)]">
+        <CardHeader className="gap-2 border-b border-border/70">
+          <CardTitle>{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-5 text-sm text-muted-foreground">{description}</CardContent>
+        <CardFooter className="justify-end gap-2 border-t border-border/70 bg-muted/30">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
             {cancelLabel}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={pending}
-            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          </Button>
+          <Button type="button" onClick={onConfirm} disabled={pending}>
             {confirmLabel}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>,
     document.body,
   )

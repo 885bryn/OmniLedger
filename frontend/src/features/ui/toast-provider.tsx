@@ -1,13 +1,8 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import { Toaster } from '@/components/ui/sonner'
 import { API_SAFETY_TOAST_EVENT, type SafetyToastCode } from '../../lib/api-client'
-
-type ToastEntry = {
-  id: number
-  message: string
-  tone: 'safety' | 'neutral' | 'success'
-  testId: string
-}
 
 type ToastContextValue = {
   push: (options: { message: string; tone?: 'neutral' | 'success'; dedupeKey?: string; durationMs?: number }) => void
@@ -26,8 +21,6 @@ function resolveSafetyToastMessage(code: SafetyToastCode, t: (key: string) => st
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation()
-  const [toasts, setToasts] = useState<ToastEntry[]>([])
-  const nextIdRef = useRef(0)
   const lastEmitRef = useRef<{ key: string; at: number } | null>(null)
 
   const push = useCallback(
@@ -42,14 +35,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
       lastEmitRef.current = { key, at: now }
 
-      const id = nextIdRef.current + 1
-      nextIdRef.current = id
+      if (tone === 'success') {
+        toast.success(message, { duration: durationMs, id: key, testId: 'toast' })
+        return
+      }
 
-      setToasts((current) => [...current, { id, message, tone, testId: 'toast' }])
-
-      window.setTimeout(() => {
-        setToasts((current) => current.filter((toast) => toast.id !== id))
-      }, durationMs)
+      toast.message(message, { duration: durationMs, id: key, testId: 'toast' })
     },
     [],
   )
@@ -68,14 +59,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
       lastEmitRef.current = { key: dedupeKey, at: now }
 
-      const id = nextIdRef.current + 1
-      nextIdRef.current = id
-
-      setToasts((current) => [...current, { id, message, tone: 'safety', testId: 'safety-toast' }])
-
-      window.setTimeout(() => {
-        setToasts((current) => current.filter((toast) => toast.id !== id))
-      }, 4500)
+      toast.warning(message, { duration: 4500, id: dedupeKey, testId: 'safety-toast' })
     },
     [t],
   )
@@ -111,24 +95,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-4 z-[120] flex w-full max-w-sm flex-col gap-2" aria-live="polite" aria-atomic="true">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            role="status"
-            data-testid={toast.testId}
-            className={
-              toast.tone === 'safety'
-                ? 'pointer-events-auto rounded-xl border border-amber-300 bg-amber-100 px-3 py-2 text-sm font-medium text-amber-900 shadow-sm'
-                : toast.tone === 'success'
-                  ? 'pointer-events-auto rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900 shadow-sm'
-                  : 'pointer-events-auto rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm'
-            }
-          >
-            {toast.message}
-          </div>
-        ))}
-      </div>
+      <Toaster closeButton offset={16} />
     </ToastContext.Provider>
   )
 }
