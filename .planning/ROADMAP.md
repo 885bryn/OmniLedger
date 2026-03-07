@@ -72,7 +72,12 @@ Plans:
   3. User gets tactile press feedback on interactive shadcn cards and primary actions during pointer/tap interaction.
   4. User sees newly created rows or cards slide in from a slight vertical offset and briefly highlight so additions are easy to spot.
   5. User sees at least one exemplar `@/components/ui` list or panel pattern that combines layout animation, spring motion, and creation confirmation consistently.
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] `26-01-PLAN.md` - Add the shared Framer Motion foundation, reusable animated surface primitives, and subtle in-shell content shift.
+- [ ] `26-02-PLAN.md` - Apply shared spring layout motion and creation feedback to dashboard and events exemplar surfaces.
+- [ ] `26-03-PLAN.md` - Roll tactile press feedback and new-record confirmation across item workflows, dialogs, and shell controls.
 
 ## Progress
 
@@ -80,7 +85,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 24. Theme Foundation | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 25. Dashboard Surface System | v4.1 | Complete    | 2026-03-07 | 2026-03-07 |
-| 26. Motion Interaction Patterns | v4.1 | 0/TBD | Not started | - |
+| 26. Motion Interaction Patterns | v4.1 | 0/3 | Not started | - |
 
 ---
-*Last updated: 2026-03-07 after completing plan 25-03*
+*Last updated: 2026-03-07 after planning phase 26*
