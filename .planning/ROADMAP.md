@@ -39,7 +39,11 @@
   2. User can manually switch between light and dark themes from the dashboard UI.
   3. User refreshes the app and sees their last explicit theme choice restored.
   4. User sees theme changes happen only from saved local choice or direct toggle interaction, not from OS/browser preference changes.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] `24-01-PLAN.md` - Establish the class-driven theme provider, light-first boot behavior, and persisted explicit-choice contract.
+- [ ] `24-02-PLAN.md` - Add the authenticated shell's desktop/mobile theme toggle controls and regression coverage.
 
 ### Phase 25: Dashboard Surface System
 **Goal**: Users can scan dense financial information in a consistent, high-contrast dashboard shell across light and dark themes.
@@ -69,7 +73,7 @@
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 24. Theme Foundation | v4.1 | 0/TBD | Not started | - |
+| 24. Theme Foundation | v4.1 | 0/2 | Not started | - |
 | 25. Dashboard Surface System | v4.1 | 0/TBD | Not started | - |
 | 26. Motion Interaction Patterns | v4.1 | 0/TBD | Not started | - |
 
