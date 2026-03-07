@@ -62,28 +62,28 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| THEME-01 | TBD | Pending |
-| THEME-02 | TBD | Pending |
-| THEME-03 | TBD | Pending |
-| THEME-04 | TBD | Pending |
-| VIS-01 | TBD | Pending |
-| VIS-02 | TBD | Pending |
-| VIS-03 | TBD | Pending |
-| VIS-04 | TBD | Pending |
-| MOTION-01 | TBD | Pending |
-| MOTION-02 | TBD | Pending |
-| MOTION-03 | TBD | Pending |
-| MOTION-04 | TBD | Pending |
-| IMPL-01 | TBD | Pending |
-| IMPL-02 | TBD | Pending |
-| IMPL-03 | TBD | Pending |
-| IMPL-04 | TBD | Pending |
+| THEME-01 | Phase 24 | Pending |
+| THEME-02 | Phase 24 | Pending |
+| THEME-03 | Phase 24 | Pending |
+| THEME-04 | Phase 24 | Pending |
+| VIS-01 | Phase 25 | Pending |
+| VIS-02 | Phase 25 | Pending |
+| VIS-03 | Phase 25 | Pending |
+| VIS-04 | Phase 25 | Pending |
+| MOTION-01 | Phase 26 | Pending |
+| MOTION-02 | Phase 26 | Pending |
+| MOTION-03 | Phase 26 | Pending |
+| MOTION-04 | Phase 26 | Pending |
+| IMPL-01 | Phase 24 | Pending |
+| IMPL-02 | Phase 24 | Pending |
+| IMPL-03 | Phase 25 | Pending |
+| IMPL-04 | Phase 26 | Pending |
 
 **Coverage:**
 - v1 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after initial definition*
+*Last updated: 2026-03-07 after roadmap creation*
