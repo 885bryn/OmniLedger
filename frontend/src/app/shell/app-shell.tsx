@@ -1,7 +1,11 @@
-import { type ReactNode, createContext, useContext, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
 import { useAuth } from '../../auth/auth-context'
 import { AdminSafetyBanner } from '../../features/admin-scope/admin-safety-banner'
 import { SessionExpiredBanner } from '../../features/auth/session-expired-banner'
@@ -9,38 +13,7 @@ import { LanguageSwitcher } from './language-switcher'
 import { ThemeToggle } from './theme-toggle'
 import { UserSwitcher } from './user-switcher'
 
-type SidebarContextValue = {
-  open: boolean
-  toggle: () => void
-}
-
-const SidebarContext = createContext<SidebarContextValue | null>(null)
-
-export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false)
-
-  const value = useMemo(
-    () => ({
-      open,
-      toggle: () => setOpen((current) => !current),
-    }),
-    [open],
-  )
-
-  return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>
-}
-
-function useSidebar() {
-  const context = useContext(SidebarContext)
-
-  if (!context) {
-    throw new Error('Sidebar context is missing. Wrap app shell with SidebarProvider.')
-  }
-
-  return context
-}
-
-function NavContent() {
+function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
 
   const navItems = [
@@ -50,16 +23,19 @@ function NavContent() {
   ]
 
   return (
-    <nav className="space-y-1">
+    <nav className="space-y-1.5">
       {navItems.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
+          onClick={onNavigate}
           className={({ isActive }) =>
-            [
-              'block rounded-lg px-3 py-2 text-sm transition-colors',
-              isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
-            ].join(' ')
+            cn(
+              'flex items-center rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors',
+              isActive
+                ? 'border-border bg-card text-foreground shadow-sm shadow-black/5 dark:shadow-none'
+                : 'border-transparent text-muted-foreground hover:border-border hover:bg-card/80 hover:text-foreground',
+            )
           }
         >
           {item.label}
@@ -71,46 +47,57 @@ function NavContent() {
 
 function LayoutFrame() {
   const { t } = useTranslation()
-  const { open, toggle } = useSidebar()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const location = useLocation()
   const { sessionExpired } = useAuth()
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8fafc,_#e2e8f0)] text-foreground">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col md:flex-row">
-        <aside
-          className={[
-            'border-r border-border bg-card/95 p-4 shadow-sm backdrop-blur md:static md:block md:w-64 md:translate-x-0',
-            'fixed inset-y-0 left-0 z-40 w-72 transform transition-transform duration-200',
-            open ? 'translate-x-0' : '-translate-x-full',
-          ].join(' ')}
-        >
-          <Link to="/dashboard" className="mb-6 block rounded-lg px-3 py-2 text-sm font-semibold uppercase tracking-wide text-primary">
-            {t('shell.workspace')}
-          </Link>
-          <NavContent />
-          <div className="mt-6 border-t border-border pt-4 md:hidden" data-testid="mobile-theme-access">
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm">
-              <span>{t('shell.themeMenuLabel')}</span>
-              <ThemeToggle />
-            </div>
-          </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1480px] gap-4 px-3 py-3 md:gap-6 md:px-6 md:py-6">
+        <aside className="hidden w-72 shrink-0 md:block">
+          <Card className="sticky top-6 gap-0 border border-border bg-card/95 shadow-sm shadow-black/5 dark:bg-card dark:shadow-none">
+            <CardContent className="px-4 py-4">
+              <Link
+                to="/dashboard"
+                className="mb-6 block rounded-lg px-1 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground"
+              >
+                {t('shell.workspace')}
+              </Link>
+              <NavContent />
+            </CardContent>
+          </Card>
         </aside>
 
-        {open ? <button className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={toggle} aria-label="Close menu" /> : null}
-
-        <div className="flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-card/90 px-4 py-3 backdrop-blur md:px-6">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col gap-4 md:gap-6">
+          <header className="sticky top-0 z-20 flex items-center justify-between rounded-xl border border-border bg-background/90 px-4 py-3 shadow-sm shadow-black/5 backdrop-blur supports-[backdrop-filter]:bg-background/85 dark:shadow-none md:px-5">
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground md:hidden"
-                onClick={toggle}
-                aria-label="Toggle menu"
-              >
-                <Menu className="h-4 w-4" />
-              </button>
-              <p className="text-sm font-medium">{t('shell.title')}</p>
+              <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+                <SheetTrigger asChild>
+                  <Button type="button" variant="outline" size="icon-lg" className="rounded-lg md:hidden" aria-label="Toggle menu">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[20rem] border-border bg-card p-0 shadow-xl shadow-black/10 dark:shadow-none sm:max-w-[20rem]">
+                  <SheetHeader className="border-b border-border px-4 py-4 text-left">
+                    <SheetTitle className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                      {t('shell.workspace')}
+                    </SheetTitle>
+                    <SheetDescription className="sr-only">
+                      {t('shell.title')}
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex h-full flex-col px-4 py-4">
+                    <NavContent onNavigate={() => setMobileNavOpen(false)} />
+                    <Card className="mt-6 border border-border bg-background shadow-sm shadow-black/5 dark:shadow-none" data-testid="mobile-theme-access" size="sm">
+                      <CardContent className="flex items-center justify-between gap-3 px-3 py-3">
+                        <span className="text-sm font-medium text-foreground">{t('shell.themeMenuLabel')}</span>
+                        <ThemeToggle />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </SheetContent>
+              </Sheet>
+              <p className="text-sm font-medium tracking-tight">{t('shell.title')}</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="hidden md:flex" data-testid="desktop-theme-toggle">
@@ -123,7 +110,7 @@ function LayoutFrame() {
 
           <AdminSafetyBanner />
 
-          <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
+          <main className="flex-1 px-1 pb-6 md:px-0 md:pb-8">
             {sessionExpired ? <SessionExpiredBanner /> : null}
             <div key={location.pathname} className="page-transition">
               <Outlet />
@@ -136,9 +123,5 @@ function LayoutFrame() {
 }
 
 export function AppShell() {
-  return (
-    <SidebarProvider>
-      <LayoutFrame />
-    </SidebarProvider>
-  )
+  return <LayoutFrame />
 }

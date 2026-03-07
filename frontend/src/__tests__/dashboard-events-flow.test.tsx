@@ -196,12 +196,12 @@ describe('dashboard/events completion flow', () => {
 
     await screen.findByText('Mortgage')
     expect(screen.getByText('Current and upcoming')).toBeTruthy()
-    expect(screen.getByText('History')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /History/i })).toBeTruthy()
     expect(screen.getByText(/Monthly, (next on|no upcoming date)/)).toBeTruthy()
-    expect(screen.getByText('Closed contract, no future projections')).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Complete' }))
     await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Complete' }))
 
+    await userEvent.click(screen.getByRole('button', { name: /History/i }))
     expect((await screen.findAllByRole('button', { name: 'Undo' })).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Completed').length).toBeGreaterThan(0)
 
@@ -345,6 +345,8 @@ describe('dashboard/events completion flow', () => {
 
     renderEventsPage()
 
+    await screen.findByText('Mortgage')
+    await userEvent.click(screen.getByRole('button', { name: /History/i }))
     await screen.findByText('Insurance')
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
     await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Undo' }))
@@ -443,7 +445,7 @@ describe('dashboard/events completion flow', () => {
     renderDashboardPage()
 
     await screen.findByText('Upcoming amount')
-    const upcomingAmountCard = screen.getByText('Upcoming amount').closest('article')
+    const upcomingAmountCard = screen.getByText('Upcoming amount').closest('[data-dashboard-metric-card="true"]') as HTMLElement | null
     expect(upcomingAmountCard).toBeTruthy()
 
     if (!upcomingAmountCard) {

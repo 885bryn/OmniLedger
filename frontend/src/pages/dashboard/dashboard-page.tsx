@@ -2,11 +2,13 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { DataCard } from '../../features/dashboard/data-card'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
-import { getItemDisplayName } from '../../lib/item-display'
+import { getItemDisplayName, isIncomeItem } from '../../lib/item-display'
 import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type EventRow = {
@@ -32,6 +34,7 @@ type EventsResponse = {
 type ItemRow = {
   id: string
   item_type: string
+  type?: string | null
   attributes: Record<string, unknown>
   updated_at: string
 }
@@ -39,6 +42,28 @@ type ItemRow = {
 type ItemsResponse = {
   items: ItemRow[]
   total_count: number
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function normalizeSubtype(value: unknown) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : ''
+}
+
+function isOutflowItem(item: ItemRow | undefined) {
+  if (!item) {
+    return false
+  }
+
+  if (item.item_type !== 'FinancialItem') {
+    return false
+  }
+
+  const attributes = isRecord(item.attributes) ? item.attributes : {}
+  const subtype = normalizeSubtype(item.type) || normalizeSubtype(attributes.financialSubtype) || normalizeSubtype(attributes.type)
+  return subtype === 'commitment'
 }
 
 function formatDueLabel(value: string) {
@@ -60,6 +85,15 @@ function formatCurrency(value: number) {
     currency: 'USD',
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+function formatEventAmount(value: number | null, isIncome: boolean) {
+  if (value === null || Number.isNaN(value)) {
+    return null
+  }
+
+  const formatted = formatCurrency(Number(value))
+  return isIncome ? `+${formatted}` : formatted
 }
 
 function formatDateRange(values: string[]) {
@@ -102,12 +136,12 @@ function DashboardSkeleton() {
     <section className="space-y-5" aria-label="Loading dashboard">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-28 animate-pulse rounded-2xl border border-border bg-card/70" />
+          <div key={index} className="h-32 animate-pulse rounded-xl border border-border bg-card/80 shadow-sm shadow-black/5 dark:shadow-none" />
         ))}
       </div>
-      <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+      <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm shadow-black/5 dark:shadow-none">
         {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="h-14 animate-pulse rounded-xl bg-muted/80" />
+          <div key={index} className="h-14 animate-pulse rounded-lg bg-muted/80" />
         ))}
       </div>
     </section>
@@ -118,18 +152,22 @@ function DashboardEmptyState() {
   const { t } = useTranslation()
 
   return (
-    <section className="rounded-2xl border border-dashed border-border bg-card/70 p-8 text-center">
-      <h2 className="text-lg font-semibold">{t('dashboard.noDueEventsTitle')}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">{t('dashboard.noDueEventsDescription')}</p>
-      <div className="mt-5 flex flex-wrap justify-center gap-3">
-        <Link to="/items/create/wizard" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-          {t('dashboard.addItem')}
-        </Link>
-        <Link to="/events" className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground">
-          {t('dashboard.openEvents')}
-        </Link>
+    <DataCard
+      as="section"
+      className="animate-fade-up"
+      contentClassName="pt-0"
+      description={t('dashboard.noDueEventsDescription')}
+      title={t('dashboard.noDueEventsTitle')}
+    >
+      <div className="flex flex-wrap gap-3">
+        <Button asChild>
+          <Link to="/items/create/wizard">{t('dashboard.addItem')}</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link to="/events">{t('dashboard.openEvents')}</Link>
+        </Button>
       </div>
-    </section>
+    </DataCard>
   )
 }
 
@@ -175,6 +213,10 @@ export function DashboardPage() {
   }, [eventsQuery.data])
 
   const allEvents = useMemo(() => grouped.flatMap((group) => group.events), [grouped])
+  const itemById = useMemo(() => {
+    const rows = itemLookupQuery.data?.items ?? []
+    return new Map(rows.map((item) => [item.id, item]))
+  }, [itemLookupQuery.data?.items])
   const itemNameById = useMemo(() => {
     const rows = itemLookupQuery.data?.items ?? []
     return new Map(rows.map((item) => [item.id, getItemDisplayName(item)]))
@@ -193,7 +235,13 @@ export function DashboardPage() {
 
       return due - now <= 7 * 24 * 60 * 60 * 1000 && due >= now
     }).length
-    const dueAmount = allEvents.reduce((total, event) => total + Number(event.amount ?? 0), 0)
+    const dueAmount = allEvents.reduce((total, event) => {
+      if (!isOutflowItem(itemById.get(event.item_id))) {
+        return total
+      }
+
+      return total + Number(event.amount ?? 0)
+    }, 0)
     const dueRange = formatDateRange(allEvents.map((event) => event.due_date))
 
     return {
@@ -203,7 +251,20 @@ export function DashboardPage() {
       dueAmount,
       dueRange,
     }
-  }, [allEvents])
+  }, [allEvents, itemById])
+
+  const metricCards = [
+    { key: 'totalDue', label: t('dashboard.dueEvents'), value: metrics.totalDue, delay: '0ms' },
+    { key: 'overdue', label: t('dashboard.overdue'), value: metrics.overdue, delay: '40ms', valueClassName: 'text-destructive' },
+    { key: 'thisWeekCount', label: t('dashboard.dueInWeek'), value: metrics.thisWeekCount, delay: '80ms' },
+    {
+      key: 'dueAmount',
+      label: t('dashboard.upcomingAmount'),
+      value: formatCurrency(metrics.dueAmount),
+      delay: '120ms',
+      description: metrics.dueRange ? t('dashboard.upcomingRange', { range: metrics.dueRange }) : t('dashboard.upcomingRangeMissing'),
+    },
+  ]
 
   if (eventsQuery.isLoading || assetsQuery.isLoading || itemLookupQuery.isLoading) {
     return <DashboardSkeleton />
@@ -211,87 +272,90 @@ export function DashboardPage() {
 
   if (eventsQuery.isError || assetsQuery.isError || itemLookupQuery.isError) {
     return (
-      <section className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
-        {t('dashboard.loadError')}
-      </section>
+      <DataCard as="section" className="animate-fade-up" title={t('dashboard.loadError')}>
+        <p className="text-sm text-destructive">{t('dashboard.loadError')}</p>
+      </DataCard>
     )
   }
 
   return (
     <section className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="hover-lift animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('dashboard.dueEvents')}</p>
-          <p className="mt-2 text-2xl font-semibold">{metrics.totalDue}</p>
-        </article>
-        <article className="hover-lift animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm" style={{ animationDelay: '40ms' }}>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('dashboard.overdue')}</p>
-          <p className="mt-2 text-2xl font-semibold text-destructive">{metrics.overdue}</p>
-        </article>
-        <article className="hover-lift animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm" style={{ animationDelay: '80ms' }}>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('dashboard.dueInWeek')}</p>
-          <p className="mt-2 text-2xl font-semibold">{metrics.thisWeekCount}</p>
-        </article>
-        <article className="hover-lift animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm" style={{ animationDelay: '120ms' }}>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('dashboard.upcomingAmount')}</p>
-          <p className="mt-2 text-2xl font-semibold">{formatCurrency(metrics.dueAmount)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{metrics.dueRange ? t('dashboard.upcomingRange', { range: metrics.dueRange }) : t('dashboard.upcomingRangeMissing')}</p>
-        </article>
+        {metricCards.map((metric) => (
+          <DataCard
+            key={metric.key}
+            as="article"
+            className="hover-lift animate-fade-up"
+            data-dashboard-metric-card="true"
+            description={metric.description}
+            eyebrow={metric.label}
+            style={{ animationDelay: metric.delay }}
+            value={<span className={metric.valueClassName}>{metric.value}</span>}
+          />
+        ))}
       </div>
 
-      <section className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm" style={{ animationDelay: '160ms' }}>
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">{t('dashboard.assetsTitle')}</h2>
-          <Link to="/items?filter=assets" className="text-xs font-medium text-primary">
-            {t('dashboard.viewAllItems')}
-          </Link>
-        </div>
-
+      <DataCard
+        as="section"
+        action={
+          <Button asChild size="sm" variant="ghost">
+            <Link to="/items?filter=assets">{t('dashboard.viewAllItems')}</Link>
+          </Button>
+        }
+        className="animate-fade-up"
+        eyebrow={t('dashboard.assetsTitle')}
+        style={{ animationDelay: '160ms' }}
+      >
         {assets.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">{t('dashboard.assetsEmpty')}</p>
+          <p className="text-sm text-muted-foreground">{t('dashboard.assetsEmpty')}</p>
         ) : (
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {assets.map((asset) => (
-              <li key={asset.id} className="hover-lift rounded-xl border border-border bg-background/80 p-3">
+              <li key={asset.id} className="hover-lift rounded-xl border border-border bg-background/80 p-4 shadow-sm shadow-black/5 dark:shadow-none">
                 <Link to={`/items/${asset.id}`} state={{ from: location.pathname + location.search }} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
                   {getItemDisplayName(asset)}
                 </Link>
-                <p className="mt-1 text-xs text-muted-foreground">{asset.item_type}</p>
+                <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{asset.item_type}</p>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </DataCard>
 
       {grouped.length === 0 ? (
         <DashboardEmptyState />
       ) : (
         <div className="space-y-4">
           {grouped.map((group) => (
-            <section key={group.due_date} className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <h2 className="text-sm font-semibold">{formatDueLabel(group.due_date)}</h2>
-                <Link to="/events" className="text-xs font-medium text-primary">
-                  {t('dashboard.openEvents')}
-                </Link>
-              </div>
-              <ul className="mt-3 space-y-2">
+            <DataCard
+              key={group.due_date}
+              as="section"
+              action={
+                <Button asChild size="sm" variant="ghost">
+                  <Link to="/events">{t('dashboard.openEvents')}</Link>
+                </Button>
+              }
+              className="animate-fade-up"
+              contentClassName="pt-0"
+              eyebrow={formatDueLabel(group.due_date)}
+            >
+              <ul className="space-y-2">
                 {group.events.slice(0, 4).map((event) => (
-                  <li key={event.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3 md:flex-row md:items-center md:justify-between">
+                  <li key={event.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3.5 shadow-sm shadow-black/5 dark:shadow-none md:flex-row md:items-center md:justify-between">
                     <div>
                       <p className="text-sm font-medium">{event.type}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
                           {itemNameById.get(event.item_id) ?? t('dashboard.itemLabel', { itemId: event.item_id })}
                         </Link>{' '}
-                        - {event.amount === null ? t('dashboard.amountPending') : formatCurrency(Number(event.amount))}
+                        - {formatEventAmount(event.amount, isIncomeItem(itemById.get(event.item_id) ?? { item_type: 'Unknown' })) ?? t('dashboard.amountPending')}
                       </p>
                     </div>
                     <CompleteEventRowAction eventId={event.id} itemId={event.item_id} />
                   </li>
                 ))}
               </ul>
-            </section>
+            </DataCard>
           ))}
         </div>
       )}
