@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { ApiClientError } from '../../lib/api-client'
 import { sanitizeReturnTo, useAuth } from '../../auth/auth-context'
 
@@ -31,17 +35,23 @@ export function LoginPage() {
   const [inlineErrors, setInlineErrors] = useState<InlineErrors>({})
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const [showSessionExpiredNotice, setShowSessionExpiredNotice] = useState(false)
 
   const returnTo = useMemo(() => {
     const query = new URLSearchParams(location.search)
     return sanitizeReturnTo(query.get('returnTo'))
   }, [location.search])
 
-  const showSessionExpiredNotice = useMemo(() => {
+  useEffect(() => {
     const query = new URLSearchParams(location.search)
     const queryFlag = query.get('expired') === '1'
     const storedFlag = typeof window !== 'undefined' && window.sessionStorage.getItem('hact.auth.session-expired') === '1'
-    return queryFlag || storedFlag
+
+    setShowSessionExpiredNotice(queryFlag || storedFlag)
+
+    if (storedFlag && typeof window !== 'undefined') {
+      window.sessionStorage.removeItem('hact.auth.session-expired')
+    }
   }, [location.search])
 
   useEffect(() => {
@@ -83,6 +93,8 @@ export function LoginPage() {
   }, [cooldownSeconds])
 
   const isSubmitDisabled = submitting || cooldownSeconds > 0
+  const emailHasError = Boolean(inlineErrors.email)
+  const passwordHasError = Boolean(inlineErrors.password)
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -132,72 +144,93 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#f5f3ff,_#e2e8f0)] px-4 py-12 text-foreground">
-      <div className="mx-auto w-full max-w-md rounded-2xl border border-border bg-card/95 p-6 shadow-lg backdrop-blur md:p-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('auth.login.title')}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t('auth.login.subtitle')}</p>
-
-        {topError ? (
-          <div role="alert" className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {topError}
+    <div className="min-h-screen bg-background px-4 py-10 text-foreground sm:px-6 sm:py-14">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-5xl items-center justify-center">
+        <div className="w-full max-w-md space-y-4">
+          <div className="space-y-2 text-center sm:text-left">
+            <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">OmniLedger</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">{t('auth.login.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('auth.login.subtitle')}</p>
           </div>
-        ) : null}
 
-        {showSessionExpiredNotice ? (
-          <div role="alert" className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900">
-            <p className="font-semibold">{t('auth.sessionExpired.title')}</p>
-            <p className="mt-1">{t('auth.sessionExpired.body')}</p>
-          </div>
-        ) : null}
+          <Card className="border border-border/80 bg-card shadow-[var(--shadow-surface)]">
+            <CardHeader className="gap-2 border-b border-border/70">
+              <CardTitle>{t('auth.login.submit')}</CardTitle>
+              <CardDescription>Use your account credentials to continue into the dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-6">
+              {topError ? (
+                <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {topError}
+                </div>
+              ) : null}
 
-        {cooldownSeconds > 0 ? (
-          <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800">
-            {t('auth.login.cooldown', { seconds: cooldownSeconds })}
-          </div>
-        ) : null}
+              {showSessionExpiredNotice ? (
+                <div role="alert" className="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-200">
+                  <p className="font-semibold">{t('auth.sessionExpired.title')}</p>
+                  <p className="mt-1">{t('auth.sessionExpired.body')}</p>
+                </div>
+              ) : null}
 
-        <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-          <label className="block text-sm font-medium text-foreground">
-            {t('auth.login.emailLabel')}
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              placeholder={t('auth.login.emailPlaceholder')}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none ring-primary transition focus:ring-2"
-            />
-            {inlineErrors.email ? <p className="mt-1 text-xs text-destructive">{inlineErrors.email}</p> : null}
-          </label>
+              {cooldownSeconds > 0 ? (
+                <div className="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+                  {t('auth.login.cooldown', { seconds: cooldownSeconds })}
+                </div>
+              ) : null}
 
-          <label className="block text-sm font-medium text-foreground">
-            {t('auth.login.passwordLabel')}
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              placeholder={t('auth.login.passwordPlaceholder')}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none ring-primary transition focus:ring-2"
-            />
-            {inlineErrors.password ? <p className="mt-1 text-xs text-destructive">{inlineErrors.password}</p> : null}
-          </label>
+              <form className="space-y-4" onSubmit={onSubmit}>
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">{t('auth.login.emailLabel')}</Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
+                    placeholder={t('auth.login.emailPlaceholder')}
+                    aria-invalid={emailHasError}
+                    aria-describedby={emailHasError ? 'login-email-error' : undefined}
+                  />
+                  {inlineErrors.email ? (
+                    <p id="login-email-error" className="text-xs text-destructive">
+                      {inlineErrors.email}
+                    </p>
+                  ) : null}
+                </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitDisabled}
-            className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitting ? t('auth.login.submitting') : t('auth.login.submit')}
-          </button>
-        </form>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">{t('auth.login.passwordLabel')}</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="current-password"
+                    placeholder={t('auth.login.passwordPlaceholder')}
+                    aria-invalid={passwordHasError}
+                    aria-describedby={passwordHasError ? 'login-password-error' : undefined}
+                  />
+                  {inlineErrors.password ? (
+                    <p id="login-password-error" className="text-xs text-destructive">
+                      {inlineErrors.password}
+                    </p>
+                  ) : null}
+                </div>
 
-        <p className="mt-6 text-sm text-muted-foreground">
-          {t('auth.login.registerPrompt')}{' '}
-          <Link to={returnTo ? `/register?returnTo=${encodeURIComponent(returnTo)}` : '/register'} className="font-medium text-primary underline-offset-4 hover:underline">
-            {t('auth.login.registerAction')}
-          </Link>
-        </p>
+                <Button type="submit" disabled={isSubmitDisabled} className="w-full">
+                  {submitting ? t('auth.login.submitting') : t('auth.login.submit')}
+                </Button>
+              </form>
+
+              <p className="text-sm text-muted-foreground">
+                {t('auth.login.registerPrompt')}{' '}
+                <Link to={returnTo ? `/register?returnTo=${encodeURIComponent(returnTo)}` : '/register'} className="font-medium text-primary underline-offset-4 hover:underline">
+                  {t('auth.login.registerAction')}
+                </Link>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
