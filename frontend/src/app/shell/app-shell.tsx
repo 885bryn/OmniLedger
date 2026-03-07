@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/auth-context'
 import { AdminSafetyBanner } from '../../features/admin-scope/admin-safety-banner'
 import { SessionExpiredBanner } from '../../features/auth/session-expired-banner'
 import { LanguageSwitcher } from './language-switcher'
+import { ThemeToggle } from './theme-toggle'
 import { UserSwitcher } from './user-switcher'
 
 type SidebarContextValue = {
@@ -88,6 +89,12 @@ function LayoutFrame() {
             {t('shell.workspace')}
           </Link>
           <NavContent />
+          <div className="mt-6 border-t border-border pt-4 md:hidden" data-testid="mobile-theme-access">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm">
+              <span>{t('shell.themeMenuLabel')}</span>
+              <ThemeToggle />
+            </div>
+          </div>
         </aside>
 
         {open ? <button className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={toggle} aria-label="Close menu" /> : null}
@@ -106,6 +113,9 @@ function LayoutFrame() {
               <p className="text-sm font-medium">{t('shell.title')}</p>
             </div>
             <div className="flex items-center gap-2">
+              <div className="hidden md:flex" data-testid="desktop-theme-toggle">
+                <ThemeToggle />
+              </div>
               <LanguageSwitcher />
               <UserSwitcher />
             </div>
