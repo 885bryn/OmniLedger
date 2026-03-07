@@ -195,6 +195,9 @@ describe('dashboard/events completion flow', () => {
     renderEventsPage()
 
     await screen.findByText('Mortgage')
+    const eventsHeader = document.querySelector('[data-events-header="true"]') as HTMLElement | null
+    expect(eventsHeader).toBeTruthy()
+    expect(eventsHeader?.className.includes('animate-fade-up')).toBe(false)
     expect(screen.getByText('Mortgage').closest('[data-event-row-id="event-1"]')).toBeTruthy()
     expect(document.querySelector('[data-event-group-id="upcoming-2026-02-26"]')).toBeTruthy()
     expect(screen.getByText('Current and upcoming')).toBeTruthy()

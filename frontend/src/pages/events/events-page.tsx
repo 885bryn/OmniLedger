@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +10,7 @@ import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
 import { getItemDisplayName, isIncomeItem } from '../../lib/item-display'
+import { panelItemVariants } from '../../lib/motion'
 import { eventListParams, lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type EventRow = {
@@ -313,7 +315,14 @@ export function EventsPage() {
 
   return (
     <section className="space-y-4">
-      <header className="animate-fade-up rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <motion.header
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={panelItemVariants}
+        data-events-header="true"
+        className="rounded-2xl border border-border bg-card p-4 shadow-sm"
+      >
         <h1 className="text-xl font-semibold">{t('events.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t('events.subtitle')}</p>
         <div className="mt-3 inline-flex rounded-lg border border-border bg-background p-1 text-sm">
@@ -336,7 +345,7 @@ export function EventsPage() {
             {t('events.historyTitle')} ({historyCount})
           </button>
         </div>
-      </header>
+      </motion.header>
 
       {activeTab === 'present' ? <section className="space-y-3">
         <div className="space-y-2">
