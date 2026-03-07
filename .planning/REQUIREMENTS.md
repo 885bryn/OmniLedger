@@ -9,7 +9,7 @@
 ### Theme System
 
 - [x] **THEME-01**: User sees the OmniLedger dashboard in light mode on first render when no saved theme exists.
-- [ ] **THEME-02**: User can explicitly toggle the dashboard between light and dark themes.
+- [x] **THEME-02**: User can explicitly toggle the dashboard between light and dark themes.
 - [x] **THEME-03**: User's explicit theme choice persists across refreshes using local storage.
 - [x] **THEME-04**: User theme selection ignores OS/browser `prefers-color-scheme` and changes only from saved choice or direct toggle interaction.
 
@@ -63,7 +63,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | THEME-01 | Phase 24 | Complete |
-| THEME-02 | Phase 24 | Pending |
+| THEME-02 | Phase 24 | Complete |
 | THEME-03 | Phase 24 | Complete |
 | THEME-04 | Phase 24 | Complete |
 | VIS-01 | Phase 25 | Pending |
@@ -86,4 +86,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after roadmap creation*
+*Last updated: 2026-03-07 after completing phase 24 requirements*
