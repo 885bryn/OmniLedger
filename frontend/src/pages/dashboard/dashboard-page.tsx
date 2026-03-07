@@ -225,6 +225,22 @@ export function DashboardPage() {
 
   const assets = assetsQuery.data?.items ?? []
 
+  const assetGridClassName = useMemo(() => {
+    if (assets.length <= 1) {
+      return 'grid gap-3 grid-cols-1'
+    }
+
+    if (assets.length === 2) {
+      return 'grid gap-3 grid-cols-1 sm:grid-cols-2'
+    }
+
+    if (assets.length === 3) {
+      return 'grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+    }
+
+    return 'grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4'
+  }, [assets.length])
+
   const metrics = useMemo(() => {
     const now = Date.now()
     const overdue = allEvents.filter((event) => Date.parse(event.due_date) < now).length
@@ -314,14 +330,14 @@ export function DashboardPage() {
           <MotionPanelList
             items={assets}
             getItemKey={(asset) => asset.id}
-            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-            itemClassName="h-full"
+            className={assetGridClassName}
+            itemClassName="h-full w-full min-w-0"
             renderItem={(asset) => (
-              <Pressable className="h-full w-full">
+              <Pressable className="!flex h-full !w-full min-w-0">
                 <Link
                   to={`/items/${asset.id}`}
                   state={{ from: location.pathname + location.search }}
-                  className="hover-lift block h-full rounded-xl border border-border bg-background/80 p-4 shadow-sm shadow-black/5 dark:shadow-none"
+                  className="hover-lift flex h-full w-full flex-col rounded-xl border border-border bg-background/80 p-4 shadow-sm shadow-black/5 dark:shadow-none"
                 >
                   <span className="text-sm font-semibold text-primary underline-offset-2 hover:underline">{getItemDisplayName(asset)}</span>
                   <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{asset.item_type}</p>
