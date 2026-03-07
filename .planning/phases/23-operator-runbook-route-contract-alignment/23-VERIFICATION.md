@@ -1,16 +1,26 @@
 ---
 phase: 23-operator-runbook-route-contract-alignment
-verified: 2026-03-07T00:01:30Z
-status: passed
+verified: 2026-03-07T00:10:39Z
+status: human_needed
 score: 6/6 must-haves verified
+re_verification:
+  previous_status: passed
+  previous_score: 6/6
+  gaps_closed: []
+  gaps_remaining: []
+  regressions: []
+human_verification:
+  - test: "Run README troubleshooting and verification gates against live NAS deployment"
+    expected: "Backend-direct checks on :8080 succeed/fail exactly as documented using /auth/login and /items, without false route-not-found from path mismatch"
+    why_human: "Requires live Portainer/NAS runtime, valid credentials, and deployed containers not available in this executor"
 ---
 
 # Phase 23: Operator Runbook Route Contract Alignment Verification Report
 
-**Phase Goal:** Operators can run README verification and troubleshooting commands end-to-end without false failures caused by route-path mismatches.
-**Verified:** 2026-03-07T00:01:30Z
-**Status:** passed
-**Re-verification:** Yes - closes DOCS-01 audit gap from v4.0 milestone audit
+**Phase Goal:** Operators can run README verification/troubleshooting commands end-to-end without false failures caused by route-path mismatches.
+**Verified:** 2026-03-07T00:10:39Z
+**Status:** human_needed
+**Re-verification:** No - initial mode (no prior `gaps` section)
 
 ## Goal Achievement
 
@@ -18,56 +28,62 @@ score: 6/6 must-haves verified
 
 | # | Truth | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Phase 23 verification records DOCS-01 as satisfied with backend-direct commands that use live `/auth/*` and `/items` routes on backend port `:8080`. | ✓ VERIFIED | Backend-direct contract note explicitly requires `POST /auth/login` and `GET/POST /items` on `:8080` (`README.md:175`), and gate commands use `http://<NAS_STATIC_IP>:8080/auth/login` plus `http://<NAS_STATIC_IP>:8080/items` (`README.md:291`, `README.md:292`, `README.md:293`). |
-| 2 | Milestone v4.0 audit no longer classifies DOCS-01 as unsatisfied for route-path mismatch. | ✓ VERIFIED | `.planning/v4.0-MILESTONE-AUDIT.md` now records DOCS-01 as `satisfied` in requirement, integration, and flow sections using Phase 23 evidence (`.planning/v4.0-MILESTONE-AUDIT.md:12`, `.planning/v4.0-MILESTONE-AUDIT.md:20`, `.planning/v4.0-MILESTONE-AUDIT.md:26`). |
-| 3 | Requirements traceability reflects DOCS-01 closure after route-contract alignment evidence is captured. | ✓ VERIFIED | Requirement checkbox remains complete (`.planning/REQUIREMENTS.md:30`) and traceability maps DOCS-01 to Phase 23 as complete (`.planning/REQUIREMENTS.md:63`). |
+| 1 | Operator can run backend-direct auth and items checks against `:8080` without `/api/*` mismatch failures. | ✓ VERIFIED | Backend-direct route contract explicitly requires `POST /auth/login` and `GET/POST /items` on `:8080` (`README.md:175`); gate commands use `:8080/auth/login` and `:8080/items` (`README.md:291`, `README.md:292`, `README.md:293`); no `:8080/api/` patterns remain in README. |
+| 2 | Operator can clearly distinguish frontend gateway checks (`:8085/api/*`) from backend-direct checks (`:8080/auth/*`, `:8080/items`). | ✓ VERIFIED | README contract section separates the two styles and calls backend `/api/*` usage on `:8080` a path mismatch (`README.md:175`, `README.md:176`, `README.md:177`). |
+| 3 | Troubleshooting and verification command examples match live backend route mounts. | ✓ VERIFIED | Troubleshooting auth/items examples call `:8080/auth/login` and `:8080/items` (`README.md:189`, `README.md:190`, `README.md:215`); backend app mounts auth at `/auth` and items router at `/` with `/items` endpoints (`src/api/app.js:161`, `src/api/app.js:162`, `src/api/routes/items.routes.js:27`, `src/api/routes/items.routes.js:45`, `src/api/routes/auth.routes.js:296`). |
+| 4 | Phase 23 verification records DOCS-01 as satisfied with corrected backend-direct route evidence. | ✓ VERIFIED | Current phase verification artifact exists and documents DOCS-01 route-contract alignment against `:8080/auth/login` and `:8080/items` (`.planning/phases/23-operator-runbook-route-contract-alignment/23-VERIFICATION.md`). |
+| 5 | Milestone v4.0 audit no longer reports DOCS-01 unsatisfied for route mismatch. | ✓ VERIFIED | Milestone audit marks DOCS-01 `satisfied` and phase 23 `passed` in inventory/cross-reference (`.planning/v4.0-MILESTONE-AUDIT.md:44`, `.planning/v4.0-MILESTONE-AUDIT.md:67`), with empty requirements/integration/flow gaps (`.planning/v4.0-MILESTONE-AUDIT.md:11`, `.planning/v4.0-MILESTONE-AUDIT.md:12`, `.planning/v4.0-MILESTONE-AUDIT.md:13`). |
+| 6 | Requirements traceability reflects DOCS-01 closure after route-contract alignment evidence. | ✓ VERIFIED | DOCS-01 remains checked and mapped to Phase 23 completion (`.planning/REQUIREMENTS.md:30`, `.planning/REQUIREMENTS.md:63`). |
 
-**Score:** 3/3 truths verified
+**Score:** 6/6 truths verified
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 | --- | --- | --- | --- |
-| `.planning/phases/23-operator-runbook-route-contract-alignment/23-VERIFICATION.md` | Phase-level proof that corrected runbook commands execute against live route contracts | ✓ VERIFIED | This report captures corrected `:8080/auth/login` and `:8080/items` evidence and maps closure to DOCS-01. |
-| `.planning/v4.0-MILESTONE-AUDIT.md` | Updated requirement/integration/flow status after DOCS-01 gap closure | ✓ VERIFIED | Audit now cites Phase 23 closure evidence and removes unsatisfied route-mismatch findings. |
-| `.planning/REQUIREMENTS.md` | Requirement checkbox and traceability closure for DOCS-01 | ✓ VERIFIED | DOCS-01 checkbox and traceability row are marked complete. |
+| `README.md` | Corrected runbook contract for backend-direct and gateway checks | ✓ VERIFIED | Exists, substantive troubleshooting + verification-gate content, and wired to real route mounts in backend code (`README.md:169`, `README.md:284`, `src/api/app.js:161`, `src/api/app.js:162`). |
+| `.planning/phases/23-operator-runbook-route-contract-alignment/23-VERIFICATION.md` | Phase-level DOCS-01 closure evidence | ✓ VERIFIED | Exists with must-have truth coverage and explicit route-contract evidence (this file). |
+| `.planning/v4.0-MILESTONE-AUDIT.md` | Re-audit showing DOCS-01 closure | ✓ VERIFIED | Exists, substantive audit table + decision, wired to Phase 23 verification outcome (`.planning/v4.0-MILESTONE-AUDIT.md:44`, `.planning/v4.0-MILESTONE-AUDIT.md:67`). |
+| `.planning/REQUIREMENTS.md` | DOCS-01 checkbox + traceability closure | ✓ VERIFIED | Exists, substantive requirement and traceability tables include DOCS-01 completion (`.planning/REQUIREMENTS.md:30`, `.planning/REQUIREMENTS.md:63`). |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 | --- | --- | --- | --- | --- |
-| `.planning/phases/23-operator-runbook-route-contract-alignment/23-VERIFICATION.md` | `README.md` | verification evidence references corrected backend-direct commands | ✓ WIRED | README backend-direct diagnostics and gates use `:8080/auth/login` and `:8080/items` (`README.md:189`, `README.md:190`, `README.md:215`, `README.md:291`, `README.md:292`, `README.md:293`). |
-| `.planning/v4.0-MILESTONE-AUDIT.md` | `.planning/phases/23-operator-runbook-route-contract-alignment/23-VERIFICATION.md` | milestone decision uses Phase 23 verification evidence for DOCS-01 status | ✓ WIRED | Audit gap closure references Phase 23 verification and route-contract alignment for DOCS-01 (`.planning/v4.0-MILESTONE-AUDIT.md:88`, `.planning/v4.0-MILESTONE-AUDIT.md:102`, `.planning/v4.0-MILESTONE-AUDIT.md:117`). |
+| `README.md` | `src/api/app.js` | backend-direct command paths align to mounted routes | ✓ WIRED | README uses `:8080/auth/login` and `:8080/items` (`README.md:189`, `README.md:190`, `README.md:291`, `README.md:292`, `README.md:293`); backend mounts `/auth` and root routers that define `/items` (`src/api/app.js:161`, `src/api/app.js:162`, `src/api/routes/items.routes.js:27`, `src/api/routes/items.routes.js:45`). |
+| `README.md` | README verification gate table | backend `:8080` avoids `/api/*`; gateway rule retains `/api/*` | ✓ WIRED | Contract rule states backend no `/api/*`, gateway keeps `/api/*` (`README.md:175`, `README.md:176`); gate commands comply with backend-direct paths (`README.md:291`, `README.md:292`, `README.md:293`). |
+| `.planning/phases/23-operator-runbook-route-contract-alignment/23-VERIFICATION.md` | `README.md` | verification evidence references corrected backend-direct commands | ✓ WIRED | Verification truth evidence links route-contract checks to README troubleshooting/gate commands (`README.md:175`, `README.md:291`, `README.md:292`, `README.md:293`). |
+| `.planning/v4.0-MILESTONE-AUDIT.md` | `.planning/phases/23-operator-runbook-route-contract-alignment/23-VERIFICATION.md` | milestone decision uses phase verification evidence for DOCS-01 status | ✓ WIRED | Audit phase inventory and requirement row explicitly cite phase 23 DOCS-01 closure outcome (`.planning/v4.0-MILESTONE-AUDIT.md:44`, `.planning/v4.0-MILESTONE-AUDIT.md:67`, `.planning/v4.0-MILESTONE-AUDIT.md:81`). |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| DOCS-01 | `23-01-PLAN.md`, `23-02-PLAN.md` | Operator can follow a production deployment README that lists exact Portainer stack environment variables and route-valid verification commands for successful deployment checks. | ✓ SATISFIED | Route contract and verification commands in README are aligned to live backend mounts (`README.md:175`, `README.md:291`, `README.md:292`, `README.md:293`), and closure is reflected in milestone and requirements artifacts. |
+| DOCS-01 | `23-01-PLAN.md`, `23-02-PLAN.md` | Operator can follow a production deployment README that lists exact Portainer stack environment variables and route-valid verification commands for successful deployment checks. | ✓ SATISFIED | README contains explicit route contract and corrected backend-direct verification commands (`README.md:175`, `README.md:176`, `README.md:291`, `README.md:292`, `README.md:293`); milestone and traceability artifacts reflect closure (`.planning/v4.0-MILESTONE-AUDIT.md:67`, `.planning/REQUIREMENTS.md:63`). |
 
 Plan-declared requirement IDs: DOCS-01.
-Cross-reference with `.planning/REQUIREMENTS.md` shows DOCS-01 mapped to Phase 23 as complete.
+Cross-reference with `.planning/REQUIREMENTS.md` phase mapping for Phase 23: DOCS-01 only.
 Orphaned requirements for Phase 23: none.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 | --- | --- | --- | --- | --- |
-| None | - | No backend `:8080/api/*` command examples remain in README backend-direct troubleshooting or gate checks | - | Route-contract mismatch source for DOCS-01 is removed. |
+| `README.md` | - | No `:8080/api/*` backend-direct examples; no TODO/FIXME placeholder stubs in phase artifacts | - | No route-path mismatch anti-pattern remains in operator troubleshooting/verification commands. |
 
 ### Human Verification Required
 
-### 1. Live NAS Runtime Recheck (optional confirmation)
+### 1. Live NAS operator drill
 
-**Test:** Execute README verification gates on live NAS deployment using one authenticated cookie jar.
-**Expected:** Backend-direct `:8080/auth/login` and `:8080/items` checks pass/deny exactly as documented with no route-path false negatives.
-**Why human:** Requires NAS + Portainer runtime credentials and live deployment state unavailable in this executor.
+**Test:** Execute README troubleshooting and go-live verification gate commands against the deployed stack using valid credentials and one cookie jar.
+**Expected:** `:8080/auth/login` and `:8080/items` commands behave as documented (authorized vs unauthorized responses) with no false `Route not found` caused by route-path mismatch.
+**Why human:** Requires live Portainer/NAS runtime state and credentials that are unavailable in this static code verification environment.
 
 ### Gaps Summary
 
-No documentation route-contract gaps remain for DOCS-01. Remaining manual runtime checks are environmental confirmations, not route-mismatch blockers.
+No implementation/documentation gaps were found in phase must-haves. Automated verification confirms route-contract alignment; remaining validation is live-environment behavioral confirmation.
 
 ---
 
-_Verified: 2026-03-07T00:01:30Z_
-_Verifier: Claude (gsd-executor)_
+_Verified: 2026-03-07T00:10:39Z_
+_Verifier: Claude (gsd-verifier)_
