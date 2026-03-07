@@ -11,18 +11,18 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 25 of 26 (Dashboard Surface System)
-Plan: 01 of 03
+Plan: 02 of 03
 Status: In progress
-Last activity: 2026-03-07 - Completed 25-01 dashboard surface system plan
+Last activity: 2026-03-07 - Completed 25-02 dashboard surface system plan
 
-Progress: [======░░░░] 55%
+Progress: [======░░░░] 57%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 57
+- Total plans completed: 58
 - Average duration: 4 min
-- Total execution time: 4.4 hours
+- Total execution time: 4.5 hours
 
 **By Phase:**
 
@@ -33,11 +33,12 @@ Progress: [======░░░░] 55%
 | 24 (v4.1) | 2 | 5 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 24-02 (2 min), 24-01 (3 min), 23-02 (5 min), 23-01 (1 min), 22-02 (1 min)
-- Trend: Theme foundation closed cleanly with fast execution; next work shifts from theme behavior to dashboard surface-system rollout.
+- Last 5 plans: 25-02 (4 min), 25-01 (1 min), 24-02 (2 min), 24-01 (3 min), 23-02 (5 min)
+- Trend: Dashboard surface rollout remains fast; auth, toast, and dialog surfaces now match the shared phase 25 shell.
 | Phase 24-theme-foundation P01 | 3 min | 2 tasks | 4 files |
 | Phase 24 P02 | 2 min | 2 tasks | 5 files |
 | Phase 25 P01 | 1 min | 2 tasks | 7 files |
+| Phase 25-dashboard-surface-system P02 | 4 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -55,6 +56,9 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 24]: Expose mobile theme switching from the off-canvas menu row instead of the visible mobile header to preserve a cleaner authenticated chrome.
 - [Phase 25]: Use warmer neutral light tokens with restrained light-only shadows while keeping dark mode border-first and near-black.
 - [Phase 25]: Introduce a reusable DataCard wrapper around shadcn Card primitives so dashboard metrics, empty states, and grouped sections share one surface pattern.
+- [Phase 25-dashboard-surface-system]: Use the same border-first shadcn card shell for auth entry so login and registration visually match the Phase 25 dashboard surfaces.
+- [Phase 25-dashboard-surface-system]: Keep useToast as the public API while delegating rendering to themed sonner surfaces so existing event contracts remain stable.
+- [Phase 25-dashboard-surface-system]: Add an optional theme hook for shared feedback renderers instead of weakening the strict useTheme guard.
 
 ### Pending Todos
 
@@ -69,5 +73,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 25-01-PLAN.md
+Stopped at: Completed 25-02-PLAN.md
 Resume file: None

@@ -18,7 +18,7 @@
 - [x] **VIS-01**: User sees the default light theme with `bg-neutral-50` canvas, `bg-white` shadcn surfaces, `border-neutral-200`, `text-neutral-900` primary text, `text-neutral-500` secondary text, and subtle `shadow-sm` card elevation.
 - [x] **VIS-02**: User sees the dark theme with `dark:bg-neutral-950` canvas, `dark:bg-neutral-900` shadcn surfaces, `dark:border-neutral-800`, `dark:text-neutral-100` primary text, `dark:text-neutral-400` secondary text, and border-only separation without card shadows.
 - [x] **VIS-03**: User sees official shadcn cards use `rounded-xl` styling and shadcn interactive controls use `rounded-lg` styling consistently across the updated dashboard shell.
-- [ ] **VIS-04**: User sees generous spacing across cards, forms, and dense data panels so financial information stays readable.
+- [x] **VIS-04**: User sees generous spacing across cards, forms, and dense data panels so financial information stays readable.
 
 ### Motion and Feedback
 
@@ -69,7 +69,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-01 | Phase 25 | Complete |
 | VIS-02 | Phase 25 | Complete |
 | VIS-03 | Phase 25 | Complete |
-| VIS-04 | Phase 25 | Pending |
+| VIS-04 | Phase 25 | Complete |
 | MOTION-01 | Phase 26 | Pending |
 | MOTION-02 | Phase 26 | Pending |
 | MOTION-03 | Phase 26 | Pending |

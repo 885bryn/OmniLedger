@@ -1,0 +1,2 @@
+- `frontend/src/app/shell/theme-toggle.tsx` still throws `useTheme must be used within a ThemeProvider` in some `admin-safety-signals` test routes that render outside the phase 24 provider boundary.
+- `frontend/src/pages/items/item-edit-page.tsx` currently exposes the Estimated value control as a textbox rather than the spinbutton expected by `frontend/src/__tests__/admin-safety-signals.test.tsx`.

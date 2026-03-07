@@ -59,7 +59,7 @@ Plans:
 
 Plans:
 - [x] `25-01-PLAN.md` - Establish the Phase 25 surface tokens, shell styling, and reusable dashboard data-card pattern.
-- [ ] `25-02-PLAN.md` - Migrate auth entry, dialogs, and toast presentation to shadcn-aligned surfaces.
+- [x] `25-02-PLAN.md` - Migrate auth entry, dialogs, and toast presentation to shadcn-aligned surfaces.
 - [ ] `25-03-PLAN.md` - Roll the shared shadcn form system across first-pass item-management and admin action surfaces.
 
 ### Phase 26: Motion Interaction Patterns
@@ -79,8 +79,8 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 24. Theme Foundation | v4.1 | 2/2 | Complete | 2026-03-07 |
-| 25. Dashboard Surface System | v4.1 | 1/3 | In Progress | - |
+| 25. Dashboard Surface System | v4.1 | 2/3 | In Progress | - |
 | 26. Motion Interaction Patterns | v4.1 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-03-07 after completing plan 25-01*
+*Last updated: 2026-03-07 after completing plan 25-02*
