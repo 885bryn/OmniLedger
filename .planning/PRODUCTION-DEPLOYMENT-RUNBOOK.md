@@ -4,11 +4,11 @@ Last updated: 2026-03-06
 
 ## 1) Canonical Architecture
 
-- NAS host IP: `192.168.68.62`
+- NAS host IP: `<nas-static-ip>`
 - Frontend container: nginx on `:80`, published as `8085:80`
 - Backend container: node/express on `:8080`, published as `8080:8080`
 - Database container: postgres `:5432` on internal docker network
-- Frontend browser URL: `http://192.168.68.62:8085`
+- Frontend browser URL: `http://<nas-static-ip>:8085`
 - Frontend API path: `/api/*` proxied to backend
 
 ## 2) Publish Images from GitHub Actions
@@ -47,7 +47,7 @@ Use real values in Portainer env panel (no placeholders in running stack).
 GHCR_OWNER=<owner>
 IMAGE_TAG=<same-tag-as-published>
 
-NAS_STATIC_IP=192.168.68.62
+NAS_STATIC_IP=<nas-static-ip>
 FRONTEND_PORT=8085
 BACKEND_PORT=8080
 
