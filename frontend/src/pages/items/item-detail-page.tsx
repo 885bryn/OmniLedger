@@ -42,6 +42,21 @@ type NetStatusResponse = ItemRow & {
     monthly_income_total: number
     net_monthly_cashflow: number
     excluded_row_count: number
+    active_period?: {
+      cadence?: string
+      start_date?: string
+      end_date?: string
+      reference_date?: string
+      boundary?: string
+      label?: string
+    }
+    one_time_rule?: {
+      frequency?: string
+      inclusion?: string
+      boundary?: string
+      excludes?: string[]
+      description?: string
+    }
   }
 }
 
@@ -190,6 +205,35 @@ function formatDateLabel(value: string) {
     day: 'numeric',
     year: 'numeric',
   }).format(parsed)
+}
+
+function formatPeriodDate(value: string) {
+  const parsed = Date.parse(value)
+  if (Number.isNaN(parsed)) {
+    return null
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+  }).format(parsed)
+}
+
+function resolveActivePeriodLabel(summary: NetStatusResponse['summary'] | null | undefined, t: (key: string, options?: Record<string, unknown>) => string) {
+  const activePeriod = summary?.active_period
+
+  if (activePeriod?.label && activePeriod.label.trim().length > 0) {
+    return activePeriod.label
+  }
+
+  const start = typeof activePeriod?.start_date === 'string' ? formatPeriodDate(activePeriod.start_date) : null
+  const end = typeof activePeriod?.end_date === 'string' ? formatPeriodDate(activePeriod.end_date) : null
+
+  if (start && end) {
+    return `${start} - ${end}`
+  }
+
+  return t('items.detail.summaryPeriodFallback')
 }
 
 function formatEventAmount(event: EventRow, item: ItemRow | undefined) {
@@ -594,6 +638,17 @@ export function ItemDetailPage() {
 
     return t('items.detail.recurrence.summaryNoDate', { frequency: frequencyLabel })
   }, [detail, resolvedFinancialFrequency, resolvedFinancialStatus, rootAttributes.dueDate, rootAttributes.nextDueDate, t])
+  const summaryPeriodLabel = useMemo(
+    () => resolveActivePeriodLabel(isNetStatusItem(detail) ? detail.summary : null, t),
+    [detail, t],
+  )
+  const oneTimeRuleHint = useMemo(() => {
+    if (isNetStatusItem(detail) && typeof detail.summary.one_time_rule?.description === 'string' && detail.summary.one_time_rule.description.length > 0) {
+      return detail.summary.one_time_rule.description
+    }
+
+    return t('items.detail.summaryRuleHint')
+  }, [detail, t])
 
   const parentItem = useMemo(() => {
     const parentId = parentLinkId
@@ -829,21 +884,27 @@ export function ItemDetailPage() {
           <motion.div layout className="space-y-3">
             <motion.section layout className="grid gap-3 md:grid-cols-4">
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryMonthly')}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryMonthly', { period: summaryPeriodLabel })}</p>
                 <p className="mt-2 text-2xl font-semibold">{formatCurrency(effectiveSummary.monthly_obligation_total)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryIncome')}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryIncome', { period: summaryPeriodLabel })}</p>
                 <p className="mt-2 text-2xl font-semibold text-emerald-700">{formatCurrency(effectiveSummary.monthly_income_total)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryNet')}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryNet', { period: summaryPeriodLabel })}</p>
                 <p className="mt-2 text-2xl font-semibold">{formatCurrency(effectiveSummary.net_monthly_cashflow)}</p>
+                <p className="mt-2 text-[11px] text-muted-foreground">{t('items.detail.summaryNetFormulaHint')}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryLinked')}</p>
                 <p className="mt-2 text-2xl font-semibold">{commitments.length}</p>
               </motion.article>
+            </motion.section>
+
+            <motion.section layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <p className="text-xs text-muted-foreground">{t('items.detail.summaryPeriodHint', { period: summaryPeriodLabel })}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{oneTimeRuleHint}</p>
             </motion.section>
 
             <motion.section layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
