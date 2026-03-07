@@ -6,23 +6,23 @@ See: `.planning/PROJECT.md` (updated 2026-03-07)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 25 - Dashboard Surface System
+**Current focus:** Phase 26 - Motion Interaction Patterns
 
 ## Current Position
 
-Phase: 25 of 26 (Dashboard Surface System)
-Plan: 02 of 03
-Status: In progress
-Last activity: 2026-03-07 - Completed 25-02 dashboard surface system plan
+Phase: 26 of 26 (Motion Interaction Patterns)
+Plan: 00 of TBD
+Status: Ready to start
+Last activity: 2026-03-07 - Completed 25-03 dashboard surface system plan
 
-Progress: [======░░░░] 57%
+Progress: [======░░░░] 58%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 58
+- Total plans completed: 59
 - Average duration: 4 min
-- Total execution time: 4.5 hours
+- Total execution time: 4.6 hours
 
 **By Phase:**
 
@@ -33,12 +33,13 @@ Progress: [======░░░░] 57%
 | 24 (v4.1) | 2 | 5 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 25-02 (4 min), 25-01 (1 min), 24-02 (2 min), 24-01 (3 min), 23-02 (5 min)
-- Trend: Dashboard surface rollout remains fast; auth, toast, and dialog surfaces now match the shared phase 25 shell.
+- Last 5 plans: 25-03 (8 min), 25-02 (4 min), 25-01 (1 min), 24-02 (2 min), 24-01 (3 min)
+- Trend: Phase 25 is complete; the shared surface language now reaches shell, auth, dialogs, toasts, and item-management flows.
 | Phase 24-theme-foundation P01 | 3 min | 2 tasks | 4 files |
 | Phase 24 P02 | 2 min | 2 tasks | 5 files |
 | Phase 25 P01 | 1 min | 2 tasks | 7 files |
 | Phase 25-dashboard-surface-system P02 | 4 min | 2 tasks | 6 files |
+| Phase 25 P03 | 8 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -59,6 +60,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 25-dashboard-surface-system]: Use the same border-first shadcn card shell for auth entry so login and registration visually match the Phase 25 dashboard surfaces.
 - [Phase 25-dashboard-surface-system]: Keep useToast as the public API while delegating rendering to themed sonner surfaces so existing event contracts remain stable.
 - [Phase 25-dashboard-surface-system]: Add an optional theme hook for shared feedback renderers instead of weakening the strict useTheme guard.
+- [Phase 25]: Use shadcn Card sections to separate dense item form areas without changing business logic.
+- [Phase 25]: Keep compact event and admin controls on shared Button variants so rounded-lg actions match the shell.
 
 ### Pending Todos
 
@@ -73,5 +76,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 25-02-PLAN.md
+Stopped at: Completed 25-03-PLAN.md
 Resume file: None
