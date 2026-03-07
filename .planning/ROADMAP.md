@@ -6,7 +6,7 @@
 - ✅ **v2.0 Auth, Timeline & Data Lifecycle** - Phases 8-13 shipped 2026-03-02 (`.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v2.0-MILESTONE-AUDIT.md`)
 - ✅ **v3.0 Data Portability** - Phases 14-18 shipped 2026-03-04 (`.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v3.0-MILESTONE-AUDIT.md`)
 - ✅ **v4.0 Interactive Production Deployment for Ugreen NAS** - Phases 19-23 shipped 2026-03-07 (`.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.0-REQUIREMENTS.md`, `.planning/milestones/v4.0-MILESTONE-AUDIT.md`)
-- 🚧 **v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion** - Phases 24-25 shipped; Phase 26 is next
+- 🚧 **v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion** - Phases 24-25 shipped; Phase 26 gap closure is next
 
 ## Phases
 
@@ -26,7 +26,7 @@
 
 - [x] **Phase 24: Theme Foundation** - Deliver strict light-first theme initialization, manual toggle behavior, and persisted user choice. (completed 2026-03-07)
 - [x] **Phase 25: Dashboard Surface System** - Apply the high-contrast shadcn-based shell, cards, forms, toasts, and exemplar data-surface patterns. (completed 2026-03-07)
-- [x] **Phase 26: Motion Interaction Patterns** - Add shared Framer Motion spring behavior, tactile feedback, fluid layout reflow, and exemplar shadcn list/panel animation patterns. (completed 2026-03-07)
+- [ ] **Phase 26: Motion Interaction Patterns** - Add shared Framer Motion spring behavior, tactile feedback, fluid layout reflow, and exemplar shadcn list/panel animation patterns. (gap closure planned 2026-03-07)
 
 ## Phase Details
 
@@ -72,13 +72,14 @@ Plans:
   3. User gets tactile press feedback on interactive shadcn cards and primary actions during pointer/tap interaction.
   4. User sees newly created rows or cards slide in from a slight vertical offset and briefly highlight so additions are easy to spot.
   5. User sees at least one exemplar `@/components/ui` list or panel pattern that combines layout animation, spring motion, and creation confirmation consistently.
-**Plans**: 4 plans
+**Plans**: 5 plans
 
 Plans:
 - [x] `26-01-PLAN.md` - Add the shared Framer Motion foundation, reusable animated surface primitives, and subtle in-shell content shift.
 - [x] `26-02-PLAN.md` - Apply shared spring layout motion and creation feedback to dashboard and events exemplar surfaces.
 - [x] `26-03-PLAN.md` - Roll tactile press feedback, fluid reflow, and new-record confirmation across item workflows.
 - [x] `26-04-PLAN.md` - Apply the shared tactile press language to dialog actions and authenticated shell controls.
+- [ ] `26-05-PLAN.md` - Close the remaining shared spring exit and events-header motion verification gaps.
 
 ## Progress
 
@@ -86,7 +87,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 24. Theme Foundation | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 25. Dashboard Surface System | v4.1 | 3/3 | Complete | 2026-03-07 |
-| 26. Motion Interaction Patterns | v4.1 | 4/4 | Complete | 2026-03-07 |
+| 26. Motion Interaction Patterns | v4.1 | 4/5 | Gap Closure Planned | 2026-03-07 |
 
 ---
-*Last updated: 2026-03-07 after planning phase 26*
+*Last updated: 2026-03-07 after planning phase 26 gap closure*
