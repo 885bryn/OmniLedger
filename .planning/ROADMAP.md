@@ -75,7 +75,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] `26-01-PLAN.md` - Add the shared Framer Motion foundation, reusable animated surface primitives, and subtle in-shell content shift.
+- [x] `26-01-PLAN.md` - Add the shared Framer Motion foundation, reusable animated surface primitives, and subtle in-shell content shift.
 - [ ] `26-02-PLAN.md` - Apply shared spring layout motion and creation feedback to dashboard and events exemplar surfaces.
 - [ ] `26-03-PLAN.md` - Roll tactile press feedback, fluid reflow, and new-record confirmation across item workflows.
 - [ ] `26-04-PLAN.md` - Apply the shared tactile press language to dialog actions and authenticated shell controls.
@@ -85,8 +85,8 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 24. Theme Foundation | v4.1 | 2/2 | Complete | 2026-03-07 |
-| 25. Dashboard Surface System | v4.1 | Complete    | 2026-03-07 | 2026-03-07 |
-| 26. Motion Interaction Patterns | v4.1 | 0/4 | Not started | - |
+| 25. Dashboard Surface System | v4.1 | 3/3 | Complete | 2026-03-07 |
+| 26. Motion Interaction Patterns | v4.1 | 1/4 | In Progress | - |
 
 ---
 *Last updated: 2026-03-07 after planning phase 26*

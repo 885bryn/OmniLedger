@@ -22,9 +22,9 @@
 
 ### Motion and Feedback
 
-- [ ] **MOTION-01**: User sees mounts and unmounts use a shared Framer Motion spring transition with `type: "spring"`, `stiffness: 400`, and `damping: 30`.
+- [x] **MOTION-01**: User sees mounts and unmounts use a shared Framer Motion spring transition with `type: "spring"`, `stiffness: 400`, and `damping: 30`.
 - [ ] **MOTION-02**: User sees surrounding cards or rows fluidly reposition when list or grid items are added, removed, or reordered.
-- [ ] **MOTION-03**: User sees interactive cards and primary buttons provide tactile press feedback with `whileTap={{ scale: 0.97 }}`.
+- [x] **MOTION-03**: User sees interactive cards and primary buttons provide tactile press feedback with `whileTap={{ scale: 0.97 }}`.
 - [ ] **MOTION-04**: User sees newly created rows or cards animate in from `opacity: 0, y: 10` to `opacity: 1, y: 0` and briefly highlight to confirm the addition.
 
 ### Implementation Delivery
@@ -32,7 +32,7 @@
 - [x] **IMPL-01**: Engineer has a reusable layout wrapper/provider that enforces light mode as the initial theme and exposes a manual theme toggle.
 - [x] **IMPL-02**: Engineer has the Tailwind and/or theme-provider configuration needed to support the milestone's dual-theme token system.
 - [x] **IMPL-03**: Engineer has a shadcn-based Data Card pattern using official `@/components/ui` primitives and milestone surface tokens.
-- [ ] **IMPL-04**: Engineer has a Framer Motion example showing how shadcn-based list items or panels use layout animation, spring behavior, and creation feedback.
+- [x] **IMPL-04**: Engineer has a Framer Motion example showing how shadcn-based list items or panels use layout animation, spring behavior, and creation feedback.
 
 ## Future Requirements (Deferred)
 
@@ -70,14 +70,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-02 | Phase 25 | Complete |
 | VIS-03 | Phase 25 | Complete |
 | VIS-04 | Phase 25 | Complete |
-| MOTION-01 | Phase 26 | Pending |
+| MOTION-01 | Phase 26 | Complete |
 | MOTION-02 | Phase 26 | Pending |
-| MOTION-03 | Phase 26 | Pending |
+| MOTION-03 | Phase 26 | Complete |
 | MOTION-04 | Phase 26 | Pending |
 | IMPL-01 | Phase 24 | Complete |
 | IMPL-02 | Phase 24 | Complete |
 | IMPL-03 | Phase 25 | Complete |
-| IMPL-04 | Phase 26 | Pending |
+| IMPL-04 | Phase 26 | Complete |
 
 **Coverage:**
 - v1 requirements: 16 total
