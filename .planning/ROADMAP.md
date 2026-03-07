@@ -17,7 +17,7 @@ This milestone delivers environment-driven production deployment for Ugreen NAS 
 - [x] **Phase 20: Production Container Build and Gateway Routing** - Deliver production-grade backend/frontend images and Nginx API routing driven by NAS address configuration. (completed 2026-03-04)
 - [x] **Phase 21: Portainer Stack Deployment and Persistence** - Provide deployable three-service production compose stack with Portainer env injection and NAS-backed Postgres persistence. (completed 2026-03-05)
 - [x] **Phase 22: Operator Deployment Documentation** - Publish production README guidance that allows operators to deploy successfully using the required Portainer environment values. (completed 2026-03-06)
-- [ ] **Phase 23: Operator Runbook Route Contract Alignment** - Close DOCS-01 audit gaps by aligning README verification/troubleshooting endpoint commands with live backend route contracts and re-verifying operator flows.
+- [x] **Phase 23: Operator Runbook Route Contract Alignment** - Close DOCS-01 audit gaps by aligning README verification/troubleshooting endpoint commands with live backend route contracts and re-verifying operator flows. (completed 2026-03-07)
 
 ## Phase Details
 
@@ -92,4 +92,4 @@ Plans:
 | 20. Production Container Build and Gateway Routing | 2/2 | Complete   | 2026-03-04 |
 | 21. Portainer Stack Deployment and Persistence | 2/2 | Complete   | 2026-03-05 |
 | 22. Operator Deployment Documentation | 2/2 | Complete    | 2026-03-06 |
-| 23. Operator Runbook Route Contract Alignment | 1/2 | In Progress|  |
+| 23. Operator Runbook Route Contract Alignment | 2/2 | Complete   | 2026-03-07 |
