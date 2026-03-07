@@ -59,5 +59,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Created `.planning/ROADMAP.md` for milestone v4.1
-Resume file: None
+Stopped at: Phase 24 context gathered
+Resume file: `.planning/phases/24-theme-foundation/24-CONTEXT.md`
