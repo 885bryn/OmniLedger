@@ -52,7 +52,7 @@ Each task was committed atomically:
 1. **Task 1: Build the light-first theme provider with persisted explicit choice rules** - `fb1593b` (feat)
 2. **Task 2: Wire theme foundation into app boot and global surface variables** - `4b68fae` (feat)
 
-**Plan metadata:** Pending metadata commit
+**Plan metadata:** `0213039` (docs)
 
 ## Files Created/Modified
 - `frontend/src/features/theme/theme-provider.tsx` - Provides reusable theme state, explicit persistence, and document root synchronization.
