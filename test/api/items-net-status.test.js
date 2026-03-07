@@ -70,7 +70,7 @@ describe("GET /items/:id/net-status", () => {
         linked_asset_item_id: parentItemId,
         title: rawAttributes.name || (subtype === "Income" ? "Income item" : "Commitment item"),
         type: subtype,
-        frequency: "monthly",
+        frequency: rawAttributes.frequency || "monthly",
         default_amount: defaultAmount,
         status: "Active",
         attributes: {
@@ -100,6 +100,25 @@ describe("GET /items/:id/net-status", () => {
         silent: true
       }
     );
+  }
+
+  function toDateOnly(value) {
+    return new Date(value).toISOString().slice(0, 10);
+  }
+
+  function getActiveMonthSampleDates(referenceDate = new Date()) {
+    const year = referenceDate.getUTCFullYear();
+    const month = referenceDate.getUTCMonth();
+    const endOfMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const middleOfMonth = Math.max(2, Math.min(15, endOfMonth - 1));
+
+    return {
+      start: toDateOnly(Date.UTC(year, month, 1)),
+      middle: toDateOnly(Date.UTC(year, month, middleOfMonth)),
+      end: toDateOnly(Date.UTC(year, month, endOfMonth)),
+      prevMonthEnd: toDateOnly(Date.UTC(year, month, 0)),
+      nextMonthStart: toDateOnly(Date.UTC(year, month + 1, 1))
+    };
   }
 
   beforeAll(async () => {
@@ -265,11 +284,243 @@ describe("GET /items/:id/net-status", () => {
 
     expect(response.body).not.toHaveProperty("events");
     expect(response.body).not.toHaveProperty("event_previews");
-    expect(response.body.summary).toEqual({
+    expect(response.body.summary).toMatchObject({
       monthly_obligation_total: 1033,
       monthly_income_total: 0,
       net_monthly_cashflow: -1033,
-      excluded_row_count: 1
+      excluded_row_count: 1,
+      active_period: {
+        cadence: "monthly",
+        boundary: "inclusive"
+      },
+      one_time_rule: {
+        frequency: "one_time",
+        inclusion: "due_date_inside_active_period",
+        boundary: "inclusive"
+      }
+    });
+    expect(response.body.summary.active_period.start_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(response.body.summary.active_period.end_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(response.body.summary.active_period.reference_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(response.body.summary.one_time_rule.excludes).toEqual(
+      expect.arrayContaining(["outside_active_period", "missing_or_invalid_due_date", "invalid_or_zero_amount"])
+    );
+  });
+
+  it("includes one-time rows only when due date is inside the active month", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "RealEstate",
+      attributes: {
+        address: "One-time active period root",
+        estimatedValue: 500000
+      }
+    });
+    const dates = getActiveMonthSampleDates();
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: 900,
+        dueDate: dates.middle,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        amount: 1500,
+        dueDate: dates.middle,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: 333,
+        dueDate: dates.nextMonthStart,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        amount: 444,
+        dueDate: dates.prevMonthEnd,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: 100,
+        dueDate: dates.nextMonthStart,
+        frequency: "monthly"
+      }
+    });
+
+    const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.summary).toMatchObject({
+      monthly_obligation_total: 1000,
+      monthly_income_total: 1500,
+      net_monthly_cashflow: 500,
+      excluded_row_count: 2
+    });
+  });
+
+  it("treats active period boundaries as inclusive for one-time rows", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "Vehicle",
+      attributes: {
+        vin: "VIN-ONE-TIME-BOUNDARY",
+        estimatedValue: 42000
+      }
+    });
+    const dates = getActiveMonthSampleDates();
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: 200,
+        dueDate: dates.start,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        amount: 500,
+        dueDate: dates.end,
+        frequency: "one_time"
+      }
+    });
+
+    const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.summary).toMatchObject({
+      monthly_obligation_total: 200,
+      monthly_income_total: 500,
+      net_monthly_cashflow: 300,
+      excluded_row_count: 0
+    });
+    expect(response.body.summary.active_period.start_date).toBe(dates.start);
+    expect(response.body.summary.active_period.end_date).toBe(dates.end);
+  });
+
+  it("excludes malformed, null, and zero amounts so net totals stay stable", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "RealEstate",
+      attributes: {
+        address: "Guardrails root",
+        estimatedValue: 350000
+      }
+    });
+    const dates = getActiveMonthSampleDates();
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: 600,
+        dueDate: dates.middle,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        amount: 1000,
+        dueDate: dates.middle,
+        frequency: "monthly"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: "n/a",
+        dueDate: dates.middle,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        amount: null,
+        dueDate: dates.middle,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        amount: 0,
+        dueDate: dates.middle,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: 0,
+        dueDate: dates.middle,
+        frequency: "monthly"
+      }
+    });
+
+    const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.summary).toMatchObject({
+      monthly_obligation_total: 600,
+      monthly_income_total: 1000,
+      net_monthly_cashflow: 400,
+      excluded_row_count: 4
     });
   });
 
