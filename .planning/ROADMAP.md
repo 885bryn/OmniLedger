@@ -87,7 +87,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 24. Theme Foundation | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 25. Dashboard Surface System | v4.1 | 3/3 | Complete | 2026-03-07 |
-| 26. Motion Interaction Patterns | v4.1 | 5/5 | Complete | 2026-03-07 |
+| 26. Motion Interaction Patterns | v4.1 | Complete    | 2026-03-07 | 2026-03-07 |
 
 ---
 *Last updated: 2026-03-07 after planning phase 26 gap closure*
