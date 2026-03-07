@@ -1,6 +1,75 @@
 # Household Asset & Commitment Tracker (HACT)
 
-This document is the canonical production runbook for deploying House ERP to a Ugreen NAS with Portainer.
+HACT (OmniLedger) is a household financial operations platform I orchestrated end-to-end: stakeholder discovery, domain modeling, roadmap planning, implementation, verification, and production deployment.
+
+## Project Overview
+
+This project helps a household manage assets, commitments, income, and timeline events in one place with clear audit history and predictable workflows.
+
+It is designed to answer practical operational questions, not just store records:
+- What is due this week?
+- Which commitments are linked to which assets?
+- What changed, when, and by whom?
+- What is projected next vs already persisted?
+
+## Why I Built It
+
+I built this with my mom as the primary stakeholder and real-world user. I led discovery with her use cases, translated non-technical needs into a technical product scope, and then delivered the system through phased milestones.
+
+This was intentionally run like a production program rather than a simple side project:
+- Defined milestone/phase scope and execution workflow
+- Planned ERD, data flow, and domain boundaries
+- Implemented backend/frontend architecture
+- Added verification and gap-closure loops
+- Deployed to home-network production with repeatable release operations
+
+## What It Does
+
+- Asset management for real estate, vehicles, and financial items
+- Financial commitments and income tracking with recurrence support
+- Timeline event generation (pending, projected, exception handling)
+- Completion/undo/edit workflows for event operations
+- Dashboard views for portfolio snapshots, due-event metrics, and grouped event queues
+- Role-aware access and scoped data views
+- Audit trails for change accountability
+- Demo data seeding for reproducible product walkthroughs
+
+## General Architecture
+
+### 1) Product and planning layer
+- Requirement-driven milestone planning with phase artifacts (`ROADMAP.md`, `REQUIREMENTS.md`, `STATE.md`)
+- Plan -> execute -> verify loop with explicit gap closure workflow
+
+### 2) Backend domain and API layer
+- Node.js + Express API
+- Sequelize ORM with PostgreSQL in production
+- Core models: `User`, `Item`, `Event`, `AuditLog`
+- Domain services for item lifecycle, event lifecycle, auth, and audit behavior
+
+### 3) Frontend interaction layer
+- React + TypeScript + Vite
+- shadcn-based UI surface system and reusable data-card patterns
+- Framer Motion for shared motion language and tactile feedback in dense data UIs
+
+### 4) Operations and deployment layer
+- Containerized frontend/backend images published to GHCR
+- GitHub Actions image-publish workflow (`.github/workflows/publish-prod-images.yml`)
+- Portainer stack deployment on Ugreen NAS via pinned image tags
+- Deterministic release/rollback model using explicit `IMAGE_TAG`
+
+## Ownership Scope (What I Personally Orchestrated)
+
+- Discovery and use-case definition with stakeholder
+- ERD/domain design, data structures, and flow planning
+- Milestone decomposition and phased technical planning
+- Full-stack implementation direction and verification gates
+- Release operations, deployment workflow, and production troubleshooting
+
+---
+
+This README also contains the canonical production runbook for deploying House ERP to a Ugreen NAS with Portainer.
+
+## Deployment Runbook
 
 ## Production Deployment (Ugreen NAS + Portainer)
 
@@ -26,9 +95,10 @@ Publish images before touching the Portainer stack.
 
 1. Open Actions -> `Publish Production Images`.
 2. Run workflow with:
-   - `image_tag`: release tag (for example `2026.03.06-1`)
+   - `image_tag`: release tag using the standard format `YYYY.MM.DD-N` (for example `2026.03.06-1`)
    - `include_latest`: `false`
 3. Wait for the workflow to complete successfully.
+4. If `git` and `gh` CLI are installed and authenticated on the local machine, this workflow can be triggered from the CLI assistant instead of opening the GitHub Actions page manually.
 
 #### Option B: Local CLI publish
 
