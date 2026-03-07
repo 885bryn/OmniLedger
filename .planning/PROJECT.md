@@ -2,7 +2,7 @@
 
 ## What This Is
 
-HACT is a full-stack household ledger product with secure multi-user access, scope-correct export portability, deterministic workbook generation, and actor/lens-attributed audit visibility.
+HACT is a full-stack household ledger product with secure multi-user access, scope-correct export portability, deterministic workbook generation, and actor/lens-attributed audit visibility. The OmniLedger dashboard is the primary React/Tailwind interface where users review assets, obligations, timelines, exports, and operational status.
 
 ## Core Value
 
@@ -14,11 +14,38 @@ Users can see each asset together with its linked obligations and timeline statu
 - **Archive references:** `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.0-REQUIREMENTS.md`, `.planning/milestones/v4.0-MILESTONE-AUDIT.md`
 - **Completion stance:** shipped; requirements satisfied with remaining non-blocking runtime verification debt tracked in milestone audit
 
-## Next Milestone Goals
+## Current Milestone: v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion
 
-- Define next milestone scope through fresh requirements and roadmap planning.
-- Decide whether to prioritize operational hardening (HTTPS/TLS, runtime verification debt closure) or product-surface enhancements.
-- Keep deployability and audit traceability as non-negotiable release constraints.
+**Goal:** Elevate the OmniLedger dashboard with a premium, data-focused UI system that defaults to light mode, supports an explicit dark toggle, and uses MacOS-style spring motion for clearer interaction feedback.
+
+**Target features:**
+- Strict light-mode default theme system that ignores OS preference until the user explicitly toggles themes.
+- High-contrast dashboard canvas, card surfaces, borders, text hierarchy, spacing, and radius tokens across the core UI shell.
+- Framer Motion layout, mount/unmount, and tactile press interactions for cards, list items, and record creation states.
+- A reusable layout wrapper plus exemplar Data Card and List Item motion patterns for rollout across the dashboard.
+
+## Requirements
+
+### Validated
+
+- ✓ Users can manage household financial data through a secure multi-user dashboard with authenticated access and owner-scoped RBAC visibility. - v2.0
+- ✓ Users can view assets, obligations, and timeline-driven financial projections in a deterministic ledger experience. - v2.0
+- ✓ Users can export scope-correct workbook data with audit-attributed traceability. - v3.0
+- ✓ Operators can deploy the product to Ugreen NAS through documented Portainer workflows with environment-driven production configuration. - v4.0
+
+### Active
+
+- [ ] Users see the OmniLedger dashboard in light mode on first render, regardless of OS or browser theme preference.
+- [ ] Users can explicitly toggle between high-contrast light and dark themes, with their chosen theme persisted locally.
+- [ ] Users interact with cards, controls, and list/grid layouts that use consistent radii, generous spacing, crisp borders, and subtle light-mode elevation.
+- [ ] Users see physics-based motion when records appear, disappear, or shift position so layout changes stay visually legible.
+- [ ] Engineers have a reusable layout wrapper, theme toggle pattern, Tailwind updates, and Framer Motion examples to apply across the dashboard.
+
+### Out of Scope
+
+- Backend/domain model changes - this milestone is limited to frontend UI system and interaction behavior.
+- OS-level theme detection or `prefers-color-scheme` listeners - strict light-mode default is a milestone constraint.
+- Marketing-site redesign or brand repositioning - the dashboard should remain structured, utilitarian, and data-focused.
 
 ## Constraints
 
@@ -27,6 +54,9 @@ Users can see each asset together with its linked obligations and timeline statu
 - **Execution model:** Continue milestone/phase planning through GSD workflows with archive-first documentation hygiene.
 - **Deployment target:** Ugreen NAS + Portainer remains the production operating baseline.
 - **Configuration security:** Network and identity settings must be externalized via environment variables; no hardcoded values.
+- **Theme behavior:** Initial render must be locked to light mode and ignore OS/browser preference until the user uses the theme toggle.
+- **Visual language:** Preserve a structured, high-contrast, developer-tool dashboard aesthetic rather than a marketing-style redesign.
+- **Motion model:** Layout changes should use Framer Motion spring physics instead of generic linear CSS transitions where the UI reflows.
 
 <details>
 <summary>Archived Prior Milestone Snapshot (v4.0 In-Progress Framing)</summary>
@@ -45,4 +75,4 @@ Users can see each asset together with its linked obligations and timeline statu
 </details>
 
 ---
-*Last updated: 2026-03-07 after completing milestone v4.0*
+*Last updated: 2026-03-07 after starting milestone v4.1*

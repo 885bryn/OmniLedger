@@ -17,8 +17,12 @@ Run workflow: `.github/workflows/publish-prod-images.yml`
 
 Recommended input values:
 
-- `image_tag`: explicit release tag, example `2026-03-06-hotfix-1`
+- `image_tag`: explicit release tag using `YYYY.MM.DD-N`, example `2026.03.06-1`
 - `include_latest`: optional (`true` allowed, but do not deploy from `latest` during incident recovery)
+
+Operator note:
+
+- If `git` and `gh` CLI are installed and authenticated on the local machine, the CLI assistant can trigger `.github/workflows/publish-prod-images.yml` directly and report the exact tag used, so only the Portainer/NAS update remains manual.
 
 Expected images:
 
