@@ -49,20 +49,20 @@ Deferred to a future milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CASH-01 | Phase TBD | Pending |
-| CASH-02 | Phase TBD | Pending |
-| CASH-03 | Phase TBD | Pending |
-| CASH-04 | Phase TBD | Pending |
-| VIEW-01 | Phase TBD | Pending |
-| VIEW-02 | Phase TBD | Pending |
-| VIEW-03 | Phase TBD | Pending |
-| SAFE-01 | Phase TBD | Pending |
+| CASH-01 | Phase 28 | Pending |
+| CASH-02 | Phase 28 | Pending |
+| CASH-03 | Phase 29 | Pending |
+| CASH-04 | Phase 27 | Pending |
+| VIEW-01 | Phase 29 | Pending |
+| VIEW-02 | Phase 29 | Pending |
+| VIEW-03 | Phase 29 | Pending |
+| SAFE-01 | Phase 29 | Pending |
 
 **Coverage:**
 - v1 requirements: 8 total
-- Mapped to phases: 0
-- Unmapped: 8 ⚠️
+- Mapped to phases: 8
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after milestone v4.2 requirement definition*
+*Last updated: 2026-03-07 after milestone v4.2 roadmap mapping*
