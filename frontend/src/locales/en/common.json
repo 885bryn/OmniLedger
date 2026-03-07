@@ -2,6 +2,9 @@
   "shell": {
     "title": "Household Asset and Commitment Tracker",
     "workspace": "HACT Workspace",
+    "themeMenuLabel": "Theme",
+    "themeSwitchToDark": "Switch to dark theme",
+    "themeSwitchToLight": "Switch to light theme",
     "identityLabel": "Signed in as",
     "exportBackupAction": "Export Backup",
     "exportingBackup": "Exporting...",

@@ -2,6 +2,9 @@
   "shell": {
     "title": "家庭资产与承诺追踪器",
     "workspace": "HACT 工作区",
+    "themeMenuLabel": "主题",
+    "themeSwitchToDark": "切换到深色主题",
+    "themeSwitchToLight": "切换到浅色主题",
     "identityLabel": "当前会话",
     "exportBackupAction": "导出备份",
     "exportingBackup": "导出中...",
