@@ -66,5 +66,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 24-02-PLAN.md
-Resume file: `None`
+Stopped at: Phase 25 context gathered after UI pivot
+Resume file: `.planning/phases/25-dashboard-surface-system/25-CONTEXT.md`

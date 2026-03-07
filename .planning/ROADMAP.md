@@ -22,11 +22,11 @@
 
 ### 🚧 v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion
 
-**Milestone Goal:** Users get a premium, data-first OmniLedger dashboard that starts in light mode, supports an explicit dark toggle, and uses spring-driven motion to keep dense UI changes readable.
+**Milestone Goal:** Users get a premium, data-first OmniLedger dashboard that starts in light mode, uses shadcn/ui Nova primitives for its visual system, supports an explicit dark toggle, and layers spring-driven motion onto dense UI changes.
 
 - [x] **Phase 24: Theme Foundation** - Deliver strict light-first theme initialization, manual toggle behavior, and persisted user choice. (completed 2026-03-07)
-- [ ] **Phase 25: Dashboard Surface System** - Apply the high-contrast dual-theme shell, spacing, radius, and exemplar data-card surface pattern.
-- [ ] **Phase 26: Motion Interaction Patterns** - Add shared spring motion, tactile press feedback, fluid layout reflow, and exemplar list-item creation feedback.
+- [ ] **Phase 25: Dashboard Surface System** - Apply the high-contrast shadcn-based shell, cards, forms, toasts, and exemplar data-surface patterns.
+- [ ] **Phase 26: Motion Interaction Patterns** - Add shared Framer Motion spring behavior, tactile feedback, fluid layout reflow, and exemplar shadcn list/panel animation patterns.
 
 ## Phase Details
 
@@ -46,27 +46,32 @@ Plans:
 - [x] `24-02-PLAN.md` - Add the authenticated shell's desktop/mobile theme toggle controls and regression coverage.
 
 ### Phase 25: Dashboard Surface System
-**Goal**: Users can scan dense financial information in a consistent, high-contrast dashboard shell across light and dark themes.
+**Goal**: Users can scan dense financial information in a consistent, high-contrast dashboard shell built from shadcn/ui Nova primitives across light and dark themes.
 **Depends on**: Phase 24
 **Requirements**: VIS-01, VIS-02, VIS-03, VIS-04, IMPL-03
 **Success Criteria** (what must be TRUE):
-  1. User sees the light theme use the milestone canvas, card, border, text, and subtle elevation tokens across the updated dashboard shell.
-  2. User sees the dark theme swap to the milestone dark canvas, card, border, and text tokens without relying on card shadows for separation.
-  3. User sees main cards use `rounded-xl` styling and interactive controls use `rounded-lg` styling consistently across updated dashboard surfaces.
-  4. User can read dense dashboard data comfortably because updated cards use generous internal spacing and clear hierarchy.
-  5. User sees at least one exemplar data-card pattern that matches the shell's required surface styling and can be reused across the dashboard.
-**Plans**: TBD
+  1. User sees the light theme use the milestone canvas, shadcn surface, border, text, and subtle elevation tokens across the updated dashboard shell.
+  2. User sees the dark theme swap to the milestone deep-black canvas, shadcn surface, border, and text tokens without relying on card shadows for separation.
+  3. User sees official shadcn cards use `rounded-xl` styling and shadcn interactive controls use `rounded-lg` styling consistently across updated dashboard surfaces.
+  4. User can read dense dashboard forms and data panels comfortably because updated surfaces use generous spacing and clear hierarchy.
+  5. User sees at least one exemplar data-card pattern built from `@/components/ui` primitives that can be reused across dashboard views.
+**Plans**: 3 plans
+
+Plans:
+- [ ] `25-01-PLAN.md` - Establish the Phase 25 surface tokens, shell styling, and reusable dashboard data-card pattern.
+- [ ] `25-02-PLAN.md` - Migrate auth entry, dialogs, and toast presentation to shadcn-aligned surfaces.
+- [ ] `25-03-PLAN.md` - Roll the shared shadcn form system across first-pass item-management and admin action surfaces.
 
 ### Phase 26: Motion Interaction Patterns
-**Goal**: Users can follow dashboard changes through fluid MacOS-style motion and tactile feedback instead of abrupt reflows.
+**Goal**: Users can follow dashboard changes through fluid MacOS-style Framer Motion behavior and tactile feedback layered onto shadcn-based surfaces instead of abrupt reflows.
 **Depends on**: Phase 25
 **Requirements**: MOTION-01, MOTION-02, MOTION-03, MOTION-04, IMPL-04
 **Success Criteria** (what must be TRUE):
-  1. User sees cards and rows enter or leave with a shared spring feel instead of abrupt appearance changes.
+  1. User sees shadcn cards, rows, or panels enter and leave with a shared Framer Motion spring feel instead of abrupt appearance changes.
   2. User sees surrounding cards or rows fluidly reposition when records are added, removed, or reordered.
-  3. User gets tactile press feedback on interactive cards and primary actions during pointer/tap interaction.
+  3. User gets tactile press feedback on interactive shadcn cards and primary actions during pointer/tap interaction.
   4. User sees newly created rows or cards slide in from a slight vertical offset and briefly highlight so additions are easy to spot.
-  5. User sees at least one exemplar list-item pattern that combines layout animation, spring motion, and creation confirmation consistently.
+  5. User sees at least one exemplar `@/components/ui` list or panel pattern that combines layout animation, spring motion, and creation confirmation consistently.
 **Plans**: TBD
 
 ## Progress
@@ -74,8 +79,8 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 24. Theme Foundation | v4.1 | 2/2 | Complete | 2026-03-07 |
-| 25. Dashboard Surface System | v4.1 | 0/TBD | Not started | - |
+| 25. Dashboard Surface System | v4.1 | 0/3 | Not started | - |
 | 26. Motion Interaction Patterns | v4.1 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-03-07 after completing plan 24-02*
+*Last updated: 2026-03-07 after planning phase 25*
