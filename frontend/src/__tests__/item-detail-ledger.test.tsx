@@ -91,6 +91,111 @@ describe('item detail commitments panel', () => {
     }
   })
 
+  it('renders period-aware summary labels and one-time rule guidance when summary metadata exists', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/asset-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'asset-1',
+            item_type: 'RealEstate',
+            user_id: 'owner-1',
+            child_commitments: [],
+            summary: {
+              monthly_obligation_total: 1200,
+              monthly_income_total: 1800,
+              net_monthly_cashflow: 600,
+              excluded_row_count: 0,
+              active_period: {
+                label: 'Mar 2026',
+                start_date: '2026-03-01',
+                end_date: '2026-03-31',
+              },
+              one_time_rule: {
+                description: 'One-time rows count once only when due date is inside this active period.',
+              },
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              { id: 'asset-1', item_type: 'RealEstate', attributes: { address: 'Maple Street' }, updated_at: '2026-02-20T00:00:00.000Z' },
+            ],
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail()
+
+    expect(await screen.findByText('Monthly obligations (Mar 2026)')).toBeTruthy()
+    expect(screen.getByText('Monthly income (Mar 2026)')).toBeTruthy()
+    expect(screen.getByText('Net cashflow (Mar 2026)')).toBeTruthy()
+    expect(screen.getByText('Active summary period: Mar 2026.')).toBeTruthy()
+    expect(screen.getByText('One-time rows count once only when due date is inside this active period.')).toBeTruthy()
+    expect(screen.getByText('Net cashflow is normalized income minus obligations for this monthly period.')).toBeTruthy()
+  })
+
+  it('falls back to stable monthly summary wording when metadata is missing', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/asset-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'asset-1',
+            item_type: 'RealEstate',
+            user_id: 'owner-1',
+            child_commitments: [],
+            summary: {
+              monthly_obligation_total: 1200,
+              monthly_income_total: 800,
+              net_monthly_cashflow: -400,
+              excluded_row_count: 0,
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              { id: 'asset-1', item_type: 'RealEstate', attributes: { address: 'Maple Street' }, updated_at: '2026-02-20T00:00:00.000Z' },
+            ],
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail()
+
+    expect(await screen.findByText('Monthly obligations (current month)')).toBeTruthy()
+    expect(screen.getByText('Monthly income (current month)')).toBeTruthy()
+    expect(screen.getByText('Net cashflow (current month)')).toBeTruthy()
+    expect(screen.getByText('Active summary period: current month.')).toBeTruthy()
+    expect(screen.getByText('One-time rows count once only when their due date is inside this active period.')).toBeTruthy()
+  })
+
   it('shows one row per linked financial item without expanding into occurrences', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
