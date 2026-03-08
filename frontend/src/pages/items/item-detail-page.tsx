@@ -69,6 +69,11 @@ type NetStatusResponse = ItemRow & {
           monthly?: number
           yearly?: number
         }
+        net_cashflow?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
         net?: {
           weekly?: number
           monthly?: number
@@ -85,6 +90,12 @@ type ResolvedCadenceTotals = {
   obligations: number
   income: number
   net: number
+}
+
+type RecurringCadenceProjection = {
+  obligations: number
+  income: number
+  netCashflow: number
 }
 
 type EventRow = {
@@ -421,19 +432,21 @@ function deriveSummaryFromCommitments(commitments: ItemRow[]) {
 
 function resolveCadenceSummaryTotals(summary: NetStatusResponse['summary'], cadence: SummaryCadence): ResolvedCadenceTotals {
   const recurringTotals = summary.cadence_totals?.recurring
-  const recurringObligations = recurringTotals?.obligations?.[cadence]
-  const recurringIncome = recurringTotals?.income?.[cadence]
-  const recurringNet = recurringTotals?.net?.[cadence]
+  const recurringCadenceProjection: RecurringCadenceProjection = {
+    obligations: Number(recurringTotals?.obligations?.[cadence]),
+    income: Number(recurringTotals?.income?.[cadence]),
+    netCashflow: Number(recurringTotals?.net_cashflow?.[cadence] ?? recurringTotals?.net?.[cadence]),
+  }
 
   if (
-    Number.isFinite(recurringObligations)
-    && Number.isFinite(recurringIncome)
-    && Number.isFinite(recurringNet)
+    Number.isFinite(recurringCadenceProjection.obligations)
+    && Number.isFinite(recurringCadenceProjection.income)
+    && Number.isFinite(recurringCadenceProjection.netCashflow)
   ) {
     return {
-      obligations: Number(recurringObligations),
-      income: Number(recurringIncome),
-      net: Number(recurringNet),
+      obligations: recurringCadenceProjection.obligations,
+      income: recurringCadenceProjection.income,
+      net: recurringCadenceProjection.netCashflow,
     }
   }
 
