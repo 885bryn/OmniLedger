@@ -74,7 +74,8 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
-None.
+- `gsd-tools state advance-plan`, `state update-progress`, and `state record-session` could not parse this repository's STATE.md structure; equivalent state/session updates were applied manually in `.planning/STATE.md`.
+- `gsd-tools commit` argument parsing failed in this Windows shell context; metadata files were committed with direct `git add` + `git commit` fallback.
 
 ## User Setup Required
 None - no external service configuration required.
