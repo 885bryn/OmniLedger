@@ -4,6 +4,7 @@ const { models } = require("../../db");
 const { canAccessOwner } = require("../../api/auth/scope-context");
 const { ItemNetStatusError, ITEM_NET_STATUS_ERROR_CATEGORIES } = require("./item-net-status-errors");
 const { applyComputedFinancialProgress } = require("./financial-metrics");
+const { normalizeRecurringAmount, roundBankers } = require("./cadence-normalization");
 
 const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
@@ -252,6 +253,28 @@ function resolveParentLinkId(item) {
   return null;
 }
 
+function createCadenceBucket() {
+  return {
+    weekly: 0,
+    monthly: 0,
+    yearly: 0
+  };
+}
+
+function applyCadenceTotals(target, cadenceTotals) {
+  target.weekly += cadenceTotals.weekly;
+  target.monthly += cadenceTotals.monthly;
+  target.yearly += cadenceTotals.yearly;
+}
+
+function finalizeCadenceBucket(bucket) {
+  return {
+    weekly: roundBankers(bucket.weekly),
+    monthly: roundBankers(bucket.monthly),
+    yearly: roundBankers(bucket.yearly)
+  };
+}
+
 function buildSummary(childCommitments) {
   const activePeriod = resolveActiveMonthlyPeriod();
   const summary = childCommitments.reduce(
@@ -260,23 +283,51 @@ function buildSummary(childCommitments) {
 
       if (amount === null || amount === 0) {
         accumulator.excluded_row_count += 1;
+        accumulator.cadence_totals.exclusions.invalid_or_zero_amount_count += 1;
         return accumulator;
       }
 
       if (isOneTimeItem(child)) {
         const dueDateDayKey = deriveDueDateDayKey(child);
+
+        if (dueDateDayKey === null) {
+          accumulator.excluded_row_count += 1;
+          accumulator.cadence_totals.exclusions.missing_or_invalid_due_date_count += 1;
+          return accumulator;
+        }
+
         const isInsideActivePeriod = isDueDateInsideActiveMonthlyPeriod(dueDateDayKey, activePeriod);
 
         if (!isInsideActivePeriod) {
           accumulator.excluded_row_count += 1;
+          accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
           return accumulator;
         }
+
+        if (isIncomeItem(child)) {
+          accumulator.monthly_income_total += amount;
+          accumulator.cadence_totals.one_time_period.monthly_income_total += amount;
+        } else {
+          accumulator.monthly_obligation_total += amount;
+          accumulator.cadence_totals.one_time_period.monthly_obligation_total += amount;
+        }
+
+        return accumulator;
+      }
+
+      const recurringNormalization = normalizeRecurringAmount(amount, child.frequency);
+      if (!recurringNormalization.isValid) {
+        accumulator.excluded_row_count += 1;
+        accumulator.cadence_totals.exclusions.invalid_or_missing_frequency_count += 1;
+        return accumulator;
       }
 
       if (isIncomeItem(child)) {
         accumulator.monthly_income_total += amount;
+        applyCadenceTotals(accumulator.cadence_totals.recurring.income, recurringNormalization.cadenceTotals);
       } else {
         accumulator.monthly_obligation_total += amount;
+        applyCadenceTotals(accumulator.cadence_totals.recurring.obligations, recurringNormalization.cadenceTotals);
       }
 
       return accumulator;
@@ -287,11 +338,52 @@ function buildSummary(childCommitments) {
       net_monthly_cashflow: 0,
       excluded_row_count: 0,
       active_period: activePeriod.metadata,
-      one_time_rule: ONE_TIME_RULE_DESCRIPTOR
+      one_time_rule: ONE_TIME_RULE_DESCRIPTOR,
+      cadence_totals: {
+        recurring: {
+          obligations: createCadenceBucket(),
+          income: createCadenceBucket(),
+          net_cashflow: createCadenceBucket()
+        },
+        one_time_period: {
+          cadence: "monthly",
+          monthly_obligation_total: 0,
+          monthly_income_total: 0,
+          net_monthly_cashflow: 0,
+          active_period: activePeriod.metadata
+        },
+        exclusions: {
+          invalid_or_zero_amount_count: 0,
+          invalid_or_missing_frequency_count: 0,
+          missing_or_invalid_due_date_count: 0,
+          outside_active_period_count: 0,
+          total_excluded_row_count: 0
+        }
+      }
     }
   );
 
   summary.net_monthly_cashflow = summary.monthly_income_total - summary.monthly_obligation_total;
+
+  summary.cadence_totals.recurring.obligations = finalizeCadenceBucket(summary.cadence_totals.recurring.obligations);
+  summary.cadence_totals.recurring.income = finalizeCadenceBucket(summary.cadence_totals.recurring.income);
+  summary.cadence_totals.recurring.net_cashflow = {
+    weekly: roundBankers(summary.cadence_totals.recurring.income.weekly - summary.cadence_totals.recurring.obligations.weekly),
+    monthly: roundBankers(summary.cadence_totals.recurring.income.monthly - summary.cadence_totals.recurring.obligations.monthly),
+    yearly: roundBankers(summary.cadence_totals.recurring.income.yearly - summary.cadence_totals.recurring.obligations.yearly)
+  };
+
+  summary.cadence_totals.one_time_period.monthly_obligation_total = roundBankers(
+    summary.cadence_totals.one_time_period.monthly_obligation_total
+  );
+  summary.cadence_totals.one_time_period.monthly_income_total = roundBankers(
+    summary.cadence_totals.one_time_period.monthly_income_total
+  );
+  summary.cadence_totals.one_time_period.net_monthly_cashflow = roundBankers(
+    summary.cadence_totals.one_time_period.monthly_income_total - summary.cadence_totals.one_time_period.monthly_obligation_total
+  );
+  summary.cadence_totals.exclusions.total_excluded_row_count = summary.excluded_row_count;
+
   return summary;
 }
 
