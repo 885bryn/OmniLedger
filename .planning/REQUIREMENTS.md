@@ -11,13 +11,13 @@ Requirements for milestone v4.2 cashflow frequency normalization and cadence cla
 
 - [x] **CASH-01**: User sees per-asset obligation totals converted to the selected cadence (weekly/monthly/yearly) using each financial item's billing frequency.
 - [x] **CASH-02**: User sees per-asset income totals converted to the selected cadence (weekly/monthly/yearly) using each financial item's billing frequency.
-- [ ] **CASH-03**: User sees per-asset net cashflow computed from cadence-normalized obligation and income totals rather than monthly-only assumptions.
+- [x] **CASH-03**: User sees per-asset net cashflow computed from cadence-normalized obligation and income totals rather than monthly-only assumptions.
 - [x] **CASH-04**: User sees non-recurring (`one_time`) financial items handled with a clear, consistent rule so recurring cadence totals remain predictable.
 
 ### Cadence Controls & Clarity
 
 - [x] **VIEW-01**: User can switch asset-summary cadence between weekly, monthly, and yearly.
-- [ ] **VIEW-02**: User sees obligations, income, and net cashflow cards update in sync whenever cadence changes.
+- [x] **VIEW-02**: User sees obligations, income, and net cashflow cards update in sync whenever cadence changes.
 - [x] **VIEW-03**: User sees summary labels/units that clearly match the selected cadence.
 
 ### Compatibility Guardrail
@@ -51,10 +51,10 @@ Deferred to a future milestone.
 |-------------|-------|--------|
 | CASH-01 | Phase 28 | Complete |
 | CASH-02 | Phase 28 | Complete |
-| CASH-03 | Phase 29 | Pending |
+| CASH-03 | Phase 29 | Complete |
 | CASH-04 | Phase 27 | Complete |
 | VIEW-01 | Phase 29 | Complete |
-| VIEW-02 | Phase 29 | Pending |
+| VIEW-02 | Phase 29 | Complete |
 | VIEW-03 | Phase 29 | Complete |
 | SAFE-01 | Phase 29 | Pending |
 
@@ -65,4 +65,4 @@ Deferred to a future milestone.
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-08 after phase 28 completion verification*
+*Last updated: 2026-03-08 after phase 29 plan 02 execution*
