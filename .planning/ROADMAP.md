@@ -40,10 +40,11 @@
   1. User sees one-time obligations and income handled by one consistent summary rule instead of ad-hoc behavior.
   2. User sees the same one-time handling outcome anywhere the asset summary is rendered.
   3. User can still use existing item and event workflows without new required steps or broken paths.
-**Plans**: 2 plans
+**Plans**: 3 plans
 Plans:
 - [ ] 27-01-PLAN.md - Lock backend one-time monthly period contract and net-status metadata
 - [ ] 27-02-PLAN.md - Surface period-aware summary wording and one-time rule hint in item detail UI
+- [ ] 27-03-PLAN.md - Close one-time future-month leakage in monthly obligations with regression tests
 
 ### Phase 28: Cadence-Normalized Totals
 **Goal**: Users can trust that obligation and income rollups reflect each item's billing frequency in the selected cadence.
