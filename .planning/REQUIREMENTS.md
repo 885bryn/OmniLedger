@@ -22,7 +22,7 @@ Requirements for milestone v4.2 cashflow frequency normalization and cadence cla
 
 ### Compatibility Guardrail
 
-- [ ] **SAFE-01**: User retains existing item/event workflows while only the asset-summary rollup calculations and cadence controls are changed.
+- [x] **SAFE-01**: User retains existing item/event workflows while only the asset-summary rollup calculations and cadence controls are changed.
 
 ## v2 Requirements
 
@@ -56,7 +56,7 @@ Deferred to a future milestone.
 | VIEW-01 | Phase 29 | Complete |
 | VIEW-02 | Phase 29 | Complete |
 | VIEW-03 | Phase 29 | Complete |
-| SAFE-01 | Phase 29 | Pending |
+| SAFE-01 | Phase 29 | Complete |
 
 **Coverage:**
 - v1 requirements: 8 total

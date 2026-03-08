@@ -28,7 +28,7 @@
 
 - [x] **Phase 27: Frequency Rule Contract** - Establish predictable normalization rules, including one-time handling, without changing non-summary workflows. (completed 2026-03-08)
 - [x] **Phase 28: Cadence-Normalized Totals** - Deliver cadence-correct obligation and income totals for weekly, monthly, and yearly views. (completed 2026-03-08)
-- [ ] **Phase 29: Cadence Toggle & Synced Cashflow View** - Add cadence switching with synchronized cards, clear units, and net cashflow derived from normalized totals.
+- [x] **Phase 29: Cadence Toggle & Synced Cashflow View** - Add cadence switching with synchronized cards, clear units, and net cashflow derived from normalized totals. (completed 2026-03-08)
 
 ## Phase Details
 
@@ -77,7 +77,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 27. Frequency Rule Contract | 3/3 | Complete    | 2026-03-08 |
 | 28. Cadence-Normalized Totals | 2/2 | Complete    | 2026-03-08 |
-| 29. Cadence Toggle & Synced Cashflow View | 2/3 | In Progress|  |
+| 29. Cadence Toggle & Synced Cashflow View | 3/3 | Complete   | 2026-03-08 |
 
 ---
-*Last updated: 2026-03-08 after completing phase 29 plan 02*
+*Last updated: 2026-03-08 after completing phase 29 plan 03*
