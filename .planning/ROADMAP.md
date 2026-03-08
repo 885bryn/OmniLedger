@@ -26,7 +26,7 @@
 
 **Milestone Goal:** Make per-asset cashflow rollups mathematically correct across billing frequencies and user-selectable cadence views while preserving existing RBAC/audit/deployment guarantees.
 
-- [ ] **Phase 27: Frequency Rule Contract** - Establish predictable normalization rules, including one-time handling, without changing non-summary workflows.
+- [x] **Phase 27: Frequency Rule Contract** - Establish predictable normalization rules, including one-time handling, without changing non-summary workflows. (completed 2026-03-08)
 - [ ] **Phase 28: Cadence-Normalized Totals** - Deliver cadence-correct obligation and income totals for weekly, monthly, and yearly views.
 - [ ] **Phase 29: Cadence Toggle & Synced Cashflow View** - Add cadence switching with synchronized cards, clear units, and net cashflow derived from normalized totals.
 
@@ -71,7 +71,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 27. Frequency Rule Contract | 1/2 | In Progress|  |
+| 27. Frequency Rule Contract | 2/2 | Complete   | 2026-03-08 |
 | 28. Cadence-Normalized Totals | 0/TBD | Not started | - |
 | 29. Cadence Toggle & Synced Cashflow View | 0/TBD | Not started | - |
 
