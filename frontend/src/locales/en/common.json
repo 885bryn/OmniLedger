@@ -216,12 +216,25 @@
       "summaryMonthly": "Monthly obligations ({{period}})",
       "summaryIncome": "Monthly income ({{period}})",
       "summaryNet": "Net cashflow ({{period}})",
+      "summaryObligationsCadence": "{{cadence}} obligations ({{period}})",
+      "summaryIncomeCadence": "{{cadence}} income ({{period}})",
+      "summaryNetCadence": "{{cadence}} net cashflow ({{period}})",
       "summaryPeriodHint": "Active summary period: {{period}}.",
       "summaryRuleHint": "One-time rows count once only when their due date is inside this active period.",
       "summaryNetFormulaHint": "Net cashflow is normalized income minus obligations for this monthly period.",
+      "summaryNetFormulaHintCadence": "{{cadence}} net cashflow equals normalized {{cadence}} income minus {{cadence}} obligations.",
       "summaryPeriodFallback": "current month",
       "summaryLinked": "Linked financial items",
       "summaryExcluded": "Excluded rows",
+      "cadence": {
+        "ariaLabel": "Summary cadence",
+        "optionSelected": "Selected cadence: {{cadence}}",
+        "options": {
+          "weekly": "Weekly",
+          "monthly": "Monthly",
+          "yearly": "Yearly"
+        }
+      },
       "keyDetails": "Key details",
       "noCommitments": "No linked financial items yet.",
       "linkedItemsTitle": "Connections",

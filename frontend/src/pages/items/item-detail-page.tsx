@@ -707,6 +707,7 @@ export function ItemDetailPage() {
     () => resolveCadenceSummaryTotals(effectiveSummary, selectedCadence),
     [effectiveSummary, selectedCadence],
   )
+  const selectedCadenceLabel = t(`items.detail.cadence.options.${selectedCadence}`)
 
   const parentItem = useMemo(() => {
     const parentId = parentLinkId
@@ -973,17 +974,23 @@ export function ItemDetailPage() {
 
             <motion.section layout className="grid gap-3 md:grid-cols-4">
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryMonthly', { period: summaryPeriodLabel })}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t('items.detail.summaryObligationsCadence', { cadence: selectedCadenceLabel, period: summaryPeriodLabel })}
+                </p>
                 <p className="mt-2 text-2xl font-semibold">{formatCurrency(cadenceSummaryTotals.obligations)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryIncome', { period: summaryPeriodLabel })}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t('items.detail.summaryIncomeCadence', { cadence: selectedCadenceLabel, period: summaryPeriodLabel })}
+                </p>
                 <p className="mt-2 text-2xl font-semibold text-emerald-700">{formatCurrency(cadenceSummaryTotals.income)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryNet', { period: summaryPeriodLabel })}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t('items.detail.summaryNetCadence', { cadence: selectedCadenceLabel, period: summaryPeriodLabel })}
+                </p>
                 <p className="mt-2 text-2xl font-semibold">{formatCurrency(cadenceSummaryTotals.net)}</p>
-                <p className="mt-2 text-[11px] text-muted-foreground">{t('items.detail.summaryNetFormulaHint')}</p>
+                <p className="mt-2 text-[11px] text-muted-foreground">{t('items.detail.summaryNetFormulaHintCadence', { cadence: selectedCadenceLabel })}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryLinked')}</p>
