@@ -117,6 +117,8 @@ function resolveActiveMonthlyPeriod(referenceDate = new Date()) {
   const referenceDayKey = Date.UTC(year, month, date);
 
   return {
+    year,
+    month,
     startDayKey,
     endDayKey,
     referenceDayKey,
@@ -128,6 +130,19 @@ function resolveActiveMonthlyPeriod(referenceDate = new Date()) {
       boundary: "inclusive"
     }
   };
+}
+
+function isDueDateInsideActiveMonthlyPeriod(dueDateDayKey, activePeriod) {
+  if (dueDateDayKey === null) {
+    return false;
+  }
+
+  if (dueDateDayKey < activePeriod.startDayKey || dueDateDayKey > activePeriod.endDayKey) {
+    return false;
+  }
+
+  const dueDate = new Date(dueDateDayKey);
+  return dueDate.getUTCFullYear() === activePeriod.year && dueDate.getUTCMonth() === activePeriod.month;
 }
 
 function sortChildCommitments(items) {
@@ -250,9 +265,7 @@ function buildSummary(childCommitments) {
 
       if (isOneTimeItem(child)) {
         const dueDateDayKey = deriveDueDateDayKey(child);
-        const isInsideActivePeriod = dueDateDayKey !== null
-          && dueDateDayKey >= activePeriod.startDayKey
-          && dueDateDayKey <= activePeriod.endDayKey;
+        const isInsideActivePeriod = isDueDateInsideActiveMonthlyPeriod(dueDateDayKey, activePeriod);
 
         if (!isInsideActivePeriod) {
           accumulator.excluded_row_count += 1;
