@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -10,6 +10,7 @@ import { ItemActivityTimeline } from '../../features/audit/item-activity-timelin
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { EditEventRowAction } from '../../features/events/edit-event-row-action'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
+import { useToast } from '../../features/ui/toast-provider'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
 import { compareByNearestDue } from '../../lib/date-ordering'
 import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel, isHiddenAttributeKey, isIncomeItem } from '../../lib/item-display'
@@ -79,6 +80,9 @@ type NetStatusResponse = ItemRow & {
           monthly?: number
           yearly?: number
         }
+      }
+      one_time_period?: {
+        net_monthly_cashflow?: number
       }
     }
   }
@@ -225,6 +229,15 @@ function formatCurrency(value: number) {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,
+  }).format(value)
+}
+
+function formatCurrencyWithCents(value: number) {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value)
 }
 
@@ -426,6 +439,11 @@ function deriveSummaryFromCommitments(commitments: ItemRow[]) {
       monthly_income_total: 0,
       net_monthly_cashflow: 0,
       excluded_row_count: 0,
+      cadence_totals: {
+        one_time_period: {
+          net_monthly_cashflow: 0,
+        },
+      },
     },
   )
 }
@@ -457,12 +475,17 @@ function resolveCadenceSummaryTotals(summary: NetStatusResponse['summary'], cade
   }
 }
 
+function hasFiniteCadenceTotals(totals: ResolvedCadenceTotals) {
+  return Number.isFinite(totals.obligations) && Number.isFinite(totals.income) && Number.isFinite(totals.net)
+}
+
 function isNetStatusItem(item: NetStatusResponse | ItemRow | null): item is NetStatusResponse {
   return item !== null && 'child_commitments' in item && 'summary' in item
 }
 
 export function ItemDetailPage() {
   const { t } = useTranslation()
+  const { push } = useToast()
   const location = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -473,12 +496,16 @@ export function ItemDetailPage() {
   const [activeTab, setActiveTab] = useState<DetailTab>('overview')
   const [activeFinancialEventsTab, setActiveFinancialEventsTab] = useState<FinancialEventsTab>('present')
   const [selectedCadence, setSelectedCadence] = useState<SummaryCadence>('monthly')
+  const [displayCadence, setDisplayCadence] = useState<SummaryCadence>('monthly')
+  const [isCadenceTransitionPending, setIsCadenceTransitionPending] = useState(false)
+  const [cadenceTransitionError, setCadenceTransitionError] = useState<string | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [showTechnical, setShowTechnical] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [selectedParentCascadeIds, setSelectedParentCascadeIds] = useState<string[]>([])
   const [childDeleteTarget, setChildDeleteTarget] = useState<ItemRow | null>(null)
   const [childDeleteError, setChildDeleteError] = useState<string | null>(null)
+  const cadenceTransitionVersionRef = useRef(0)
   const locationState = (typeof location.state === 'object' && location.state !== null ? location.state : null) as ItemDetailLocationState | null
   const returnTo = String(locationState?.from ?? '')
   const [highlightHeader, setHighlightHeader] = useState(locationState?.highlightItemId === itemId)
@@ -671,6 +698,11 @@ export function ItemDetailPage() {
         monthly_income_total: 0,
         net_monthly_cashflow: 0,
         excluded_row_count: 0,
+        cadence_totals: {
+          one_time_period: {
+            net_monthly_cashflow: 0,
+          },
+        },
       }
     }
 
@@ -716,11 +748,50 @@ export function ItemDetailPage() {
 
     return t('items.detail.summaryRuleHint')
   }, [detail, t])
-  const cadenceSummaryTotals = useMemo(
-    () => resolveCadenceSummaryTotals(effectiveSummary, selectedCadence),
-    [effectiveSummary, selectedCadence],
+  const displayedCadenceTotals = useMemo(
+    () => resolveCadenceSummaryTotals(effectiveSummary, displayCadence),
+    [displayCadence, effectiveSummary],
   )
-  const selectedCadenceLabel = t(`items.detail.cadence.options.${selectedCadence}`)
+  const displayedCadenceLabel = t(`items.detail.cadence.options.${displayCadence}`)
+  const oneTimeImpact = Number(effectiveSummary.cadence_totals?.one_time_period?.net_monthly_cashflow ?? 0)
+  const oneTimeImpactLabel = t('items.detail.summaryOneTimeImpact', { defaultValue: 'One-time impact (separate from recurring net)' })
+  const oneTimeImpactPrefix = oneTimeImpact > 0 ? '+' : oneTimeImpact < 0 ? '-' : ''
+
+  function handleCadenceChange(nextCadence: SummaryCadence) {
+    if (selectedCadence === nextCadence && displayCadence === nextCadence && !isCadenceTransitionPending) {
+      return
+    }
+
+    setSelectedCadence(nextCadence)
+    setCadenceTransitionError(null)
+    setIsCadenceTransitionPending(true)
+
+    const transitionVersion = cadenceTransitionVersionRef.current + 1
+    cadenceTransitionVersionRef.current = transitionVersion
+
+    window.setTimeout(() => {
+      if (cadenceTransitionVersionRef.current !== transitionVersion) {
+        return
+      }
+
+      try {
+        const nextTotals = resolveCadenceSummaryTotals(effectiveSummary, nextCadence)
+        if (!hasFiniteCadenceTotals(nextTotals)) {
+          throw new Error('Invalid cadence totals')
+        }
+
+        setDisplayCadence(nextCadence)
+      } catch {
+        const feedback = t('items.detail.loadError')
+        setCadenceTransitionError(feedback)
+        push({ message: feedback, dedupeKey: 'item-detail-cadence-transition-failed' })
+      } finally {
+        if (cadenceTransitionVersionRef.current === transitionVersion) {
+          setIsCadenceTransitionPending(false)
+        }
+      }
+    }, 120)
+  }
 
   const parentItem = useMemo(() => {
     const parentId = parentLinkId
@@ -744,6 +815,10 @@ export function ItemDetailPage() {
     setActiveTab('overview')
     setActiveFinancialEventsTab('present')
     setSelectedCadence('monthly')
+    setDisplayCadence('monthly')
+    setIsCadenceTransitionPending(false)
+    setCadenceTransitionError(null)
+    cadenceTransitionVersionRef.current += 1
   }, [itemId])
 
   useEffect(() => {
@@ -968,7 +1043,8 @@ export function ItemDetailPage() {
                     <button
                       key={cadenceOption}
                       type="button"
-                      onClick={() => setSelectedCadence(cadenceOption)}
+                      onClick={() => handleCadenceChange(cadenceOption)}
+                      disabled={isCadenceTransitionPending && selectedCadence === cadenceOption}
                       className={[
                         'flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
                         isSelected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
@@ -985,30 +1061,52 @@ export function ItemDetailPage() {
               </div>
             </motion.section>
 
-            <motion.section layout className="grid gap-3 md:grid-cols-4">
+            <motion.section
+              layout
+              aria-live="polite"
+              aria-busy={isCadenceTransitionPending}
+              className={[
+                'space-y-2',
+                isCadenceTransitionPending ? 'rounded-2xl border border-border/70 bg-muted/20 p-2' : '',
+              ].join(' ')}
+            >
+              {isCadenceTransitionPending ? (
+                <p className="px-2 text-xs text-muted-foreground">{t('common.loading', { defaultValue: 'Updating summary values...' })}</p>
+              ) : null}
+              {cadenceTransitionError ? <p className="px-2 text-xs font-medium text-destructive">{cadenceTransitionError}</p> : null}
+              <div className="grid gap-3 md:grid-cols-4">
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('items.detail.summaryObligationsCadence', { cadence: selectedCadenceLabel, period: summaryPeriodLabel })}
+                  {t('items.detail.summaryObligationsCadence', { cadence: displayedCadenceLabel, period: summaryPeriodLabel })}
                 </p>
-                <p className="mt-2 text-2xl font-semibold">{formatCurrency(cadenceSummaryTotals.obligations)}</p>
+                <p className="mt-2 text-2xl font-semibold">{formatCurrency(displayedCadenceTotals.obligations)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('items.detail.summaryIncomeCadence', { cadence: selectedCadenceLabel, period: summaryPeriodLabel })}
+                  {t('items.detail.summaryIncomeCadence', { cadence: displayedCadenceLabel, period: summaryPeriodLabel })}
                 </p>
-                <p className="mt-2 text-2xl font-semibold text-emerald-700">{formatCurrency(cadenceSummaryTotals.income)}</p>
+                <p className="mt-2 text-2xl font-semibold text-emerald-700">{formatCurrency(displayedCadenceTotals.income)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('items.detail.summaryNetCadence', { cadence: selectedCadenceLabel, period: summaryPeriodLabel })}
+                  {t('items.detail.summaryNetCadence', { cadence: displayedCadenceLabel, period: summaryPeriodLabel })}
                 </p>
-                <p className="mt-2 text-2xl font-semibold">{formatCurrency(cadenceSummaryTotals.net)}</p>
-                <p className="mt-2 text-[11px] text-muted-foreground">{t('items.detail.summaryNetFormulaHintCadence', { cadence: selectedCadenceLabel })}</p>
+                <p className="mt-2 text-2xl font-semibold">{formatCurrency(displayedCadenceTotals.net)}</p>
+                <p className="mt-2 text-[11px] text-muted-foreground">{t('items.detail.summaryNetFormulaHintCadence', { cadence: displayedCadenceLabel })}</p>
+                <p
+                  className={[
+                    'mt-2 text-[11px] font-medium',
+                    oneTimeImpact > 0 ? 'text-emerald-700' : oneTimeImpact < 0 ? 'text-destructive' : 'text-muted-foreground',
+                  ].join(' ')}
+                >
+                  {`${oneTimeImpactLabel}: ${oneTimeImpactPrefix}${formatCurrencyWithCents(Math.abs(oneTimeImpact))}`}
+                </p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryLinked')}</p>
                 <p className="mt-2 text-2xl font-semibold">{commitments.length}</p>
               </motion.article>
+              </div>
             </motion.section>
 
             <motion.section layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
