@@ -11,11 +11,11 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 28 of 29 (Cadence-Normalized Totals)
-Plan: 1 of 2
-Status: In Progress
-Last activity: 2026-03-08 - Completed 28-01 cadence-normalized totals contract and exclusion metadata wiring
+Plan: 2 of 2
+Status: Complete
+Last activity: 2026-03-08 - Completed 28-02 cadence-normalized totals API regression coverage and equivalence validation
 
-Progress: [#####-----] 50%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -33,12 +33,13 @@ Progress: [#####-----] 50%
 | 24-26 (v4.1) | 10 | 41 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 28-01 (1 min), 27-03 (3 min), 27-02 (3 min), 27-01 (0 min), 26-05 (1 min)
-- Trend: Stable execution cadence with short, focused plan loops.
+- Last 5 plans: 28-02 (3 min), 28-01 (1 min), 27-03 (3 min), 27-02 (3 min), 27-01 (0 min)
+- Trend: Stable execution cadence with phase 28 completed and regression scope locked.
 | Phase 27 P01 | 0 min | 2 tasks | 2 files |
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
 | Phase 27 P03 | 3 min | 2 tasks | 2 files |
 | Phase 28 P01 | 1 min | 2 tasks | 2 files |
+| Phase 28 P02 | 3 min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 27]: Freeze regression clock to March in API tests so future-month one-time leakage remains reproducible and protected.
 - [Phase 28]: Use yearly baseline cadence normalization with strict 52/12 constants and banker rounding at final totals.
 - [Phase 28]: Expose cadence_totals while preserving legacy monthly keys until Phase 29 UI cadence toggle adoption.
+- [Phase 28]: Use deterministic recurring fixture values for exact cross-cadence equivalence assertions in net-status API tests.
+- [Phase 28]: Model invalid recurring frequency regression with nullable frequency rows because persisted enum rejects arbitrary invalid strings.
 
 ### Pending Todos
 
@@ -71,5 +74,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 28-01-PLAN.md
+Stopped at: Completed 28-02-PLAN.md
 Resume file: `None`

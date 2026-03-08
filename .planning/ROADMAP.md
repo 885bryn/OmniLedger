@@ -27,7 +27,7 @@
 **Milestone Goal:** Make per-asset cashflow rollups mathematically correct across billing frequencies and user-selectable cadence views while preserving existing RBAC/audit/deployment guarantees.
 
 - [x] **Phase 27: Frequency Rule Contract** - Establish predictable normalization rules, including one-time handling, without changing non-summary workflows. (completed 2026-03-08)
-- [ ] **Phase 28: Cadence-Normalized Totals** - Deliver cadence-correct obligation and income totals for weekly, monthly, and yearly views.
+- [x] **Phase 28: Cadence-Normalized Totals** - Deliver cadence-correct obligation and income totals for weekly, monthly, and yearly views. (completed 2026-03-08)
 - [ ] **Phase 29: Cadence Toggle & Synced Cashflow View** - Add cadence switching with synchronized cards, clear units, and net cashflow derived from normalized totals.
 
 ## Phase Details
@@ -56,8 +56,8 @@ Plans:
   3. User sees equivalent values remain mathematically consistent when switching cadence (for example, weekly x 52 aligns with yearly expectations).
 **Plans**: 2 plans
 Plans:
-- [ ] 28-01-PLAN.md - Implement recurring cadence-normalized totals contract and one-time separation in net-status summary
-- [ ] 28-02-PLAN.md - Add API regression coverage for mixed-frequency cadence normalization and equivalence guarantees
+- [x] 28-01-PLAN.md - Implement recurring cadence-normalized totals contract and one-time separation in net-status summary
+- [x] 28-02-PLAN.md - Add API regression coverage for mixed-frequency cadence normalization and equivalence guarantees
 
 ### Phase 29: Cadence Toggle & Synced Cashflow View
 **Goal**: Users can switch cadence and immediately read synchronized obligation, income, and net cashflow values with clear units and no workflow regressions.
@@ -76,8 +76,8 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 27. Frequency Rule Contract | 3/3 | Complete    | 2026-03-08 |
-| 28. Cadence-Normalized Totals | 1/2 | In Progress|  |
+| 28. Cadence-Normalized Totals | 2/2 | Complete   | 2026-03-08 |
 | 29. Cadence Toggle & Synced Cashflow View | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-03-08 after completing phase 27 plan set*
+*Last updated: 2026-03-08 after completing phase 28 plan set*
