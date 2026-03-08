@@ -534,6 +534,175 @@ describe("GET /items/:id/net-status", () => {
     expect(recurringTotals.obligations.monthly).not.toBe(prematureRoundedObligations.monthly);
   });
 
+  it("tracks exclusion metadata and preserves one-time separation with cross-cadence equivalence", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "Vehicle",
+      attributes: {
+        vin: "VIN-CADENCE-EXCLUSION",
+        estimatedValue: 81000
+      }
+    });
+    const dates = getActiveMonthSampleDates();
+
+    const recurringObligations = [
+      { amount: 120, frequency: "monthly" },
+      { amount: 60, frequency: "weekly" },
+      { amount: 1680, frequency: "yearly" }
+    ];
+    const recurringIncome = [
+      { amount: 100, frequency: "weekly" },
+      { amount: 200, frequency: "monthly" },
+      { amount: 1760, frequency: "yearly" }
+    ];
+
+    for (const row of recurringObligations) {
+      await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          amount: row.amount,
+          dueDate: dates.middle,
+          frequency: row.frequency
+        }
+      });
+    }
+
+    for (const row of recurringIncome) {
+      await createItem({
+        userId: owner.id,
+        itemType: "FinancialIncome",
+        parentItemId: root.id,
+        attributes: {
+          amount: row.amount,
+          dueDate: dates.middle,
+          frequency: row.frequency
+        }
+      });
+    }
+
+    await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      parent_item_id: root.id,
+      linked_asset_item_id: root.id,
+      title: "Missing frequency row",
+      type: "Commitment",
+      frequency: null,
+      default_amount: 999,
+      status: "Active",
+      attributes: {
+        amount: 999,
+        dueDate: dates.middle,
+        financialSubtype: "Commitment"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: "invalid",
+        dueDate: dates.middle,
+        frequency: "weekly"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        amount: 0,
+        dueDate: dates.middle,
+        frequency: "monthly"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        amount: null,
+        dueDate: dates.middle,
+        frequency: "yearly"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        amount: 400,
+        dueDate: dates.middle,
+        frequency: "one_time"
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialIncome",
+      parentItemId: root.id,
+      attributes: {
+        amount: 250,
+        dueDate: dates.middle,
+        frequency: "one_time"
+      }
+    });
+
+    const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+    expect(response.status).toBe(200);
+
+    const summary = response.body.summary;
+    const recurringTotals = summary.cadence_totals.recurring;
+    const expectedObligations = computeExpectedRecurringCadenceTotals(recurringObligations);
+    const expectedIncome = computeExpectedRecurringCadenceTotals(recurringIncome);
+
+    expect(recurringTotals.obligations).toEqual(expectedObligations);
+    expect(recurringTotals.income).toEqual(expectedIncome);
+    expect(recurringTotals.net_cashflow).toEqual({
+      weekly: roundBankers(expectedIncome.weekly - expectedObligations.weekly),
+      monthly: roundBankers(expectedIncome.monthly - expectedObligations.monthly),
+      yearly: roundBankers(expectedIncome.yearly - expectedObligations.yearly)
+    });
+
+    expect(summary.cadence_totals.one_time_period).toMatchObject({
+      cadence: "monthly",
+      monthly_obligation_total: 400,
+      monthly_income_total: 250,
+      net_monthly_cashflow: -150
+    });
+
+    expect(summary.excluded_row_count).toBe(4);
+    expect(summary.cadence_totals.exclusions).toMatchObject({
+      invalid_or_zero_amount_count: 3,
+      invalid_or_missing_frequency_count: 1,
+      missing_or_invalid_due_date_count: 0,
+      outside_active_period_count: 0,
+      total_excluded_row_count: 4
+    });
+
+    expect(Math.abs(recurringTotals.obligations.weekly * WEEKS_PER_YEAR - recurringTotals.obligations.yearly)).toBeLessThanOrEqual(
+      CADENCE_EQUIVALENCE_TOLERANCE
+    );
+    expect(Math.abs(recurringTotals.obligations.monthly * MONTHS_PER_YEAR - recurringTotals.obligations.yearly)).toBeLessThanOrEqual(
+      CADENCE_EQUIVALENCE_TOLERANCE
+    );
+    expect(Math.abs(recurringTotals.income.weekly * WEEKS_PER_YEAR - recurringTotals.income.yearly)).toBeLessThanOrEqual(
+      CADENCE_EQUIVALENCE_TOLERANCE
+    );
+    expect(Math.abs(recurringTotals.income.monthly * MONTHS_PER_YEAR - recurringTotals.income.yearly)).toBeLessThanOrEqual(
+      CADENCE_EQUIVALENCE_TOLERANCE
+    );
+  });
+
   it("excludes one-time obligations due in May from March summary while including in-period one-time rows", async () => {
     const marchReference = new Date("2026-03-18T12:00:00.000Z");
     jest.useFakeTimers();
