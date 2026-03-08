@@ -121,6 +121,76 @@ describe("GET /items/:id/net-status", () => {
     };
   }
 
+  const WEEKS_PER_YEAR = 52;
+  const MONTHS_PER_YEAR = 12;
+  const CADENCE_EQUIVALENCE_TOLERANCE = 0.01;
+  const YEARLY_FACTORS = Object.freeze({
+    weekly: WEEKS_PER_YEAR,
+    biweekly: WEEKS_PER_YEAR / 2,
+    monthly: MONTHS_PER_YEAR,
+    quarterly: 4,
+    yearly: 1
+  });
+
+  function roundBankers(value, decimals = 2) {
+    const scale = 10 ** decimals;
+    const scaled = value * scale;
+    const floor = Math.floor(scaled);
+    const fraction = scaled - floor;
+    const distanceToHalf = Math.abs(fraction - 0.5);
+    const epsilon = Number.EPSILON * 10;
+
+    if (distanceToHalf <= epsilon) {
+      const rounded = floor % 2 === 0 ? floor : floor + 1;
+      return rounded / scale;
+    }
+
+    return Math.round(scaled) / scale;
+  }
+
+  function toYearlyBaseline(amount, frequency) {
+    const factor = YEARLY_FACTORS[String(frequency || "").toLowerCase()];
+    if (!factor) {
+      return null;
+    }
+
+    return Number(amount) * factor;
+  }
+
+  function cadenceFromYearly(yearly) {
+    return {
+      weekly: yearly / WEEKS_PER_YEAR,
+      monthly: yearly / MONTHS_PER_YEAR,
+      yearly
+    };
+  }
+
+  function computeExpectedRecurringCadenceTotals(rows, { roundPerRow = false } = {}) {
+    const bucket = { weekly: 0, monthly: 0, yearly: 0 };
+
+    rows.forEach((row) => {
+      const yearly = toYearlyBaseline(row.amount, row.frequency);
+      const cadence = cadenceFromYearly(yearly);
+      const contribution = roundPerRow
+        ? {
+            weekly: roundBankers(cadence.weekly),
+            monthly: roundBankers(cadence.monthly),
+            yearly: roundBankers(cadence.yearly)
+          }
+        : cadence;
+
+      bucket.weekly += contribution.weekly;
+      bucket.monthly += contribution.monthly;
+      bucket.yearly += contribution.yearly;
+    });
+
+    return {
+      weekly: roundBankers(bucket.weekly),
+      monthly: roundBankers(bucket.monthly),
+      yearly: roundBankers(bucket.yearly)
+    };
+  }
+
   beforeAll(async () => {
     await sequelize.query("PRAGMA foreign_keys = ON");
     await sequelize.sync({ force: true });
@@ -384,6 +454,84 @@ describe("GET /items/:id/net-status", () => {
       net_monthly_cashflow: 500,
       excluded_row_count: 2
     });
+  });
+
+  it("returns mixed-frequency recurring cadence totals with final-only bankers rounding", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "RealEstate",
+      attributes: {
+        address: "Cadence normalization root",
+        estimatedValue: 615000
+      }
+    });
+
+    const recurringObligations = [
+      { amount: 52, frequency: "weekly" },
+      { amount: 120, frequency: "monthly" },
+      { amount: 365.25, frequency: "yearly" },
+      { amount: 10.005, frequency: "monthly" },
+      { amount: 10.005, frequency: "monthly" }
+    ];
+    const recurringIncome = [
+      { amount: 200, frequency: "weekly" },
+      { amount: 1000.1, frequency: "monthly" },
+      { amount: 2600.4, frequency: "yearly" },
+      { amount: 5.005, frequency: "monthly" }
+    ];
+
+    for (const row of recurringObligations) {
+      await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          amount: row.amount,
+          dueDate: "2026-03-10",
+          frequency: row.frequency
+        }
+      });
+    }
+
+    for (const row of recurringIncome) {
+      await createItem({
+        userId: owner.id,
+        itemType: "FinancialIncome",
+        parentItemId: root.id,
+        attributes: {
+          amount: row.amount,
+          dueDate: "2026-03-11",
+          frequency: row.frequency
+        }
+      });
+    }
+
+    const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+    expect(response.status).toBe(200);
+
+    const recurringTotals = response.body.summary.cadence_totals.recurring;
+    const expectedObligations = computeExpectedRecurringCadenceTotals(recurringObligations);
+    const expectedIncome = computeExpectedRecurringCadenceTotals(recurringIncome);
+    const expectedNet = {
+      weekly: roundBankers(expectedIncome.weekly - expectedObligations.weekly),
+      monthly: roundBankers(expectedIncome.monthly - expectedObligations.monthly),
+      yearly: roundBankers(expectedIncome.yearly - expectedObligations.yearly)
+    };
+
+    const prematureRoundedObligations = computeExpectedRecurringCadenceTotals(recurringObligations, { roundPerRow: true });
+
+    expect(recurringTotals.obligations).toEqual(expectedObligations);
+    expect(recurringTotals.income).toEqual(expectedIncome);
+    expect(recurringTotals.net_cashflow).toEqual(expectedNet);
+
+    expect(Object.keys(recurringTotals.obligations).sort()).toEqual(["monthly", "weekly", "yearly"]);
+    expect(Object.keys(recurringTotals.income).sort()).toEqual(["monthly", "weekly", "yearly"]);
+    expect(Object.keys(recurringTotals.net_cashflow).sort()).toEqual(["monthly", "weekly", "yearly"]);
+
+    expect(recurringTotals.obligations.monthly).not.toBe(prematureRoundedObligations.monthly);
   });
 
   it("excludes one-time obligations due in May from March summary while including in-period one-time rows", async () => {
