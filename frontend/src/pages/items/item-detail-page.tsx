@@ -57,7 +57,34 @@ type NetStatusResponse = ItemRow & {
       excludes?: string[]
       description?: string
     }
+    cadence_totals?: {
+      recurring?: {
+        obligations?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+        income?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+        net?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+      }
+    }
   }
+}
+
+type SummaryCadence = 'weekly' | 'monthly' | 'yearly'
+
+type ResolvedCadenceTotals = {
+  obligations: number
+  income: number
+  net: number
 }
 
 type EventRow = {
@@ -92,6 +119,7 @@ type ItemDetailLocationState = {
 }
 
 const HIGHLIGHT_DURATION_MS = 1600
+const SUMMARY_CADENCE_OPTIONS: SummaryCadence[] = ['weekly', 'monthly', 'yearly']
 
 const DETAIL_KEY_ORDER = [
   'name',
@@ -391,6 +419,31 @@ function deriveSummaryFromCommitments(commitments: ItemRow[]) {
   )
 }
 
+function resolveCadenceSummaryTotals(summary: NetStatusResponse['summary'], cadence: SummaryCadence): ResolvedCadenceTotals {
+  const recurringTotals = summary.cadence_totals?.recurring
+  const recurringObligations = recurringTotals?.obligations?.[cadence]
+  const recurringIncome = recurringTotals?.income?.[cadence]
+  const recurringNet = recurringTotals?.net?.[cadence]
+
+  if (
+    Number.isFinite(recurringObligations)
+    && Number.isFinite(recurringIncome)
+    && Number.isFinite(recurringNet)
+  ) {
+    return {
+      obligations: Number(recurringObligations),
+      income: Number(recurringIncome),
+      net: Number(recurringNet),
+    }
+  }
+
+  return {
+    obligations: summary.monthly_obligation_total,
+    income: summary.monthly_income_total,
+    net: summary.net_monthly_cashflow,
+  }
+}
+
 function isNetStatusItem(item: NetStatusResponse | ItemRow | null): item is NetStatusResponse {
   return item !== null && 'child_commitments' in item && 'summary' in item
 }
@@ -406,6 +459,7 @@ export function ItemDetailPage() {
 
   const [activeTab, setActiveTab] = useState<DetailTab>('overview')
   const [activeFinancialEventsTab, setActiveFinancialEventsTab] = useState<FinancialEventsTab>('present')
+  const [selectedCadence, setSelectedCadence] = useState<SummaryCadence>('monthly')
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [showTechnical, setShowTechnical] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -649,6 +703,10 @@ export function ItemDetailPage() {
 
     return t('items.detail.summaryRuleHint')
   }, [detail, t])
+  const cadenceSummaryTotals = useMemo(
+    () => resolveCadenceSummaryTotals(effectiveSummary, selectedCadence),
+    [effectiveSummary, selectedCadence],
+  )
 
   const parentItem = useMemo(() => {
     const parentId = parentLinkId
@@ -671,6 +729,7 @@ export function ItemDetailPage() {
   useEffect(() => {
     setActiveTab('overview')
     setActiveFinancialEventsTab('present')
+    setSelectedCadence('monthly')
   }, [itemId])
 
   useEffect(() => {
@@ -882,18 +941,48 @@ export function ItemDetailPage() {
           </motion.div>
         ) : (
           <motion.div layout className="space-y-3">
+            <motion.section layout className="rounded-2xl border border-border bg-card p-2 shadow-sm">
+              <div
+                className="inline-flex w-full rounded-lg border border-border bg-background p-1"
+                role="group"
+                aria-label={t('items.detail.cadence.ariaLabel')}
+              >
+                {SUMMARY_CADENCE_OPTIONS.map((cadenceOption) => {
+                  const isSelected = selectedCadence === cadenceOption
+
+                  return (
+                    <button
+                      key={cadenceOption}
+                      type="button"
+                      onClick={() => setSelectedCadence(cadenceOption)}
+                      className={[
+                        'flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                        isSelected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+                      ].join(' ')}
+                      aria-pressed={isSelected}
+                      aria-label={t('items.detail.cadence.optionSelected', {
+                        cadence: t(`items.detail.cadence.options.${cadenceOption}`),
+                      })}
+                    >
+                      {t(`items.detail.cadence.options.${cadenceOption}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </motion.section>
+
             <motion.section layout className="grid gap-3 md:grid-cols-4">
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryMonthly', { period: summaryPeriodLabel })}</p>
-                <p className="mt-2 text-2xl font-semibold">{formatCurrency(effectiveSummary.monthly_obligation_total)}</p>
+                <p className="mt-2 text-2xl font-semibold">{formatCurrency(cadenceSummaryTotals.obligations)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryIncome', { period: summaryPeriodLabel })}</p>
-                <p className="mt-2 text-2xl font-semibold text-emerald-700">{formatCurrency(effectiveSummary.monthly_income_total)}</p>
+                <p className="mt-2 text-2xl font-semibold text-emerald-700">{formatCurrency(cadenceSummaryTotals.income)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryNet', { period: summaryPeriodLabel })}</p>
-                <p className="mt-2 text-2xl font-semibold">{formatCurrency(effectiveSummary.net_monthly_cashflow)}</p>
+                <p className="mt-2 text-2xl font-semibold">{formatCurrency(cadenceSummaryTotals.net)}</p>
                 <p className="mt-2 text-[11px] text-muted-foreground">{t('items.detail.summaryNetFormulaHint')}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
