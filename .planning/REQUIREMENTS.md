@@ -16,9 +16,9 @@ Requirements for milestone v4.2 cashflow frequency normalization and cadence cla
 
 ### Cadence Controls & Clarity
 
-- [ ] **VIEW-01**: User can switch asset-summary cadence between weekly, monthly, and yearly.
+- [x] **VIEW-01**: User can switch asset-summary cadence between weekly, monthly, and yearly.
 - [ ] **VIEW-02**: User sees obligations, income, and net cashflow cards update in sync whenever cadence changes.
-- [ ] **VIEW-03**: User sees summary labels/units that clearly match the selected cadence.
+- [x] **VIEW-03**: User sees summary labels/units that clearly match the selected cadence.
 
 ### Compatibility Guardrail
 
@@ -53,9 +53,9 @@ Deferred to a future milestone.
 | CASH-02 | Phase 28 | Complete |
 | CASH-03 | Phase 29 | Pending |
 | CASH-04 | Phase 27 | Complete |
-| VIEW-01 | Phase 29 | Pending |
+| VIEW-01 | Phase 29 | Complete |
 | VIEW-02 | Phase 29 | Pending |
-| VIEW-03 | Phase 29 | Pending |
+| VIEW-03 | Phase 29 | Complete |
 | SAFE-01 | Phase 29 | Pending |
 
 **Coverage:**
