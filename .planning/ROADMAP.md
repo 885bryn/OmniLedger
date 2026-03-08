@@ -54,7 +54,10 @@ Plans:
   1. User sees obligation totals change correctly between weekly, monthly, and yearly views for mixed-frequency data.
   2. User sees income totals change correctly between weekly, monthly, and yearly views for mixed-frequency data.
   3. User sees equivalent values remain mathematically consistent when switching cadence (for example, weekly x 52 aligns with yearly expectations).
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 28-01-PLAN.md - Implement recurring cadence-normalized totals contract and one-time separation in net-status summary
+- [ ] 28-02-PLAN.md - Add API regression coverage for mixed-frequency cadence normalization and equivalence guarantees
 
 ### Phase 29: Cadence Toggle & Synced Cashflow View
 **Goal**: Users can switch cadence and immediately read synchronized obligation, income, and net cashflow values with clear units and no workflow regressions.
@@ -73,7 +76,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 27. Frequency Rule Contract | 3/3 | Complete    | 2026-03-08 |
-| 28. Cadence-Normalized Totals | 0/TBD | Not started | - |
+| 28. Cadence-Normalized Totals | 1/2 | In Progress|  |
 | 29. Cadence Toggle & Synced Cashflow View | 0/TBD | Not started | - |
 
 ---
