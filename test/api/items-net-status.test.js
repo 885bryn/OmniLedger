@@ -386,6 +386,77 @@ describe("GET /items/:id/net-status", () => {
     });
   });
 
+  it("excludes one-time obligations due in May from March summary while including in-period one-time rows", async () => {
+    const marchReference = new Date("2026-03-18T12:00:00.000Z");
+    jest.useFakeTimers();
+    jest.setSystemTime(marchReference);
+
+    try {
+      const owner = await createUser();
+      const ownerAgent = await signInAs(owner);
+      const root = await createItem({
+        userId: owner.id,
+        itemType: "RealEstate",
+        attributes: {
+          address: "Cross-month regression root",
+          estimatedValue: 525000
+        }
+      });
+
+      await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          amount: 450,
+          dueDate: "2026-03-12",
+          frequency: "one_time"
+        }
+      });
+
+      await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          amount: 700,
+          dueDate: "2026-05-03",
+          frequency: "one_time"
+        }
+      });
+
+      await createItem({
+        userId: owner.id,
+        itemType: "FinancialIncome",
+        parentItemId: root.id,
+        attributes: {
+          amount: 1000,
+          dueDate: "2026-03-22",
+          frequency: "monthly"
+        }
+      });
+
+      const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.summary).toMatchObject({
+        monthly_obligation_total: 450,
+        monthly_income_total: 1000,
+        net_monthly_cashflow: 550,
+        excluded_row_count: 1,
+        active_period: {
+          start_date: "2026-03-01",
+          end_date: "2026-03-31",
+          reference_date: "2026-03-18",
+          cadence: "monthly",
+          boundary: "inclusive"
+        }
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("treats active period boundaries as inclusive for one-time rows", async () => {
     const owner = await createUser();
     const ownerAgent = await signInAs(owner);
