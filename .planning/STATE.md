@@ -11,18 +11,18 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 27 of 29 (Frequency Rule Contract)
-Plan: 2 of 2
+Plan: 3 of 3
 Status: Complete
-Last activity: 2026-03-08 - Completed 27-02 period-aware summary wording and UI regression coverage
+Last activity: 2026-03-08 - Completed 27-03 one-time future-month exclusion fix and regression coverage
 
 Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 62
+- Total plans completed: 63
 - Average duration: 4 min
-- Total execution time: 4.8 hours
+- Total execution time: 4.9 hours
 
 **By Phase:**
 
@@ -33,10 +33,11 @@ Progress: [##########] 100%
 | 24-26 (v4.1) | 10 | 41 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 27-02 (3 min), 27-01 (0 min), 26-05 (1 min), 26-04 (3 min), 26-03 (8 min)
+- Last 5 plans: 27-03 (3 min), 27-02 (3 min), 27-01 (0 min), 26-05 (1 min), 26-04 (3 min)
 - Trend: Stable execution cadence with short, focused plan loops.
 | Phase 27 P01 | 0 min | 2 tasks | 2 files |
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
+| Phase 27 P03 | 3 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -52,6 +53,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 27]: Exclude malformed, null, and zero amounts before subtype allocation so net cashflow remains symmetric and predictable.
 - [Phase 27]: Render summary period labels from summary.active_period metadata with localized current-month fallback.
 - [Phase 27]: Display one-time inclusion and net formula helper copy in item detail summary cards for contract clarity.
+- [Phase 27]: Use explicit active-month helper checks so one-time rows require matching month/year plus inclusive day boundaries.
+- [Phase 27]: Freeze regression clock to March in API tests so future-month one-time leakage remains reproducible and protected.
 
 ### Pending Todos
 
@@ -65,5 +68,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 27-02-PLAN.md
+Stopped at: Completed 27-03-PLAN.md
 Resume file: `None`
