@@ -84,10 +84,18 @@ Each task was committed atomically:
 - **Verification:** `STATE.md` now reflects `Phase: 28`, `Plan: 1 of 2`, and `Stopped at: Completed 28-01-PLAN.md`.
 - **Committed in:** metadata/docs commit
 
+**2. [Rule 3 - Blocking] Used manual git metadata commit after gsd-tools commit argument parsing failure**
+- **Found during:** Final metadata commit step
+- **Issue:** `gsd-tools commit` parsed the quoted commit message as pathspec arguments in this shell environment and returned `nothing_to_commit` with pathspec errors.
+- **Fix:** Staged only the required metadata files and ran a direct `git commit` with the intended docs message.
+- **Files modified:** `.planning/phases/28-cadence-normalized-totals/28-cadence-normalized-totals-01-SUMMARY.md`, `.planning/STATE.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`
+- **Verification:** Metadata commit created successfully as `d113135`.
+- **Committed in:** `d113135`
+
 ---
 
-**Total deviations:** 1 auto-fixed (1 blocking)
-**Impact on plan:** No product-scope change; deviation was limited to planning metadata synchronization.
+**Total deviations:** 2 auto-fixed (2 blocking)
+**Impact on plan:** No product-scope change; deviations were limited to metadata/state automation fallbacks.
 
 ## Issues Encountered
 
