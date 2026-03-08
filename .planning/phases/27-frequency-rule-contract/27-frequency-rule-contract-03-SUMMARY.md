@@ -73,11 +73,24 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] Applied manual STATE.md continuity updates after gsd-tools parser mismatch**
+- **Found during:** Post-task metadata/state updates
+- **Issue:** `state advance-plan`, `state update-progress`, and `state record-session` could not parse the existing STATE.md format fields.
+- **Fix:** Ran successful metric/decision commands, then manually updated Current Position, velocity/trend lines, and Session Continuity fields in `.planning/STATE.md`.
+- **Files modified:** `.planning/STATE.md`
+- **Verification:** STATE now reflects Plan 3/3 completion and `Stopped at: Completed 27-03-PLAN.md`.
+- **Committed in:** `f640482` (metadata/docs commit)
+
+---
+
+**Total deviations:** 1 auto-fixed (1 blocking)
+**Impact on plan:** Metadata continuity was preserved without scope changes to product logic.
 
 ## Issues Encountered
 
-None.
+- `requirements mark-complete CASH-04` returned `not_found` because CASH-04 was already checked as complete in `.planning/REQUIREMENTS.md`; no further requirement update was needed.
 
 ## User Setup Required
 
