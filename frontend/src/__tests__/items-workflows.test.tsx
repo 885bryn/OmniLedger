@@ -196,9 +196,11 @@ describe('items workflows', () => {
 
     const listCall = fetchMock.mock.calls.find(([input, init]) => String(input).includes('/items?') && (init?.method ?? 'GET') === 'GET')
     const listInit = listCall?.[1]
+    const listUrl = String(listCall?.[0] ?? '')
 
     expect(listInit?.credentials).toBe('include')
     expect(getHeaderValue(listInit?.headers, 'x-user-id')).toBeNull()
+    expect(listUrl).not.toContain('cadence=')
 
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('sort=recently_updated'), expect.anything())
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('filter=assets'), expect.anything())
@@ -221,6 +223,13 @@ describe('items workflows', () => {
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('filter=deleted'), expect.anything())
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('include_deleted=true'), expect.anything())
     })
+
+    expect(fetchMock.mock.calls.some(([input]) => String(input).includes('/net-status'))).toBe(false)
+    expect(
+      fetchMock.mock.calls
+        .filter(([, init]) => (init?.method ?? 'GET') === 'GET')
+        .every(([input]) => !String(input).includes('cadence=')),
+    ).toBe(true)
   })
 
   it('creates a financial item using session identity without actor header injection', async () => {
@@ -302,11 +311,13 @@ describe('items workflows', () => {
     expect(createBody.user_id).toBeUndefined()
     expect(createBody.item_type).toBe('FinancialItem')
     expect(createBody.type).toBe('Commitment')
+    expect((createBody as Record<string, unknown>).cadence).toBeUndefined()
     expect(createBody.frequency).toBe('monthly')
     expect(createBody.parent_item_id).toBeNull()
     expect(createBody.confirm_unlinked_asset).toBe(true)
     expect(createBody.attributes?.name).toBe('Loan')
     expect(createBody.attributes?.financialSubtype).toBe('Commitment')
+    expect((createBody.attributes as Record<string, unknown> | undefined)?.cadence).toBeUndefined()
     expect(createBody.attributes?.amount).toBe(1200)
     expect(createBody.attributes?.billingCycle).toBe('monthly')
   })
