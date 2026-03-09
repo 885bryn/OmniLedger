@@ -102,6 +102,10 @@ type RecurringCadenceProjection = {
   netCashflow: number
 }
 
+function roundToCents(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100
+}
+
 type EventRow = {
   id: string
   item_id: string
@@ -459,12 +463,16 @@ function resolveCadenceSummaryTotals(summary: NetStatusResponse['summary'], cade
   if (
     Number.isFinite(recurringCadenceProjection.obligations)
     && Number.isFinite(recurringCadenceProjection.income)
-    && Number.isFinite(recurringCadenceProjection.netCashflow)
   ) {
+    const derivedRecurringNet = roundToCents(recurringCadenceProjection.income - recurringCadenceProjection.obligations)
+    const normalizedRecurringNet = Number.isFinite(recurringCadenceProjection.netCashflow)
+      ? roundToCents(recurringCadenceProjection.netCashflow)
+      : derivedRecurringNet
+
     return {
       obligations: recurringCadenceProjection.obligations,
       income: recurringCadenceProjection.income,
-      net: recurringCadenceProjection.netCashflow,
+      net: normalizedRecurringNet === derivedRecurringNet ? normalizedRecurringNet : derivedRecurringNet,
     }
   }
 
