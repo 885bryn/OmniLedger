@@ -236,13 +236,10 @@ function formatCurrency(value: number) {
   }).format(value)
 }
 
-function formatCurrencyWithCents(value: number) {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
+function formatSignedFixedAmount(value: number) {
+  const numericValue = Number.isFinite(value) ? value : 0
+  const sign = numericValue > 0 ? '+' : numericValue < 0 ? '-' : ''
+  return `${sign}${Math.abs(numericValue).toFixed(2)}`
 }
 
 function toNumberOrZero(value: unknown) {
@@ -514,6 +511,7 @@ export function ItemDetailPage() {
   const [childDeleteTarget, setChildDeleteTarget] = useState<ItemRow | null>(null)
   const [childDeleteError, setChildDeleteError] = useState<string | null>(null)
   const cadenceTransitionVersionRef = useRef(0)
+  const cadenceTransitionTimerRef = useRef<number | null>(null)
   const locationState = (typeof location.state === 'object' && location.state !== null ? location.state : null) as ItemDetailLocationState | null
   const returnTo = String(locationState?.from ?? '')
   const [highlightHeader, setHighlightHeader] = useState(locationState?.highlightItemId === itemId)
@@ -763,7 +761,7 @@ export function ItemDetailPage() {
   const displayedCadenceLabel = t(`items.detail.cadence.options.${displayCadence}`)
   const oneTimeImpact = Number(effectiveSummary.cadence_totals?.one_time_period?.net_monthly_cashflow ?? 0)
   const oneTimeImpactLabel = t('items.detail.summaryOneTimeImpact', { defaultValue: 'One-time impact (separate from recurring net)' })
-  const oneTimeImpactPrefix = oneTimeImpact > 0 ? '+' : oneTimeImpact < 0 ? '-' : ''
+  const oneTimeImpactValue = formatSignedFixedAmount(oneTimeImpact)
 
   function handleCadenceChange(nextCadence: SummaryCadence) {
     if (selectedCadence === nextCadence && displayCadence === nextCadence && !isCadenceTransitionPending) {
@@ -777,7 +775,11 @@ export function ItemDetailPage() {
     const transitionVersion = cadenceTransitionVersionRef.current + 1
     cadenceTransitionVersionRef.current = transitionVersion
 
-    window.setTimeout(() => {
+    if (cadenceTransitionTimerRef.current !== null) {
+      window.clearTimeout(cadenceTransitionTimerRef.current)
+    }
+
+    cadenceTransitionTimerRef.current = window.setTimeout(() => {
       if (cadenceTransitionVersionRef.current !== transitionVersion) {
         return
       }
@@ -795,6 +797,7 @@ export function ItemDetailPage() {
         push({ message: feedback, dedupeKey: 'item-detail-cadence-transition-failed' })
       } finally {
         if (cadenceTransitionVersionRef.current === transitionVersion) {
+          cadenceTransitionTimerRef.current = null
           setIsCadenceTransitionPending(false)
         }
       }
@@ -820,6 +823,11 @@ export function ItemDetailPage() {
   }, [detail?.id, lookupRows, parentLinkId])
 
   useEffect(() => {
+    if (cadenceTransitionTimerRef.current !== null) {
+      window.clearTimeout(cadenceTransitionTimerRef.current)
+      cadenceTransitionTimerRef.current = null
+    }
+
     setActiveTab('overview')
     setActiveFinancialEventsTab('present')
     setSelectedCadence('monthly')
@@ -841,6 +849,14 @@ export function ItemDetailPage() {
     const timeoutId = window.setTimeout(() => setHighlightHeader(false), HIGHLIGHT_DURATION_MS)
     return () => window.clearTimeout(timeoutId)
   }, [highlightHeader])
+
+  useEffect(() => {
+    return () => {
+      if (cadenceTransitionTimerRef.current !== null) {
+        window.clearTimeout(cadenceTransitionTimerRef.current)
+      }
+    }
+  }, [])
 
   if (netStatusQuery.isLoading || itemsLookupQuery.isLoading) {
     return (
@@ -1107,7 +1123,7 @@ export function ItemDetailPage() {
                     oneTimeImpact > 0 ? 'text-emerald-700' : oneTimeImpact < 0 ? 'text-destructive' : 'text-muted-foreground',
                   ].join(' ')}
                 >
-                  {`${oneTimeImpactLabel}: ${oneTimeImpactPrefix}${formatCurrencyWithCents(Math.abs(oneTimeImpact))}`}
+                  {`${oneTimeImpactLabel}: ${oneTimeImpactValue}`}
                 </p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
