@@ -76,7 +76,9 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
-- None.
+- `gsd-tools state advance-plan`, `state update-progress`, and `state record-session` could not parse this repository's current STATE.md headings; state position/session values were updated manually.
+- `gsd-tools requirements mark-complete` returned `not_found` for `VIEW-01`, `VIEW-03`, and `SAFE-01` because those requirement checkboxes were already complete.
+- `gsd-tools commit` split the commit subject into pathspecs in this shell context; metadata was committed via explicit `git add` + `git commit` fallback.
 
 ## User Setup Required
 
