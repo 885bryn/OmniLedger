@@ -11,11 +11,11 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 29 of 29 (Cadence Toggle & Synced Cashflow View)
-Plan: 3 of 3
-Status: Complete
-Last activity: 2026-03-09 - Re-executed 29-03 cadence/workflow regression hardening updates
+Plan: 4 of 5
+Status: In Progress
+Last activity: 2026-03-09 - Executed 29-04 due-date bounded cadence rollup contract updates
 
-Progress: [##########] 100%
+Progress: [########--] 80%
 
 ## Performance Metrics
 
@@ -33,8 +33,8 @@ Progress: [##########] 100%
 | 24-26 (v4.1) | 10 | 41 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 29-02 (1 min), 29-03 (5 min), 29-02 (4 min), 29-01 (1 min), 28-02 (3 min)
-- Trend: Phase 29 cadence behavior is stable, with rerun hardening focused on deterministic transition commits.
+- Last 5 plans: 29-04 (7 min), 29-02 (1 min), 29-03 (5 min), 29-02 (4 min), 29-01 (1 min)
+- Trend: Phase 29 cadence behavior is shifting from run-rate normalization to deterministic period-bounded inclusion rules.
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
 | Phase 27 P03 | 3 min | 2 tasks | 2 files |
 | Phase 28 P01 | 1 min | 2 tasks | 2 files |
@@ -44,6 +44,7 @@ Progress: [##########] 100%
 | Phase 29 P03 | 5 min | 2 tasks | 2 files |
 | Phase 29 P02 | 1 min | 2 tasks | 1 files |
 | Phase 29 P03 | 2 min | 2 tasks | 2 files |
+| Phase 29 P04 | 7 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 29]: Cancel pending cadence transition timers on rapid toggles so stale async work cannot overwrite latest selection.
 - [Phase 29]: Model rapid cadence interactions as multi-click sequences and assert only the final cadence state remains visible.
 - [Phase 29]: Guard item list/create workflow payloads from cadence-toggle-only fields so cadence scope stays item-detail local.
+- [Phase 29]: Replace run-rate cadence totals with inclusive active-period due-date inclusion before aggregation.
+- [Phase 29]: Keep summary.active_period explicit while exposing recurring cadence active periods for deterministic interpretation.
 
 ### Pending Todos
 
@@ -88,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 29-03-PLAN.md
+Stopped at: Completed 29-04-PLAN.md
 Resume file: `None`
