@@ -2,20 +2,19 @@
 phase: 29-cadence-toggle-synced-cashflow-view
 plan: "03"
 subsystem: testing
-tags: [vitest, react-testing-library, cadence-toggle, regression]
+tags: [vitest, react-testing-library, cadence-toggle, workflow-safety]
 
 requires:
   - phase: 29-cadence-toggle-synced-cashflow-view
-    provides: synchronized cadence card state and transition handling from plan 29-02
+    provides: synchronized cadence transition handling and fallback logic from plan 29-02
 provides:
-  - Cadence-toggle regression tests for monthly default, synchronized weekly/monthly/yearly rollups, and last-selection-wins behavior
-  - Failure-path coverage that keeps prior synchronized values visible with concise feedback when cadence transitions fail
-  - Workflow safety assertions proving item list/create flows remain cadence-isolated and keep existing fetch/payload contracts
-affects: [phase-29, item-detail, workflows, safety-regressions]
+  - Stronger cadence-toggle regressions for rapid selection ordering and fallback one-time note behavior
+  - Workflow request-contract assertions that keep cadence UI state isolated from list/create flows
+affects: [phase-29, item-detail-tests, workflows, regression-safety]
 
 tech-stack:
   added: []
-  patterns: [state-transition regression testing, cadence-isolation workflow assertions]
+  patterns: [latest-selection cadence assertions, contract-level payload guardrails]
 
 key-files:
   created: []
@@ -24,68 +23,80 @@ key-files:
     - frontend/src/__tests__/items-workflows.test.tsx
 
 key-decisions:
-  - "Assert cadence toggle buttons by accessible selected-cadence labels to match current ARIA contract."
-  - "Trigger cadence failure path with invalid monthly fallback totals while preserving valid monthly recurring projection for initial render."
+  - "Model rapid cadence interactions as multi-click sequences and assert the final selection as the only visible state."
+  - "Treat cadence formatting tokens as presentation-only by guarding workflow payloads against cadence-specific fields."
 
 patterns-established:
-  - "Cadence transitions: verify labels and values as a synchronized set across obligations, income, and net cards."
-  - "Workflow safety: assert non-summary endpoints and payloads remain free of cadence coupling."
+  - "Cadence regressions should assert both displayed labels and absence of stale labels after rapid toggles."
+  - "Workflow tests should explicitly reject cadence-only query/body coupling outside item-detail summary surfaces."
 
 requirements-completed: [SAFE-01, VIEW-02]
 
-duration: 5 min
-completed: 2026-03-08
+duration: 2 min
+completed: 2026-03-09
 ---
 
 # Phase 29 Plan 03: Cadence Toggle & Synced Cashflow View Summary
 
-**Cadence-toggle regressions now lock synchronized summary rollups, transition fallback behavior, and workflow isolation from summary cadence state.**
+**Frontend regressions now lock cadence last-selection behavior and keep non-summary workflows free from cadence-toggle contract bleed-through.**
 
 ## Performance
 
-- **Duration:** 5 min
-- **Started:** 2026-03-08T19:18:20Z
-- **Completed:** 2026-03-08T19:23:20Z
+- **Duration:** 2 min
+- **Started:** 2026-03-09T04:38:00Z
+- **Completed:** 2026-03-09T04:39:58Z
 - **Tasks:** 2
 - **Files modified:** 2
 
 ## Accomplishments
-- Expanded item-detail regression coverage for cadence defaults, synchronized weekly/monthly/yearly card updates, one-time note visibility, and rapid-toggle last-selection-wins behavior.
-- Added cadence transition failure test coverage to confirm prior synchronized values remain visible with concise in-UI feedback.
-- Extended workflow regressions to assert list/create flows remain cadence-agnostic and keep existing fetch and payload contracts unchanged.
+- Hardened item-detail cadence tests to validate multi-step rapid toggles resolve to the latest user selection only.
+- Expanded failure-path coverage to keep one-time impact note assertions stable while synchronized recurring values remain visible.
+- Tightened workflow safety tests to ensure create/list contracts do not introduce cadence-only query/body fields.
 
 ## Task Commits
 
 Each task was committed atomically:
 
-1. **Task 1: Add cadence-toggle regression tests for synchronized summary behavior** - `6544c99` (test)
-2. **Task 2: Extend workflow safety tests to prove no regressions outside summary rollups** - `92c99aa` (test)
+1. **Task 1: Add cadence-toggle regression tests for synchronized summary behavior** - `bbab96d` (test)
+2. **Task 2: Extend workflow safety tests to prove no regressions outside summary rollups** - `73438a2` (test)
 
 ## Files Created/Modified
-- `frontend/src/__tests__/item-detail-ledger.test.tsx` - Added cadence sync, rapid-toggle, and transition-fallback regressions plus updated expectations for cadence-aware net wording.
-- `frontend/src/__tests__/items-workflows.test.tsx` - Added cadence-isolation assertions for list query contracts and create payload shape.
+- `frontend/src/__tests__/item-detail-ledger.test.tsx` - Added final-selection rapid-toggle assertions and explicit fallback one-time note checks.
+- `frontend/src/__tests__/items-workflows.test.tsx` - Added payload-level cadence isolation checks for item creation workflow contracts.
 
 ## Decisions Made
-- Verified cadence segmented control through ARIA-selected labels (`Selected cadence: ...`) to align tests with current accessibility behavior.
-- Used invalid monthly fallback totals (with valid recurring monthly projection) to exercise cadence transition failure without breaking initial monthly render.
+- Kept cadence fallback checks tolerant to UI currency-symbol formatting differences while preserving sign and amount correctness.
+- Enforced workflow isolation at the request-contract layer so cadence state remains scoped to item-detail summary UI.
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 1 - Bug] Updated brittle one-time impact assertions for current UI formatting**
+- **Found during:** Task 1
+- **Issue:** New one-time impact assertions expected a dollar symbol that current UI formatting omits in this code path, causing false-negative failures.
+- **Fix:** Switched assertions to regex patterns that validate signed amount semantics with optional currency symbol.
+- **Files modified:** frontend/src/__tests__/item-detail-ledger.test.tsx
+- **Verification:** `npm --prefix frontend test -- src/__tests__/item-detail-ledger.test.tsx --runInBand`
+- **Committed in:** `bbab96d`
+
+---
+
+**Total deviations:** 1 auto-fixed (1 bug)
+**Impact on plan:** Auto-fix preserved intent while removing formatting brittleness; no scope creep.
 
 ## Issues Encountered
-- `gsd-tools state advance-plan`, `state update-progress`, and `state record-session` could not parse this repository's STATE.md structure; equivalent state/session updates were applied manually in `.planning/STATE.md`.
-- `gsd-tools commit` argument parsing failed in this Windows shell context; metadata files were committed with direct `git add` + `git commit` fallback.
+None.
 
 ## User Setup Required
 None - no external service configuration required.
 
 ## Next Phase Readiness
-- Phase 29 test safety net now covers synchronized cadence display behavior and workflow contract isolation.
-- Ready for phase completion/transition activities once planning docs and roadmap/state metadata are updated.
+- Phase 29 regression safety now reinforces cadence-transition ordering and workflow contract isolation.
+- Ready for phase closeout/state rollover updates.
 
 ## Self-Check: PASSED
 
 ---
 *Phase: 29-cadence-toggle-synced-cashflow-view*
-*Completed: 2026-03-08*
+*Completed: 2026-03-09*
