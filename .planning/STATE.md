@@ -11,9 +11,9 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 29 of 29 (Cadence Toggle & Synced Cashflow View)
-Plan: 10 of 11
-Status: In Progress
-Last activity: 2026-03-09 - Executed 29-10 unified origin-bounded cadence rollups and projection regressions
+Plan: 11 of 11
+Status: Complete
+Last activity: 2026-03-09 - Executed 29-11 day-safe cadence period labels/filtering and boundary regressions
 
 Progress: [##########] 100%
 
@@ -51,6 +51,7 @@ Progress: [##########] 100%
 | Phase 29 P08 | 4 min | 2 tasks | 3 files |
 | Phase 29 P09 | 12 min | 2 tasks | 5 files |
 | Phase 29 P10 | 6 min | 2 tasks | 5 files |
+| Phase 29 P11 | 2 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 29]: Derive visible cadence labels and period copy from displayCadence active-period metadata so wording matches rendered totals during and after transitions.
 - [Phase 29]: Use explicit originDate metadata (with due-date fallback) as shared recurring origin boundary for rollups and projections.
 - [Phase 29]: Keep one-time inclusion monthly-only while tightening recurring pre-origin filtering.
+- [Phase 29]: Parse backend YYYY-MM-DD active-period dates as calendar days and compare by day keys so item-detail labels and filtering are timezone-stable.
+- [Phase 29]: Add UI regressions for exact cadence boundaries and boundary-day events so labels, hints, and totals stay synchronized and non-zero when API data is valid.
 
 ### Pending Todos
 
@@ -110,5 +113,5 @@ Decisions are logged in `.planning/PROJECT.md`.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 29-10-PLAN.md
+Stopped at: Completed 29-11-PLAN.md
 Resume file: `None`
