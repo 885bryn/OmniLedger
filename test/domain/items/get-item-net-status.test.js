@@ -752,4 +752,107 @@ describe("getItemNetStatus domain service", () => {
       jest.useRealTimers();
     }
   });
+
+  it("includes every qualifying monthly row and excludes pre-origin recurring events from cadence totals", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-03-18T12:00:00.000Z"));
+
+    try {
+      const owner = await createUser();
+      const root = await createItem({
+        userId: owner.id,
+        itemType: "RealEstate",
+        attributes: {
+          address: "Downtown Rental Condo",
+          estimatedValue: 540000
+        }
+      });
+
+      const monthlyHoa = await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          name: "HOA",
+          amount: 210,
+          dueDate: "2026-01-03",
+          frequency: "monthly"
+        }
+      });
+
+      const monthlyInsurance = await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          name: "Insurance",
+          amount: 340,
+          dueDate: "2026-01-09",
+          frequency: "monthly"
+        }
+      });
+
+      const monthlyIncome = await createItem({
+        userId: owner.id,
+        itemType: "FinancialIncome",
+        parentItemId: root.id,
+        attributes: {
+          name: "Rent",
+          amount: 1600,
+          dueDate: "2026-01-11",
+          frequency: "monthly"
+        }
+      });
+
+      const annualTaxCredit = await createItem({
+        userId: owner.id,
+        itemType: "FinancialIncome",
+        parentItemId: root.id,
+        attributes: {
+          name: "Annual tax credit",
+          amount: 900,
+          dueDate: "2026-01-15",
+          frequency: "yearly"
+        }
+      });
+
+      await models.Item.update(
+        {
+          attributes: {
+            ...(monthlyInsurance.attributes || {}),
+            originDate: "2026-03-15"
+          }
+        },
+        {
+          where: { id: monthlyInsurance.id }
+        }
+      );
+      await createEvent({ itemId: monthlyHoa.id, dueDate: "2026-03-03", amount: 210, status: "Pending" });
+      await createEvent({ itemId: monthlyInsurance.id, dueDate: "2026-03-07", amount: 340, status: "Pending" });
+      await createEvent({ itemId: monthlyInsurance.id, dueDate: "2026-03-16", amount: 340, status: "Pending" });
+      await createEvent({ itemId: monthlyIncome.id, dueDate: "2026-03-12", amount: 1600, status: "Pending" });
+      await createEvent({ itemId: annualTaxCredit.id, dueDate: "2026-12-10", amount: 900, status: "Pending" });
+
+      const result = await getItemNetStatus({
+        itemId: root.id,
+        actorUserId: owner.id
+      });
+
+      const recurringTotals = result.summary.cadence_totals.recurring;
+      expect(result.summary.monthly_obligation_total).toBe(550);
+      expect(result.summary.monthly_income_total).toBe(1600);
+      expect(result.summary.net_monthly_cashflow).toBe(1050);
+      expect(recurringTotals.obligations.monthly).toBe(550);
+      expect(recurringTotals.obligations.yearly).toBe(760);
+      expect(recurringTotals.income.monthly).toBe(1600);
+      expect(recurringTotals.income.yearly).toBe(5000);
+      expect(recurringTotals.net_cashflow).toEqual({
+        weekly: recurringTotals.income.weekly - recurringTotals.obligations.weekly,
+        monthly: 1050,
+        yearly: 4240
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

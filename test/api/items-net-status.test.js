@@ -1282,4 +1282,110 @@ describe("GET /items/:id/net-status", () => {
       ])
     );
   });
+
+  it("keeps monthly totals fully inclusive and filters pre-origin recurring events at the API layer", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-03-18T12:00:00.000Z"));
+
+    try {
+      const owner = await createUser();
+      const ownerAgent = await signInAs(owner);
+      const root = await createItem({
+        userId: owner.id,
+        itemType: "Vehicle",
+        attributes: {
+          vin: "VIN-DOWNTOWN-CONDO-API",
+          estimatedValue: 61000
+        }
+      });
+
+      const monthlyLoan = await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          name: "Loan",
+          amount: 480,
+          dueDate: "2026-01-03",
+          frequency: "monthly"
+        }
+      });
+
+      const monthlyMaintenance = await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          name: "Maintenance",
+          amount: 220,
+          dueDate: "2026-01-08",
+          frequency: "monthly"
+        }
+      });
+
+      const monthlyRent = await createItem({
+        userId: owner.id,
+        itemType: "FinancialIncome",
+        parentItemId: root.id,
+        attributes: {
+          name: "Rent",
+          amount: 1750,
+          dueDate: "2026-01-11",
+          frequency: "monthly"
+        }
+      });
+
+      const yearlyBonus = await createItem({
+        userId: owner.id,
+        itemType: "FinancialIncome",
+        parentItemId: root.id,
+        attributes: {
+          name: "Year-end bonus",
+          amount: 600,
+          dueDate: "2026-01-21",
+          frequency: "yearly"
+        }
+      });
+
+      await models.Item.update(
+        {
+          attributes: {
+            ...(monthlyMaintenance.attributes || {}),
+            originDate: "2026-03-15"
+          }
+        },
+        {
+          where: { id: monthlyMaintenance.id }
+        }
+      );
+
+      await createEvent({ itemId: monthlyLoan.id, dueDate: "2026-03-03", amount: 480, status: "Pending" });
+      await createEvent({ itemId: monthlyMaintenance.id, dueDate: "2026-03-10", amount: 220, status: "Pending" });
+      await createEvent({ itemId: monthlyMaintenance.id, dueDate: "2026-03-17", amount: 220, status: "Pending" });
+      await createEvent({ itemId: monthlyRent.id, dueDate: "2026-03-12", amount: 1750, status: "Pending" });
+      await createEvent({ itemId: yearlyBonus.id, dueDate: "2026-12-02", amount: 600, status: "Completed" });
+
+      const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+      expect(response.status).toBe(200);
+
+      const summary = response.body.summary;
+      const recurringTotals = summary.cadence_totals.recurring;
+
+      expect(summary.monthly_obligation_total).toBe(700);
+      expect(summary.monthly_income_total).toBe(1750);
+      expect(summary.net_monthly_cashflow).toBe(1050);
+      expect(recurringTotals.obligations.monthly).toBe(700);
+      expect(recurringTotals.obligations.yearly).toBe(1180);
+      expect(recurringTotals.income.monthly).toBe(1750);
+      expect(recurringTotals.income.yearly).toBe(4700);
+      expect(recurringTotals.net_cashflow).toEqual({
+        weekly: recurringTotals.income.weekly - recurringTotals.obligations.weekly,
+        monthly: 1050,
+        yearly: 3520
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

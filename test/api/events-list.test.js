@@ -318,12 +318,19 @@ describe("GET /events", () => {
 
     const commitment = await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
       parent_item_id: parent.id,
+      linked_asset_item_id: parent.id,
+      title: "e300 testing payment",
+      type: "Commitment",
+      frequency: "one_time",
+      default_amount: 300,
+      status: "Active",
       attributes: {
         name: "e300 testing payment",
         amount: 300,
-        dueDate: "2026-02-26"
+        dueDate: "2026-02-26",
+        financialSubtype: "Commitment"
       }
     });
 
@@ -409,7 +416,12 @@ describe("GET /events", () => {
     const horizonEnd = horizonDate.getTime();
 
     const projectedTimes = projected.map((event) => new Date(event.due_date).getTime());
-    expect(Math.min(...projectedTimes)).toBeGreaterThanOrEqual(todayStart);
+    const overdueTimes = projectedTimes.filter((dueTime) => dueTime < todayStart);
+    const currentAndFutureTimes = projectedTimes.filter((dueTime) => dueTime >= todayStart);
+
+    expect(overdueTimes.length).toBeGreaterThanOrEqual(1);
+    expect(currentAndFutureTimes.length).toBeGreaterThan(0);
+    expect(Math.min(...currentAndFutureTimes)).toBeGreaterThanOrEqual(todayStart);
     expect(Math.max(...projectedTimes)).toBeLessThanOrEqual(horizonEnd);
 
     const leakedClosedOrForeign = response.body.groups
@@ -461,5 +473,53 @@ describe("GET /events", () => {
       .filter((event) => event.item_id === financialItem.id || event.type === "Deleted recurring bill");
 
     expect(matching).toHaveLength(0);
+  });
+
+  it("does not project recurring events before the source financial item creation date", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-03-18T12:00:00.000Z"));
+
+    try {
+      const owner = await createUser();
+      const ownerAgent = await signInAs(owner);
+
+      const recurringItem = await createFinancialItem({
+        userId: owner.id,
+        title: "Creation-bounded projection",
+        frequency: "weekly",
+        status: "Active",
+        dueDate: "2026-01-01",
+        defaultAmount: 140
+      });
+
+      await models.Item.update(
+        {
+          attributes: {
+            ...(recurringItem.attributes || {}),
+            originDate: "2026-03-16"
+          }
+        },
+        {
+          where: { id: recurringItem.id }
+        }
+      );
+
+      const response = await ownerAgent.get("/events").query({ status: "pending" });
+
+      expect(response.status).toBe(200);
+
+      const projected = response.body.groups
+        .flatMap((group) => group.events)
+        .filter((event) => event.item_id === recurringItem.id && event.source_state === "projected");
+
+      expect(projected.length).toBeGreaterThan(0);
+
+      const creationBoundary = new Date("2026-03-16T00:00:00.000Z").getTime();
+      projected.forEach((event) => {
+        expect(new Date(event.due_date).getTime()).toBeGreaterThanOrEqual(creationBoundary);
+      });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
