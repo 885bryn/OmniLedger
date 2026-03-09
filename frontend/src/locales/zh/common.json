@@ -216,13 +216,13 @@
       "summaryMonthly": "每月承诺总额（{{period}}）",
       "summaryIncome": "每月收入（{{period}}）",
       "summaryNet": "净现金流（{{period}}）",
-      "summaryObligationsCadence": "{{cadence}}承诺总额（{{period}}）",
-      "summaryIncomeCadence": "{{cadence}}收入（{{period}}）",
-      "summaryNetCadence": "{{cadence}}净现金流（{{period}}）",
-      "summaryPeriodHint": "当前汇总周期：{{period}}。",
+      "summaryObligationsCadence": "本{{cadencePeriod}}到期承诺总额（{{period}}）",
+      "summaryIncomeCadence": "本{{cadencePeriod}}到期收入（{{period}}）",
+      "summaryNetCadence": "本{{cadencePeriod}}到期净现金流（{{period}}）",
+      "summaryPeriodHint": "仅统计本{{cadencePeriod}}内到期且落在当前汇总周期（{{period}}）的条目。",
       "summaryRuleHint": "一次性条目仅在到期日落入该周期内时计入一次。",
       "summaryNetFormulaHint": "该周期净现金流 = 归一化收入 - 承诺支出。",
-      "summaryNetFormulaHintCadence": "{{cadence}}净现金流 = 归一化{{cadence}}收入 - {{cadence}}承诺支出。",
+      "summaryNetFormulaHintCadence": "本{{cadencePeriod}}净现金流 = 本{{cadencePeriod}}到期收入 - 本{{cadencePeriod}}到期承诺支出。",
       "summaryPeriodFallback": "当前月份",
       "summaryLinked": "关联财务项目",
       "summaryExcluded": "排除行",
@@ -233,6 +233,11 @@
           "weekly": "每周",
           "monthly": "每月",
           "yearly": "每年"
+        },
+        "periodNouns": {
+          "weekly": "周",
+          "monthly": "月",
+          "yearly": "年"
         }
       },
       "keyDetails": "关键详情",

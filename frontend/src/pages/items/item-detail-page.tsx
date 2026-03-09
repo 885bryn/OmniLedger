@@ -759,6 +759,7 @@ export function ItemDetailPage() {
     [displayCadence, effectiveSummary],
   )
   const displayedCadenceLabel = t(`items.detail.cadence.options.${displayCadence}`)
+  const displayedCadencePeriodNoun = t(`items.detail.cadence.periodNouns.${displayCadence}`)
   const oneTimeImpact = Number(effectiveSummary.cadence_totals?.one_time_period?.net_monthly_cashflow ?? 0)
   const oneTimeImpactLabel = t('items.detail.summaryOneTimeImpact', { defaultValue: 'One-time impact (separate from recurring net)' })
   const oneTimeImpactValue = formatSignedFixedAmount(oneTimeImpact)
@@ -1101,22 +1102,22 @@ export function ItemDetailPage() {
               <div className="grid gap-3 md:grid-cols-4">
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('items.detail.summaryObligationsCadence', { cadence: displayedCadenceLabel, period: summaryPeriodLabel })}
+                  {t('items.detail.summaryObligationsCadence', { cadence: displayedCadenceLabel, cadencePeriod: displayedCadencePeriodNoun, period: summaryPeriodLabel })}
                 </p>
                 <p className="mt-2 text-2xl font-semibold">{formatCurrency(displayedCadenceTotals.obligations)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('items.detail.summaryIncomeCadence', { cadence: displayedCadenceLabel, period: summaryPeriodLabel })}
+                  {t('items.detail.summaryIncomeCadence', { cadence: displayedCadenceLabel, cadencePeriod: displayedCadencePeriodNoun, period: summaryPeriodLabel })}
                 </p>
                 <p className="mt-2 text-2xl font-semibold text-emerald-700">{formatCurrency(displayedCadenceTotals.income)}</p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {t('items.detail.summaryNetCadence', { cadence: displayedCadenceLabel, period: summaryPeriodLabel })}
+                  {t('items.detail.summaryNetCadence', { cadence: displayedCadenceLabel, cadencePeriod: displayedCadencePeriodNoun, period: summaryPeriodLabel })}
                 </p>
                 <p className="mt-2 text-2xl font-semibold">{formatCurrency(displayedCadenceTotals.net)}</p>
-                <p className="mt-2 text-[11px] text-muted-foreground">{t('items.detail.summaryNetFormulaHintCadence', { cadence: displayedCadenceLabel })}</p>
+                <p className="mt-2 text-[11px] text-muted-foreground">{t('items.detail.summaryNetFormulaHintCadence', { cadence: displayedCadenceLabel, cadencePeriod: displayedCadencePeriodNoun })}</p>
                 <p
                   className={[
                     'mt-2 text-[11px] font-medium',
@@ -1134,7 +1135,7 @@ export function ItemDetailPage() {
             </motion.section>
 
             <motion.section layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <p className="text-xs text-muted-foreground">{t('items.detail.summaryPeriodHint', { period: summaryPeriodLabel })}</p>
+              <p className="text-xs text-muted-foreground">{t('items.detail.summaryPeriodHint', { period: summaryPeriodLabel, cadence: displayedCadenceLabel, cadencePeriod: displayedCadencePeriodNoun })}</p>
               <p className="mt-1 text-xs text-muted-foreground">{oneTimeRuleHint}</p>
             </motion.section>
 

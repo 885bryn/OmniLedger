@@ -216,13 +216,13 @@
       "summaryMonthly": "Monthly obligations ({{period}})",
       "summaryIncome": "Monthly income ({{period}})",
       "summaryNet": "Net cashflow ({{period}})",
-      "summaryObligationsCadence": "{{cadence}} obligations ({{period}})",
-      "summaryIncomeCadence": "{{cadence}} income ({{period}})",
-      "summaryNetCadence": "{{cadence}} net cashflow ({{period}})",
-      "summaryPeriodHint": "Active summary period: {{period}}.",
+      "summaryObligationsCadence": "Obligations due this {{cadencePeriod}} ({{period}})",
+      "summaryIncomeCadence": "Income due this {{cadencePeriod}} ({{period}})",
+      "summaryNetCadence": "Net cashflow due this {{cadencePeriod}} ({{period}})",
+      "summaryPeriodHint": "Only rows due this {{cadencePeriod}} are included in the active period: {{period}}.",
       "summaryRuleHint": "One-time rows count once only when their due date is inside this active period.",
       "summaryNetFormulaHint": "Net cashflow is normalized income minus obligations for this monthly period.",
-      "summaryNetFormulaHintCadence": "{{cadence}} net cashflow equals normalized {{cadence}} income minus {{cadence}} obligations.",
+      "summaryNetFormulaHintCadence": "Net cashflow due this {{cadencePeriod}} equals income due this {{cadencePeriod}} minus obligations due this {{cadencePeriod}}.",
       "summaryPeriodFallback": "current month",
       "summaryLinked": "Linked financial items",
       "summaryExcluded": "Excluded rows",
@@ -233,6 +233,11 @@
           "weekly": "Weekly",
           "monthly": "Monthly",
           "yearly": "Yearly"
+        },
+        "periodNouns": {
+          "weekly": "week",
+          "monthly": "month",
+          "yearly": "year"
         }
       },
       "keyDetails": "Key details",
