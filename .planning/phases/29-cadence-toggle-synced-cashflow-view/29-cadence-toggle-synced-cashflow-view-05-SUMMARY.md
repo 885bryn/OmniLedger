@@ -80,7 +80,9 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
-None.
+- `gsd-tools state advance-plan`, `state update-progress`, and `state record-session` could not parse this repository's current STATE.md headings; current-position and session fields were updated manually after successful metric/decision writes.
+- `gsd-tools requirements mark-complete` reported requirement IDs as not found because requirement checkboxes were already complete; only the requirements metadata timestamp was advanced manually.
+- `gsd-tools commit` argument parsing split the commit subject in this shell context, so metadata files were committed via explicit `git add` + `git commit` fallback.
 
 ## User Setup Required
 
