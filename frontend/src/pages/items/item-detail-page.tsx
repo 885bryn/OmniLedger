@@ -80,6 +80,23 @@ type NetStatusResponse = ItemRow & {
           monthly?: number
           yearly?: number
         }
+        active_periods?: {
+          weekly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+          monthly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+          yearly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+        }
       }
       one_time_period?: {
         net_monthly_cashflow?: number
@@ -270,6 +287,35 @@ function formatPeriodDate(value: string) {
     month: 'short',
     day: 'numeric',
   }).format(parsed)
+}
+
+function isDueDateInsidePeriod(dueDate: string, period: { start_date?: string; end_date?: string } | undefined) {
+  if (!period?.start_date || !period.end_date) {
+    return false
+  }
+
+  const dueTime = Date.parse(dueDate)
+  const startTime = Date.parse(period.start_date)
+  const endTime = Date.parse(period.end_date)
+
+  if (Number.isNaN(dueTime) || Number.isNaN(startTime) || Number.isNaN(endTime)) {
+    return false
+  }
+
+  return dueTime >= startTime && dueTime <= endTime
+}
+
+function resolveCadenceActivePeriod(summary: NetStatusResponse['summary'], cadence: SummaryCadence) {
+  const cadencePeriod = summary.cadence_totals?.recurring?.active_periods?.[cadence]
+  if (cadencePeriod?.start_date && cadencePeriod.end_date) {
+    return cadencePeriod
+  }
+
+  if (cadence === 'monthly') {
+    return summary.active_period
+  }
+
+  return undefined
 }
 
 function resolveActivePeriodLabel(summary: NetStatusResponse['summary'] | null | undefined, t: (key: string, options?: Record<string, unknown>) => string) {
@@ -633,7 +679,7 @@ export function ItemDetailPage() {
 
   const financialTimelineEventsQuery = useQuery({
     queryKey: queryKeys.items.itemLedger(itemId, ledgerListParams),
-    enabled: Boolean(itemId) && activeTab === 'commitments' && isFinancialDetail,
+    enabled: Boolean(itemId) && activeTab === 'commitments' && (isFinancialDetail || commitments.length > 0),
     queryFn: async () => {
       const params = new URLSearchParams(ledgerListParams)
       return apiRequest<EventsResponse>(`/events?${params.toString()}`)
@@ -758,8 +804,40 @@ export function ItemDetailPage() {
     () => resolveCadenceSummaryTotals(effectiveSummary, displayCadence),
     [displayCadence, effectiveSummary],
   )
-  const displayedCadenceLabel = t(`items.detail.cadence.options.${displayCadence}`)
-  const displayedCadencePeriodNoun = t(`items.detail.cadence.periodNouns.${displayCadence}`)
+  const commitmentRowsForActiveCadence = useMemo(() => {
+    if (isFinancialDetail || commitments.length === 0) {
+      return commitments
+    }
+
+    if (!financialTimelineEventsQuery.isSuccess) {
+      return commitments
+    }
+
+    const events = (financialTimelineEventsQuery.data?.groups ?? []).flatMap((group) => group.events)
+
+    const activePeriod = resolveCadenceActivePeriod(effectiveSummary, displayCadence)
+    if (!activePeriod) {
+      return commitments
+    }
+
+    const itemIdsInPeriod = new Set(
+      events
+        .filter((event) => isDueDateInsidePeriod(event.due_date, activePeriod))
+        .map((event) => event.item_id),
+    )
+
+    return commitments.filter((commitment) => {
+      const attributes = isRecord(commitment.attributes) ? commitment.attributes : {}
+      const frequency = resolveFinancialFrequency(commitment, attributes)
+      if (frequency === 'one_time' && displayCadence !== 'monthly') {
+        return false
+      }
+
+      return itemIdsInPeriod.has(commitment.id)
+    })
+  }, [commitments, displayCadence, effectiveSummary, financialTimelineEventsQuery.data?.groups, financialTimelineEventsQuery.isSuccess, isFinancialDetail])
+  const displayedCadenceLabel = t(`items.detail.cadence.options.${selectedCadence}`)
+  const displayedCadencePeriodNoun = t(`items.detail.cadence.periodNouns.${selectedCadence}`)
   const oneTimeImpact = Number(effectiveSummary.cadence_totals?.one_time_period?.net_monthly_cashflow ?? 0)
   const oneTimeImpactLabel = t('items.detail.summaryOneTimeImpact', { defaultValue: 'One-time impact (separate from recurring net)' })
   const oneTimeImpactValue = formatSignedFixedAmount(oneTimeImpact)
@@ -1129,7 +1207,7 @@ export function ItemDetailPage() {
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryLinked')}</p>
-                <p className="mt-2 text-2xl font-semibold">{commitments.length}</p>
+                <p className="mt-2 text-2xl font-semibold">{commitmentRowsForActiveCadence.length}</p>
               </motion.article>
               </div>
             </motion.section>
@@ -1188,13 +1266,13 @@ export function ItemDetailPage() {
             </div>
           ) : null}
 
-          {!isFinancialDetail && commitments.length === 0 ? (
+          {!isFinancialDetail && commitmentRowsForActiveCadence.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('items.detail.noCommitments')}</p>
           ) : (
             <motion.div layout className="space-y-4">
               {!isFinancialDetail ? (
                 <MotionPanelList
-                  items={commitments}
+                  items={commitmentRowsForActiveCadence}
                   getItemKey={(commitment) => commitment.id}
                   className="space-y-2"
                   renderItem={(commitment) => {
