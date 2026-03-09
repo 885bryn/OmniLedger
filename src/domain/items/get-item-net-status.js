@@ -118,6 +118,46 @@ function deriveEventDueDateDayKey(event) {
   return Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
 }
 
+function toUtcDayKey(value) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
+}
+
+function deriveItemOriginDayKey(item) {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const createdDayKey = toUtcDayKey(item.created_at || item.createdAt);
+  const attributes = isPlainObject(item.attributes) ? item.attributes : {};
+  const explicitOriginDayKey = toUtcDayKey(
+    attributes.originDate || attributes.origin_date || attributes.originAt || attributes.origin_at
+  );
+  const dueDateDayKey = toUtcDayKey(attributes.dueDate || attributes.due_date);
+
+  if (explicitOriginDayKey !== null) {
+    return dueDateDayKey === null ? explicitOriginDayKey : Math.max(explicitOriginDayKey, dueDateDayKey);
+  }
+
+  if (dueDateDayKey !== null) {
+    return dueDateDayKey;
+  }
+
+  if (createdDayKey === null) {
+    return null;
+  }
+
+  return createdDayKey;
+}
+
 function createActivePeriodMetadata({ cadence, startDayKey, endDayKey, referenceDayKey }) {
   return {
     cadence,
@@ -323,7 +363,7 @@ function finalizeCadenceBucket(bucket) {
   };
 }
 
-function buildEventOccurrenceLookup(events, activePeriods) {
+function buildEventOccurrenceLookup(events, activePeriods, originDayKeyByItemId) {
   const lookup = new Map();
 
   events.forEach((event) => {
@@ -333,6 +373,11 @@ function buildEventOccurrenceLookup(events, activePeriods) {
 
     const dueDateDayKey = deriveEventDueDateDayKey(event);
     if (dueDateDayKey === null) {
+      return;
+    }
+
+    const originDayKey = originDayKeyByItemId.get(event.item_id);
+    if (originDayKey !== null && originDayKey !== undefined && dueDateDayKey < originDayKey) {
       return;
     }
 
@@ -363,7 +408,10 @@ function buildEventOccurrenceLookup(events, activePeriods) {
 function buildSummary(childCommitments, childEvents = []) {
   const activePeriods = resolveActiveCadencePeriods();
   const activePeriod = activePeriods.monthly;
-  const eventOccurrenceByItemId = buildEventOccurrenceLookup(childEvents, activePeriods);
+  const originDayKeyByItemId = new Map(
+    childCommitments.map((child) => [child.id, deriveItemOriginDayKey(child)])
+  );
+  const eventOccurrenceByItemId = buildEventOccurrenceLookup(childEvents, activePeriods, originDayKeyByItemId);
   const summary = childCommitments.reduce(
     (accumulator, child) => {
       const amount = resolveSummaryAmount(child);

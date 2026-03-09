@@ -2,7 +2,7 @@
 
 const { Op } = require("sequelize");
 
-const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome", "FinancialItem"]);
+const CASHFLOW_ITEM_TYPES = new Set(["FinancialItem"]);
 const ONE_TIME_FREQUENCY = "one_time";
 const RECURRING_FREQUENCIES = new Set(["weekly", "monthly", "yearly"]);
 const ACTIVE_FINANCIAL_STATUS = "Active";
@@ -27,6 +27,31 @@ function toUtcDate(value) {
   }
 
   return new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()));
+}
+
+function maxUtcDate(left, right) {
+  if (!left) {
+    return right;
+  }
+
+  if (!right) {
+    return left;
+  }
+
+  return left.getTime() >= right.getTime() ? left : right;
+}
+
+function resolveOriginBoundaryDate(item, seedDate) {
+  const attributes = isPlainObject(item && item.attributes) ? item.attributes : {};
+  const explicitOrigin = toUtcDate(
+    attributes.originDate || attributes.origin_date || attributes.originAt || attributes.origin_at
+  );
+
+  if (!explicitOrigin) {
+    return seedDate;
+  }
+
+  return maxUtcDate(seedDate, explicitOrigin);
 }
 
 function addDaysUtc(date, count) {
@@ -198,7 +223,9 @@ function projectItemEvents({
     return [];
   }
 
-  const projectionStart = toUtcDate(windowStart || today);
+  const originBoundary = resolveOriginBoundaryDate(item, seedDate);
+
+  const projectionStart = maxUtcDate(toUtcDate(windowStart || today), originBoundary);
   const projectionEnd = toUtcDate(windowEnd || addYearsUtc(today, 3));
   if (!projectionStart || !projectionEnd || projectionEnd.getTime() < projectionStart.getTime()) {
     return [];
@@ -212,15 +239,37 @@ function projectItemEvents({
 
   const projected = [];
   let cursor = seedDate;
+  let latestBeforeProjectionStart = null;
   let guard = 0;
 
   while (cursor.getTime() < projectionStart.getTime() && guard < 500) {
+    latestBeforeProjectionStart = cursor;
     const nextCursor = advanceByFrequency(cursor, item.frequency);
     if (!nextCursor) {
       return [];
     }
     cursor = nextCursor;
     guard += 1;
+  }
+
+  const overdueDateKey = toDateKey(latestBeforeProjectionStart);
+  const canProjectOverdueOccurrence =
+    latestBeforeProjectionStart && originBoundary
+      ? latestBeforeProjectionStart.getTime() >= originBoundary.getTime()
+      : Boolean(latestBeforeProjectionStart);
+  if (overdueDateKey && canProjectOverdueOccurrence && existingDateKeys.has(overdueDateKey) === false) {
+    projected.push({
+      id: `projected-${item.id}-${overdueDateKey}`,
+      item_id: item.id,
+      type: getEventType(item.item_type, item.attributes, item),
+      amount: getAmount(item.attributes, item),
+      due_date: latestBeforeProjectionStart.toISOString(),
+      status: "Pending",
+      recurring: true,
+      completed_at: null,
+      created_at: null,
+      updated_at: null
+    });
   }
 
   while (cursor.getTime() <= projectionEnd.getTime() && guard < 2000) {
