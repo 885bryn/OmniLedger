@@ -225,6 +225,23 @@ describe('item detail commitments panel', () => {
                   obligations: { weekly: 30, monthly: 120, yearly: 1440 },
                   income: { weekly: 42, monthly: 170, yearly: 2040 },
                   net_cashflow: { weekly: 12, monthly: 50, yearly: 600 },
+                  active_periods: {
+                    weekly: {
+                      start_date: '2026-03-08',
+                      end_date: '2026-03-14',
+                      label: 'Mar 8 - Mar 14',
+                    },
+                    monthly: {
+                      start_date: '2026-03-01',
+                      end_date: '2026-03-31',
+                      label: 'Mar 2026',
+                    },
+                    yearly: {
+                      start_date: '2026-01-01',
+                      end_date: '2026-12-31',
+                      label: '2026',
+                    },
+                  },
                 },
                 one_time_period: {
                   net_monthly_cashflow: 25,
@@ -256,6 +273,7 @@ describe('item detail commitments panel', () => {
     expect(await screen.findByText('Obligations due this month (Mar 2026)')).toBeTruthy()
     expect(screen.getByText('Income due this month (Mar 2026)')).toBeTruthy()
     expect(screen.getByText('Net cashflow due this month (Mar 2026)')).toBeTruthy()
+    expect(screen.getByText('Linked due this month (Mar 2026)')).toBeTruthy()
 
     expect(screen.getByRole('button', { name: 'Selected cadence: Monthly' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByText('Obligations due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$120(?:\.00)?/)
@@ -265,24 +283,26 @@ describe('item detail commitments panel', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Weekly' }))
 
-    expect(await screen.findByText('Obligations due this week (Mar 2026)')).toBeTruthy()
-    expect(screen.getByText('Income due this week (Mar 2026)')).toBeTruthy()
-    expect(screen.getByText('Net cashflow due this week (Mar 2026)')).toBeTruthy()
+    expect(await screen.findByText('Obligations due this week (Mar 8 - Mar 14)')).toBeTruthy()
+    expect(screen.getByText('Income due this week (Mar 8 - Mar 14)')).toBeTruthy()
+    expect(screen.getByText('Net cashflow due this week (Mar 8 - Mar 14)')).toBeTruthy()
+    expect(screen.getByText('Linked due this week (Mar 8 - Mar 14)')).toBeTruthy()
     await waitFor(() => {
-      expect(screen.getByText('Obligations due this week (Mar 2026)').closest('article')?.textContent).toMatch(/\$30(?:\.00)?/)
-      expect(screen.getByText('Income due this week (Mar 2026)').closest('article')?.textContent).toMatch(/\$42(?:\.00)?/)
-      expect(screen.getByText('Net cashflow due this week (Mar 2026)').closest('article')?.textContent).toMatch(/\$12(?:\.00)?/)
+      expect(screen.getByText('Obligations due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/\$30(?:\.00)?/)
+      expect(screen.getByText('Income due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/\$42(?:\.00)?/)
+      expect(screen.getByText('Net cashflow due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/\$12(?:\.00)?/)
     })
 
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
 
-    expect(await screen.findByText('Obligations due this year (Mar 2026)')).toBeTruthy()
-    expect(screen.getByText('Income due this year (Mar 2026)')).toBeTruthy()
-    expect(screen.getByText('Net cashflow due this year (Mar 2026)')).toBeTruthy()
+    expect(await screen.findByText('Obligations due this year (2026)')).toBeTruthy()
+    expect(screen.getByText('Income due this year (2026)')).toBeTruthy()
+    expect(screen.getByText('Net cashflow due this year (2026)')).toBeTruthy()
+    expect(screen.getByText('Linked due this year (2026)')).toBeTruthy()
     await waitFor(() => {
-      expect(screen.getByText('Obligations due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$1,440(?:\.00)?/)
-      expect(screen.getByText('Income due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$2,040(?:\.00)?/)
-      expect(screen.getByText('Net cashflow due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$600(?:\.00)?/)
+      expect(screen.getByText('Obligations due this year (2026)').closest('article')?.textContent).toMatch(/\$1,440(?:\.00)?/)
+      expect(screen.getByText('Income due this year (2026)').closest('article')?.textContent).toMatch(/\$2,040(?:\.00)?/)
+      expect(screen.getByText('Net cashflow due this year (2026)').closest('article')?.textContent).toMatch(/\$600(?:\.00)?/)
     })
     expect(screen.getByText('Net cashflow due this year equals income due this year minus obligations due this year.')).toBeTruthy()
   })
@@ -315,6 +335,13 @@ describe('item detail commitments panel', () => {
                   obligations: { weekly: 20, monthly: 90, yearly: 1290 },
                   income: { weekly: 70, monthly: 300, yearly: 3600 },
                   net_cashflow: { weekly: 50, monthly: 210, yearly: 2310 },
+                  active_periods: {
+                    yearly: {
+                      start_date: '2026-01-01',
+                      end_date: '2026-12-31',
+                      label: '2026',
+                    },
+                  },
                 },
                 one_time_period: {
                   net_monthly_cashflow: 0,
@@ -350,11 +377,11 @@ describe('item detail commitments panel', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
 
-    expect(await screen.findByText('Obligations due this year (Mar 2026)')).toBeTruthy()
+    expect(await screen.findByText('Obligations due this year (2026)')).toBeTruthy()
     await waitFor(() => {
-      expect(screen.getByText('Obligations due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$1,290(?:\.00)?/)
-      expect(screen.getByText('Income due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$3,600(?:\.00)?/)
-      expect(screen.getByText('Net cashflow due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$2,310(?:\.00)?/)
+      expect(screen.getByText('Obligations due this year (2026)').closest('article')?.textContent).toMatch(/\$1,290(?:\.00)?/)
+      expect(screen.getByText('Income due this year (2026)').closest('article')?.textContent).toMatch(/\$3,600(?:\.00)?/)
+      expect(screen.getByText('Net cashflow due this year (2026)').closest('article')?.textContent).toMatch(/\$2,310(?:\.00)?/)
     })
   })
 
@@ -492,15 +519,15 @@ describe('item detail commitments panel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
 
     expect(await screen.findByText('Item details could not be loaded.')).toBeTruthy()
-    expect(screen.getByText('Obligations due this year (Mar 2026)')).toBeTruthy()
-    expect(screen.queryByText('Obligations due this month (Mar 2026)')).toBeNull()
-    expect(screen.getByText('Obligations due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$90(?:\.00)?/)
-    expect(screen.getByText('Income due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$140(?:\.00)?/)
-    expect(screen.getByText('Net cashflow due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$50(?:\.00)?/)
+    expect(screen.getByText('Obligations due this month (Mar 2026)')).toBeTruthy()
+    expect(screen.queryByText('Obligations due this year (Mar 2026)')).toBeNull()
+    expect(screen.getByText('Obligations due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$90(?:\.00)?/)
+    expect(screen.getByText('Income due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$140(?:\.00)?/)
+    expect(screen.getByText('Net cashflow due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$50(?:\.00)?/)
     expect(screen.getByText(/One-time impact \(separate from recurring net\): -\$?10\.00/)).toBeTruthy()
   })
 
-  it('renders commitment and income rows from in-period events across cadence views regardless of completion', async () => {
+  it('keeps all linked financial rows visible in the commitments tab while the summary count stays cadence-filtered', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -668,6 +695,7 @@ describe('item detail commitments panel', () => {
     renderItemDetail()
 
     expect(await screen.findByText('Obligations due this month (Mar 2026)')).toBeTruthy()
+    expect(screen.getByText('Linked due this month (Mar 2026)').closest('article')?.textContent).toMatch(/2/)
 
     await screen.findByRole('button', { name: 'Commitments' })
     await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
@@ -675,13 +703,15 @@ describe('item detail commitments panel', () => {
     expect(await screen.findByRole('link', { name: 'Mortgage' })).toBeTruthy()
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Salary' })).toBeTruthy()
-      expect(screen.queryByRole('link', { name: 'Annual Insurance' })).toBeNull()
+      expect(screen.getByRole('link', { name: 'Annual Insurance' })).toBeTruthy()
     })
     expect(screen.queryByText('Current & Upcoming')).toBeNull()
     expect(screen.queryByText('Historical Ledger')).toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: 'Overview' }))
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
+    expect(await screen.findByText('Linked due this year (2026)')).toBeTruthy()
+    expect(screen.getByText('Linked due this year (2026)').closest('article')?.textContent).toMatch(/3/)
     await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
     expect(await screen.findByRole('link', { name: 'Annual Insurance' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Mortgage' })).toBeTruthy()
@@ -689,11 +719,13 @@ describe('item detail commitments panel', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Overview' }))
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Weekly' }))
+    expect(await screen.findByText('Linked due this week (Mar 8 - Mar 14)')).toBeTruthy()
+    expect(screen.getByText('Linked due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/2/)
     await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
     expect(await screen.findByRole('link', { name: 'Mortgage' })).toBeTruthy()
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Salary' })).toBeTruthy()
-      expect(screen.queryByRole('link', { name: 'Annual Insurance' })).toBeNull()
+      expect(screen.getByRole('link', { name: 'Annual Insurance' })).toBeTruthy()
     })
 
     await waitFor(() => {
@@ -701,7 +733,7 @@ describe('item detail commitments panel', () => {
     })
   })
 
-  it('hides linked financial rows when no in-period events exist for the active cadence', async () => {
+  it('keeps linked financial rows visible in the commitments tab when no in-period events exist', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -792,11 +824,14 @@ describe('item detail commitments panel', () => {
 
     renderItemDetail()
 
+    expect(await screen.findByText('Linked due this month (Mar 2026)')).toBeTruthy()
+    expect(screen.getByText('Linked due this month (Mar 2026)').closest('article')?.textContent).toMatch(/0/)
+
     await screen.findByRole('button', { name: 'Commitments' })
     await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
 
-    expect(await screen.findByText('No linked financial items yet.')).toBeTruthy()
-    expect(screen.queryByRole('link', { name: 'Mortgage' })).toBeNull()
+    expect(await screen.findByRole('link', { name: 'Mortgage' })).toBeTruthy()
+    expect(screen.queryByText('No linked financial items yet.')).toBeNull()
     expect(screen.queryByText('No current or upcoming ledger records for linked financial items.')).toBeNull()
     expect(screen.queryByText('No historical ledger records for linked financial items.')).toBeNull()
   })
