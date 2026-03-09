@@ -11,18 +11,18 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 29 of 29 (Cadence Toggle & Synced Cashflow View)
-Plan: 9 of 9
-Status: Complete
-Last activity: 2026-03-09 - Executed 29-09 restored linked commitments tab visibility and cadence-synced range copy
+Plan: 10 of 11
+Status: In Progress
+Last activity: 2026-03-09 - Executed 29-10 unified origin-bounded cadence rollups and projection regressions
 
 Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 69
+- Total plans completed: 70
 - Average duration: 4 min
-- Total execution time: 5.4 hours
+- Total execution time: 5.5 hours
 
 **By Phase:**
 
@@ -33,7 +33,7 @@ Progress: [##########] 100%
 | 24-26 (v4.1) | 10 | 41 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 29-09 (12 min), 29-08 (4 min), 29-07 (8 min), 29-06 (5 min), 29-05 (2 min)
+- Last 5 plans: 29-10 (6 min), 29-09 (12 min), 29-08 (4 min), 29-07 (8 min), 29-06 (5 min)
 - Trend: Phase 29 cadence behavior is shifting from run-rate normalization to deterministic period-bounded inclusion rules.
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
 | Phase 27 P03 | 3 min | 2 tasks | 2 files |
@@ -50,6 +50,7 @@ Progress: [##########] 100%
 | Phase 29 P07 | 8 min | 2 tasks | 3 files |
 | Phase 29 P08 | 4 min | 2 tasks | 3 files |
 | Phase 29 P09 | 12 min | 2 tasks | 5 files |
+| Phase 29 P10 | 6 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 29]: Keep one-time inclusion monthly-only while recurrence-aware cadence net remains income minus obligations.
 - [Phase 29]: Use the full linked commitments list for the commitments tab while keeping the summary count cadence-filtered.
 - [Phase 29]: Derive visible cadence labels and period copy from displayCadence active-period metadata so wording matches rendered totals during and after transitions.
+- [Phase 29]: Use explicit originDate metadata (with due-date fallback) as shared recurring origin boundary for rollups and projections.
+- [Phase 29]: Keep one-time inclusion monthly-only while tightening recurring pre-origin filtering.
 
 ### Pending Todos
 
@@ -107,5 +110,5 @@ Decisions are logged in `.planning/PROJECT.md`.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 29-09-PLAN.md
+Stopped at: Completed 29-10-PLAN.md
 Resume file: `None`
