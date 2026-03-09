@@ -337,21 +337,21 @@ function buildEventOccurrenceLookup(events, activePeriods) {
     }
 
     const existing = lookup.get(event.item_id) || {
-      weekly: false,
-      monthly: false,
-      yearly: false
+      weekly: 0,
+      monthly: 0,
+      yearly: 0
     };
 
-    if (!existing.weekly && isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.weekly)) {
-      existing.weekly = true;
+    if (isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.weekly)) {
+      existing.weekly += 1;
     }
 
-    if (!existing.monthly && isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.monthly)) {
-      existing.monthly = true;
+    if (isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.monthly)) {
+      existing.monthly += 1;
     }
 
-    if (!existing.yearly && isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.yearly)) {
-      existing.yearly = true;
+    if (isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.yearly)) {
+      existing.yearly += 1;
     }
 
     lookup.set(event.item_id, existing);
@@ -375,19 +375,19 @@ function buildSummary(childCommitments, childEvents = []) {
       }
 
       const includedInCadence = eventOccurrenceByItemId.get(child.id) || {
-        weekly: false,
-        monthly: false,
-        yearly: false
+        weekly: 0,
+        monthly: 0,
+        yearly: 0
       };
 
-      if (!includedInCadence.weekly && !includedInCadence.monthly && !includedInCadence.yearly) {
+      if (includedInCadence.weekly === 0 && includedInCadence.monthly === 0 && includedInCadence.yearly === 0) {
         accumulator.excluded_row_count += 1;
         accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
         return accumulator;
       }
 
       if (isOneTimeItem(child)) {
-        if (!includedInCadence.monthly) {
+        if (includedInCadence.monthly === 0) {
           accumulator.excluded_row_count += 1;
           accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
           return accumulator;
@@ -410,37 +410,41 @@ function buildSummary(childCommitments, childEvents = []) {
         return accumulator;
       }
 
+      const weeklyOccurrenceTotal = amount * includedInCadence.weekly;
+      const monthlyOccurrenceTotal = amount * includedInCadence.monthly;
+      const yearlyOccurrenceTotal = amount * includedInCadence.yearly;
+
       if (isIncomeItem(child)) {
-        if (includedInCadence.monthly) {
-          accumulator.monthly_income_total += amount;
+        if (includedInCadence.monthly > 0) {
+          accumulator.monthly_income_total += monthlyOccurrenceTotal;
         }
 
-        if (includedInCadence.weekly) {
-          accumulator.cadence_totals.recurring.income.weekly += amount;
+        if (includedInCadence.weekly > 0) {
+          accumulator.cadence_totals.recurring.income.weekly += weeklyOccurrenceTotal;
         }
 
-        if (includedInCadence.monthly) {
-          accumulator.cadence_totals.recurring.income.monthly += amount;
+        if (includedInCadence.monthly > 0) {
+          accumulator.cadence_totals.recurring.income.monthly += monthlyOccurrenceTotal;
         }
 
-        if (includedInCadence.yearly) {
-          accumulator.cadence_totals.recurring.income.yearly += amount;
+        if (includedInCadence.yearly > 0) {
+          accumulator.cadence_totals.recurring.income.yearly += yearlyOccurrenceTotal;
         }
       } else {
-        if (includedInCadence.monthly) {
-          accumulator.monthly_obligation_total += amount;
+        if (includedInCadence.monthly > 0) {
+          accumulator.monthly_obligation_total += monthlyOccurrenceTotal;
         }
 
-        if (includedInCadence.weekly) {
-          accumulator.cadence_totals.recurring.obligations.weekly += amount;
+        if (includedInCadence.weekly > 0) {
+          accumulator.cadence_totals.recurring.obligations.weekly += weeklyOccurrenceTotal;
         }
 
-        if (includedInCadence.monthly) {
-          accumulator.cadence_totals.recurring.obligations.monthly += amount;
+        if (includedInCadence.monthly > 0) {
+          accumulator.cadence_totals.recurring.obligations.monthly += monthlyOccurrenceTotal;
         }
 
-        if (includedInCadence.yearly) {
-          accumulator.cadence_totals.recurring.obligations.yearly += amount;
+        if (includedInCadence.yearly > 0) {
+          accumulator.cadence_totals.recurring.obligations.yearly += yearlyOccurrenceTotal;
         }
       }
 

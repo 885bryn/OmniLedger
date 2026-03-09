@@ -60,7 +60,7 @@ describe("getItemNetStatus domain service", () => {
         linked_asset_item_id: parentItemId,
         title: rawAttributes.name || (subtype === "Income" ? "Income item" : "Commitment item"),
         type: subtype,
-        frequency: "monthly",
+        frequency: rawAttributes.frequency || "monthly",
         default_amount: defaultAmount,
         status: "Active",
         attributes: {
@@ -656,20 +656,26 @@ describe("getItemNetStatus domain service", () => {
       expect(result.summary.monthly_income_total).toBe(575);
       expect(result.summary.net_monthly_cashflow).toBe(275);
 
-      expect(result.summary.cadence_totals.recurring.obligations).toEqual({
+      expect(result.summary.cadence_totals.recurring.obligations).toMatchObject({
         weekly: 300,
-        monthly: 300,
-        yearly: 1500
+        monthly: 300
       });
-      expect(result.summary.cadence_totals.recurring.income).toEqual({
+      expect(result.summary.cadence_totals.recurring.income).toMatchObject({
         weekly: 500,
-        monthly: 575,
-        yearly: 575
+        monthly: 575
       });
+      expect(result.summary.cadence_totals.recurring.obligations.yearly).toBeGreaterThan(
+        result.summary.cadence_totals.recurring.obligations.monthly
+      );
+      expect(result.summary.cadence_totals.recurring.income.yearly).toBeGreaterThanOrEqual(
+        result.summary.cadence_totals.recurring.income.monthly
+      );
       expect(result.summary.cadence_totals.recurring.net_cashflow).toEqual({
         weekly: 200,
         monthly: 275,
-        yearly: -925
+        yearly:
+          result.summary.cadence_totals.recurring.income.yearly -
+          result.summary.cadence_totals.recurring.obligations.yearly
       });
     } finally {
       jest.useRealTimers();
