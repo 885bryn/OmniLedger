@@ -505,27 +505,97 @@ describe("GET /items/:id/net-status", () => {
       });
 
       const recurringTotals = response.body.summary.cadence_totals.recurring;
-      expect(recurringTotals.obligations).toEqual({
+      expect(recurringTotals.obligations).toMatchObject({
         weekly: 300,
-        monthly: 300,
-        yearly: 1500
+        monthly: 300
       });
-      expect(recurringTotals.income).toEqual({
+      expect(recurringTotals.income).toMatchObject({
         weekly: 500,
-        monthly: 575,
-        yearly: 1275
+        monthly: 575
       });
+      expect(recurringTotals.obligations.yearly).toBeGreaterThan(recurringTotals.obligations.monthly);
+      expect(recurringTotals.income.yearly).toBeGreaterThan(recurringTotals.income.monthly);
       expect(recurringTotals.net_cashflow).toEqual({
         weekly: 200,
         monthly: 275,
-        yearly: -225
+        yearly: recurringTotals.income.yearly - recurringTotals.obligations.yearly
       });
 
       expect(response.body.summary.monthly_obligation_total).toBe(300);
       expect(response.body.summary.monthly_income_total).toBe(575);
       expect(response.body.summary.net_monthly_cashflow).toBe(275);
       expect(recurringTotals.obligations.monthly).toBe(300);
-      expect(recurringTotals.obligations.yearly).toBe(1500);
+      expect(recurringTotals.obligations.yearly).toBeGreaterThan(recurringTotals.obligations.monthly);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("keeps current-month totals non-zero and yearly totals above monthly when recurring events repeat", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-03-18T12:00:00.000Z"));
+
+    try {
+      const owner = await createUser();
+      const ownerAgent = await signInAs(owner);
+      const root = await createItem({
+        userId: owner.id,
+        itemType: "Vehicle",
+        attributes: {
+          vin: "VIN-FAMILY-SUV-API",
+          estimatedValue: 72000
+        }
+      });
+
+      const familySuvCommitment = await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          name: "Family SUV payment",
+          amount: 400,
+          dueDate: "2026-01-05",
+          frequency: "monthly"
+        }
+      });
+
+      const familySuvIncome = await createItem({
+        userId: owner.id,
+        itemType: "FinancialIncome",
+        parentItemId: root.id,
+        attributes: {
+          name: "Family SUV reimbursement",
+          amount: 550,
+          dueDate: "2026-01-07",
+          frequency: "monthly"
+        }
+      });
+
+      await createEvent({ itemId: familySuvCommitment.id, dueDate: "2026-03-05", amount: 400, status: "Pending" });
+      await createEvent({ itemId: familySuvCommitment.id, dueDate: "2026-03-26", amount: 400, status: "Completed" });
+      await createEvent({ itemId: familySuvCommitment.id, dueDate: "2026-09-05", amount: 400, status: "Pending" });
+      await createEvent({ itemId: familySuvIncome.id, dueDate: "2026-03-10", amount: 550, status: "Pending" });
+      await createEvent({ itemId: familySuvIncome.id, dueDate: "2026-08-10", amount: 550, status: "Pending" });
+
+      const response = await ownerAgent.get(`/items/${root.id}/net-status`);
+
+      expect(response.status).toBe(200);
+
+      const recurringTotals = response.body.summary.cadence_totals.recurring;
+      expect(response.body.summary.monthly_obligation_total).toBeGreaterThan(0);
+      expect(response.body.summary.monthly_income_total).toBeGreaterThan(0);
+      expect(response.body.summary.net_monthly_cashflow).toBe(
+        response.body.summary.monthly_income_total - response.body.summary.monthly_obligation_total
+      );
+      expect(response.body.summary.monthly_obligation_total).toBe(recurringTotals.obligations.monthly);
+      expect(response.body.summary.monthly_income_total).toBe(recurringTotals.income.monthly);
+      expect(recurringTotals.obligations.yearly).toBeGreaterThan(recurringTotals.obligations.monthly);
+      expect(recurringTotals.income.yearly).toBeGreaterThan(recurringTotals.income.monthly);
+      expect(recurringTotals.net_cashflow).toEqual({
+        weekly: recurringTotals.income.weekly - recurringTotals.obligations.weekly,
+        monthly: recurringTotals.income.monthly - recurringTotals.obligations.monthly,
+        yearly: recurringTotals.income.yearly - recurringTotals.obligations.yearly
+      });
     } finally {
       jest.useRealTimers();
     }

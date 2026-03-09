@@ -681,4 +681,75 @@ describe("getItemNetStatus domain service", () => {
       jest.useRealTimers();
     }
   });
+
+  it("keeps current-month totals non-zero and lets yearly totals exceed monthly when recurring events repeat", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-03-18T12:00:00.000Z"));
+
+    try {
+      const owner = await createUser();
+      const root = await createItem({
+        userId: owner.id,
+        itemType: "Vehicle",
+        attributes: {
+          vin: "VIN-FAMILY-SUV",
+          estimatedValue: 68000
+        }
+      });
+
+      const familySuvCommitment = await createItem({
+        userId: owner.id,
+        itemType: "FinancialCommitment",
+        parentItemId: root.id,
+        attributes: {
+          name: "Family SUV payment",
+          amount: 400,
+          dueDate: "2026-01-05",
+          frequency: "monthly"
+        }
+      });
+
+      const familySuvIncome = await createItem({
+        userId: owner.id,
+        itemType: "FinancialIncome",
+        parentItemId: root.id,
+        attributes: {
+          name: "Family SUV reimbursement",
+          amount: 550,
+          dueDate: "2026-01-07",
+          frequency: "monthly"
+        }
+      });
+
+      await createEvent({ itemId: familySuvCommitment.id, dueDate: "2026-03-05", amount: 400, status: "Pending" });
+      await createEvent({ itemId: familySuvCommitment.id, dueDate: "2026-03-26", amount: 400, status: "Completed" });
+      await createEvent({ itemId: familySuvCommitment.id, dueDate: "2026-09-05", amount: 400, status: "Pending" });
+      await createEvent({ itemId: familySuvIncome.id, dueDate: "2026-03-10", amount: 550, status: "Pending" });
+      await createEvent({ itemId: familySuvIncome.id, dueDate: "2026-08-10", amount: 550, status: "Pending" });
+
+      const result = await getItemNetStatus({
+        itemId: root.id,
+        actorUserId: owner.id
+      });
+
+      const recurringTotals = result.summary.cadence_totals.recurring;
+
+      expect(result.summary.monthly_obligation_total).toBeGreaterThan(0);
+      expect(result.summary.monthly_income_total).toBeGreaterThan(0);
+      expect(result.summary.net_monthly_cashflow).toBe(
+        result.summary.monthly_income_total - result.summary.monthly_obligation_total
+      );
+      expect(result.summary.monthly_obligation_total).toBe(recurringTotals.obligations.monthly);
+      expect(result.summary.monthly_income_total).toBe(recurringTotals.income.monthly);
+      expect(recurringTotals.obligations.yearly).toBeGreaterThan(recurringTotals.obligations.monthly);
+      expect(recurringTotals.income.yearly).toBeGreaterThan(recurringTotals.income.monthly);
+      expect(recurringTotals.net_cashflow).toEqual({
+        weekly: recurringTotals.income.weekly - recurringTotals.obligations.weekly,
+        monthly: recurringTotals.income.monthly - recurringTotals.obligations.monthly,
+        yearly: recurringTotals.income.yearly - recurringTotals.obligations.yearly
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });
