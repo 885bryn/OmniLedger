@@ -261,7 +261,7 @@ describe('item detail commitments panel', () => {
     expect(screen.getByText('Monthly obligations (Mar 2026)').closest('article')?.textContent).toMatch(/\$120(?:\.00)?/)
     expect(screen.getByText('Monthly income (Mar 2026)').closest('article')?.textContent).toMatch(/\$170(?:\.00)?/)
     expect(screen.getByText('Monthly net cashflow (Mar 2026)').closest('article')?.textContent).toMatch(/\$50(?:\.00)?/)
-    expect(screen.getByText('One-time impact (separate from recurring net): +$25.00')).toBeTruthy()
+    expect(screen.getByText(/One-time impact \(separate from recurring net\): \+\$?25\.00/)).toBeTruthy()
 
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Weekly' }))
 
@@ -343,12 +343,14 @@ describe('item detail commitments panel', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Weekly' }))
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Monthly' }))
 
-    expect(await screen.findByText('Yearly obligations (Mar 2026)')).toBeTruthy()
-    expect(screen.getByText('Yearly income (Mar 2026)')).toBeTruthy()
-    expect(screen.getByText('Yearly net cashflow (Mar 2026)')).toBeTruthy()
+    expect(await screen.findByText('Monthly obligations (Mar 2026)')).toBeTruthy()
+    expect(screen.getByText('Monthly income (Mar 2026)')).toBeTruthy()
+    expect(screen.getByText('Monthly net cashflow (Mar 2026)')).toBeTruthy()
     expect(screen.queryByText('Weekly obligations (Mar 2026)')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Selected cadence: Yearly' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByText('Yearly obligations (Mar 2026)')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Selected cadence: Monthly' }).getAttribute('aria-pressed')).toBe('true')
   })
 
   it('keeps previous synchronized values visible and shows concise feedback when cadence transition fails', async () => {
@@ -420,6 +422,7 @@ describe('item detail commitments panel', () => {
     expect(screen.getByText('Monthly obligations (Mar 2026)').closest('article')?.textContent).toMatch(/\$90(?:\.00)?/)
     expect(screen.getByText('Monthly income (Mar 2026)').closest('article')?.textContent).toMatch(/\$140(?:\.00)?/)
     expect(screen.getByText('Monthly net cashflow (Mar 2026)').closest('article')?.textContent).toMatch(/\$50(?:\.00)?/)
+    expect(screen.getByText(/One-time impact \(separate from recurring net\): -\$?10\.00/)).toBeTruthy()
   })
 
   it('shows one row per linked financial item without expanding into occurrences', async () => {
