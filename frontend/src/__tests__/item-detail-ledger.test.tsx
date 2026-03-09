@@ -268,18 +268,22 @@ describe('item detail commitments panel', () => {
     expect(await screen.findByText('Obligations due this week (Mar 2026)')).toBeTruthy()
     expect(screen.getByText('Income due this week (Mar 2026)')).toBeTruthy()
     expect(screen.getByText('Net cashflow due this week (Mar 2026)')).toBeTruthy()
-    expect(screen.getByText('Obligations due this week (Mar 2026)').closest('article')?.textContent).toMatch(/\$30(?:\.00)?/)
-    expect(screen.getByText('Income due this week (Mar 2026)').closest('article')?.textContent).toMatch(/\$42(?:\.00)?/)
-    expect(screen.getByText('Net cashflow due this week (Mar 2026)').closest('article')?.textContent).toMatch(/\$12(?:\.00)?/)
+    await waitFor(() => {
+      expect(screen.getByText('Obligations due this week (Mar 2026)').closest('article')?.textContent).toMatch(/\$30(?:\.00)?/)
+      expect(screen.getByText('Income due this week (Mar 2026)').closest('article')?.textContent).toMatch(/\$42(?:\.00)?/)
+      expect(screen.getByText('Net cashflow due this week (Mar 2026)').closest('article')?.textContent).toMatch(/\$12(?:\.00)?/)
+    })
 
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
 
     expect(await screen.findByText('Obligations due this year (Mar 2026)')).toBeTruthy()
     expect(screen.getByText('Income due this year (Mar 2026)')).toBeTruthy()
     expect(screen.getByText('Net cashflow due this year (Mar 2026)')).toBeTruthy()
-    expect(screen.getByText('Obligations due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$1,440(?:\.00)?/)
-    expect(screen.getByText('Income due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$2,040(?:\.00)?/)
-    expect(screen.getByText('Net cashflow due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$600(?:\.00)?/)
+    await waitFor(() => {
+      expect(screen.getByText('Obligations due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$1,440(?:\.00)?/)
+      expect(screen.getByText('Income due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$2,040(?:\.00)?/)
+      expect(screen.getByText('Net cashflow due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$600(?:\.00)?/)
+    })
     expect(screen.getByText('Net cashflow due this year equals income due this year minus obligations due this year.')).toBeTruthy()
   })
 
@@ -347,9 +351,11 @@ describe('item detail commitments panel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
 
     expect(await screen.findByText('Obligations due this year (Mar 2026)')).toBeTruthy()
-    expect(screen.getByText('Obligations due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$1,290(?:\.00)?/)
-    expect(screen.getByText('Income due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$3,600(?:\.00)?/)
-    expect(screen.getByText('Net cashflow due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$2,310(?:\.00)?/)
+    await waitFor(() => {
+      expect(screen.getByText('Obligations due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$1,290(?:\.00)?/)
+      expect(screen.getByText('Income due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$3,600(?:\.00)?/)
+      expect(screen.getByText('Net cashflow due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$2,310(?:\.00)?/)
+    })
   })
 
   it('keeps only the latest cadence selection visible during rapid interactions', async () => {
@@ -486,15 +492,15 @@ describe('item detail commitments panel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
 
     expect(await screen.findByText('Item details could not be loaded.')).toBeTruthy()
-    expect(screen.getByText('Obligations due this month (Mar 2026)')).toBeTruthy()
-    expect(screen.queryByText('Obligations due this year (Mar 2026)')).toBeNull()
-    expect(screen.getByText('Obligations due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$90(?:\.00)?/)
-    expect(screen.getByText('Income due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$140(?:\.00)?/)
-    expect(screen.getByText('Net cashflow due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$50(?:\.00)?/)
+    expect(screen.getByText('Obligations due this year (Mar 2026)')).toBeTruthy()
+    expect(screen.queryByText('Obligations due this month (Mar 2026)')).toBeNull()
+    expect(screen.getByText('Obligations due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$90(?:\.00)?/)
+    expect(screen.getByText('Income due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$140(?:\.00)?/)
+    expect(screen.getByText('Net cashflow due this year (Mar 2026)').closest('article')?.textContent).toMatch(/\$50(?:\.00)?/)
     expect(screen.getByText(/One-time impact \(separate from recurring net\): -\$?10\.00/)).toBeTruthy()
   })
 
-  it('shows one row per linked financial item without expanding into occurrences', async () => {
+  it('renders commitment and income rows from in-period events across cadence views regardless of completion', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -513,7 +519,8 @@ describe('item detail commitments panel', () => {
                 item_type: 'FinancialItem',
                 type: 'Commitment',
                 title: 'Mortgage',
-                attributes: { name: 'Mortgage' },
+                frequency: 'monthly',
+                attributes: { name: 'Mortgage', dueDate: '2026-01-05' },
                 updated_at: '2026-02-20T00:00:00.000Z',
               },
               {
@@ -521,16 +528,56 @@ describe('item detail commitments panel', () => {
                 user_id: 'owner-1',
                 item_type: 'FinancialItem',
                 type: 'Income',
-                title: 'Rent',
-                attributes: { name: 'Rent' },
+                frequency: 'monthly',
+                title: 'Salary',
+                attributes: { name: 'Salary', dueDate: '2026-01-03' },
+                updated_at: '2026-02-20T00:00:00.000Z',
+              },
+              {
+                id: 'fin-3',
+                user_id: 'owner-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                frequency: 'yearly',
+                title: 'Annual Insurance',
+                attributes: { name: 'Annual Insurance', dueDate: '2026-01-10' },
                 updated_at: '2026-02-20T00:00:00.000Z',
               },
             ],
             summary: {
               monthly_obligation_total: 1200,
-              monthly_income_total: 800,
-              net_monthly_cashflow: -400,
+              monthly_income_total: 3200,
+              net_monthly_cashflow: 2000,
               excluded_row_count: 0,
+              active_period: {
+                label: 'Mar 2026',
+                start_date: '2026-03-01',
+                end_date: '2026-03-31',
+              },
+              cadence_totals: {
+                recurring: {
+                  obligations: { weekly: 1200, monthly: 1200, yearly: 2700 },
+                  income: { weekly: 3200, monthly: 3200, yearly: 38400 },
+                  net_cashflow: { weekly: 2000, monthly: 2000, yearly: 35700 },
+                  active_periods: {
+                    weekly: {
+                      start_date: '2026-03-08',
+                      end_date: '2026-03-14',
+                      label: 'Mar 8 - Mar 14',
+                    },
+                    monthly: {
+                      start_date: '2026-03-01',
+                      end_date: '2026-03-31',
+                      label: 'Mar 2026',
+                    },
+                    yearly: {
+                      start_date: '2026-01-01',
+                      end_date: '2026-12-31',
+                      label: '2026',
+                    },
+                  },
+                },
+              },
             },
           },
         })
@@ -543,8 +590,62 @@ describe('item detail commitments panel', () => {
             items: [
               { id: 'asset-1', item_type: 'RealEstate', attributes: { address: 'Maple Street' }, updated_at: '2026-02-20T00:00:00.000Z' },
               { id: 'fin-1', item_type: 'FinancialItem', type: 'Commitment', title: 'Mortgage', attributes: { name: 'Mortgage' }, updated_at: '2026-02-20T00:00:00.000Z' },
-              { id: 'fin-2', item_type: 'FinancialItem', type: 'Income', title: 'Rent', attributes: { name: 'Rent' }, updated_at: '2026-02-20T00:00:00.000Z' },
+              { id: 'fin-2', item_type: 'FinancialItem', type: 'Income', title: 'Salary', attributes: { name: 'Salary' }, updated_at: '2026-02-20T00:00:00.000Z' },
+              { id: 'fin-3', item_type: 'FinancialItem', type: 'Commitment', title: 'Annual Insurance', attributes: { name: 'Annual Insurance' }, updated_at: '2026-02-20T00:00:00.000Z' },
             ],
+          },
+        })
+      }
+
+      if (url.includes('/events?') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [
+              {
+                due_date: '2026-03-10',
+                events: [
+                  {
+                    id: 'event-fin-1-mar',
+                    item_id: 'fin-1',
+                    type: 'Mortgage',
+                    amount: 1200,
+                    due_date: '2026-03-10',
+                    status: 'Pending',
+                    updated_at: '2026-02-20T00:00:00.000Z',
+                  },
+                ],
+              },
+              {
+                due_date: '2026-03-11',
+                events: [
+                  {
+                    id: 'event-fin-2-mar',
+                    item_id: 'fin-2',
+                    type: 'Salary',
+                    amount: 3200,
+                    due_date: '2026-03-11',
+                    status: 'Completed',
+                    updated_at: '2026-02-20T00:00:00.000Z',
+                  },
+                ],
+              },
+              {
+                due_date: '2026-06-15',
+                events: [
+                  {
+                    id: 'event-fin-3-jun',
+                    item_id: 'fin-3',
+                    type: 'Annual Insurance',
+                    amount: 1500,
+                    due_date: '2026-06-15',
+                    status: 'Pending',
+                    updated_at: '2026-02-20T00:00:00.000Z',
+                  },
+                ],
+              },
+            ],
+            total_count: 3,
           },
         })
       }
@@ -566,20 +667,41 @@ describe('item detail commitments panel', () => {
 
     renderItemDetail()
 
+    expect(await screen.findByText('Obligations due this month (Mar 2026)')).toBeTruthy()
+
     await screen.findByRole('button', { name: 'Commitments' })
     await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
 
     expect(await screen.findByRole('link', { name: 'Mortgage' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Rent' })).toBeTruthy()
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Salary' })).toBeTruthy()
+      expect(screen.queryByRole('link', { name: 'Annual Insurance' })).toBeNull()
+    })
     expect(screen.queryByText('Current & Upcoming')).toBeNull()
     expect(screen.queryByText('Historical Ledger')).toBeNull()
 
+    await userEvent.click(screen.getByRole('button', { name: 'Overview' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+    expect(await screen.findByRole('link', { name: 'Annual Insurance' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Mortgage' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Salary' })).toBeTruthy()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Overview' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Weekly' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+    expect(await screen.findByRole('link', { name: 'Mortgage' })).toBeTruthy()
     await waitFor(() => {
-      expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining('/events?status=all'), expect.anything())
+      expect(screen.getByRole('link', { name: 'Salary' })).toBeTruthy()
+      expect(screen.queryByRole('link', { name: 'Annual Insurance' })).toBeNull()
+    })
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some(([request, requestInit]) => String(request).includes('/events?') && (requestInit?.method ?? 'GET') === 'GET')).toBe(true)
     })
   })
 
-  it('shows linked financial item cards even when occurrence fetch would be empty', async () => {
+  it('hides linked financial rows when no in-period events exist for the active cadence', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -607,6 +729,35 @@ describe('item detail commitments panel', () => {
               monthly_income_total: 0,
               net_monthly_cashflow: -1200,
               excluded_row_count: 0,
+              active_period: {
+                label: 'Mar 2026',
+                start_date: '2026-03-01',
+                end_date: '2026-03-31',
+              },
+              cadence_totals: {
+                recurring: {
+                  obligations: { weekly: 1200, monthly: 1200, yearly: 14400 },
+                  income: { weekly: 0, monthly: 0, yearly: 0 },
+                  net_cashflow: { weekly: -1200, monthly: -1200, yearly: -14400 },
+                  active_periods: {
+                    weekly: {
+                      start_date: '2026-03-08',
+                      end_date: '2026-03-14',
+                      label: 'Mar 8 - Mar 14',
+                    },
+                    monthly: {
+                      start_date: '2026-03-01',
+                      end_date: '2026-03-31',
+                      label: 'Mar 2026',
+                    },
+                    yearly: {
+                      start_date: '2026-01-01',
+                      end_date: '2026-12-31',
+                      label: '2026',
+                    },
+                  },
+                },
+              },
             },
           },
         })
@@ -624,6 +775,16 @@ describe('item detail commitments panel', () => {
         })
       }
 
+      if (url.includes('/events?') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [],
+            total_count: 0,
+          },
+        })
+      }
+
       throw new Error(`Unhandled request: ${method} ${url}`)
     })
 
@@ -634,7 +795,8 @@ describe('item detail commitments panel', () => {
     await screen.findByRole('button', { name: 'Commitments' })
     await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
 
-    expect(await screen.findByRole('link', { name: 'Mortgage' })).toBeTruthy()
+    expect(await screen.findByText('No linked financial items yet.')).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Mortgage' })).toBeNull()
     expect(screen.queryByText('No current or upcoming ledger records for linked financial items.')).toBeNull()
     expect(screen.queryByText('No historical ledger records for linked financial items.')).toBeNull()
   })

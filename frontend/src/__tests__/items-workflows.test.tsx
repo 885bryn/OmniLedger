@@ -430,6 +430,17 @@ describe('items workflows', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await userEvent.click(screen.getAllByRole('button', { name: 'Save changes' })[1])
 
+    const patchCall = fetchMock.mock.calls.find(([input, requestInit]) => String(input).includes('/items/item-1') && (requestInit?.method ?? 'GET') === 'PATCH')
+    const patchBodyRaw = patchCall?.[1]?.body
+    const patchBody = typeof patchBodyRaw === 'string' ? JSON.parse(patchBodyRaw) as Record<string, unknown> : {}
+
+    expect(patchBody.cadence).toBeUndefined()
+    expect(patchBody.selected_cadence).toBeUndefined()
+    expect(patchBody.display_cadence).toBeUndefined()
+    expect(patchBody.summary_cadence).toBeUndefined()
+    expect(patchBody.active_period).toBeUndefined()
+    expect(patchBody.cadence_totals).toBeUndefined()
+
     expect(await screen.findByText(/Cannot update a soft-deleted item\./)).toBeTruthy()
   })
 
