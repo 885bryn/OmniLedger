@@ -63,7 +63,7 @@ describe("GET /items/:id/net-status", () => {
       const amountCandidate = Number(rawAttributes.nextPaymentAmount ?? rawAttributes.amount);
       const defaultAmount = Number.isFinite(amountCandidate) ? amountCandidate : null;
 
-      return models.Item.create({
+      const created = await models.Item.create({
         user_id: userId,
         item_type: "FinancialItem",
         parent_item_id: parentItemId,
@@ -79,6 +79,20 @@ describe("GET /items/:id/net-status", () => {
           financialSubtype: subtype
         }
       });
+
+      const eventDueDate = rawAttributes.eventDueDate || rawAttributes.dueDate || "1970-01-01";
+      const eventStatus = rawAttributes.eventStatus || "Pending";
+      const eventCompletedAt = eventStatus === "Completed" ? rawAttributes.completedAt || eventDueDate : null;
+      await models.Event.create({
+        item_id: created.id,
+        event_type: subtype === "Income" ? "income" : "payment",
+        due_date: eventDueDate,
+        amount: defaultAmount === null ? 0 : defaultAmount,
+        status: eventStatus,
+        completed_at: eventCompletedAt
+      });
+
+      return created;
     }
 
     return models.Item.create({
@@ -100,6 +114,17 @@ describe("GET /items/:id/net-status", () => {
         silent: true
       }
     );
+  }
+
+  async function createEvent({ itemId, dueDate, amount = 0, status = "Pending", completedAt = null }) {
+    return models.Event.create({
+      item_id: itemId,
+      event_type: "payment",
+      due_date: dueDate,
+      amount,
+      status,
+      completed_at: status === "Completed" ? completedAt || dueDate : null
+    });
   }
 
   function toDateOnly(value) {
@@ -219,6 +244,7 @@ describe("GET /items/:id/net-status", () => {
         dueDate: "2026-04-20"
       }
     });
+    await createEvent({ itemId: linkedRecurringCommitment.id, dueDate: "2026-04-20", amount: 88, status: "Pending" });
 
     await createItem({
       userId: owner.id,
@@ -295,7 +321,7 @@ describe("GET /items/:id/net-status", () => {
       },
       one_time_rule: {
         frequency: "one_time",
-        inclusion: "due_date_inside_active_period",
+        inclusion: "event_occurs_inside_active_period",
         boundary: "inclusive"
       }
     });
@@ -303,7 +329,7 @@ describe("GET /items/:id/net-status", () => {
     expect(response.body.summary.active_period.end_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(response.body.summary.active_period.reference_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(response.body.summary.one_time_rule.excludes).toEqual(
-      expect.arrayContaining(["outside_active_period", "missing_or_invalid_due_date", "invalid_or_zero_amount"])
+      expect.arrayContaining(["outside_active_period", "missing_or_invalid_event_due_date", "invalid_or_zero_amount"])
     );
   });
 
@@ -386,7 +412,7 @@ describe("GET /items/:id/net-status", () => {
     });
   });
 
-  it("uses active-period due-date inclusion for recurring cadence totals and net cashflow", async () => {
+  it("uses event occurrences for recurring cadence totals and net cashflow", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-03-18T12:00:00.000Z"));
 
@@ -408,53 +434,64 @@ describe("GET /items/:id/net-status", () => {
         parentItemId: root.id,
         attributes: {
           amount: 1200,
-          dueDate: "2026-05-10",
+          dueDate: "2026-01-10",
           frequency: "yearly"
         }
       });
 
-      await createItem({
+      const monthlyCommitment = await createItem({
         userId: owner.id,
         itemType: "FinancialCommitment",
         parentItemId: root.id,
         attributes: {
           amount: 300,
-          dueDate: "2026-03-16",
+          dueDate: "2026-01-11",
           frequency: "monthly"
         }
       });
 
-      await createItem({
+      const monthlyIncome = await createItem({
         userId: owner.id,
         itemType: "FinancialIncome",
         parentItemId: root.id,
         attributes: {
           amount: 500,
-          dueDate: "2026-03-18",
+          dueDate: "2026-01-12",
           frequency: "monthly"
         }
       });
 
-      await createItem({
+      const weeklyIncome = await createItem({
         userId: owner.id,
         itemType: "FinancialIncome",
         parentItemId: root.id,
         attributes: {
           amount: 75,
-          dueDate: "2026-03-23",
+          dueDate: "2026-01-13",
           frequency: "weekly"
         }
       });
 
-      await createItem({
+      await createEvent({ itemId: monthlyCommitment.id, dueDate: "2026-03-16", amount: 300, status: "Pending" });
+      await createEvent({ itemId: monthlyIncome.id, dueDate: "2026-03-18", amount: 500, status: "Pending" });
+      await createEvent({ itemId: weeklyIncome.id, dueDate: "2026-03-23", amount: 75, status: "Pending" });
+
+      const yearlyIncome = await createItem({
         userId: owner.id,
         itemType: "FinancialIncome",
         parentItemId: root.id,
         attributes: {
           amount: 700,
-          dueDate: "2026-12-01",
+          dueDate: "2026-01-20",
           frequency: "yearly"
         }
+      });
+      await createEvent({
+        itemId: yearlyIncome.id,
+        dueDate: "2026-12-01",
+        amount: 700,
+        status: "Completed",
+        completedAt: "2026-12-01T10:00:00.000Z"
       });
 
       const response = await ownerAgent.get(`/items/${root.id}/net-status`);
@@ -576,7 +613,7 @@ describe("GET /items/:id/net-status", () => {
         }
       });
 
-      await models.Item.create({
+      const missingFrequencyRow = await models.Item.create({
         user_id: owner.id,
         item_type: "FinancialItem",
         parent_item_id: root.id,
@@ -592,6 +629,7 @@ describe("GET /items/:id/net-status", () => {
           financialSubtype: "Commitment"
         }
       });
+      await createEvent({ itemId: missingFrequencyRow.id, dueDate: "2026-03-18", amount: 999, status: "Pending" });
 
       await createItem({
         userId: owner.id,
@@ -702,7 +740,7 @@ describe("GET /items/:id/net-status", () => {
       expect(summary.cadence_totals.exclusions).toMatchObject({
         invalid_or_zero_amount_count: 3,
         invalid_or_missing_frequency_count: 1,
-        missing_or_invalid_due_date_count: 0,
+        missing_or_invalid_event_due_date_count: 0,
         outside_active_period_count: 1,
         total_excluded_row_count: 5
       });
@@ -1047,6 +1085,7 @@ describe("GET /items/:id/net-status", () => {
         nextPaymentAmount: 95
       }
     });
+    await createEvent({ itemId: legacyLinkedFinancialItem.id, dueDate: "2026-03-03", amount: 95, status: "Pending" });
 
     const response = await ownerAgent.get(`/items/${root.id}/net-status`);
 
@@ -1085,7 +1124,7 @@ describe("GET /items/:id/net-status", () => {
       }
     });
 
-    await models.Item.create({
+    const linkedIncome = await models.Item.create({
       user_id: owner.id,
       item_type: "FinancialItem",
       title: "Renting out SUV",
@@ -1100,6 +1139,7 @@ describe("GET /items/:id/net-status", () => {
         amount: 3333333478
       }
     });
+    await createEvent({ itemId: linkedIncome.id, dueDate: "2026-03-02", amount: 3333333478, status: "Pending" });
 
     const response = await ownerAgent.get(`/items/${root.id}/net-status`);
 

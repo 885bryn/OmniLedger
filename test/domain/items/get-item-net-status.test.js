@@ -53,7 +53,7 @@ describe("getItemNetStatus domain service", () => {
       const amountCandidate = Number(rawAttributes.nextPaymentAmount ?? rawAttributes.amount);
       const defaultAmount = Number.isFinite(amountCandidate) ? amountCandidate : null;
 
-      return models.Item.create({
+      const created = await models.Item.create({
         user_id: userId,
         item_type: "FinancialItem",
         parent_item_id: parentItemId,
@@ -69,6 +69,20 @@ describe("getItemNetStatus domain service", () => {
           financialSubtype: subtype
         }
       });
+
+      const eventDueDate = rawAttributes.eventDueDate || rawAttributes.dueDate || "1970-01-01";
+      const eventStatus = rawAttributes.eventStatus || "Pending";
+      const eventCompletedAt = eventStatus === "Completed" ? rawAttributes.completedAt || eventDueDate : null;
+      await models.Event.create({
+        item_id: created.id,
+        event_type: subtype === "Income" ? "income" : "payment",
+        due_date: eventDueDate,
+        amount: defaultAmount === null ? 0 : defaultAmount,
+        status: eventStatus,
+        completed_at: eventCompletedAt
+      });
+
+      return created;
     }
 
     return models.Item.create({
@@ -90,6 +104,17 @@ describe("getItemNetStatus domain service", () => {
         silent: true
       }
     );
+  }
+
+  async function createEvent({ itemId, dueDate, amount = 0, status = "Pending", completedAt = null }) {
+    return models.Event.create({
+      item_id: itemId,
+      event_type: "payment",
+      due_date: dueDate,
+      amount,
+      status,
+      completed_at: status === "Completed" ? completedAt || dueDate : null
+    });
   }
 
   beforeAll(async () => {
@@ -182,6 +207,12 @@ describe("getItemNetStatus domain service", () => {
       attributes: {
         dueDate: dates.end
       }
+    });
+    await createEvent({
+      itemId: linkedRecurringCommitment.id,
+      dueDate: dates.end,
+      amount: 88,
+      status: "Pending"
     });
 
     const nullDueOlder = await createItem({
@@ -496,7 +527,7 @@ describe("getItemNetStatus domain service", () => {
       }
     });
 
-    await models.Item.create({
+    const linkedIncome = await models.Item.create({
       user_id: owner.id,
       item_type: "FinancialItem",
       title: "Renting out SUV",
@@ -511,6 +542,12 @@ describe("getItemNetStatus domain service", () => {
         amount: 2000
       }
     });
+    await createEvent({
+      itemId: linkedIncome.id,
+      dueDate: "2026-03-04",
+      amount: 2000,
+      status: "Pending"
+    });
 
     const result = await getItemNetStatus({
       itemId: root.id,
@@ -524,7 +561,7 @@ describe("getItemNetStatus domain service", () => {
     });
   });
 
-  it("applies shared due-date cadence inclusion across obligations and income with period boundaries", async () => {
+  it("uses event occurrences for cadence inclusion regardless of completion status", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-03-18T12:00:00.000Z"));
 
@@ -545,42 +582,62 @@ describe("getItemNetStatus domain service", () => {
         parentItemId: root.id,
         attributes: {
           amount: 1200,
-          dueDate: "2026-05-10",
+          dueDate: "2026-01-10",
           frequency: "yearly"
         }
       });
 
-      await createItem({
+      const monthlyCommitment = await createItem({
         userId: owner.id,
         itemType: "FinancialCommitment",
         parentItemId: root.id,
         attributes: {
           amount: 300,
-          dueDate: "2026-03-16",
+          dueDate: "2026-01-12",
           frequency: "monthly"
         }
       });
 
-      await createItem({
+      const monthlyIncome = await createItem({
         userId: owner.id,
         itemType: "FinancialIncome",
         parentItemId: root.id,
         attributes: {
           amount: 500,
-          dueDate: "2026-03-18",
+          dueDate: "2026-01-13",
           frequency: "monthly"
         }
       });
 
-      await createItem({
+      const weeklyIncome = await createItem({
         userId: owner.id,
         itemType: "FinancialIncome",
         parentItemId: root.id,
         attributes: {
           amount: 75,
-          dueDate: "2026-03-23",
+          dueDate: "2026-01-14",
           frequency: "weekly"
         }
+      });
+
+      await createEvent({
+        itemId: monthlyCommitment.id,
+        dueDate: "2026-03-16",
+        amount: 300,
+        status: "Pending"
+      });
+      await createEvent({
+        itemId: monthlyIncome.id,
+        dueDate: "2026-03-18",
+        amount: 500,
+        status: "Pending"
+      });
+      await createEvent({
+        itemId: weeklyIncome.id,
+        dueDate: "2026-03-23",
+        amount: 75,
+        status: "Completed",
+        completedAt: "2026-03-23T11:00:00.000Z"
       });
 
       const result = await getItemNetStatus({

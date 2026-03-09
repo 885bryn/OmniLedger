@@ -387,6 +387,12 @@ function buildSummary(childCommitments, childEvents = []) {
       }
 
       if (isOneTimeItem(child)) {
+        if (!includedInCadence.monthly) {
+          accumulator.excluded_row_count += 1;
+          accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
+          return accumulator;
+        }
+
         if (isIncomeItem(child)) {
           accumulator.monthly_income_total += amount;
           accumulator.cadence_totals.one_time_period.monthly_income_total += amount;
@@ -468,7 +474,7 @@ function buildSummary(childCommitments, childEvents = []) {
         exclusions: {
           invalid_or_zero_amount_count: 0,
           invalid_or_missing_frequency_count: 0,
-          missing_or_invalid_due_date_count: 0,
+          missing_or_invalid_event_due_date_count: 0,
           outside_active_period_count: 0,
           total_excluded_row_count: 0
         }
