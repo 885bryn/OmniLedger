@@ -4,7 +4,7 @@ const { models } = require("../../db");
 const { canAccessOwner } = require("../../api/auth/scope-context");
 const { ItemNetStatusError, ITEM_NET_STATUS_ERROR_CATEGORIES } = require("./item-net-status-errors");
 const { applyComputedFinancialProgress } = require("./financial-metrics");
-const { normalizeRecurringAmount, roundBankers } = require("./cadence-normalization");
+const { resolveYearlyFactor, roundBankers } = require("./cadence-normalization");
 
 const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
@@ -108,42 +108,84 @@ function formatDateFromUtcDayKey(dayKey) {
   return new Date(dayKey).toISOString().slice(0, 10);
 }
 
-function resolveActiveMonthlyPeriod(referenceDate = new Date()) {
+function createActivePeriodMetadata({ cadence, startDayKey, endDayKey, referenceDayKey }) {
+  return {
+    cadence,
+    start_date: formatDateFromUtcDayKey(startDayKey),
+    end_date: formatDateFromUtcDayKey(endDayKey),
+    reference_date: formatDateFromUtcDayKey(referenceDayKey),
+    boundary: "inclusive"
+  };
+}
+
+function resolveActiveCadencePeriods(referenceDate = new Date()) {
   const year = referenceDate.getUTCFullYear();
   const month = referenceDate.getUTCMonth();
   const date = referenceDate.getUTCDate();
-
-  const startDayKey = Date.UTC(year, month, 1);
-  const endDayKey = Date.UTC(year, month + 1, 0);
   const referenceDayKey = Date.UTC(year, month, date);
 
+  const weekDay = referenceDate.getUTCDay();
+  const weekOffsetFromMonday = (weekDay + 6) % 7;
+  const weeklyStartDayKey = referenceDayKey - weekOffsetFromMonday * 24 * 60 * 60 * 1000;
+  const weeklyEndDayKey = weeklyStartDayKey + 6 * 24 * 60 * 60 * 1000;
+
+  const monthlyStartDayKey = Date.UTC(year, month, 1);
+  const monthlyEndDayKey = Date.UTC(year, month + 1, 0);
+
+  const yearlyStartDayKey = Date.UTC(year, 0, 1);
+  const yearlyEndDayKey = Date.UTC(year, 11, 31);
+
   return {
-    year,
-    month,
-    startDayKey,
-    endDayKey,
-    referenceDayKey,
-    metadata: {
-      cadence: "monthly",
-      start_date: formatDateFromUtcDayKey(startDayKey),
-      end_date: formatDateFromUtcDayKey(endDayKey),
-      reference_date: formatDateFromUtcDayKey(referenceDayKey),
-      boundary: "inclusive"
+    weekly: {
+      startDayKey: weeklyStartDayKey,
+      endDayKey: weeklyEndDayKey,
+      referenceDayKey,
+      metadata: createActivePeriodMetadata({
+        cadence: "weekly",
+        startDayKey: weeklyStartDayKey,
+        endDayKey: weeklyEndDayKey,
+        referenceDayKey
+      })
+    },
+    monthly: {
+      startDayKey: monthlyStartDayKey,
+      endDayKey: monthlyEndDayKey,
+      referenceDayKey,
+      metadata: createActivePeriodMetadata({
+        cadence: "monthly",
+        startDayKey: monthlyStartDayKey,
+        endDayKey: monthlyEndDayKey,
+        referenceDayKey
+      })
+    },
+    yearly: {
+      startDayKey: yearlyStartDayKey,
+      endDayKey: yearlyEndDayKey,
+      referenceDayKey,
+      metadata: createActivePeriodMetadata({
+        cadence: "yearly",
+        startDayKey: yearlyStartDayKey,
+        endDayKey: yearlyEndDayKey,
+        referenceDayKey
+      })
     }
   };
 }
 
+function resolveActiveMonthlyPeriod(referenceDate = new Date()) {
+  return resolveActiveCadencePeriods(referenceDate).monthly;
+}
+
 function isDueDateInsideActiveMonthlyPeriod(dueDateDayKey, activePeriod) {
+  return isDueDateInsideActivePeriod(dueDateDayKey, activePeriod);
+}
+
+function isDueDateInsideActivePeriod(dueDateDayKey, activePeriod) {
   if (dueDateDayKey === null) {
     return false;
   }
 
-  if (dueDateDayKey < activePeriod.startDayKey || dueDateDayKey > activePeriod.endDayKey) {
-    return false;
-  }
-
-  const dueDate = new Date(dueDateDayKey);
-  return dueDate.getUTCFullYear() === activePeriod.year && dueDate.getUTCMonth() === activePeriod.month;
+  return dueDateDayKey >= activePeriod.startDayKey && dueDateDayKey <= activePeriod.endDayKey;
 }
 
 function sortChildCommitments(items) {
@@ -276,7 +318,8 @@ function finalizeCadenceBucket(bucket) {
 }
 
 function buildSummary(childCommitments) {
-  const activePeriod = resolveActiveMonthlyPeriod();
+  const activePeriods = resolveActiveCadencePeriods();
+  const activePeriod = activePeriods.monthly;
   const summary = childCommitments.reduce(
     (accumulator, child) => {
       const amount = resolveSummaryAmount(child);
@@ -287,15 +330,14 @@ function buildSummary(childCommitments) {
         return accumulator;
       }
 
+      const dueDateDayKey = deriveDueDateDayKey(child);
+      if (dueDateDayKey === null) {
+        accumulator.excluded_row_count += 1;
+        accumulator.cadence_totals.exclusions.missing_or_invalid_due_date_count += 1;
+        return accumulator;
+      }
+
       if (isOneTimeItem(child)) {
-        const dueDateDayKey = deriveDueDateDayKey(child);
-
-        if (dueDateDayKey === null) {
-          accumulator.excluded_row_count += 1;
-          accumulator.cadence_totals.exclusions.missing_or_invalid_due_date_count += 1;
-          return accumulator;
-        }
-
         const isInsideActivePeriod = isDueDateInsideActiveMonthlyPeriod(dueDateDayKey, activePeriod);
 
         if (!isInsideActivePeriod) {
@@ -315,19 +357,56 @@ function buildSummary(childCommitments) {
         return accumulator;
       }
 
-      const recurringNormalization = normalizeRecurringAmount(amount, child.frequency);
-      if (!recurringNormalization.isValid) {
+      if (!resolveYearlyFactor(child.frequency).isValid) {
         accumulator.excluded_row_count += 1;
         accumulator.cadence_totals.exclusions.invalid_or_missing_frequency_count += 1;
         return accumulator;
       }
 
+      const includedInCadence = {
+        weekly: isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.weekly),
+        monthly: isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.monthly),
+        yearly: isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.yearly)
+      };
+
+      if (!includedInCadence.weekly && !includedInCadence.monthly && !includedInCadence.yearly) {
+        accumulator.excluded_row_count += 1;
+        accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
+        return accumulator;
+      }
+
       if (isIncomeItem(child)) {
-        accumulator.monthly_income_total += amount;
-        applyCadenceTotals(accumulator.cadence_totals.recurring.income, recurringNormalization.cadenceTotals);
+        if (includedInCadence.monthly) {
+          accumulator.monthly_income_total += amount;
+        }
+
+        if (includedInCadence.weekly) {
+          accumulator.cadence_totals.recurring.income.weekly += amount;
+        }
+
+        if (includedInCadence.monthly) {
+          accumulator.cadence_totals.recurring.income.monthly += amount;
+        }
+
+        if (includedInCadence.yearly) {
+          accumulator.cadence_totals.recurring.income.yearly += amount;
+        }
       } else {
-        accumulator.monthly_obligation_total += amount;
-        applyCadenceTotals(accumulator.cadence_totals.recurring.obligations, recurringNormalization.cadenceTotals);
+        if (includedInCadence.monthly) {
+          accumulator.monthly_obligation_total += amount;
+        }
+
+        if (includedInCadence.weekly) {
+          accumulator.cadence_totals.recurring.obligations.weekly += amount;
+        }
+
+        if (includedInCadence.monthly) {
+          accumulator.cadence_totals.recurring.obligations.monthly += amount;
+        }
+
+        if (includedInCadence.yearly) {
+          accumulator.cadence_totals.recurring.obligations.yearly += amount;
+        }
       }
 
       return accumulator;
@@ -343,7 +422,12 @@ function buildSummary(childCommitments) {
         recurring: {
           obligations: createCadenceBucket(),
           income: createCadenceBucket(),
-          net_cashflow: createCadenceBucket()
+          net_cashflow: createCadenceBucket(),
+          active_periods: {
+            weekly: activePeriods.weekly.metadata,
+            monthly: activePeriods.monthly.metadata,
+            yearly: activePeriods.yearly.metadata
+          }
         },
         one_time_period: {
           cadence: "monthly",

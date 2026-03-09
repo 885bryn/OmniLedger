@@ -19,6 +19,22 @@ const { ItemNetStatusError, ITEM_NET_STATUS_ERROR_CATEGORIES } = require("../../
 describe("getItemNetStatus domain service", () => {
   let counter = 0;
 
+  function toDateOnly(value) {
+    return new Date(value).toISOString().slice(0, 10);
+  }
+
+  function getActiveMonthSampleDates(referenceDate = new Date()) {
+    const year = referenceDate.getUTCFullYear();
+    const month = referenceDate.getUTCMonth();
+    const endOfMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+
+    return {
+      start: toDateOnly(Date.UTC(year, month, 1)),
+      middle: toDateOnly(Date.UTC(year, month, Math.max(2, Math.min(15, endOfMonth - 1)))),
+      end: toDateOnly(Date.UTC(year, month, endOfMonth))
+    };
+  }
+
   async function createUser() {
     counter += 1;
 
@@ -30,11 +46,36 @@ describe("getItemNetStatus domain service", () => {
   }
 
   async function createItem({ userId, itemType, parentItemId = null, attributes }) {
+    const rawAttributes = attributes || {};
+
+    if (itemType === "FinancialCommitment" || itemType === "FinancialIncome") {
+      const subtype = itemType === "FinancialIncome" ? "Income" : "Commitment";
+      const amountCandidate = Number(rawAttributes.nextPaymentAmount ?? rawAttributes.amount);
+      const defaultAmount = Number.isFinite(amountCandidate) ? amountCandidate : null;
+
+      return models.Item.create({
+        user_id: userId,
+        item_type: "FinancialItem",
+        parent_item_id: parentItemId,
+        linked_asset_item_id: parentItemId,
+        title: rawAttributes.name || (subtype === "Income" ? "Income item" : "Commitment item"),
+        type: subtype,
+        frequency: "monthly",
+        default_amount: defaultAmount,
+        status: "Active",
+        attributes: {
+          ...rawAttributes,
+          dueDate: rawAttributes.dueDate || "1970-01-01",
+          financialSubtype: subtype
+        }
+      });
+    }
+
     return models.Item.create({
       user_id: userId,
       item_type: itemType,
       parent_item_id: parentItemId,
-      attributes
+      attributes: rawAttributes
     });
   }
 
@@ -68,6 +109,7 @@ describe("getItemNetStatus domain service", () => {
   });
 
   it("returns canonical root payload with deterministic child ordering and summary exclusions", async () => {
+    const dates = getActiveMonthSampleDates();
     const owner = await createUser();
     const root = await createItem({
       userId: owner.id,
@@ -84,7 +126,7 @@ describe("getItemNetStatus domain service", () => {
       parentItemId: root.id,
       attributes: {
         amount: 200,
-        dueDate: "2026-03-01"
+        dueDate: dates.start
       }
     });
 
@@ -94,7 +136,7 @@ describe("getItemNetStatus domain service", () => {
       parentItemId: root.id,
       attributes: {
         amount: 300,
-        dueDate: "2026-04-01"
+        dueDate: dates.middle
       }
     });
 
@@ -104,7 +146,7 @@ describe("getItemNetStatus domain service", () => {
       parentItemId: root.id,
       attributes: {
         amount: 125,
-        dueDate: "2026-04-01"
+        dueDate: dates.middle
       }
     });
 
@@ -114,7 +156,7 @@ describe("getItemNetStatus domain service", () => {
       parentItemId: root.id,
       attributes: {
         amount: "abc",
-        dueDate: "2026-05-01"
+        dueDate: dates.end
       }
     });
 
@@ -124,7 +166,7 @@ describe("getItemNetStatus domain service", () => {
       parentItemId: root.id,
       attributes: {
         amount: "300",
-        dueDate: "2026-05-15"
+        dueDate: dates.end
       }
     });
 
@@ -138,7 +180,7 @@ describe("getItemNetStatus domain service", () => {
       status: "Active",
       linked_asset_item_id: root.id,
       attributes: {
-        dueDate: "2026-05-20"
+        dueDate: dates.end
       }
     });
 
@@ -148,7 +190,7 @@ describe("getItemNetStatus domain service", () => {
       parentItemId: root.id,
       attributes: {
         amount: 50,
-        dueDate: "2026-06-01"
+        dueDate: dates.end
       }
     });
 
@@ -158,7 +200,7 @@ describe("getItemNetStatus domain service", () => {
       parentItemId: root.id,
       attributes: {
         amount: "n/a",
-        dueDate: "2026-06-15"
+        dueDate: dates.end
       }
     });
 
@@ -227,11 +269,15 @@ describe("getItemNetStatus domain service", () => {
       ]);
     });
 
-    expect(result.summary).toEqual({
+    expect(result.summary).toMatchObject({
       monthly_obligation_total: 1063,
       monthly_income_total: 0,
       net_monthly_cashflow: -1063,
-      excluded_row_count: 2
+      excluded_row_count: 2,
+      active_period: {
+        cadence: "monthly",
+        boundary: "inclusive"
+      }
     });
   });
 
@@ -254,7 +300,7 @@ describe("getItemNetStatus domain service", () => {
     });
   });
 
-  it("throws forbidden category when actor does not own root item", async () => {
+  it("throws not_found category when actor does not own root item", async () => {
     const owner = await createUser();
     const outsider = await createUser();
     const root = await createItem({
@@ -272,11 +318,11 @@ describe("getItemNetStatus domain service", () => {
         actorUserId: outsider.id
       })
     ).rejects.toMatchObject({
-      category: ITEM_NET_STATUS_ERROR_CATEGORIES.FORBIDDEN,
+      category: ITEM_NET_STATUS_ERROR_CATEGORIES.NOT_FOUND,
       issues: [
         expect.objectContaining({
           field: "item_id",
-          code: "forbidden"
+          code: "not_found"
         })
       ]
     });
@@ -331,6 +377,7 @@ describe("getItemNetStatus domain service", () => {
   });
 
   it("excludes soft-deleted child commitments from the net-status payload", async () => {
+    const dates = getActiveMonthSampleDates();
     const owner = await createUser();
     const root = await createItem({
       userId: owner.id,
@@ -348,7 +395,7 @@ describe("getItemNetStatus domain service", () => {
       attributes: {
         name: "1578 rent",
         amount: 1578,
-        dueDate: "2026-02-25"
+        dueDate: dates.middle
       }
     });
 
@@ -359,7 +406,7 @@ describe("getItemNetStatus domain service", () => {
       attributes: {
         name: "old rent",
         amount: 1200,
-        dueDate: "2026-02-20",
+        dueDate: dates.start,
         _deleted_at: "2026-02-24T00:00:00.000Z"
       }
     });
@@ -378,6 +425,7 @@ describe("getItemNetStatus domain service", () => {
   });
 
   it("excludes child commitments owned by a different user", async () => {
+    const dates = getActiveMonthSampleDates();
     const owner = await createUser();
     const outsider = await createUser();
 
@@ -397,7 +445,7 @@ describe("getItemNetStatus domain service", () => {
       attributes: {
         name: "e300 testing payment",
         amount: 300,
-        dueDate: "2026-02-26"
+        dueDate: dates.middle
       }
     });
 
@@ -408,7 +456,7 @@ describe("getItemNetStatus domain service", () => {
       attributes: {
         name: "foreign commitment",
         amount: 999,
-        dueDate: "2026-02-25"
+        dueDate: dates.middle
       }
     });
 
@@ -420,5 +468,55 @@ describe("getItemNetStatus domain service", () => {
     expect(result.child_commitments).toHaveLength(1);
     expect(result.child_commitments[0].id).toBe(ownedChild.id);
     expect(result.summary.monthly_obligation_total).toBe(300);
+  });
+
+  it("classifies FinancialItem income subtype in net-status summary totals", async () => {
+    const owner = await createUser();
+    const root = await createItem({
+      userId: owner.id,
+      itemType: "Vehicle",
+      attributes: {
+        vin: "VIN-INCOME",
+        estimatedValue: 41000
+      }
+    });
+
+    await createItem({
+      userId: owner.id,
+      itemType: "FinancialCommitment",
+      parentItemId: root.id,
+      attributes: {
+        name: "Insurance",
+        amount: 500,
+        dueDate: "2026-03-03"
+      }
+    });
+
+    await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      title: "Renting out SUV",
+      type: "Income",
+      frequency: "weekly",
+      default_amount: 2000,
+      status: "Active",
+      linked_asset_item_id: root.id,
+      attributes: {
+        dueDate: "2026-03-04",
+        financialSubtype: "Income",
+        amount: 2000
+      }
+    });
+
+    const result = await getItemNetStatus({
+      itemId: root.id,
+      actorUserId: owner.id
+    });
+
+    expect(result.summary).toMatchObject({
+      monthly_obligation_total: 500,
+      monthly_income_total: 2000,
+      net_monthly_cashflow: 1500
+    });
   });
 });
