@@ -264,9 +264,64 @@ function toNumberOrZero(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function padCalendarDatePart(value: number) {
+  return String(value).padStart(2, '0')
+}
+
+function parseCalendarDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) {
+    return null
+  }
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const parsed = new Date(year, month - 1, day)
+
+  if (
+    Number.isNaN(parsed.getTime())
+    || parsed.getFullYear() !== year
+    || parsed.getMonth() + 1 !== month
+    || parsed.getDate() !== day
+  ) {
+    return null
+  }
+
+  return {
+    year,
+    month,
+    day,
+    date: parsed,
+  }
+}
+
+function toCalendarDayKey(value: string) {
+  const calendarDate = parseCalendarDate(value)
+  if (calendarDate) {
+    return `${calendarDate.year}-${padCalendarDatePart(calendarDate.month)}-${padCalendarDatePart(calendarDate.day)}`
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return null
+  }
+
+  return `${parsed.getFullYear()}-${padCalendarDatePart(parsed.getMonth() + 1)}-${padCalendarDatePart(parsed.getDate())}`
+}
+
 function formatDateLabel(value: string) {
-  const parsed = Date.parse(value)
-  if (Number.isNaN(parsed)) {
+  const calendarDate = parseCalendarDate(value)
+  if (calendarDate) {
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(calendarDate.date)
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
     return value
   }
 
@@ -278,8 +333,16 @@ function formatDateLabel(value: string) {
 }
 
 function formatPeriodDate(value: string) {
-  const parsed = Date.parse(value)
-  if (Number.isNaN(parsed)) {
+  const calendarDate = parseCalendarDate(value)
+  if (calendarDate) {
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: 'numeric',
+    }).format(calendarDate.date)
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
     return null
   }
 
@@ -294,15 +357,15 @@ function isDueDateInsidePeriod(dueDate: string, period: { start_date?: string; e
     return false
   }
 
-  const dueTime = Date.parse(dueDate)
-  const startTime = Date.parse(period.start_date)
-  const endTime = Date.parse(period.end_date)
+  const dueDayKey = toCalendarDayKey(dueDate)
+  const startDayKey = toCalendarDayKey(period.start_date)
+  const endDayKey = toCalendarDayKey(period.end_date)
 
-  if (Number.isNaN(dueTime) || Number.isNaN(startTime) || Number.isNaN(endTime)) {
+  if (!dueDayKey || !startDayKey || !endDayKey) {
     return false
   }
 
-  return dueTime >= startTime && dueTime <= endTime
+  return dueDayKey >= startDayKey && dueDayKey <= endDayKey
 }
 
 function resolveCadenceActivePeriod(summary: NetStatusResponse['summary'], cadence: SummaryCadence) {
