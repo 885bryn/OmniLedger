@@ -37,6 +37,11 @@ Deferred to a future milestone.
 
 - **CASH-05**: User can choose how one-time items contribute to cadence rollups (exclude, prorate, or period-bounded include).
 
+### Progress and Event Visibility
+
+- **VIEW-06**: User can see completed/total obligation and income progress for the selected cadence period, based on completed events vs total due events in-period.
+- **FLOW-01**: User can open a financial-item event-history tab showing past and future events with explicit completion status per event.
+
 ## Out of Scope
 
 | Feature | Reason |

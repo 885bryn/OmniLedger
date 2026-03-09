@@ -11,11 +11,11 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 29 of 29 (Cadence Toggle & Synced Cashflow View)
-Plan: 5 of 5
-Status: Complete
-Last activity: 2026-03-09 - Executed 29-05 active-period due-total copy and regression lock updates
+Plan: 6 of 7
+Status: In Progress
+Last activity: 2026-03-09 - Executed 29-06 event-driven cadence inclusion and regression updates
 
-Progress: [##########] 100%
+Progress: [#########-] 86%
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [##########] 100%
 | Phase 29 P03 | 2 min | 2 tasks | 2 files |
 | Phase 29 P04 | 7 min | 2 tasks | 3 files |
 | Phase 29 P05 | 2 min | 2 tasks | 5 files |
+| Phase 29 P06 | 5 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -81,10 +82,13 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 29]: Keep summary.active_period explicit while exposing recurring cadence active periods for deterministic interpretation.
 - [Phase 29]: Render cadence card copy as due-this-period language using localized period nouns instead of annualized-style wording.
 - [Phase 29]: Protect non-summary workflows by asserting cadence-only and summary metadata fields never appear in list/create/delete contracts.
+- [Phase 29]: Use Event table due dates as cadence period inclusion source of truth for summary rollups.
+- [Phase 29]: Keep one-time inclusion monthly-scoped by requiring an in-month event while recurring totals remain event-driven across cadences.
 
 ### Pending Todos
 
-None yet.
+- Next milestone kickoff: include progress-style rollup visual showing completed/total amounts for selected cadence period.
+- Next milestone kickoff: include financial-item event-history tab with past/future events and completion state per event.
 
 ### Blockers/Concerns
 
@@ -94,5 +98,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 29-05-PLAN.md
+Stopped at: Completed 29-06-PLAN.md
 Resume file: `None`
