@@ -230,6 +230,11 @@ describe('items workflows', () => {
         .filter(([, init]) => (init?.method ?? 'GET') === 'GET')
         .every(([input]) => !String(input).includes('cadence=')),
     ).toBe(true)
+    expect(
+      fetchMock.mock.calls
+        .filter(([, init]) => (init?.method ?? 'GET') === 'GET')
+        .every(([input]) => !String(input).includes('active_period') && !String(input).includes('cadence_totals')),
+    ).toBe(true)
   })
 
   it('creates a financial item using session identity without actor header injection', async () => {
@@ -315,6 +320,8 @@ describe('items workflows', () => {
     expect((createBody as Record<string, unknown>).selected_cadence).toBeUndefined()
     expect((createBody as Record<string, unknown>).display_cadence).toBeUndefined()
     expect((createBody as Record<string, unknown>).summary_cadence).toBeUndefined()
+    expect((createBody as Record<string, unknown>).active_period).toBeUndefined()
+    expect((createBody as Record<string, unknown>).cadence_totals).toBeUndefined()
     expect(createBody.frequency).toBe('monthly')
     expect(createBody.parent_item_id).toBeNull()
     expect(createBody.confirm_unlinked_asset).toBe(true)
@@ -323,6 +330,8 @@ describe('items workflows', () => {
     expect((createBody.attributes as Record<string, unknown> | undefined)?.cadence).toBeUndefined()
     expect((createBody.attributes as Record<string, unknown> | undefined)?.selected_cadence).toBeUndefined()
     expect((createBody.attributes as Record<string, unknown> | undefined)?.display_cadence).toBeUndefined()
+    expect((createBody.attributes as Record<string, unknown> | undefined)?.active_period).toBeUndefined()
+    expect((createBody.attributes as Record<string, unknown> | undefined)?.cadence_totals).toBeUndefined()
     expect(createBody.attributes?.amount).toBe(1200)
     expect(createBody.attributes?.billingCycle).toBe('monthly')
     expect(fetchMock.mock.calls.some(([input]) => String(input).includes('/net-status'))).toBe(false)
@@ -560,6 +569,12 @@ describe('items workflows', () => {
       const rawBody = deleteCall?.[1]?.body
       const body = typeof rawBody === 'string' ? JSON.parse(rawBody) : {}
       expect(body.cascade_delete_ids).toEqual(['item-commitment-1'])
+      expect(body.cadence).toBeUndefined()
+      expect(body.selected_cadence).toBeUndefined()
+      expect(body.display_cadence).toBeUndefined()
+      expect(body.summary_cadence).toBeUndefined()
+      expect(body.active_period).toBeUndefined()
+      expect(body.cadence_totals).toBeUndefined()
     })
   })
 
