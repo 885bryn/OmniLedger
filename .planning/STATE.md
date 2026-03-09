@@ -11,16 +11,16 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 29 of 29 (Cadence Toggle & Synced Cashflow View)
-Plan: 4 of 5
-Status: In Progress
-Last activity: 2026-03-09 - Executed 29-04 due-date bounded cadence rollup contract updates
+Plan: 5 of 5
+Status: Complete
+Last activity: 2026-03-09 - Executed 29-05 active-period due-total copy and regression lock updates
 
-Progress: [########--] 80%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 65
+- Total plans completed: 66
 - Average duration: 4 min
 - Total execution time: 5.0 hours
 
@@ -33,7 +33,7 @@ Progress: [########--] 80%
 | 24-26 (v4.1) | 10 | 41 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 29-04 (7 min), 29-02 (1 min), 29-03 (5 min), 29-02 (4 min), 29-01 (1 min)
+- Last 5 plans: 29-05 (2 min), 29-04 (7 min), 29-03 (2 min), 29-02 (1 min), 29-03 (5 min)
 - Trend: Phase 29 cadence behavior is shifting from run-rate normalization to deterministic period-bounded inclusion rules.
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
 | Phase 27 P03 | 3 min | 2 tasks | 2 files |
@@ -45,6 +45,7 @@ Progress: [########--] 80%
 | Phase 29 P02 | 1 min | 2 tasks | 1 files |
 | Phase 29 P03 | 2 min | 2 tasks | 2 files |
 | Phase 29 P04 | 7 min | 2 tasks | 3 files |
+| Phase 29 P05 | 2 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 29]: Guard item list/create workflow payloads from cadence-toggle-only fields so cadence scope stays item-detail local.
 - [Phase 29]: Replace run-rate cadence totals with inclusive active-period due-date inclusion before aggregation.
 - [Phase 29]: Keep summary.active_period explicit while exposing recurring cadence active periods for deterministic interpretation.
+- [Phase 29]: Render cadence card copy as due-this-period language using localized period nouns instead of annualized-style wording.
+- [Phase 29]: Protect non-summary workflows by asserting cadence-only and summary metadata fields never appear in list/create/delete contracts.
 
 ### Pending Todos
 
@@ -91,5 +94,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 29-04-PLAN.md
+Stopped at: Completed 29-05-PLAN.md
 Resume file: `None`
