@@ -69,7 +69,17 @@ Plans:
   3. User sees summary labels and units that clearly match the active cadence.
   4. User sees net cashflow always equal cadence-normalized income minus cadence-normalized obligations.
   5. User can continue existing item/event workflows and audit-visible behaviors with no RBAC or deployment-contract regressions.
-**Plans**: TBD
+**Plans**: 9 plans
+Plans:
+- [x] 29-01-PLAN.md - Add segmented weekly/monthly/yearly cadence control and cadence-aware summary copy shell
+- [x] 29-02-PLAN.md - Wire synchronized cadence totals and recurring net projection into item detail summary cards
+- [x] 29-03-PLAN.md - Protect non-summary workflows from cadence-toggle and summary metadata leakage
+- [x] 29-04-PLAN.md - Repair cadence transition synchronization and fallback net consistency
+- [x] 29-05-PLAN.md - Shift cadence cards from normalized run-rate totals to active-period due-this-period wording and data
+- [x] 29-06-PLAN.md - Replace due-date-anchor rollups with event-driven active-period inclusion and regressions
+- [x] 29-07-PLAN.md - Align item-detail row visibility and cadence wording with event-driven active periods
+- [x] 29-08-PLAN.md - Repair event-occurrence aggregation so current-period and yearly cadence totals reflect actual due-event counts
+- [ ] 29-09-PLAN.md - Restore linked commitments tab visibility and align cadence labels/range copy with rendered totals
 
 ## Progress
 
@@ -77,7 +87,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 27. Frequency Rule Contract | 3/3 | Complete    | 2026-03-08 |
 | 28. Cadence-Normalized Totals | 2/2 | Complete    | 2026-03-08 |
-| 29. Cadence Toggle & Synced Cashflow View | 7/7 | Complete   | 2026-03-09 |
+| 29. Cadence Toggle & Synced Cashflow View | 8/9 | In Progress|  |
 
 ---
-*Last updated: 2026-03-09 after executing phase 29 plan 07*
+*Last updated: 2026-03-09 after planning phase 29 gap-closure plans 08-09*

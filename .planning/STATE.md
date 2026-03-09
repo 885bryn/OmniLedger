@@ -11,18 +11,18 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 ## Current Position
 
 Phase: 29 of 29 (Cadence Toggle & Synced Cashflow View)
-Plan: 7 of 7
-Status: Complete
-Last activity: 2026-03-09 - Executed 29-07 UI event-driven cadence row visibility and workflow safety regressions
+Plan: 8 of 9
+Status: In Progress
+Last activity: 2026-03-09 - Executed 29-08 counted event-occurrence cadence aggregation and regressions
 
-Progress: [##########] 100%
+Progress: [#########-] 89%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 67
+- Total plans completed: 68
 - Average duration: 4 min
-- Total execution time: 5.1 hours
+- Total execution time: 5.2 hours
 
 **By Phase:**
 
@@ -33,7 +33,7 @@ Progress: [##########] 100%
 | 24-26 (v4.1) | 10 | 41 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 29-07 (8 min), 29-06 (5 min), 29-05 (2 min), 29-04 (7 min), 29-03 (2 min)
+- Last 5 plans: 29-08 (4 min), 29-07 (8 min), 29-06 (5 min), 29-05 (2 min), 29-04 (7 min)
 - Trend: Phase 29 cadence behavior is shifting from run-rate normalization to deterministic period-bounded inclusion rules.
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
 | Phase 27 P03 | 3 min | 2 tasks | 2 files |
@@ -48,6 +48,7 @@ Progress: [##########] 100%
 | Phase 29 P05 | 2 min | 2 tasks | 5 files |
 | Phase 29 P06 | 5 min | 2 tasks | 3 files |
 | Phase 29 P07 | 8 min | 2 tasks | 3 files |
+| Phase 29 P08 | 4 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 29]: Keep one-time inclusion monthly-scoped by requiring an in-month event while recurring totals remain event-driven across cadences.
 - [Phase 29]: Filter linked financial rows by active cadence period metadata plus in-period event occurrence rather than due-date anchors.
 - [Phase 29]: Keep cadence wording bound to selected cadence while preserving display-cadence projection safety for transitions.
+- [Phase 29]: Count recurring cadence totals from matching event occurrences inside each active period instead of boolean membership.
+- [Phase 29]: Keep one-time inclusion monthly-only while recurrence-aware cadence net remains income minus obligations.
 
 ### Pending Todos
 
@@ -101,5 +104,5 @@ Decisions are logged in `.planning/PROJECT.md`.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 29-07-PLAN.md
+Stopped at: Completed 29-08-PLAN.md
 Resume file: `None`
