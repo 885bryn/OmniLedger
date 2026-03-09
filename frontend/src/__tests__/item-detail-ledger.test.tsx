@@ -197,6 +197,156 @@ describe('item detail commitments panel', () => {
     expect(screen.getByText('One-time rows count once only when their due date is inside this active period.')).toBeTruthy()
   })
 
+  it('renders exact backend monthly period boundaries from calendar-day metadata', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/asset-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'asset-1',
+            item_type: 'RealEstate',
+            user_id: 'owner-1',
+            child_commitments: [],
+            summary: {
+              monthly_obligation_total: 1200,
+              monthly_income_total: 1800,
+              net_monthly_cashflow: 600,
+              excluded_row_count: 0,
+              active_period: {
+                start_date: '2026-03-01',
+                end_date: '2026-03-31',
+              },
+              cadence_totals: {
+                recurring: {
+                  obligations: { weekly: 300, monthly: 1200, yearly: 14400 },
+                  income: { weekly: 450, monthly: 1800, yearly: 21600 },
+                  net_cashflow: { weekly: 150, monthly: 600, yearly: 7200 },
+                  active_periods: {
+                    monthly: {
+                      start_date: '2026-03-01',
+                      end_date: '2026-03-31',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              { id: 'asset-1', item_type: 'RealEstate', attributes: { address: 'Maple Street' }, updated_at: '2026-02-20T00:00:00.000Z' },
+            ],
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail()
+
+    expect(await screen.findByText('Obligations due this month (Mar 1 - Mar 31)')).toBeTruthy()
+    expect(screen.getByText('Income due this month (Mar 1 - Mar 31)')).toBeTruthy()
+    expect(screen.getByText('Net cashflow due this month (Mar 1 - Mar 31)')).toBeTruthy()
+    expect(screen.getByText('Only rows due this month are included in the active period: Mar 1 - Mar 31.')).toBeTruthy()
+  })
+
+  it('keeps cadence labels, period hints, and totals synchronized from active-period metadata when switching cadence', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/asset-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'asset-1',
+            item_type: 'RealEstate',
+            user_id: 'owner-1',
+            child_commitments: [],
+            summary: {
+              monthly_obligation_total: 120,
+              monthly_income_total: 170,
+              net_monthly_cashflow: 50,
+              excluded_row_count: 0,
+              active_period: {
+                start_date: '2026-03-01',
+                end_date: '2026-03-31',
+              },
+              cadence_totals: {
+                recurring: {
+                  obligations: { weekly: 30, monthly: 120, yearly: 1440 },
+                  income: { weekly: 42, monthly: 170, yearly: 2040 },
+                  net_cashflow: { weekly: 12, monthly: 50, yearly: 600 },
+                  active_periods: {
+                    weekly: {
+                      start_date: '2026-03-08',
+                      end_date: '2026-03-14',
+                    },
+                    monthly: {
+                      start_date: '2026-03-01',
+                      end_date: '2026-03-31',
+                    },
+                    yearly: {
+                      start_date: '2026-01-01',
+                      end_date: '2026-12-31',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              { id: 'asset-1', item_type: 'RealEstate', attributes: { address: 'Maple Street' }, updated_at: '2026-02-20T00:00:00.000Z' },
+            ],
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail()
+
+    expect(await screen.findByText('Obligations due this month (Mar 1 - Mar 31)')).toBeTruthy()
+    expect(screen.getByText('Linked due this month (Mar 1 - Mar 31)')).toBeTruthy()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Weekly' }))
+
+    expect(await screen.findByText('Obligations due this week (Mar 8 - Mar 14)')).toBeTruthy()
+    expect(screen.getByText('Income due this week (Mar 8 - Mar 14)')).toBeTruthy()
+    expect(screen.getByText('Net cashflow due this week (Mar 8 - Mar 14)')).toBeTruthy()
+    expect(screen.getByText('Linked due this week (Mar 8 - Mar 14)')).toBeTruthy()
+    expect(screen.getByText('Only rows due this week are included in the active period: Mar 8 - Mar 14.')).toBeTruthy()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
+
+    expect(await screen.findByText('Obligations due this year (Jan 1 - Dec 31)')).toBeTruthy()
+    expect(screen.getByText('Income due this year (Jan 1 - Dec 31)')).toBeTruthy()
+    expect(screen.getByText('Net cashflow due this year (Jan 1 - Dec 31)')).toBeTruthy()
+    expect(screen.getByText('Linked due this year (Jan 1 - Dec 31)')).toBeTruthy()
+    expect(screen.getByText('Only rows due this year are included in the active period: Jan 1 - Dec 31.')).toBeTruthy()
+  })
+
   it('defaults to monthly cadence and keeps obligations/income/net labels and values synchronized when switching cadence', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
@@ -731,6 +881,133 @@ describe('item detail commitments panel', () => {
     await waitFor(() => {
       expect(fetchMock.mock.calls.some(([request, requestInit]) => String(request).includes('/events?') && (requestInit?.method ?? 'GET') === 'GET')).toBe(true)
     })
+  })
+
+  it('keeps non-zero cadence summary values visible when qualifying events occur on active-period boundaries', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/asset-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'asset-1',
+            item_type: 'RealEstate',
+            user_id: 'owner-1',
+            child_commitments: [
+              {
+                id: 'fin-1',
+                user_id: 'owner-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                frequency: 'monthly',
+                title: 'Mortgage',
+                attributes: { name: 'Mortgage', dueDate: '2026-03-01' },
+                updated_at: '2026-02-20T00:00:00.000Z',
+              },
+              {
+                id: 'fin-2',
+                user_id: 'owner-1',
+                item_type: 'FinancialItem',
+                type: 'Income',
+                frequency: 'monthly',
+                title: 'Salary',
+                attributes: { name: 'Salary', dueDate: '2026-03-31' },
+                updated_at: '2026-02-20T00:00:00.000Z',
+              },
+            ],
+            summary: {
+              monthly_obligation_total: 1200,
+              monthly_income_total: 3000,
+              net_monthly_cashflow: 1800,
+              excluded_row_count: 0,
+              active_period: {
+                start_date: '2026-03-01',
+                end_date: '2026-03-31',
+              },
+              cadence_totals: {
+                recurring: {
+                  obligations: { weekly: 1200, monthly: 1200, yearly: 14400 },
+                  income: { weekly: 3000, monthly: 3000, yearly: 36000 },
+                  net_cashflow: { weekly: 1800, monthly: 1800, yearly: 21600 },
+                  active_periods: {
+                    monthly: {
+                      start_date: '2026-03-01',
+                      end_date: '2026-03-31',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              { id: 'asset-1', item_type: 'RealEstate', attributes: { address: 'Maple Street' }, updated_at: '2026-02-20T00:00:00.000Z' },
+              { id: 'fin-1', item_type: 'FinancialItem', type: 'Commitment', title: 'Mortgage', attributes: { name: 'Mortgage' }, updated_at: '2026-02-20T00:00:00.000Z' },
+              { id: 'fin-2', item_type: 'FinancialItem', type: 'Income', title: 'Salary', attributes: { name: 'Salary' }, updated_at: '2026-02-20T00:00:00.000Z' },
+            ],
+          },
+        })
+      }
+
+      if (url.includes('/events?') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [
+              {
+                due_date: '2026-03-01',
+                events: [
+                  {
+                    id: 'event-fin-1-mar-start',
+                    item_id: 'fin-1',
+                    type: 'Mortgage',
+                    amount: 1200,
+                    due_date: '2026-03-01',
+                    status: 'Pending',
+                    updated_at: '2026-02-20T00:00:00.000Z',
+                  },
+                ],
+              },
+              {
+                due_date: '2026-03-31',
+                events: [
+                  {
+                    id: 'event-fin-2-mar-end',
+                    item_id: 'fin-2',
+                    type: 'Salary',
+                    amount: 3000,
+                    due_date: '2026-03-31',
+                    status: 'Completed',
+                    updated_at: '2026-02-20T00:00:00.000Z',
+                  },
+                ],
+              },
+            ],
+            total_count: 2,
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail()
+
+    expect(await screen.findByText('Obligations due this month (Mar 1 - Mar 31)')).toBeTruthy()
+    expect(screen.getByText('Obligations due this month (Mar 1 - Mar 31)').closest('article')?.textContent).toMatch(/\$1,200(?:\.00)?/)
+    expect(screen.getByText('Income due this month (Mar 1 - Mar 31)').closest('article')?.textContent).toMatch(/\$3,000(?:\.00)?/)
+    expect(screen.getByText('Net cashflow due this month (Mar 1 - Mar 31)').closest('article')?.textContent).toMatch(/\$1,800(?:\.00)?/)
+    expect(screen.getByText('Linked due this month (Mar 1 - Mar 31)').closest('article')?.textContent).toMatch(/2/)
   })
 
   it('keeps linked financial rows visible in the commitments tab when no in-period events exist', async () => {
