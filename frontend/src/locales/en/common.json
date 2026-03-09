@@ -224,7 +224,7 @@
       "summaryNetFormulaHint": "Net cashflow is normalized income minus obligations for this monthly period.",
       "summaryNetFormulaHintCadence": "Net cashflow due this {{cadencePeriod}} equals income due this {{cadencePeriod}} minus obligations due this {{cadencePeriod}}.",
       "summaryPeriodFallback": "current month",
-      "summaryLinked": "Linked financial items",
+      "summaryLinked": "Linked due this {{cadencePeriod}} ({{period}})",
       "summaryExcluded": "Excluded rows",
       "cadence": {
         "ariaLabel": "Summary cadence",

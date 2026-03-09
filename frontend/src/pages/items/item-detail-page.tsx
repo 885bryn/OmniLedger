@@ -318,8 +318,12 @@ function resolveCadenceActivePeriod(summary: NetStatusResponse['summary'], caden
   return undefined
 }
 
-function resolveActivePeriodLabel(summary: NetStatusResponse['summary'] | null | undefined, t: (key: string, options?: Record<string, unknown>) => string) {
-  const activePeriod = summary?.active_period
+function resolveActivePeriodLabel(
+  summary: NetStatusResponse['summary'] | null | undefined,
+  cadence: SummaryCadence,
+  t: (key: string, options?: Record<string, unknown>) => string,
+) {
+  const activePeriod = summary ? resolveCadenceActivePeriod(summary, cadence) : undefined
 
   if (activePeriod?.label && activePeriod.label.trim().length > 0) {
     return activePeriod.label
@@ -790,8 +794,8 @@ export function ItemDetailPage() {
     return t('items.detail.recurrence.summaryNoDate', { frequency: frequencyLabel })
   }, [detail, resolvedFinancialFrequency, resolvedFinancialStatus, rootAttributes.dueDate, rootAttributes.nextDueDate, t])
   const summaryPeriodLabel = useMemo(
-    () => resolveActivePeriodLabel(isNetStatusItem(detail) ? detail.summary : null, t),
-    [detail, t],
+    () => resolveActivePeriodLabel(isNetStatusItem(detail) ? detail.summary : null, displayCadence, t),
+    [detail, displayCadence, t],
   )
   const oneTimeRuleHint = useMemo(() => {
     if (isNetStatusItem(detail) && typeof detail.summary.one_time_rule?.description === 'string' && detail.summary.one_time_rule.description.length > 0) {
@@ -836,8 +840,8 @@ export function ItemDetailPage() {
       return itemIdsInPeriod.has(commitment.id)
     })
   }, [commitments, displayCadence, effectiveSummary, financialTimelineEventsQuery.data?.groups, financialTimelineEventsQuery.isSuccess, isFinancialDetail])
-  const displayedCadenceLabel = t(`items.detail.cadence.options.${selectedCadence}`)
-  const displayedCadencePeriodNoun = t(`items.detail.cadence.periodNouns.${selectedCadence}`)
+  const displayedCadenceLabel = t(`items.detail.cadence.options.${displayCadence}`)
+  const displayedCadencePeriodNoun = t(`items.detail.cadence.periodNouns.${displayCadence}`)
   const oneTimeImpact = Number(effectiveSummary.cadence_totals?.one_time_period?.net_monthly_cashflow ?? 0)
   const oneTimeImpactLabel = t('items.detail.summaryOneTimeImpact', { defaultValue: 'One-time impact (separate from recurring net)' })
   const oneTimeImpactValue = formatSignedFixedAmount(oneTimeImpact)
@@ -1206,7 +1210,9 @@ export function ItemDetailPage() {
                 </p>
               </motion.article>
               <motion.article layout className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('items.detail.summaryLinked')}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t('items.detail.summaryLinked', { cadencePeriod: displayedCadencePeriodNoun, period: summaryPeriodLabel })}
+                </p>
                 <p className="mt-2 text-2xl font-semibold">{commitmentRowsForActiveCadence.length}</p>
               </motion.article>
               </div>
@@ -1266,13 +1272,13 @@ export function ItemDetailPage() {
             </div>
           ) : null}
 
-          {!isFinancialDetail && commitmentRowsForActiveCadence.length === 0 ? (
+          {!isFinancialDetail && commitments.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('items.detail.noCommitments')}</p>
           ) : (
             <motion.div layout className="space-y-4">
               {!isFinancialDetail ? (
                 <MotionPanelList
-                  items={commitmentRowsForActiveCadence}
+                  items={commitments}
                   getItemKey={(commitment) => commitment.id}
                   className="space-y-2"
                   renderItem={(commitment) => {

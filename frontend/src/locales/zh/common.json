@@ -224,7 +224,7 @@
       "summaryNetFormulaHint": "该周期净现金流 = 归一化收入 - 承诺支出。",
       "summaryNetFormulaHintCadence": "本{{cadencePeriod}}净现金流 = 本{{cadencePeriod}}到期收入 - 本{{cadencePeriod}}到期承诺支出。",
       "summaryPeriodFallback": "当前月份",
-      "summaryLinked": "关联财务项目",
+      "summaryLinked": "本{{cadencePeriod}}关联条目（{{period}}）",
       "summaryExcluded": "排除行",
       "cadence": {
         "ariaLabel": "汇总周期",
