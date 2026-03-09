@@ -86,7 +86,8 @@ Each task was committed atomically:
 **Impact on plan:** Auto-fix preserved intent while removing formatting brittleness; no scope creep.
 
 ## Issues Encountered
-None.
+- `gsd-tools state advance-plan`, `state update-progress`, and `state record-session` could not parse this repository's current STATE.md heading layout; metric/decision updates were applied via gsd-tools, then position/session text was updated directly in `STATE.md`.
+- `gsd-tools commit` argument parsing failed in this Windows shell context, so metadata files were committed with explicit `git add` + `git commit` fallback.
 
 ## User Setup Required
 None - no external service configuration required.
