@@ -1,5 +1,6 @@
 "use strict";
 
+const { Op } = require("sequelize");
 const { models } = require("../../db");
 const { canAccessOwner } = require("../../api/auth/scope-context");
 const { ItemNetStatusError, ITEM_NET_STATUS_ERROR_CATEGORIES } = require("./item-net-status-errors");
@@ -27,9 +28,9 @@ const CASHFLOW_ITEM_TYPES = new Set(["FinancialItem"]);
 const ONE_TIME_FREQUENCY = "one_time";
 const ONE_TIME_RULE_DESCRIPTOR = Object.freeze({
   frequency: ONE_TIME_FREQUENCY,
-  inclusion: "due_date_inside_active_period",
+  inclusion: "event_occurs_inside_active_period",
   boundary: "inclusive",
-  excludes: ["outside_active_period", "missing_or_invalid_due_date", "invalid_or_zero_amount"]
+  excludes: ["outside_active_period", "missing_or_invalid_event_due_date", "invalid_or_zero_amount"]
 });
 
 function isPlainObject(value) {
@@ -94,18 +95,27 @@ function deriveDueDateKey(item) {
   return time;
 }
 
-function deriveDueDateDayKey(item) {
-  const time = deriveDueDateKey(item);
-  if (time === null) {
+function formatDateFromUtcDayKey(dayKey) {
+  return new Date(dayKey).toISOString().slice(0, 10);
+}
+
+function deriveEventDueDateDayKey(event) {
+  if (!event || typeof event !== "object") {
     return null;
   }
 
-  const parsed = new Date(time);
-  return Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
-}
+  const dueDateValue = event.due_date || event.dueDate;
+  if (!dueDateValue) {
+    return null;
+  }
 
-function formatDateFromUtcDayKey(dayKey) {
-  return new Date(dayKey).toISOString().slice(0, 10);
+  const dueDateTime = new Date(dueDateValue).getTime();
+  if (Number.isNaN(dueDateTime)) {
+    return null;
+  }
+
+  const parsed = new Date(dueDateTime);
+  return Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
 }
 
 function createActivePeriodMetadata({ cadence, startDayKey, endDayKey, referenceDayKey }) {
@@ -174,10 +184,6 @@ function resolveActiveCadencePeriods(referenceDate = new Date()) {
 
 function resolveActiveMonthlyPeriod(referenceDate = new Date()) {
   return resolveActiveCadencePeriods(referenceDate).monthly;
-}
-
-function isDueDateInsideActiveMonthlyPeriod(dueDateDayKey, activePeriod) {
-  return isDueDateInsideActivePeriod(dueDateDayKey, activePeriod);
 }
 
 function isDueDateInsideActivePeriod(dueDateDayKey, activePeriod) {
@@ -317,9 +323,47 @@ function finalizeCadenceBucket(bucket) {
   };
 }
 
-function buildSummary(childCommitments) {
+function buildEventOccurrenceLookup(events, activePeriods) {
+  const lookup = new Map();
+
+  events.forEach((event) => {
+    if (!event || typeof event.item_id !== "string") {
+      return;
+    }
+
+    const dueDateDayKey = deriveEventDueDateDayKey(event);
+    if (dueDateDayKey === null) {
+      return;
+    }
+
+    const existing = lookup.get(event.item_id) || {
+      weekly: false,
+      monthly: false,
+      yearly: false
+    };
+
+    if (!existing.weekly && isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.weekly)) {
+      existing.weekly = true;
+    }
+
+    if (!existing.monthly && isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.monthly)) {
+      existing.monthly = true;
+    }
+
+    if (!existing.yearly && isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.yearly)) {
+      existing.yearly = true;
+    }
+
+    lookup.set(event.item_id, existing);
+  });
+
+  return lookup;
+}
+
+function buildSummary(childCommitments, childEvents = []) {
   const activePeriods = resolveActiveCadencePeriods();
   const activePeriod = activePeriods.monthly;
+  const eventOccurrenceByItemId = buildEventOccurrenceLookup(childEvents, activePeriods);
   const summary = childCommitments.reduce(
     (accumulator, child) => {
       const amount = resolveSummaryAmount(child);
@@ -330,22 +374,19 @@ function buildSummary(childCommitments) {
         return accumulator;
       }
 
-      const dueDateDayKey = deriveDueDateDayKey(child);
-      if (dueDateDayKey === null) {
+      const includedInCadence = eventOccurrenceByItemId.get(child.id) || {
+        weekly: false,
+        monthly: false,
+        yearly: false
+      };
+
+      if (!includedInCadence.weekly && !includedInCadence.monthly && !includedInCadence.yearly) {
         accumulator.excluded_row_count += 1;
-        accumulator.cadence_totals.exclusions.missing_or_invalid_due_date_count += 1;
+        accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
         return accumulator;
       }
 
       if (isOneTimeItem(child)) {
-        const isInsideActivePeriod = isDueDateInsideActiveMonthlyPeriod(dueDateDayKey, activePeriod);
-
-        if (!isInsideActivePeriod) {
-          accumulator.excluded_row_count += 1;
-          accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
-          return accumulator;
-        }
-
         if (isIncomeItem(child)) {
           accumulator.monthly_income_total += amount;
           accumulator.cadence_totals.one_time_period.monthly_income_total += amount;
@@ -360,18 +401,6 @@ function buildSummary(childCommitments) {
       if (!resolveYearlyFactor(child.frequency).isValid) {
         accumulator.excluded_row_count += 1;
         accumulator.cadence_totals.exclusions.invalid_or_missing_frequency_count += 1;
-        return accumulator;
-      }
-
-      const includedInCadence = {
-        weekly: isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.weekly),
-        monthly: isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.monthly),
-        yearly: isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.yearly)
-      };
-
-      if (!includedInCadence.weekly && !includedInCadence.monthly && !includedInCadence.yearly) {
-        accumulator.excluded_row_count += 1;
-        accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
         return accumulator;
       }
 
@@ -555,7 +584,22 @@ async function getItemNetStatus({ itemId, scope, actorUserId }) {
     .filter((child) => !isSoftDeleted(child));
 
   const childCommitments = sortChildCommitments(canonicalChildren);
-  const summary = buildSummary(childCommitments);
+  const childIds = childCommitments.map((child) => child.id);
+  const childEvents = childIds.length
+    ? await models.Event.findAll({
+      where: {
+        item_id: {
+          [Op.in]: childIds
+        }
+      },
+      attributes: ["item_id", "due_date"]
+    })
+    : [];
+
+  const summary = buildSummary(
+    childCommitments,
+    childEvents.map((event) => (typeof event.get === "function" ? event.get({ plain: true }) : event))
+  );
 
   return {
     ...toCanonicalItem(rootItem),
