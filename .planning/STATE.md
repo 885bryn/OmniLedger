@@ -6,14 +6,14 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v4.3 requirements and roadmap creation starting at Phase 30
+**Current focus:** Milestone v4.3 roadmap is defined; Phase 30 upcoming-ledger foundation is next pending manual-gated execution.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 30 - Upcoming Ledger Foundation
 Plan: -
-Status: Defining requirements
-Last activity: 2026-03-10 - Milestone v4.3 started
+Status: Roadmap ready for execution
+Last activity: 2026-03-10 - Milestone v4.3 roadmap created
 
 Progress: [----------] 0%
 
@@ -99,20 +99,27 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 29]: Keep one-time inclusion monthly-only while tightening recurring pre-origin filtering.
 - [Phase 29]: Parse backend YYYY-MM-DD active-period dates as calendar days and compare by day keys so item-detail labels and filtering are timezone-stable.
 - [Phase 29]: Add UI regressions for exact cadence boundaries and boundary-day events so labels, hints, and totals stay synchronized and non-zero when API data is valid.
+- [Phase 30]: Start v4.3 with a read-only Upcoming/History ledger foundation before introducing any state-changing flows.
+- [Phase 31]: Mark-paid behavior must move rows from Upcoming to History immediately and stay legible via shared spring motion.
+- [Phase 32]: Manual historical injection support must be enforced first at the backend/manual-override boundary layer before exposing the item-detail UI.
+- [Phase 33]: Every v4.3 phase pauses for manual browser testing and explicit approval before the next phase begins.
 
 ### Pending Todos
 
 - Next milestone kickoff: include progress-style rollup visual showing completed/total amounts for selected cadence period.
 - Next milestone kickoff: include financial-item event-history tab with past/future events and completion state per event.
-- v4.3 must pause after each phase for manual browser verification before planning/executing the next phase.
+- After Phase 30, run manual browser verification for tab switching, sticky grouping, and overdue styling before Phase 31.
+- After Phase 31, run manual browser verification for mark-paid transition and history population before Phase 32.
+- After Phase 32, verify pre-origin manual overrides are allowed while projected pre-origin system events remain blocked before Phase 33.
+- After Phase 33, run final manual browser verification before milestone closeout.
 
 ### Blockers/Concerns
 
 - Existing unrelated frontend lint item remains: `frontend/src/pages/events/events-page.tsx:255` (`todayStart` unused).
-- Phase execution must preserve item/event workflows while changing only summary rollup behavior and cadence controls.
+- v4.3 execution must preserve RBAC, audit attribution, deployment contracts, and existing item/event workflows while adding grouped ledger and manual-history flows.
 
 ## Session Continuity
 
-Last session: 2026-03-09
-Stopped at: Completed 29-11-PLAN.md
-Resume file: `None`
+Last session: 2026-03-10
+Stopped at: Roadmap creation for milestone v4.3
+Resume file: `.planning/ROADMAP.md`
