@@ -143,6 +143,10 @@
     },
     "historyPaidBadge": "Paid",
     "historyPaidOn": "Paid on {{date}}",
+    "manualOverride": {
+      "badge": "Manual override",
+      "description": "Logged as an exceptional manual history entry. Review the date and amount against the source record."
+    },
     "historyCard": {
       "paidDate": "Paid date",
       "amount": "Amount"

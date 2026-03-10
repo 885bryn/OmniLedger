@@ -143,6 +143,10 @@
     },
     "historyPaidBadge": "已支付",
     "historyPaidOn": "支付日期 {{date}}",
+    "manualOverride": {
+      "badge": "手动覆盖",
+      "description": "这是一条例外的手动历史记录，请结合原始记录核对日期和金额。"
+    },
     "historyCard": {
       "paidDate": "支付日期",
       "amount": "金额"

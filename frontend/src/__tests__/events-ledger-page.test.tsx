@@ -231,6 +231,22 @@ function buildCompletedRows(): EventRow[] {
   ]
 }
 
+function buildManualOverrideRow(): EventRow {
+  return {
+    id: 'event-manual-override',
+    item_id: 'item-5',
+    type: 'Historical renovation draw',
+    amount: 900,
+    due_date: '2025-11-14',
+    status: 'Completed',
+    completed_at: '2025-11-14T08:00:00.000Z',
+    updated_at: '2025-11-14T08:00:00.000Z',
+    source_state: 'persisted',
+    is_projected: false,
+    is_manual_override: true,
+  }
+}
+
 function buildLedgerEventsResponse(rows?: { pending?: EventRow[]; completed?: EventRow[]; meta?: EventsMeta }) {
   const pending = rows?.pending ?? buildPendingRows()
   const completed = rows?.completed ?? buildCompletedRows()
@@ -581,5 +597,44 @@ describe('events ledger page', () => {
 
     expect(screen.queryByText('3 invalid projected history rows were hidden from this ledger.')).toBeNull()
     expect(screen.queryByText('These pre-origin projected rows were suppressed so the ledger stays clean while you review the underlying item data.')).toBeNull()
+  })
+
+  it('keeps manual override history rows visible with exceptional warning treatment', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: buildLedgerEventsResponse({
+            completed: [buildCompletedRows()[0], buildCompletedRows()[1], buildManualOverrideRow()],
+          }),
+        })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({ status: 200, json: buildItemsResponse() })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage()
+
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('tab', { name: 'History' }))
+
+    expect(await screen.findByRole('heading', { name: 'November 2025' })).toBeTruthy()
+    expect(screen.getByText('Historical renovation draw')).toBeTruthy()
+    expect(screen.getByText('Manual override')).toBeTruthy()
+    expect(screen.getByText('Logged as an exceptional manual history entry. Review the date and amount against the source record.')).toBeTruthy()
+
+    const manualRow = screen.getByText('Historical renovation draw').closest('[data-manual-override]')
+    expect(manualRow?.getAttribute('data-manual-override')).toBe('true')
+    expect(within(manualRow as HTMLElement).getByText('Renovation Draw')).toBeTruthy()
+    expect(within(manualRow as HTMLElement).getByText('$900')).toBeTruthy()
   })
 })

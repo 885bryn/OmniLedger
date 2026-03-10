@@ -186,6 +186,10 @@ function isCompletedEvent(event: EventRow) {
   return event.status.trim().toLowerCase() === 'completed'
 }
 
+function isManualOverrideEvent(event: EventRow) {
+  return event.is_manual_override === true
+}
+
 function getCompletedDateKey(event: EventRow) {
   return toDateKey(event.completed_at || event.updated_at || event.due_date)
 }
@@ -845,29 +849,41 @@ export function EventsPage() {
                   highlightedKeys={highlightedHistoryKeys}
                   className="space-y-2"
                   itemClassName="overflow-hidden rounded-3xl"
-                  renderItem={(event) => {
-                    const item = itemById.get(event.item_id)
-                    const isSyncing = localCompletions[event.id]?.phase === 'history' && localCompletions[event.id]?.isSyncing
-                    const isHighlighted = highlightedHistoryKeys.includes(event.id)
+                   renderItem={(event) => {
+                     const item = itemById.get(event.item_id)
+                     const manualOverride = isManualOverrideEvent(event)
+                     const isSyncing = localCompletions[event.id]?.phase === 'history' && localCompletions[event.id]?.isSyncing
+                     const isHighlighted = highlightedHistoryKeys.includes(event.id)
 
-                    return (
-                      <article
-                        data-event-row-id={event.id}
-                        data-history-highlighted={isHighlighted ? 'true' : 'false'}
-                        className="rounded-3xl border border-border/70 bg-card/90 px-4 py-4 shadow-sm"
-                      >
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                          <div className="min-w-0 space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-base font-semibold text-foreground">{event.type}</h3>
-                              <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                                {t('events.historyPaidBadge')}
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{t('events.historyPaidOn', { date: formatDueLabel(event.completed_at || event.due_date) })}</p>
-                            <p className="text-sm text-muted-foreground">
-                              <Link
-                                to={`/items/${event.item_id}`}
+                     return (
+                       <article
+                         data-event-row-id={event.id}
+                         data-manual-override={manualOverride ? 'true' : 'false'}
+                         data-history-highlighted={isHighlighted ? 'true' : 'false'}
+                         className={`rounded-3xl border px-4 py-4 shadow-sm ${
+                           manualOverride
+                             ? 'border-amber-300 bg-[linear-gradient(135deg,rgba(255,251,235,0.98),rgba(255,255,255,0.98))]'
+                             : 'border-border/70 bg-card/90'
+                         }`}
+                       >
+                         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                           <div className="min-w-0 space-y-2">
+                             <div className="flex flex-wrap items-center gap-2">
+                               <h3 className="text-base font-semibold text-foreground">{event.type}</h3>
+                               {manualOverride ? (
+                                 <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-900">
+                                   {t('events.manualOverride.badge')}
+                                 </span>
+                               ) : null}
+                               <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                                 {t('events.historyPaidBadge')}
+                               </span>
+                             </div>
+                              <p className="text-sm text-muted-foreground">{t('events.historyPaidOn', { date: formatDueLabel(event.completed_at || event.due_date) })}</p>
+                             {manualOverride ? <p className="text-sm font-medium leading-6 text-amber-900">{t('events.manualOverride.description')}</p> : null}
+                             <p className="text-sm text-muted-foreground">
+                               <Link
+                                 to={`/items/${event.item_id}`}
                                 state={{ from: location.pathname + location.search }}
                                 className="font-medium text-primary underline-offset-2 hover:underline"
                               >
