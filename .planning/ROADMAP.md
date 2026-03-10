@@ -74,7 +74,10 @@ Plans:
   2. User-created manual override events can exist before the item's normal origin boundary without being rejected.
   3. User cannot create or surface system-generated projected events before the item's origin boundary.
   4. User experiences the same origin-boundary protection on normal projected events after manual-override support is added.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] `32-manual-override-boundary-contract-01-PLAN.md` - Harden event projection/origin boundaries, suppress absurd historical system rows, and add the explicit API-only manual override creation contract with regression coverage.
+- [ ] `32-manual-override-boundary-contract-02-PLAN.md` - Surface admin-only suppression feedback and strong manual-override history labeling on the Events ledger with frontend regressions.
 **Manual Test Gate**: Stop after this phase for browser/API verification that pre-origin system projections stay blocked while manual overrides remain allowed before Phase 33 starts.
 
 ### Phase 33: Historical Injection UI
@@ -94,7 +97,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 30. Upcoming Ledger Foundation | 1/1 | Complete    | 2026-03-10 |
 | 31. Paid Flow Into History | 1/1 | Complete    | 2026-03-10 |
-| 32. Manual Override Boundary Contract | 0/0 | Not started | - |
+| 32. Manual Override Boundary Contract | 0/2 | Not started | - |
 | 33. Historical Injection UI | 0/0 | Not started | - |
 
 ---
