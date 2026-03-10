@@ -340,6 +340,27 @@
         "collapseHistorical": "收起历史记录",
         "historicalCollapsedHint": "历史记录在移动端默认折叠。点击“展开历史记录”可查看。"
       },
+      "historicalAction": {
+        "button": "记录历史条目",
+        "title": "记录已完成历史条目",
+        "helper": "无需离开资产详情，即可为该财务项目创建一条已完成的手动历史记录。",
+        "warning": "该手动覆盖流程仅用于需要立即进入已完成历史中的例外历史条目。",
+        "noteOptional": "备注为可选项，只会显示在手动覆盖历史记录上。",
+        "save": "保存历史条目",
+        "pending": "保存中...",
+        "cancel": "取消",
+        "fields": {
+          "date": "完成日期",
+          "amount": "金额",
+          "note": "备注",
+          "notePlaceholder": "可选的来源备注或补充说明"
+        },
+        "errors": {
+          "dateRequired": "保存前请先选择完成日期。",
+          "amountRequired": "请输入大于 0 的有效金额。",
+          "generic": "无法保存历史条目，请重试。"
+        }
+      },
       "commitmentFallbackTitle": "财务项目详情",
       "commitmentFallbackBody": "该类型不提供净状态卡片，但可继续使用动态与编辑流程。"
     },

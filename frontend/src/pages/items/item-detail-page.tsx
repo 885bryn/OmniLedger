@@ -9,6 +9,7 @@ import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { ItemActivityTimeline } from '../../features/audit/item-activity-timeline'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { EditEventRowAction } from '../../features/events/edit-event-row-action'
+import { LogHistoricalEventAction } from '../../features/events/log-historical-event-action'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
 import { useToast } from '../../features/ui/toast-provider'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
@@ -1038,6 +1039,39 @@ export function ItemDetailPage() {
   )
   const oneTimeImpactLabel = t('items.detail.summaryOneTimeImpact', { defaultValue: 'One-time portion included in total' })
   const oneTimeImpactValue = formatSignedFixedAmount(oneTimeImpact)
+  const historicalDefaultDueDate = useMemo(() => {
+    const events = (financialTimelineEventsQuery.data?.groups ?? []).flatMap((group) => group.events)
+    const latestKnownDueDate = events
+      .map((event) => event.due_date)
+      .filter((value): value is string => typeof value === 'string' && Number.isNaN(Date.parse(value)) === false)
+      .sort((left, right) => right.localeCompare(left))[0]
+
+    const fallbackDueDate = [rootAttributes.dueDate, rootAttributes.nextDueDate]
+      .find((value) => typeof value === 'string' && Number.isNaN(Date.parse(value)) === false)
+
+    if (typeof latestKnownDueDate === 'string') {
+      return latestKnownDueDate.slice(0, 10)
+    }
+
+    if (typeof fallbackDueDate === 'string') {
+      return fallbackDueDate.slice(0, 10)
+    }
+
+    return new Date().toISOString().slice(0, 10)
+  }, [financialTimelineEventsQuery.data?.groups, rootAttributes.dueDate, rootAttributes.nextDueDate])
+  const historicalDefaultAmount = useMemo(() => {
+    const resolved = detail?.default_amount ?? rootAttributes.amount ?? rootAttributes.nextPaymentAmount
+    return typeof resolved === 'number' && Number.isFinite(resolved) ? resolved : toNumberOrZero(resolved)
+  }, [detail?.default_amount, rootAttributes.amount, rootAttributes.nextPaymentAmount])
+  const historicalAction = isFinancialDetail ? (
+    <div className="flex justify-end">
+      <LogHistoricalEventAction
+        itemId={itemId}
+        defaultDueDate={historicalDefaultDueDate}
+        defaultAmount={historicalDefaultAmount}
+      />
+    </div>
+  ) : null
 
   function handleCadenceChange(nextCadence: SummaryCadence) {
     if (selectedCadence === nextCadence && displayCadence === nextCadence && !isCadenceTransitionPending) {
@@ -1231,6 +1265,7 @@ export function ItemDetailPage() {
       {activeTab === 'overview' ? (
         wrongRootType ? (
           <motion.div layout className="space-y-3">
+            {historicalAction}
             <motion.section layout className="grid gap-3 md:grid-cols-3">
               <motion.article layout className="hover-lift rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -1330,6 +1365,7 @@ export function ItemDetailPage() {
           </motion.div>
         ) : (
           <motion.div layout className="space-y-3">
+            {historicalAction}
             <motion.section layout className="rounded-2xl border border-border bg-card p-2 shadow-sm">
               <div
                 className="inline-flex w-full rounded-lg border border-border bg-background p-1"
@@ -1532,25 +1568,32 @@ export function ItemDetailPage() {
                 />
               ) : (
                 <motion.div layout className="space-y-3">
-                  <div className="inline-flex rounded-lg border border-border bg-background p-1 text-sm">
-                    <button
-                      type="button"
-                      onClick={() => setActiveFinancialEventsTab('present')}
-                      className={`rounded-md px-3 py-1 font-medium ${
-                        activeFinancialEventsTab === 'present' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {t('items.detail.ledger.currentUpcomingTitle')} ({financialTimelineCounts.present})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveFinancialEventsTab('history')}
-                      className={`rounded-md px-3 py-1 font-medium ${
-                        activeFinancialEventsTab === 'history' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {t('items.detail.ledger.historicalTitle')} ({financialTimelineCounts.history})
-                    </button>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="inline-flex rounded-lg border border-border bg-background p-1 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setActiveFinancialEventsTab('present')}
+                        className={`rounded-md px-3 py-1 font-medium ${
+                          activeFinancialEventsTab === 'present' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {t('items.detail.ledger.currentUpcomingTitle')} ({financialTimelineCounts.present})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveFinancialEventsTab('history')}
+                        className={`rounded-md px-3 py-1 font-medium ${
+                          activeFinancialEventsTab === 'history' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {t('items.detail.ledger.historicalTitle')} ({financialTimelineCounts.history})
+                      </button>
+                    </div>
+                    <LogHistoricalEventAction
+                      itemId={itemId}
+                      defaultDueDate={historicalDefaultDueDate}
+                      defaultAmount={historicalDefaultAmount}
+                    />
                   </div>
 
                   <p className="text-xs text-muted-foreground">
@@ -1574,17 +1617,17 @@ export function ItemDetailPage() {
                       items={activeFinancialEventsTab === 'present' ? financialTimelineSections.present : financialTimelineSections.history}
                       getItemKey={(event) => event.id}
                       className="space-y-2"
-                      renderItem={(event) => {
-                        const projected = isProjectedEvent(event)
-                        const overdue = isOverduePendingEvent(event, toStartOfTodayUtc())
+                       renderItem={(event) => {
+                         const projected = isProjectedEvent(event)
+                         const overdue = isOverduePendingEvent(event, toStartOfTodayUtc())
 
-                        return (
-                          <div
-                            className={`rounded-xl border px-3 py-2 ${
-                              overdue
-                                ? 'border-red-300 bg-red-50/60'
-                                : projected
-                                  ? 'border-sky-200 bg-sky-50/40'
+                         return (
+                           <div
+                              className={`rounded-xl border px-3 py-2 ${
+                                overdue
+                                  ? 'border-red-300 bg-red-50/60'
+                                  : projected
+                                    ? 'border-sky-200 bg-sky-50/40'
                                   : 'border-border bg-background/80'
                             }`}
                           >

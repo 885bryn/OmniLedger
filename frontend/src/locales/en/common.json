@@ -340,6 +340,27 @@
         "collapseHistorical": "Hide historical records",
         "historicalCollapsedHint": "Historical records are collapsed on mobile. Use Show historical records to expand."
       },
+      "historicalAction": {
+        "button": "Log historical entry",
+        "title": "Log completed historical entry",
+        "helper": "Create a completed manual history entry for this financial item without leaving item detail.",
+        "warning": "This manual override should be used only for exceptional historical entries that need to appear in completed history immediately.",
+        "noteOptional": "Note is optional and only appears on manual override history rows.",
+        "save": "Save historical entry",
+        "pending": "Saving...",
+        "cancel": "Cancel",
+        "fields": {
+          "date": "Completed date",
+          "amount": "Amount",
+          "note": "Note",
+          "notePlaceholder": "Optional source note or context"
+        },
+        "errors": {
+          "dateRequired": "Choose a completed date before saving.",
+          "amountRequired": "Enter a valid amount greater than zero.",
+          "generic": "Historical entry could not be saved. Try again."
+        }
+      },
       "commitmentFallbackTitle": "Financial item detail",
       "commitmentFallbackBody": "This item type does not have net-status cards, but activity and edit workflows are available."
     },

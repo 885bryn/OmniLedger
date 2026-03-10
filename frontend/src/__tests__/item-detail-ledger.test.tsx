@@ -1327,6 +1327,197 @@ describe('item detail commitments panel', () => {
     expect(await screen.findByText('Completed')).toBeTruthy()
   })
 
+  it('shows historical entry actions on overview and commitments, with defaults and owner-lens attribution in the dialog', async () => {
+    adminScopeState = {
+      isAdmin: true,
+      mode: 'owner',
+      lensUserId: 'owner-1',
+      users: [
+        { id: 'owner-1', username: 'owner1', email: 'owner1@example.com' },
+      ],
+    }
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/fin-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 422,
+          json: {
+            error: {
+              code: 'item_net_status_failed',
+              category: 'wrong_root_type',
+              message: 'Net-status requires an asset root item type.',
+              issues: [],
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'fin-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                default_amount: 1200,
+                attributes: { name: 'Mortgage', dueDate: '2026-03-15' },
+                updated_at: '2026-02-20T00:00:00.000Z',
+              },
+            ],
+          },
+        })
+      }
+
+      if (url.includes('/events?') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [
+              {
+                due_date: '2026-02-15',
+                events: [
+                  {
+                    id: 'event-fin-1-2026-02-15',
+                    item_id: 'fin-1',
+                    type: 'Mortgage',
+                    amount: 1200,
+                    due_date: '2026-02-15',
+                    status: 'Completed',
+                    updated_at: '2026-02-20T00:00:00.000Z',
+                    completed_at: '2026-02-15',
+                    source_state: 'persisted',
+                  },
+                ],
+              },
+            ],
+            total_count: 1,
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail('/items/fin-1')
+
+    const overviewAction = await screen.findByRole('button', { name: 'Log historical entry' })
+    expect(overviewAction).toBeTruthy()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+    expect(await screen.findAllByRole('button', { name: 'Log historical entry' })).toHaveLength(1)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Log historical entry' }))
+
+    expect(await screen.findByText('Create a completed manual history entry for this financial item without leaving item detail.')).toBeTruthy()
+    expect(screen.getByText('This manual override should be used only for exceptional historical entries that need to appear in completed history immediately.')).toBeTruthy()
+    expect((screen.getByLabelText('Completed date') as HTMLInputElement).value).toBe('2026-02-15')
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('1200')
+    expect((screen.getByLabelText('Note') as HTMLTextAreaElement).value).toBe('')
+    expect(screen.getByTestId('target-user-chip').textContent).toContain('Actor: Tester | Lens: owner1')
+  })
+
+  it('keeps historical injection validation failures inline and preserves draft values', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/fin-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 422,
+          json: {
+            error: {
+              code: 'item_net_status_failed',
+              category: 'wrong_root_type',
+              message: 'Net-status requires an asset root item type.',
+              issues: [],
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'fin-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                default_amount: 1200,
+                attributes: { name: 'Mortgage', dueDate: '2026-03-15' },
+                updated_at: '2026-02-20T00:00:00.000Z',
+              },
+            ],
+          },
+        })
+      }
+
+      if (url.includes('/events?') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [],
+            total_count: 0,
+          },
+        })
+      }
+
+      if (url.includes('/events/manual-override') && method === 'POST') {
+        return createResponse({
+          status: 422,
+          json: {
+            error: {
+              code: 'manual_override_invalid',
+              category: 'validation_failed',
+              message: 'Manual override validation failed.',
+              issues: [
+                {
+                  field: 'due_date',
+                  code: 'future_date',
+                  category: 'validation_failed',
+                  message: 'due_date cannot be in the future.',
+                },
+              ],
+            },
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail('/items/fin-1')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Log historical entry' }))
+    await userEvent.clear(screen.getByLabelText('Completed date'))
+    await userEvent.type(screen.getByLabelText('Completed date'), '2026-12-01')
+    await userEvent.clear(screen.getByLabelText('Amount'))
+    await userEvent.type(screen.getByLabelText('Amount'), '95.55')
+    await userEvent.type(screen.getByLabelText('Note'), 'Backfilled from paper statement')
+    await userEvent.click(screen.getByRole('button', { name: 'Save historical entry' }))
+
+    expect(await screen.findByText('due_date cannot be in the future.')).toBeTruthy()
+    expect((screen.getByLabelText('Completed date') as HTMLInputElement).value).toBe('2026-12-01')
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('95.55')
+    expect((screen.getByLabelText('Note') as HTMLTextAreaElement).value).toBe('Backfilled from paper statement')
+  })
+
   it('refetches detail lookups for same item id when admin lens changes', async () => {
     adminScopeState = {
       isAdmin: true,
