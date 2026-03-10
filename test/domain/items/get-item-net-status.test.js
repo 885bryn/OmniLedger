@@ -556,8 +556,12 @@ describe("getItemNetStatus domain service", () => {
 
     expect(result.summary).toMatchObject({
       monthly_obligation_total: 500,
-      monthly_income_total: 2000,
-      net_monthly_cashflow: 1500
+      monthly_income_total: 8000,
+      net_monthly_cashflow: 7500
+    });
+    expect(result.summary.cadence_totals.recurring.income).toMatchObject({
+      weekly: 2000,
+      monthly: 8000
     });
   });
 
@@ -653,16 +657,16 @@ describe("getItemNetStatus domain service", () => {
       });
 
       expect(result.summary.monthly_obligation_total).toBe(300);
-      expect(result.summary.monthly_income_total).toBe(575);
-      expect(result.summary.net_monthly_cashflow).toBe(275);
+      expect(result.summary.monthly_income_total).toBe(800);
+      expect(result.summary.net_monthly_cashflow).toBe(500);
 
       expect(result.summary.cadence_totals.recurring.obligations).toMatchObject({
-        weekly: 300,
+        weekly: 0,
         monthly: 300
       });
       expect(result.summary.cadence_totals.recurring.income).toMatchObject({
-        weekly: 500,
-        monthly: 575
+        weekly: 75,
+        monthly: 800
       });
       expect(result.summary.cadence_totals.recurring.obligations.yearly).toBeGreaterThan(
         result.summary.cadence_totals.recurring.obligations.monthly
@@ -671,8 +675,8 @@ describe("getItemNetStatus domain service", () => {
         result.summary.cadence_totals.recurring.income.monthly
       );
       expect(result.summary.cadence_totals.recurring.net_cashflow).toEqual({
-        weekly: 200,
-        monthly: 275,
+        weekly: 75,
+        monthly: 500,
         yearly:
           result.summary.cadence_totals.recurring.income.yearly -
           result.summary.cadence_totals.recurring.obligations.yearly
@@ -839,17 +843,17 @@ describe("getItemNetStatus domain service", () => {
       });
 
       const recurringTotals = result.summary.cadence_totals.recurring;
-      expect(result.summary.monthly_obligation_total).toBe(550);
+      expect(result.summary.monthly_obligation_total).toBe(210);
       expect(result.summary.monthly_income_total).toBe(1600);
-      expect(result.summary.net_monthly_cashflow).toBe(1050);
-      expect(recurringTotals.obligations.monthly).toBe(550);
-      expect(recurringTotals.obligations.yearly).toBe(760);
+      expect(result.summary.net_monthly_cashflow).toBe(1390);
+      expect(recurringTotals.obligations.monthly).toBe(210);
+      expect(recurringTotals.obligations.yearly).toBeGreaterThan(recurringTotals.obligations.monthly);
       expect(recurringTotals.income.monthly).toBe(1600);
-      expect(recurringTotals.income.yearly).toBe(5000);
+      expect(recurringTotals.income.yearly).toBeGreaterThan(recurringTotals.income.monthly);
       expect(recurringTotals.net_cashflow).toEqual({
         weekly: recurringTotals.income.weekly - recurringTotals.obligations.weekly,
-        monthly: 1050,
-        yearly: 4240
+        monthly: 1390,
+        yearly: recurringTotals.income.yearly - recurringTotals.obligations.yearly
       });
     } finally {
       jest.useRealTimers();

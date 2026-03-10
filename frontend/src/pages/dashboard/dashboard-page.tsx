@@ -9,6 +9,7 @@ import { DataCard } from '../../features/dashboard/data-card'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
+import { formatCurrency } from '../../lib/currency'
 import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
 import { getItemDisplayName, isIncomeItem } from '../../lib/item-display'
 import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
@@ -79,14 +80,6 @@ function formatDueLabel(value: string) {
     day: 'numeric',
     year: 'numeric',
   }).format(date)
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(value)
 }
 
 function formatEventAmount(value: number | null, isIncome: boolean) {

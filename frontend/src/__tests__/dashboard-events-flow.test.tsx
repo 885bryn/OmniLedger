@@ -462,6 +462,120 @@ describe('dashboard/events completion flow', () => {
     expect(screen.getByText((content) => content.includes('+$2,200'))).toBeTruthy()
   })
 
+  it('renders cents consistently in dashboard metrics and event rows for non-whole amounts', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=pending') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [
+              {
+                due_date: '2026-03-10',
+                events: [
+                  {
+                    id: 'event-1',
+                    item_id: 'item-1',
+                    type: 'Insurance',
+                    amount: 707.4,
+                    due_date: '2026-03-10',
+                    status: 'Pending',
+                    updated_at: '2026-03-10T00:00:00.000Z',
+                    source_state: 'persisted',
+                    is_projected: false,
+                  },
+                ],
+              },
+            ],
+            total_count: 1,
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=assets') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'asset-1',
+                item_type: 'Vehicle',
+                attributes: { name: 'Family SUV' },
+                updated_at: '2026-03-10T00:00:00.000Z',
+              },
+            ],
+            total_count: 1,
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Insurance',
+                frequency: 'monthly',
+                status: 'Active',
+                attributes: { name: 'Insurance', financialSubtype: 'Commitment' },
+                updated_at: '2026-03-10T00:00:00.000Z',
+              },
+            ],
+            total_count: 1,
+          },
+        })
+      }
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [
+              {
+                due_date: '2026-03-10',
+                events: [
+                  {
+                    id: 'event-1',
+                    item_id: 'item-1',
+                    type: 'Insurance',
+                    amount: 707.4,
+                    due_date: '2026-03-10',
+                    status: 'Pending',
+                    updated_at: '2026-03-10T00:00:00.000Z',
+                    source_state: 'persisted',
+                    is_projected: false,
+                  },
+                ],
+              },
+            ],
+            total_count: 1,
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderDashboardPage()
+
+    await screen.findByText('Upcoming amount')
+    expect(screen.getByText('$707.40')).toBeTruthy()
+
+    cleanup()
+
+    renderEventsPage()
+
+    expect(await screen.findByText('$707.40')).toBeTruthy()
+  })
+
   it('shows projected/persisted legend and keeps persisted rows above projected rows on same date', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)

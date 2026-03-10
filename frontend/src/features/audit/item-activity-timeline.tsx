@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ApiClientError, apiRequest, type TransportItemActivityResponse, type TransportItemActivityRow } from '../../lib/api-client'
+import { formatNullableCurrency } from '../../lib/currency'
 import { queryKeys } from '../../lib/query-keys'
 
 type ItemActivityTimelineProps = {
@@ -42,15 +43,7 @@ function formatDate(value: string | null) {
 
 function formatCurrency(value: string | null) {
   const parsed = Number(value)
-  if (!Number.isFinite(parsed)) {
-    return null
-  }
-
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  }).format(parsed)
+  return Number.isFinite(parsed) ? formatNullableCurrency(parsed) : null
 }
 
 export function ItemActivityTimeline({ itemId }: ItemActivityTimelineProps) {

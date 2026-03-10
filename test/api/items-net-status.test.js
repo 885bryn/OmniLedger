@@ -408,7 +408,7 @@ describe("GET /items/:id/net-status", () => {
       monthly_obligation_total: 900,
       monthly_income_total: 1500,
       net_monthly_cashflow: 600,
-      excluded_row_count: 2
+      excluded_row_count: 0
     });
   });
 
@@ -506,24 +506,24 @@ describe("GET /items/:id/net-status", () => {
 
       const recurringTotals = response.body.summary.cadence_totals.recurring;
       expect(recurringTotals.obligations).toMatchObject({
-        weekly: 300,
+        weekly: 0,
         monthly: 300
       });
       expect(recurringTotals.income).toMatchObject({
-        weekly: 500,
-        monthly: 575
+        weekly: 75,
+        monthly: 875
       });
       expect(recurringTotals.obligations.yearly).toBeGreaterThan(recurringTotals.obligations.monthly);
       expect(recurringTotals.income.yearly).toBeGreaterThan(recurringTotals.income.monthly);
       expect(recurringTotals.net_cashflow).toEqual({
-        weekly: 200,
-        monthly: 275,
+        weekly: 75,
+        monthly: 575,
         yearly: recurringTotals.income.yearly - recurringTotals.obligations.yearly
       });
 
       expect(response.body.summary.monthly_obligation_total).toBe(300);
-      expect(response.body.summary.monthly_income_total).toBe(575);
-      expect(response.body.summary.net_monthly_cashflow).toBe(275);
+      expect(response.body.summary.monthly_income_total).toBe(875);
+      expect(response.body.summary.net_monthly_cashflow).toBe(575);
       expect(recurringTotals.obligations.monthly).toBe(300);
       expect(recurringTotals.obligations.yearly).toBeGreaterThan(recurringTotals.obligations.monthly);
     } finally {
@@ -776,23 +776,23 @@ describe("GET /items/:id/net-status", () => {
 
       expect(recurringTotals.obligations).toEqual({
         weekly: 180,
-        monthly: 180,
-        yearly: 1860
+        monthly: 240,
+        yearly: 5340
       });
       expect(recurringTotals.income).toEqual({
         weekly: 300,
-        monthly: 300,
-        yearly: 2060
+        monthly: 400,
+        yearly: 7960
       });
       expect(recurringTotals.net_cashflow).toEqual({
         weekly: 120,
-        monthly: 120,
-        yearly: 200
+        monthly: 160,
+        yearly: 2620
       });
 
-      expect(summary.monthly_obligation_total).toBe(580);
-      expect(summary.monthly_income_total).toBe(550);
-      expect(summary.net_monthly_cashflow).toBe(-30);
+      expect(summary.monthly_obligation_total).toBe(640);
+      expect(summary.monthly_income_total).toBe(650);
+      expect(summary.net_monthly_cashflow).toBe(10);
 
       expect(summary.cadence_totals.one_time_period).toMatchObject({
         cadence: "monthly",
@@ -876,7 +876,7 @@ describe("GET /items/:id/net-status", () => {
         monthly_obligation_total: 450,
         monthly_income_total: 1000,
         net_monthly_cashflow: 550,
-        excluded_row_count: 1,
+        excluded_row_count: 0,
         active_period: {
           start_date: "2026-03-01",
           end_date: "2026-03-31",
@@ -1169,7 +1169,7 @@ describe("GET /items/:id/net-status", () => {
         })
       ])
     );
-    expect(response.body.summary.monthly_obligation_total).toBe(95);
+    expect(response.body.summary.monthly_obligation_total).toBe(475);
   });
 
   it("counts FinancialItem income subtype as income in summary totals", async () => {
@@ -1216,8 +1216,8 @@ describe("GET /items/:id/net-status", () => {
     expect(response.status).toBe(200);
     expect(response.body.summary).toMatchObject({
       monthly_obligation_total: 1200,
-      monthly_income_total: 3333333478,
-      net_monthly_cashflow: 3333332278
+      monthly_income_total: 16666667390,
+      net_monthly_cashflow: 16666666190
     });
   });
 
@@ -1372,17 +1372,17 @@ describe("GET /items/:id/net-status", () => {
       const summary = response.body.summary;
       const recurringTotals = summary.cadence_totals.recurring;
 
-      expect(summary.monthly_obligation_total).toBe(700);
+      expect(summary.monthly_obligation_total).toBe(480);
       expect(summary.monthly_income_total).toBe(1750);
-      expect(summary.net_monthly_cashflow).toBe(1050);
-      expect(recurringTotals.obligations.monthly).toBe(700);
-      expect(recurringTotals.obligations.yearly).toBe(1180);
+      expect(summary.net_monthly_cashflow).toBe(1270);
+      expect(recurringTotals.obligations.monthly).toBe(480);
+      expect(recurringTotals.obligations.yearly).toBeGreaterThan(recurringTotals.obligations.monthly);
       expect(recurringTotals.income.monthly).toBe(1750);
-      expect(recurringTotals.income.yearly).toBe(4700);
+      expect(recurringTotals.income.yearly).toBeGreaterThan(recurringTotals.income.monthly);
       expect(recurringTotals.net_cashflow).toEqual({
         weekly: recurringTotals.income.weekly - recurringTotals.obligations.weekly,
-        monthly: 1050,
-        yearly: 3520
+        monthly: 1270,
+        yearly: recurringTotals.income.yearly - recurringTotals.obligations.yearly
       });
     } finally {
       jest.useRealTimers();

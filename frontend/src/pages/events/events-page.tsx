@@ -8,6 +8,7 @@ import { CompleteEventRowAction } from '../../features/events/complete-event-row
 import { EditEventRowAction } from '../../features/events/edit-event-row-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
+import { formatNullableCurrency } from '../../lib/currency'
 import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
 import { getItemDisplayName, isIncomeItem } from '../../lib/item-display'
 import { panelItemVariants } from '../../lib/motion'
@@ -65,15 +66,7 @@ function formatDueLabel(value: string) {
 }
 
 function formatCurrency(value: number | null) {
-  if (value === null || Number.isNaN(value)) {
-    return null
-  }
-
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(value)
+  return formatNullableCurrency(value)
 }
 
 function formatEventAmount(event: EventRow, item: ItemRow | undefined) {

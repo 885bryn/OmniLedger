@@ -361,9 +361,9 @@ describe('item detail commitments panel', () => {
             user_id: 'owner-1',
             child_commitments: [],
             summary: {
-              monthly_obligation_total: 120,
-              monthly_income_total: 170,
-              net_monthly_cashflow: 50,
+              monthly_obligation_total: 130,
+              monthly_income_total: 205,
+              net_monthly_cashflow: 75,
               excluded_row_count: 0,
               active_period: {
                 label: 'Mar 2026',
@@ -371,6 +371,28 @@ describe('item detail commitments panel', () => {
                 end_date: '2026-03-31',
               },
               cadence_totals: {
+                total: {
+                  obligations: { weekly: 35, monthly: 130, yearly: 1480 },
+                  income: { weekly: 54, monthly: 205, yearly: 2140 },
+                  net_cashflow: { weekly: 19, monthly: 75, yearly: 660 },
+                  active_periods: {
+                    weekly: {
+                      start_date: '2026-03-08',
+                      end_date: '2026-03-14',
+                      label: 'Mar 8 - Mar 14',
+                    },
+                    monthly: {
+                      start_date: '2026-03-01',
+                      end_date: '2026-03-31',
+                      label: 'Mar 2026',
+                    },
+                    yearly: {
+                      start_date: '2026-01-01',
+                      end_date: '2026-12-31',
+                      label: '2026',
+                    },
+                  },
+                },
                 recurring: {
                   obligations: { weekly: 30, monthly: 120, yearly: 1440 },
                   income: { weekly: 42, monthly: 170, yearly: 2040 },
@@ -392,6 +414,11 @@ describe('item detail commitments panel', () => {
                       label: '2026',
                     },
                   },
+                },
+                one_time: {
+                  obligations: { weekly: 5, monthly: 10, yearly: 40 },
+                  income: { weekly: 12, monthly: 35, yearly: 100 },
+                  net_cashflow: { weekly: 7, monthly: 25, yearly: 60 },
                 },
                 one_time_period: {
                   net_monthly_cashflow: 25,
@@ -426,10 +453,10 @@ describe('item detail commitments panel', () => {
     expect(screen.getByText('Linked due this month (Mar 2026)')).toBeTruthy()
 
     expect(screen.getByRole('button', { name: 'Selected cadence: Monthly' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText('Obligations due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$120(?:\.00)?/)
-    expect(screen.getByText('Income due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$170(?:\.00)?/)
-    expect(screen.getByText('Net cashflow due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$50(?:\.00)?/)
-    expect(screen.getByText(/One-time impact \(separate from recurring net\): \+\$?25\.00/)).toBeTruthy()
+    expect(screen.getByText('Obligations due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$130(?:\.00)?/)
+    expect(screen.getByText('Income due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$205(?:\.00)?/)
+    expect(screen.getByText('Net cashflow due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$75(?:\.00)?/)
+    expect(screen.getByText(/One-time portion included in total: \+25\.00/)).toBeTruthy()
 
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Weekly' }))
 
@@ -438,9 +465,9 @@ describe('item detail commitments panel', () => {
     expect(screen.getByText('Net cashflow due this week (Mar 8 - Mar 14)')).toBeTruthy()
     expect(screen.getByText('Linked due this week (Mar 8 - Mar 14)')).toBeTruthy()
     await waitFor(() => {
-      expect(screen.getByText('Obligations due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/\$30(?:\.00)?/)
-      expect(screen.getByText('Income due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/\$42(?:\.00)?/)
-      expect(screen.getByText('Net cashflow due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/\$12(?:\.00)?/)
+      expect(screen.getByText('Obligations due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/\$35(?:\.00)?/)
+      expect(screen.getByText('Income due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/\$54(?:\.00)?/)
+      expect(screen.getByText('Net cashflow due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/\$19(?:\.00)?/)
     })
 
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
@@ -450,9 +477,9 @@ describe('item detail commitments panel', () => {
     expect(screen.getByText('Net cashflow due this year (2026)')).toBeTruthy()
     expect(screen.getByText('Linked due this year (2026)')).toBeTruthy()
     await waitFor(() => {
-      expect(screen.getByText('Obligations due this year (2026)').closest('article')?.textContent).toMatch(/\$1,440(?:\.00)?/)
-      expect(screen.getByText('Income due this year (2026)').closest('article')?.textContent).toMatch(/\$2,040(?:\.00)?/)
-      expect(screen.getByText('Net cashflow due this year (2026)').closest('article')?.textContent).toMatch(/\$600(?:\.00)?/)
+      expect(screen.getByText('Obligations due this year (2026)').closest('article')?.textContent).toMatch(/\$1,480(?:\.00)?/)
+      expect(screen.getByText('Income due this year (2026)').closest('article')?.textContent).toMatch(/\$2,140(?:\.00)?/)
+      expect(screen.getByText('Net cashflow due this year (2026)').closest('article')?.textContent).toMatch(/\$660(?:\.00)?/)
     })
     expect(screen.getByText('Net cashflow due this year equals income due this year minus obligations due this year.')).toBeTruthy()
   })
@@ -533,6 +560,93 @@ describe('item detail commitments panel', () => {
       expect(screen.getByText('Income due this year (2026)').closest('article')?.textContent).toMatch(/\$3,600(?:\.00)?/)
       expect(screen.getByText('Net cashflow due this year (2026)').closest('article')?.textContent).toMatch(/\$2,310(?:\.00)?/)
     })
+  })
+
+  it('shows cents for non-whole cadence totals so monthly and yearly math stay visually consistent', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/asset-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'asset-1',
+            item_type: 'Vehicle',
+            user_id: 'owner-1',
+            child_commitments: [],
+            summary: {
+              monthly_obligation_total: 707.4,
+              monthly_income_total: 0,
+              net_monthly_cashflow: -707.4,
+              excluded_row_count: 0,
+              active_period: {
+                label: 'Mar 2026',
+                start_date: '2026-03-01',
+                end_date: '2026-03-31',
+              },
+              cadence_totals: {
+                total: {
+                  obligations: { weekly: 0, monthly: 707.4, yearly: 8488.8 },
+                  income: { weekly: 0, monthly: 0, yearly: 0 },
+                  net_cashflow: { weekly: 0, monthly: -707.4, yearly: -8488.8 },
+                  active_periods: {
+                    monthly: {
+                      start_date: '2026-03-01',
+                      end_date: '2026-03-31',
+                      label: 'Mar 2026',
+                    },
+                    yearly: {
+                      start_date: '2026-01-01',
+                      end_date: '2026-12-31',
+                      label: '2026',
+                    },
+                  },
+                },
+                recurring: {
+                  obligations: { weekly: 0, monthly: 707.4, yearly: 8488.8 },
+                  income: { weekly: 0, monthly: 0, yearly: 0 },
+                  net_cashflow: { weekly: 0, monthly: -707.4, yearly: -8488.8 },
+                },
+                one_time: {
+                  obligations: { weekly: 0, monthly: 0, yearly: 0 },
+                  income: { weekly: 0, monthly: 0, yearly: 0 },
+                  net_cashflow: { weekly: 0, monthly: 0, yearly: 0 },
+                },
+                one_time_period: {
+                  net_monthly_cashflow: 0,
+                },
+              },
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              { id: 'asset-1', item_type: 'Vehicle', attributes: { name: 'Family SUV' }, updated_at: '2026-02-20T00:00:00.000Z' },
+            ],
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail()
+
+    expect(await screen.findByText('Obligations due this month (Mar 2026)')).toBeTruthy()
+    expect(screen.getByText('Obligations due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$707\.40/)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
+
+    expect(await screen.findByText('Obligations due this year (2026)')).toBeTruthy()
+    expect(screen.getByText('Obligations due this year (2026)').closest('article')?.textContent).toMatch(/\$8,488\.80/)
   })
 
   it('keeps only the latest cadence selection visible during rapid interactions', async () => {
@@ -674,7 +788,7 @@ describe('item detail commitments panel', () => {
     expect(screen.getByText('Obligations due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$90(?:\.00)?/)
     expect(screen.getByText('Income due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$140(?:\.00)?/)
     expect(screen.getByText('Net cashflow due this month (Mar 2026)').closest('article')?.textContent).toMatch(/\$50(?:\.00)?/)
-    expect(screen.getByText(/One-time impact \(separate from recurring net\): -\$?10\.00/)).toBeTruthy()
+    expect(screen.getByText(/One-time portion included in total: -10\.00/)).toBeTruthy()
   })
 
   it('keeps all linked financial rows visible in the commitments tab while the summary count stays cadence-filtered', async () => {

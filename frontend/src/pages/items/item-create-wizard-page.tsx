@@ -110,9 +110,14 @@ function normalizeCurrencyInput(value: string) {
     return ''
   }
 
+  const endsWithDecimalPoint = sanitized.endsWith('.')
   const [wholePartRaw, ...decimalParts] = sanitized.split('.')
   const wholePart = wholePartRaw.replace(/^0+(?=\d)/, '') || '0'
   const decimals = decimalParts.join('').slice(0, 2)
+
+  if (endsWithDecimalPoint && decimals.length === 0) {
+    return `${wholePart}.`
+  }
 
   return decimals.length > 0 ? `${wholePart}.${decimals}` : wholePart
 }
@@ -125,6 +130,10 @@ function formatCurrencyInput(value: string) {
 
   const [wholePart, decimals = ''] = normalized.split('.')
   const groupedWhole = Number(wholePart).toLocaleString()
+
+  if (normalized.endsWith('.') && decimals.length === 0) {
+    return `$${groupedWhole}.`
+  }
 
   if (decimals.length > 0) {
     return `$${groupedWhole}.${decimals}`

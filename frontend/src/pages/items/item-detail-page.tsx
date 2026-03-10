@@ -12,6 +12,7 @@ import { EditEventRowAction } from '../../features/events/edit-event-row-action'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
 import { useToast } from '../../features/ui/toast-provider'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
+import { formatCurrency } from '../../lib/currency'
 import { compareByNearestDue } from '../../lib/date-ordering'
 import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel, isHiddenAttributeKey, isIncomeItem } from '../../lib/item-display'
 import { motionSpring, panelItemVariants, pressScale } from '../../lib/motion'
@@ -59,6 +60,40 @@ type NetStatusResponse = ItemRow & {
       description?: string
     }
     cadence_totals?: {
+      total?: {
+        obligations?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+        income?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+        net_cashflow?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+        active_periods?: {
+          weekly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+          monthly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+          yearly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+        }
+      }
       recurring?: {
         obligations?: {
           weekly?: number
@@ -76,6 +111,40 @@ type NetStatusResponse = ItemRow & {
           yearly?: number
         }
         net?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+        active_periods?: {
+          weekly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+          monthly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+          yearly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+        }
+      }
+      one_time?: {
+        obligations?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+        income?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+        net_cashflow?: {
           weekly?: number
           monthly?: number
           yearly?: number
@@ -245,14 +314,6 @@ function getDisplayEntries(attributes: Record<string, unknown>) {
     .map((key) => ({ key, value: attributes[key] }))
 }
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(value)
-}
-
 function formatSignedFixedAmount(value: number) {
   const numericValue = Number.isFinite(value) ? value : 0
   const sign = numericValue > 0 ? '+' : numericValue < 0 ? '-' : ''
@@ -369,7 +430,8 @@ function isDueDateInsidePeriod(dueDate: string, period: { start_date?: string; e
 }
 
 function resolveCadenceActivePeriod(summary: NetStatusResponse['summary'], cadence: SummaryCadence) {
-  const cadencePeriod = summary.cadence_totals?.recurring?.active_periods?.[cadence]
+  const cadencePeriod = summary.cadence_totals?.total?.active_periods?.[cadence]
+    ?? summary.cadence_totals?.recurring?.active_periods?.[cadence]
   if (cadencePeriod?.start_date && cadencePeriod.end_date) {
     return cadencePeriod
   }
@@ -554,6 +616,13 @@ function deriveSummaryFromCommitments(commitments: ItemRow[]) {
       net_monthly_cashflow: 0,
       excluded_row_count: 0,
       cadence_totals: {
+        one_time: {
+          net_cashflow: {
+            weekly: 0,
+            monthly: 0,
+            yearly: 0,
+          },
+        },
         one_time_period: {
           net_monthly_cashflow: 0,
         },
@@ -563,11 +632,61 @@ function deriveSummaryFromCommitments(commitments: ItemRow[]) {
 }
 
 function resolveCadenceSummaryTotals(summary: NetStatusResponse['summary'], cadence: SummaryCadence): ResolvedCadenceTotals {
+  const totalTotals = summary.cadence_totals?.total
   const recurringTotals = summary.cadence_totals?.recurring
+  const oneTimeTotals = summary.cadence_totals?.one_time
+  const totalCadenceProjection: RecurringCadenceProjection = {
+    obligations: Number(totalTotals?.obligations?.[cadence]),
+    income: Number(totalTotals?.income?.[cadence]),
+    netCashflow: Number(totalTotals?.net_cashflow?.[cadence]),
+  }
+
+  if (
+    Number.isFinite(totalCadenceProjection.obligations)
+    && Number.isFinite(totalCadenceProjection.income)
+  ) {
+    const derivedTotalNet = roundToCents(totalCadenceProjection.income - totalCadenceProjection.obligations)
+    const normalizedTotalNet = Number.isFinite(totalCadenceProjection.netCashflow)
+      ? roundToCents(totalCadenceProjection.netCashflow)
+      : derivedTotalNet
+
+    return {
+      obligations: totalCadenceProjection.obligations,
+      income: totalCadenceProjection.income,
+      net: normalizedTotalNet === derivedTotalNet ? normalizedTotalNet : derivedTotalNet,
+    }
+  }
+
   const recurringCadenceProjection: RecurringCadenceProjection = {
     obligations: Number(recurringTotals?.obligations?.[cadence]),
     income: Number(recurringTotals?.income?.[cadence]),
     netCashflow: Number(recurringTotals?.net_cashflow?.[cadence] ?? recurringTotals?.net?.[cadence]),
+  }
+
+  const oneTimeCadenceProjection: RecurringCadenceProjection = {
+    obligations: Number(oneTimeTotals?.obligations?.[cadence]),
+    income: Number(oneTimeTotals?.income?.[cadence]),
+    netCashflow: Number(oneTimeTotals?.net_cashflow?.[cadence]),
+  }
+
+  if (
+    Number.isFinite(recurringCadenceProjection.obligations)
+    && Number.isFinite(recurringCadenceProjection.income)
+    && Number.isFinite(oneTimeCadenceProjection.obligations)
+    && Number.isFinite(oneTimeCadenceProjection.income)
+  ) {
+    const combinedObligations = roundToCents(recurringCadenceProjection.obligations + oneTimeCadenceProjection.obligations)
+    const combinedIncome = roundToCents(recurringCadenceProjection.income + oneTimeCadenceProjection.income)
+    const derivedCombinedNet = roundToCents(combinedIncome - combinedObligations)
+    const combinedNetCandidate = Number.isFinite(recurringCadenceProjection.netCashflow) && Number.isFinite(oneTimeCadenceProjection.netCashflow)
+      ? roundToCents(recurringCadenceProjection.netCashflow + oneTimeCadenceProjection.netCashflow)
+      : derivedCombinedNet
+
+    return {
+      obligations: combinedObligations,
+      income: combinedIncome,
+      net: combinedNetCandidate === derivedCombinedNet ? combinedNetCandidate : derivedCombinedNet,
+    }
   }
 
   if (
@@ -818,6 +937,13 @@ export function ItemDetailPage() {
         net_monthly_cashflow: 0,
         excluded_row_count: 0,
         cadence_totals: {
+          one_time: {
+            net_cashflow: {
+              weekly: 0,
+              monthly: 0,
+              yearly: 0,
+            },
+          },
           one_time_period: {
             net_monthly_cashflow: 0,
           },
@@ -905,8 +1031,12 @@ export function ItemDetailPage() {
   }, [commitments, displayCadence, effectiveSummary, financialTimelineEventsQuery.data?.groups, financialTimelineEventsQuery.isSuccess, isFinancialDetail])
   const displayedCadenceLabel = t(`items.detail.cadence.options.${displayCadence}`)
   const displayedCadencePeriodNoun = t(`items.detail.cadence.periodNouns.${displayCadence}`)
-  const oneTimeImpact = Number(effectiveSummary.cadence_totals?.one_time_period?.net_monthly_cashflow ?? 0)
-  const oneTimeImpactLabel = t('items.detail.summaryOneTimeImpact', { defaultValue: 'One-time impact (separate from recurring net)' })
+  const oneTimeImpact = Number(
+    effectiveSummary.cadence_totals?.one_time?.net_cashflow?.[displayCadence]
+    ?? (displayCadence === 'monthly' ? effectiveSummary.cadence_totals?.one_time_period?.net_monthly_cashflow : 0)
+    ?? 0,
+  )
+  const oneTimeImpactLabel = t('items.detail.summaryOneTimeImpact', { defaultValue: 'One-time portion included in total' })
   const oneTimeImpactValue = formatSignedFixedAmount(oneTimeImpact)
 
   function handleCadenceChange(nextCadence: SummaryCadence) {

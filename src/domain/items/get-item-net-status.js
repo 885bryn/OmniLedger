@@ -1,11 +1,12 @@
 "use strict";
 
-const { Op } = require("sequelize");
 const { models } = require("../../db");
 const { canAccessOwner } = require("../../api/auth/scope-context");
 const { ItemNetStatusError, ITEM_NET_STATUS_ERROR_CATEGORIES } = require("./item-net-status-errors");
 const { applyComputedFinancialProgress } = require("./financial-metrics");
 const { resolveYearlyFactor, roundBankers } = require("./cadence-normalization");
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
@@ -118,9 +119,41 @@ function deriveEventDueDateDayKey(event) {
   return Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
 }
 
+function parseCalendarDateToUtcDayKey(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:$|T|\s)/.exec(value.trim());
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const dayKey = Date.UTC(year, month - 1, day);
+  const parsed = new Date(dayKey);
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() + 1 !== month ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return dayKey;
+}
+
 function toUtcDayKey(value) {
   if (!value) {
     return null;
+  }
+
+  const calendarDayKey = parseCalendarDateToUtcDayKey(value);
+  if (calendarDayKey !== null) {
+    return calendarDayKey;
   }
 
   const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value);
@@ -151,10 +184,6 @@ function deriveItemOriginDayKey(item) {
     return dueDateDayKey;
   }
 
-  if (createdDayKey === null) {
-    return null;
-  }
-
   return createdDayKey;
 }
 
@@ -176,8 +205,8 @@ function resolveActiveCadencePeriods(referenceDate = new Date()) {
 
   const weekDay = referenceDate.getUTCDay();
   const weekOffsetFromMonday = (weekDay + 6) % 7;
-  const weeklyStartDayKey = referenceDayKey - weekOffsetFromMonday * 24 * 60 * 60 * 1000;
-  const weeklyEndDayKey = weeklyStartDayKey + 6 * 24 * 60 * 60 * 1000;
+  const weeklyStartDayKey = referenceDayKey - weekOffsetFromMonday * DAY_MS;
+  const weeklyEndDayKey = weeklyStartDayKey + 6 * DAY_MS;
 
   const monthlyStartDayKey = Date.UTC(year, month, 1);
   const monthlyEndDayKey = Date.UTC(year, month + 1, 0);
@@ -349,10 +378,128 @@ function createCadenceBucket() {
   };
 }
 
-function applyCadenceTotals(target, cadenceTotals) {
-  target.weekly += cadenceTotals.weekly;
-  target.monthly += cadenceTotals.monthly;
-  target.yearly += cadenceTotals.yearly;
+function addDaysUtcDayKey(dayKey, count) {
+  return dayKey + count * DAY_MS;
+}
+
+function addMonthsUtcDayKey(dayKey, count) {
+  const date = new Date(dayKey);
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+  const targetMonth = month + count;
+  const monthAnchor = new Date(Date.UTC(year, targetMonth, 1));
+  const lastDay = new Date(
+    Date.UTC(monthAnchor.getUTCFullYear(), monthAnchor.getUTCMonth() + 1, 0)
+  ).getUTCDate();
+  return Date.UTC(monthAnchor.getUTCFullYear(), monthAnchor.getUTCMonth(), Math.min(day, lastDay));
+}
+
+function advanceDayKeyByFrequency(dayKey, frequency) {
+  if (frequency === "weekly") {
+    return addDaysUtcDayKey(dayKey, 7);
+  }
+
+  if (frequency === "biweekly") {
+    return addDaysUtcDayKey(dayKey, 14);
+  }
+
+  if (frequency === "monthly") {
+    return addMonthsUtcDayKey(dayKey, 1);
+  }
+
+  if (frequency === "quarterly") {
+    return addMonthsUtcDayKey(dayKey, 3);
+  }
+
+  if (frequency === "yearly") {
+    return addMonthsUtcDayKey(dayKey, 12);
+  }
+
+  return null;
+}
+
+function resolveCadenceOccurrencesForPeriod({ seedDayKey, originDayKey, frequency, activePeriod }) {
+  if (seedDayKey === null || !activePeriod) {
+    return 0;
+  }
+
+  const effectiveStartDayKey = originDayKey === null
+    ? activePeriod.startDayKey
+    : Math.max(originDayKey, activePeriod.startDayKey);
+
+  if (effectiveStartDayKey > activePeriod.endDayKey) {
+    return 0;
+  }
+
+  let cursor = seedDayKey;
+  let guard = 0;
+
+  while (cursor < effectiveStartDayKey && guard < 2000) {
+    cursor = advanceDayKeyByFrequency(cursor, frequency);
+    if (cursor === null) {
+      return 0;
+    }
+    guard += 1;
+  }
+
+  let count = 0;
+  while (cursor !== null && cursor <= activePeriod.endDayKey && guard < 4000) {
+    count += 1;
+    cursor = advanceDayKeyByFrequency(cursor, frequency);
+    guard += 1;
+  }
+
+  return count;
+}
+
+function resolveRecurringCadenceOccurrences({ dueDateDayKey, originDayKey, frequency, activePeriods }) {
+  return {
+    weekly: resolveCadenceOccurrencesForPeriod({
+      seedDayKey: dueDateDayKey,
+      originDayKey,
+      frequency,
+      activePeriod: activePeriods.weekly
+    }),
+    monthly: resolveCadenceOccurrencesForPeriod({
+      seedDayKey: dueDateDayKey,
+      originDayKey,
+      frequency,
+      activePeriod: activePeriods.monthly
+    }),
+    yearly: resolveCadenceOccurrencesForPeriod({
+      seedDayKey: dueDateDayKey,
+      originDayKey,
+      frequency,
+      activePeriod: activePeriods.yearly
+    })
+  };
+}
+
+function resolveOneTimeCadenceOccurrences({ dueDateDayKey, originDayKey, activePeriods }) {
+  if (dueDateDayKey === null) {
+    return createCadenceBucket();
+  }
+
+  if (originDayKey !== null && dueDateDayKey < originDayKey) {
+    return createCadenceBucket();
+  }
+
+  return {
+    weekly: isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.weekly) ? 1 : 0,
+    monthly: isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.monthly) ? 1 : 0,
+    yearly: isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.yearly) ? 1 : 0
+  };
+}
+
+function hasCadenceOccurrences(occurrences) {
+  return occurrences.weekly > 0 || occurrences.monthly > 0 || occurrences.yearly > 0;
+}
+
+function addCadenceAmount(target, occurrences, amount) {
+  target.weekly += amount * occurrences.weekly;
+  target.monthly += amount * occurrences.monthly;
+  target.yearly += amount * occurrences.yearly;
 }
 
 function finalizeCadenceBucket(bucket) {
@@ -363,58 +510,15 @@ function finalizeCadenceBucket(bucket) {
   };
 }
 
-function buildEventOccurrenceLookup(events, activePeriods, originDayKeyByItemId) {
-  const lookup = new Map();
-
-  events.forEach((event) => {
-    if (!event || typeof event.item_id !== "string") {
-      return;
-    }
-
-    const dueDateDayKey = deriveEventDueDateDayKey(event);
-    if (dueDateDayKey === null) {
-      return;
-    }
-
-    const originDayKey = originDayKeyByItemId.get(event.item_id);
-    if (originDayKey !== null && originDayKey !== undefined && dueDateDayKey < originDayKey) {
-      return;
-    }
-
-    const existing = lookup.get(event.item_id) || {
-      weekly: 0,
-      monthly: 0,
-      yearly: 0
-    };
-
-    if (isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.weekly)) {
-      existing.weekly += 1;
-    }
-
-    if (isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.monthly)) {
-      existing.monthly += 1;
-    }
-
-    if (isDueDateInsideActivePeriod(dueDateDayKey, activePeriods.yearly)) {
-      existing.yearly += 1;
-    }
-
-    lookup.set(event.item_id, existing);
-  });
-
-  return lookup;
-}
-
-function buildSummary(childCommitments, childEvents = []) {
+function buildSummary(childCommitments) {
   const activePeriods = resolveActiveCadencePeriods();
   const activePeriod = activePeriods.monthly;
-  const originDayKeyByItemId = new Map(
-    childCommitments.map((child) => [child.id, deriveItemOriginDayKey(child)])
-  );
-  const eventOccurrenceByItemId = buildEventOccurrenceLookup(childEvents, activePeriods, originDayKeyByItemId);
   const summary = childCommitments.reduce(
     (accumulator, child) => {
       const amount = resolveSummaryAmount(child);
+      const attributes = isPlainObject(child.attributes) ? child.attributes : {};
+      const dueDateDayKey = toUtcDayKey(attributes.dueDate || attributes.due_date);
+      const originDayKey = deriveItemOriginDayKey(child);
 
       if (amount === null || amount === 0) {
         accumulator.excluded_row_count += 1;
@@ -422,78 +526,68 @@ function buildSummary(childCommitments, childEvents = []) {
         return accumulator;
       }
 
-      const includedInCadence = eventOccurrenceByItemId.get(child.id) || {
-        weekly: 0,
-        monthly: 0,
-        yearly: 0
-      };
-
-      if (includedInCadence.weekly === 0 && includedInCadence.monthly === 0 && includedInCadence.yearly === 0) {
-        accumulator.excluded_row_count += 1;
-        accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
-        return accumulator;
-      }
-
       if (isOneTimeItem(child)) {
-        if (includedInCadence.monthly === 0) {
+        if (dueDateDayKey === null) {
+          accumulator.excluded_row_count += 1;
+          accumulator.cadence_totals.exclusions.missing_or_invalid_event_due_date_count += 1;
+          return accumulator;
+        }
+
+        const oneTimeOccurrences = resolveOneTimeCadenceOccurrences({
+          dueDateDayKey,
+          originDayKey,
+          activePeriods
+        });
+
+        if (!hasCadenceOccurrences(oneTimeOccurrences)) {
           accumulator.excluded_row_count += 1;
           accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
           return accumulator;
         }
 
         if (isIncomeItem(child)) {
-          accumulator.monthly_income_total += amount;
-          accumulator.cadence_totals.one_time_period.monthly_income_total += amount;
+          addCadenceAmount(accumulator.cadence_totals.one_time.income, oneTimeOccurrences, amount);
+          addCadenceAmount(accumulator.cadence_totals.total.income, oneTimeOccurrences, amount);
         } else {
-          accumulator.monthly_obligation_total += amount;
-          accumulator.cadence_totals.one_time_period.monthly_obligation_total += amount;
+          addCadenceAmount(accumulator.cadence_totals.one_time.obligations, oneTimeOccurrences, amount);
+          addCadenceAmount(accumulator.cadence_totals.total.obligations, oneTimeOccurrences, amount);
         }
 
         return accumulator;
       }
 
-      if (!resolveYearlyFactor(child.frequency).isValid) {
+      const frequency = resolveYearlyFactor(child.frequency);
+      if (!frequency.isValid) {
         accumulator.excluded_row_count += 1;
         accumulator.cadence_totals.exclusions.invalid_or_missing_frequency_count += 1;
         return accumulator;
       }
 
-      const weeklyOccurrenceTotal = amount * includedInCadence.weekly;
-      const monthlyOccurrenceTotal = amount * includedInCadence.monthly;
-      const yearlyOccurrenceTotal = amount * includedInCadence.yearly;
+      if (dueDateDayKey === null) {
+        accumulator.excluded_row_count += 1;
+        accumulator.cadence_totals.exclusions.missing_or_invalid_event_due_date_count += 1;
+        return accumulator;
+      }
+
+      const recurringOccurrences = resolveRecurringCadenceOccurrences({
+        dueDateDayKey,
+        originDayKey,
+        frequency: frequency.normalizedFrequency,
+        activePeriods
+      });
+
+      if (!hasCadenceOccurrences(recurringOccurrences)) {
+        accumulator.excluded_row_count += 1;
+        accumulator.cadence_totals.exclusions.outside_active_period_count += 1;
+        return accumulator;
+      }
 
       if (isIncomeItem(child)) {
-        if (includedInCadence.monthly > 0) {
-          accumulator.monthly_income_total += monthlyOccurrenceTotal;
-        }
-
-        if (includedInCadence.weekly > 0) {
-          accumulator.cadence_totals.recurring.income.weekly += weeklyOccurrenceTotal;
-        }
-
-        if (includedInCadence.monthly > 0) {
-          accumulator.cadence_totals.recurring.income.monthly += monthlyOccurrenceTotal;
-        }
-
-        if (includedInCadence.yearly > 0) {
-          accumulator.cadence_totals.recurring.income.yearly += yearlyOccurrenceTotal;
-        }
+        addCadenceAmount(accumulator.cadence_totals.recurring.income, recurringOccurrences, amount);
+        addCadenceAmount(accumulator.cadence_totals.total.income, recurringOccurrences, amount);
       } else {
-        if (includedInCadence.monthly > 0) {
-          accumulator.monthly_obligation_total += monthlyOccurrenceTotal;
-        }
-
-        if (includedInCadence.weekly > 0) {
-          accumulator.cadence_totals.recurring.obligations.weekly += weeklyOccurrenceTotal;
-        }
-
-        if (includedInCadence.monthly > 0) {
-          accumulator.cadence_totals.recurring.obligations.monthly += monthlyOccurrenceTotal;
-        }
-
-        if (includedInCadence.yearly > 0) {
-          accumulator.cadence_totals.recurring.obligations.yearly += yearlyOccurrenceTotal;
-        }
+        addCadenceAmount(accumulator.cadence_totals.recurring.obligations, recurringOccurrences, amount);
+        addCadenceAmount(accumulator.cadence_totals.total.obligations, recurringOccurrences, amount);
       }
 
       return accumulator;
@@ -505,20 +599,40 @@ function buildSummary(childCommitments, childEvents = []) {
       excluded_row_count: 0,
       active_period: activePeriod.metadata,
       one_time_rule: ONE_TIME_RULE_DESCRIPTOR,
-      cadence_totals: {
-        recurring: {
-          obligations: createCadenceBucket(),
-          income: createCadenceBucket(),
-          net_cashflow: createCadenceBucket(),
-          active_periods: {
+        cadence_totals: {
+          total: {
+            obligations: createCadenceBucket(),
+            income: createCadenceBucket(),
+            net_cashflow: createCadenceBucket(),
+            active_periods: {
+              weekly: activePeriods.weekly.metadata,
+              monthly: activePeriods.monthly.metadata,
+              yearly: activePeriods.yearly.metadata
+            }
+          },
+          recurring: {
+            obligations: createCadenceBucket(),
+            income: createCadenceBucket(),
+            net_cashflow: createCadenceBucket(),
+            active_periods: {
             weekly: activePeriods.weekly.metadata,
             monthly: activePeriods.monthly.metadata,
-            yearly: activePeriods.yearly.metadata
-          }
-        },
-        one_time_period: {
-          cadence: "monthly",
-          monthly_obligation_total: 0,
+              yearly: activePeriods.yearly.metadata
+            }
+          },
+          one_time: {
+            obligations: createCadenceBucket(),
+            income: createCadenceBucket(),
+            net_cashflow: createCadenceBucket(),
+            active_periods: {
+              weekly: activePeriods.weekly.metadata,
+              monthly: activePeriods.monthly.metadata,
+              yearly: activePeriods.yearly.metadata
+            }
+          },
+          one_time_period: {
+            cadence: "monthly",
+            monthly_obligation_total: 0,
           monthly_income_total: 0,
           net_monthly_cashflow: 0,
           active_period: activePeriod.metadata
@@ -534,8 +648,13 @@ function buildSummary(childCommitments, childEvents = []) {
     }
   );
 
-  summary.net_monthly_cashflow = summary.monthly_income_total - summary.monthly_obligation_total;
-
+  summary.cadence_totals.total.obligations = finalizeCadenceBucket(summary.cadence_totals.total.obligations);
+  summary.cadence_totals.total.income = finalizeCadenceBucket(summary.cadence_totals.total.income);
+  summary.cadence_totals.total.net_cashflow = {
+    weekly: roundBankers(summary.cadence_totals.total.income.weekly - summary.cadence_totals.total.obligations.weekly),
+    monthly: roundBankers(summary.cadence_totals.total.income.monthly - summary.cadence_totals.total.obligations.monthly),
+    yearly: roundBankers(summary.cadence_totals.total.income.yearly - summary.cadence_totals.total.obligations.yearly)
+  };
   summary.cadence_totals.recurring.obligations = finalizeCadenceBucket(summary.cadence_totals.recurring.obligations);
   summary.cadence_totals.recurring.income = finalizeCadenceBucket(summary.cadence_totals.recurring.income);
   summary.cadence_totals.recurring.net_cashflow = {
@@ -544,15 +663,21 @@ function buildSummary(childCommitments, childEvents = []) {
     yearly: roundBankers(summary.cadence_totals.recurring.income.yearly - summary.cadence_totals.recurring.obligations.yearly)
   };
 
-  summary.cadence_totals.one_time_period.monthly_obligation_total = roundBankers(
-    summary.cadence_totals.one_time_period.monthly_obligation_total
-  );
-  summary.cadence_totals.one_time_period.monthly_income_total = roundBankers(
-    summary.cadence_totals.one_time_period.monthly_income_total
-  );
-  summary.cadence_totals.one_time_period.net_monthly_cashflow = roundBankers(
-    summary.cadence_totals.one_time_period.monthly_income_total - summary.cadence_totals.one_time_period.monthly_obligation_total
-  );
+  summary.cadence_totals.one_time.obligations = finalizeCadenceBucket(summary.cadence_totals.one_time.obligations);
+  summary.cadence_totals.one_time.income = finalizeCadenceBucket(summary.cadence_totals.one_time.income);
+  summary.cadence_totals.one_time.net_cashflow = {
+    weekly: roundBankers(summary.cadence_totals.one_time.income.weekly - summary.cadence_totals.one_time.obligations.weekly),
+    monthly: roundBankers(summary.cadence_totals.one_time.income.monthly - summary.cadence_totals.one_time.obligations.monthly),
+    yearly: roundBankers(summary.cadence_totals.one_time.income.yearly - summary.cadence_totals.one_time.obligations.yearly)
+  };
+
+  summary.monthly_obligation_total = summary.cadence_totals.total.obligations.monthly;
+  summary.monthly_income_total = summary.cadence_totals.total.income.monthly;
+  summary.net_monthly_cashflow = summary.cadence_totals.total.net_cashflow.monthly;
+
+  summary.cadence_totals.one_time_period.monthly_obligation_total = summary.cadence_totals.one_time.obligations.monthly;
+  summary.cadence_totals.one_time_period.monthly_income_total = summary.cadence_totals.one_time.income.monthly;
+  summary.cadence_totals.one_time_period.net_monthly_cashflow = summary.cadence_totals.one_time.net_cashflow.monthly;
   summary.cadence_totals.exclusions.total_excluded_row_count = summary.excluded_row_count;
 
   return summary;
@@ -642,22 +767,7 @@ async function getItemNetStatus({ itemId, scope, actorUserId }) {
     .filter((child) => !isSoftDeleted(child));
 
   const childCommitments = sortChildCommitments(canonicalChildren);
-  const childIds = childCommitments.map((child) => child.id);
-  const childEvents = childIds.length
-    ? await models.Event.findAll({
-      where: {
-        item_id: {
-          [Op.in]: childIds
-        }
-      },
-      attributes: ["item_id", "due_date"]
-    })
-    : [];
-
-  const summary = buildSummary(
-    childCommitments,
-    childEvents.map((event) => (typeof event.get === "function" ? event.get({ plain: true }) : event))
-  );
+  const summary = buildSummary(childCommitments);
 
   return {
     ...toCanonicalItem(rootItem),

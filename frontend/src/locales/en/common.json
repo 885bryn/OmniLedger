@@ -221,6 +221,7 @@
       "summaryNetCadence": "Net cashflow due this {{cadencePeriod}} ({{period}})",
       "summaryPeriodHint": "Only rows due this {{cadencePeriod}} are included in the active period: {{period}}.",
       "summaryRuleHint": "One-time rows count once only when their due date is inside this active period.",
+      "summaryOneTimeImpact": "One-time portion included in total",
       "summaryNetFormulaHint": "Net cashflow is normalized income minus obligations for this monthly period.",
       "summaryNetFormulaHintCadence": "Net cashflow due this {{cadencePeriod}} equals income due this {{cadencePeriod}} minus obligations due this {{cadencePeriod}}.",
       "summaryPeriodFallback": "current month",

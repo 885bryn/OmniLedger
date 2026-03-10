@@ -450,6 +450,81 @@ describe('items workflows', () => {
     expect(await screen.findByText(/Cannot update a soft-deleted item\./)).toBeTruthy()
   })
 
+  it('preserves decimal entry while editing financial item amounts', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items?include_deleted=true') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'FinancialItem',
+                title: 'Legacy Auto Loan',
+                type: 'Commitment',
+                frequency: 'monthly',
+                default_amount: 525.4,
+                attributes: {
+                  name: 'Legacy Auto Loan',
+                  amount: 525.4,
+                  financialSubtype: 'Commitment',
+                },
+              },
+            ],
+          },
+        })
+      }
+
+      if (url.includes('/items/item-1') && method === 'PATCH') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'item-1',
+            item_type: 'FinancialItem',
+            title: 'Legacy Auto Loan',
+            type: 'Commitment',
+            frequency: 'monthly',
+            default_amount: 525.45,
+            attributes: {
+              name: 'Legacy Auto Loan',
+              amount: 525.45,
+              financialSubtype: 'Commitment',
+            },
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEditRoute()
+
+    await screen.findByText('Edit item')
+    const amountInput = screen.getByRole('textbox', { name: /Amount/i }) as HTMLInputElement
+
+    await userEvent.clear(amountInput)
+    await userEvent.type(amountInput, '525.')
+    expect(amountInput.value).toBe('$525.')
+
+    await userEvent.type(amountInput, '45')
+    expect(amountInput.value).toBe('$525.45')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await userEvent.click(screen.getAllByRole('button', { name: 'Save changes' })[1])
+
+    const patchCall = fetchMock.mock.calls.find(([input, requestInit]) => String(input).includes('/items/item-1') && (requestInit?.method ?? 'GET') === 'PATCH')
+    const patchBodyRaw = patchCall?.[1]?.body
+    const patchBody = typeof patchBodyRaw === 'string' ? JSON.parse(patchBodyRaw) as Record<string, unknown> : {}
+    const attributes = patchBody.attributes as Record<string, unknown> | undefined
+
+    expect(attributes?.amount).toBe(525.45)
+  })
+
   it('soft-delete confirms then refreshes list data', async () => {
     let listCalls = 0
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -595,6 +670,43 @@ describe('items workflows', () => {
       expect(body.active_periods).toBeUndefined()
       expect(body.cadence_totals).toBeUndefined()
     })
+  })
+
+  it('shows cents for non-whole financial item amounts in the item list', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items?') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'item-1',
+                item_type: 'FinancialItem',
+                title: 'Legacy Auto Loan',
+                type: 'Commitment',
+                frequency: 'monthly',
+                default_amount: 525.4,
+                attributes: { name: 'Legacy Auto Loan', amount: 525.4, financialSubtype: 'Commitment' },
+                updated_at: '2026-02-24T00:00:00.000Z',
+              },
+            ],
+            total_count: 1,
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderWithMemoryRouter(<ItemListPage />)
+
+    await screen.findByText('Legacy Auto Loan')
+    expect(screen.getByText('$525.40')).toBeTruthy()
   })
 
   it('restores deleted item from deleted filter list', async () => {

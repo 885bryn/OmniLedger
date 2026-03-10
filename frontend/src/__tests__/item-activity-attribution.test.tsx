@@ -196,4 +196,37 @@ describe('item activity attribution transport', () => {
     expect(await screen.findByText('Actor ID: admin-1 | Lens ID: null (all-data)')).toBeTruthy()
     expect(await screen.findByText('Item restored')).toBeTruthy()
   })
+
+  it('renders cents consistently for non-whole activity event amounts', async () => {
+    globalThis.fetch = vi.fn(async () =>
+      createJsonResponse(200, {
+        item_id: 'item-1',
+        activity: [
+          {
+            id: 'audit-amount',
+            user_id: 'owner-1',
+            actor_user_id: 'owner-1',
+            actor_label: 'Owner',
+            lens_user_id: 'owner-1',
+            lens_label: 'Owner Lens',
+            lens_attribution_state: 'attributed',
+            action: 'event.updated',
+            entity: 'event:event-1',
+            entity_type: 'event',
+            entity_id: 'event-1',
+            timestamp: '2026-02-26T10:10:10.000Z',
+            event_type: 'Insurance',
+            event_status: 'Pending',
+            event_due_date: '2026-03-10',
+            event_amount: '707.4',
+            event_completed_at: null,
+          },
+        ],
+      }),
+    ) as typeof fetch
+
+    renderTimeline()
+
+    expect(await screen.findByText((content) => content.includes('$707.40'))).toBeTruthy()
+  })
 })

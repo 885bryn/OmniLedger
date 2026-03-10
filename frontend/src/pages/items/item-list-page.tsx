@@ -9,6 +9,7 @@ import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { ItemFilters, type AssetTypeOption, type ItemFilterValue, type ItemSortValue } from '../../features/items/item-filters'
 import { ItemSoftDeleteDialog } from '../../features/items/item-soft-delete-dialog'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
+import { formatCurrency } from '../../lib/currency'
 import { getFinancialSubtype, getItemDisplayName, getItemTypeLabel, isIncomeItem } from '../../lib/item-display'
 import { motionSpring, pressScale } from '../../lib/motion'
 import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
@@ -74,14 +75,6 @@ function formatDate(value: string) {
     day: 'numeric',
     year: 'numeric',
   }).format(parsed)
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(value)
 }
 
 function getFinancialAmount(item: ItemRow) {
