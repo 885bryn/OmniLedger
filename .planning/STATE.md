@@ -124,5 +124,5 @@ Decisions are logged in `.planning/PROJECT.md`.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 30-01-PLAN.md
-Resume file: `None`
+Stopped at: Phase 31 context gathered
+Resume file: `.planning/phases/31-paid-flow-into-history/31-CONTEXT.md`
