@@ -8,7 +8,7 @@
 - ✅ **v4.0 Interactive Production Deployment for Ugreen NAS** - Phases 19-23 shipped 2026-03-07 (`.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.0-REQUIREMENTS.md`, `.planning/milestones/v4.0-MILESTONE-AUDIT.md`)
 - ✅ **v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion** - Phases 24-26 shipped 2026-03-07 (`.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.1-REQUIREMENTS.md`, `.planning/milestones/v4.1-MILESTONE-AUDIT.md`)
 - ✅ **v4.2 Cashflow Frequency Normalization & Cadence Toggle** - Phases 27-29 shipped 2026-03-10
-- 🚧 **v4.3 Smart Grouped Ledger & Historical Event Injection** - Phases 30-33 (planned)
+- ✅ **v4.3 Smart Grouped Ledger & Historical Event Injection** - Phases 30-34 shipped 2026-03-10
 
 ## Phases
 
@@ -24,7 +24,7 @@
 
 </details>
 
-### 🚧 v4.3 Smart Grouped Ledger & Historical Event Injection (Planned)
+### ✅ v4.3 Smart Grouped Ledger & Historical Event Injection (Shipped)
 
 **Milestone Goal:** Turn the events experience into a usable ledger by grouping upcoming obligations, supporting pay/log-history actions, and letting users inject past completed events without breaking origin-boundary safety.
 
@@ -33,7 +33,8 @@
 - [x] **Phase 30: Upcoming Ledger Foundation** - Deliver the read-only grouped Upcoming ledger with clear tabs, sticky chronology, and urgent overdue presentation. (completed 2026-03-10)
 - [x] **Phase 31: Paid Flow Into History** - Let users mark projected events as paid and immediately see them reappear in history with legible motion. (completed 2026-03-10)
 - [x] **Phase 32: Manual Override Boundary Contract** - Add the backend/manual-override rules that allow explicit pre-origin historical overrides while keeping system-generated guardrails intact. (completed 2026-03-10)
-- [ ] **Phase 33: Historical Injection UI** - Let users log completed historical events from item detail using the manual-override flow without breaking existing platform guarantees.
+- [x] **Phase 33: Historical Injection UI** - Let users log completed historical events from item detail using the manual-override flow without breaking existing platform guarantees. (completed 2026-03-10)
+- [x] **Phase 34: Item Detail Events Tab Clarity** - Rename the Financial Item detail `Commitments` tab to `Events` so the tab label matches the event history and event actions it contains. (completed 2026-03-10)
 
 ## Phase Details
 
@@ -90,9 +91,22 @@ Plans:
   3. User can use the historical injection flow without breaking existing RBAC scoping, audit attribution, or deployment-facing behavior.
 **Plans**: 2 plans
 Plans:
-- [ ] `33-historical-injection-ui-01-PLAN.md` - Extend the manual-override backend contract with optional note persistence and read-path compatibility coverage for item-detail historical injection.
-- [ ] `33-historical-injection-ui-02-PLAN.md` - Add the item-detail historical injection dialog, post-save history reveal, and blocking browser verification gate.
+- [x] `33-historical-injection-ui-01-PLAN.md` - Extend the manual-override backend contract with optional note persistence and read-path compatibility coverage for item-detail historical injection.
+- [x] `33-historical-injection-ui-02-PLAN.md` - Add the item-detail historical injection dialog, post-save history reveal, and blocking browser verification gate.
 **Manual Test Gate**: Stop after this phase for final browser verification and explicit approval before milestone closeout.
+
+### Phase 34: Item Detail Events Tab Clarity
+**Goal**: Users can recognize that the Financial Item detail tab contains event history and event actions because the tab label says `Events` instead of `Commitments`.
+**Depends on**: Phase 33
+**Requirements**: UX-01
+**Success Criteria** (what must be TRUE):
+  1. User sees the Financial Item detail tab label rendered as `Events` anywhere the prior `Commitments` label appeared for that view.
+  2. User can still access the same event timeline, historical injection action, and related event content from that tab with no behavior regressions.
+  3. User does not see stale `Commitments` wording in Financial Item detail copy, tests, or accessibility labels where it would make the tab's purpose unclear.
+**Plans**: 1 plan
+Plans:
+- [x] `34-item-detail-events-tab-clarity-01-PLAN.md` - Rename the Financial Item detail `Commitments` tab to `Events`, update related item-detail copy and accessibility text, and lock the behavior with focused frontend regressions.
+**Manual Test Gate**: Stop after this phase for browser verification that the renamed tab remains clear, accessible, and behaviorally unchanged before milestone closeout.
 
 ## Progress
 
@@ -101,7 +115,8 @@ Plans:
 | 30. Upcoming Ledger Foundation | 1/1 | Complete    | 2026-03-10 |
 | 31. Paid Flow Into History | 1/1 | Complete    | 2026-03-10 |
 | 32. Manual Override Boundary Contract | 2/2 | Complete    | 2026-03-10 |
-| 33. Historical Injection UI | 1/2 | In Progress|  |
+| 33. Historical Injection UI | 2/2 | Complete    | 2026-03-10 |
+| 34. Item Detail Events Tab Clarity | 1/1 | Complete   | 2026-03-10 |
 
 ---
-*Last updated: 2026-03-10 after creating Phase 33 plans*
+*Last updated: 2026-03-10 after completing Phase 34*

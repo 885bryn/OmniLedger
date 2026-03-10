@@ -31,6 +31,10 @@ Requirements for milestone v4.3 Smart Grouped Ledger & Historical Event Injectio
 - [x] **SAFE-02**: System-generated projected events that fall before the item's origin boundary remain rejected.
 - [x] **SAFE-03**: Existing projection logic, RBAC scoping, audit attribution, and deployment contracts remain intact while ledger and historical-injection features are added.
 
+### Item Detail Clarity
+
+- [x] **UX-01**: User sees the Financial Item detail tab labeled `Events` instead of `Commitments` so the tab name matches the event timeline and actions shown there.
+
 ## v2 Requirements
 
 Deferred to a future milestone.
@@ -70,12 +74,13 @@ Deferred to a future milestone.
 | EVENT-03 | Phase 32 | Complete |
 | EVENT-01 | Phase 33 | Complete |
 | SAFE-03 | Phase 33 | Complete |
+| UX-01 | Phase 34 | Complete |
 
 **Coverage:**
-- v1 requirements: 12 total
-- Mapped to phases: 12
+- v1 requirements: 13 total
+- Mapped to phases: 13
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-10*
-*Last updated: 2026-03-10 after creating milestone v4.3 roadmap*
+*Last updated: 2026-03-10 after completing Phase 34*

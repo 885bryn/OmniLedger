@@ -6,23 +6,23 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 33 backend note support is complete; Plan 02 now needs to ship the item-detail historical injection dialog and then clear the final browser verification gate.
+**Current focus:** Phase 34 is complete and browser-approved; v4.3 is ready for milestone transition after the Financial Item detail `Events` tab clarity rename.
 
 ## Current Position
 
-Phase: 33 - Historical Injection UI
-Plan: 01/02
-Status: In Progress
-Last activity: 2026-03-10 - Completed 33-01 manual override note persistence and /events read compatibility regressions
+Phase: 34 - Item Detail Events Tab Clarity
+Plan: 01/01
+Status: Complete
+Last activity: 2026-03-10 - Completed the browser-approved Financial Item detail `Events` tab clarity rename
 
-Progress: [######----] 57%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 72
+- Total plans completed: 74
 - Average duration: 4 min
-- Total execution time: 5.8 hours
+- Total execution time: 6.0 hours
 
 **By Phase:**
 
@@ -33,8 +33,8 @@ Progress: [######----] 57%
 | 24-26 (v4.1) | 10 | 41 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 31-01 (12 min), 30-01 (4 min), 29-10 (6 min), 29-09 (12 min), 29-08 (4 min)
-- Trend: v4.3 now includes inline paid-flow history movement on the Events ledger while preserving explicit manual browser verification gates between phases.
+- Last 5 plans: 34-01 (14 min), 33-02 (1 session), 33-01 (3 min), 32-02 (3 min), 32-01 (5 min)
+- Trend: v4.3 finished with browser-approved item-detail events terminology while preserving the manual verification gates used across the milestone.
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
 | Phase 27 P03 | 3 min | 2 tasks | 2 files |
 | Phase 28 P01 | 1 min | 2 tasks | 2 files |
@@ -57,6 +57,8 @@ Progress: [######----] 57%
 | Phase 32-manual-override-boundary-contract P01 | 5 min | 2 tasks | 7 files |
 | Phase 32 P02 | 3 min | 2 tasks | 4 files |
 | Phase 33-historical-injection-ui P01 | 3 min | 2 tasks | 6 files |
+| Phase 33 P02 | 1 session | 3 tasks | 6 files |
+| Phase 34 P01 | 14 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -108,6 +110,7 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 31]: Mark-paid behavior must move rows from Upcoming to History immediately and stay legible via shared spring motion.
 - [Phase 32]: Manual historical injection support must be enforced first at the backend/manual-override boundary layer before exposing the item-detail UI.
 - [Phase 33]: Every v4.3 phase pauses for manual browser testing and explicit approval before the next phase begins.
+- [Phase 34]: Use `Events` as the Financial Item detail tab label wherever the tab currently surfaces item-specific event timeline content and historical-entry actions.
 - [Phase 30]: Compare due dates as calendar-day keys so overdue and rolling-week buckets stay timezone-stable.
 - [Phase 30]: Keep History intentionally empty in Phase 30 even when completed rows are fetched so Phase 31 owns populated history.
 - [Phase 31-paid-flow-into-history]: Keep successful rows in local History immediately, then show calm catch-up copy until the server refresh includes the completed row.
@@ -118,20 +121,20 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 32]: Keep manual override rows inside normal History month groups and distinguish them with warning copy and styling instead of moving them to a separate section.
 - [Phase 33-historical-injection-ui]: Keep note writes exclusive to POST /events/manual-override so projected-event creation and ordinary completion/edit routes stay untouched.
 - [Phase 33-historical-injection-ui]: Expose note data only on manual override rows in /events responses so normal event payloads keep their prior shape.
+- [Phase 34]: Kept the existing items.detail.tabs.commitments translation key and changed only the localized values so the user-facing rename stayed low risk.
+- [Phase 34]: Used browser approval as the release gate for this phase because wording clarity is a UX judgment, not just a test result.
 
 ### Pending Todos
 
 - Next milestone kickoff: include progress-style rollup visual showing completed/total amounts for selected cadence period.
 - Next milestone kickoff: include financial-item event-history tab with past/future events and completion state per event.
-- After Phase 33, run final manual browser verification before milestone closeout.
 
 ### Blockers/Concerns
 
-- Phase 33 still requires final browser verification of the item-detail historical injection flow before milestone closeout.
 - v4.3 execution must preserve RBAC, audit attribution, deployment contracts, and existing item/event workflows while adding grouped ledger and manual-history flows.
 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 33-historical-injection-ui-01-PLAN.md
+Stopped at: Completed `34-item-detail-events-tab-clarity-01-PLAN.md`
 Resume file: `None`
