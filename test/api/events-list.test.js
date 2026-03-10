@@ -21,16 +21,18 @@ const { createApp } = require("../../src/api/app");
 describe("GET /events", () => {
   const app = createApp();
   let userCount = 0;
+  const originalAdminEmail = process.env.HACT_ADMIN_EMAIL;
 
-  async function createUser() {
+  async function createUser(overrides = {}) {
     userCount += 1;
-    const password = "StrongPass123!";
+    const password = overrides.password || "StrongPass123!";
     const passwordHash = await bcrypt.hash(password, 12);
 
     const created = await models.User.create({
-      username: `events-user-${userCount}`,
-      email: `events-user-${userCount}@example.com`,
-      password_hash: passwordHash
+      username: overrides.username || `events-user-${userCount}`,
+      email: overrides.email || `events-user-${userCount}@example.com`,
+      password_hash: passwordHash,
+      role: overrides.role
     });
 
     return {
@@ -113,6 +115,7 @@ describe("GET /events", () => {
   });
 
   beforeEach(async () => {
+    process.env.HACT_ADMIN_EMAIL = "admin@example.com";
     await sequelize.query("PRAGMA foreign_keys = OFF");
     await models.AuditLog.destroy({ where: {}, force: true });
     await models.Event.destroy({ where: {}, force: true });
@@ -122,6 +125,12 @@ describe("GET /events", () => {
   });
 
   afterAll(async () => {
+    if (typeof originalAdminEmail === "string") {
+      process.env.HACT_ADMIN_EMAIL = originalAdminEmail;
+    } else {
+      delete process.env.HACT_ADMIN_EMAIL;
+    }
+
     await sequelize.close();
   });
 
@@ -419,7 +428,7 @@ describe("GET /events", () => {
     const overdueTimes = projectedTimes.filter((dueTime) => dueTime < todayStart);
     const currentAndFutureTimes = projectedTimes.filter((dueTime) => dueTime >= todayStart);
 
-    expect(overdueTimes.length).toBeGreaterThanOrEqual(1);
+    expect(overdueTimes.length).toBe(0);
     expect(currentAndFutureTimes.length).toBeGreaterThan(0);
     expect(Math.min(...currentAndFutureTimes)).toBeGreaterThanOrEqual(todayStart);
     expect(Math.max(...projectedTimes)).toBeLessThanOrEqual(horizonEnd);
@@ -521,5 +530,105 @@ describe("GET /events", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it("suppresses absurd historical recurring rows for normal users without meta noise", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const recurringItem = await createFinancialItem({
+      userId: owner.id,
+      title: "Boundary regression bill",
+      frequency: "monthly",
+      status: "Active",
+      dueDate: "2026-03-15",
+      defaultAmount: 180
+    });
+
+    await createEvent({
+      itemId: recurringItem.id,
+      dueDate: "1068-01-15T00:00:00.000Z",
+      recurring: true,
+      amount: "180.00"
+    });
+    await createEvent({
+      itemId: recurringItem.id,
+      dueDate: "1192-02-15T00:00:00.000Z",
+      recurring: true,
+      amount: "180.00"
+    });
+
+    const response = await ownerAgent.get("/events").query({ status: "all" });
+
+    expect(response.status).toBe(200);
+    expect(response.body).not.toHaveProperty("meta");
+
+    const flattened = response.body.groups.flatMap((group) => group.events);
+    expect(flattened.some((event) => String(event.due_date).includes("1068-"))).toBe(false);
+    expect(flattened.some((event) => String(event.due_date).includes("1192-"))).toBe(false);
+  });
+
+  it("returns admin-only suppression metadata for bogus historical recurring rows", async () => {
+    const admin = await createUser({ email: "admin@example.com" });
+    const owner = await createUser();
+    const adminAgent = await signInAs(admin);
+    const recurringItem = await createFinancialItem({
+      userId: owner.id,
+      title: "Admin suppression bill",
+      frequency: "monthly",
+      status: "Active",
+      dueDate: "2026-03-15",
+      defaultAmount: 95
+    });
+
+    await createEvent({
+      itemId: recurringItem.id,
+      dueDate: "1068-01-15T00:00:00.000Z",
+      recurring: true,
+      amount: "95.00"
+    });
+    await createEvent({
+      itemId: recurringItem.id,
+      dueDate: "1192-02-15T00:00:00.000Z",
+      recurring: true,
+      amount: "95.00"
+    });
+
+    const response = await adminAgent.get("/events").query({ status: "all" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.meta).toEqual({
+      suppressed_invalid_projected_count: 2
+    });
+
+    const flattened = response.body.groups.flatMap((group) => group.events);
+    expect(flattened.some((event) => event.item_id === recurringItem.id && String(event.due_date).includes("1068-"))).toBe(false);
+    expect(flattened.some((event) => event.item_id === recurringItem.id && String(event.due_date).includes("1192-"))).toBe(false);
+  });
+
+  it("skips recurring projection when due-date seed metadata is invalid instead of guessing", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+
+    const weakRecurring = await models.Item.create(
+      {
+        user_id: owner.id,
+        item_type: "FinancialItem",
+        title: "Weak metadata recurring",
+        type: "Commitment",
+        frequency: "monthly",
+        default_amount: 61,
+        status: "Active",
+        attributes: {
+          dueDate: "not-a-date"
+        }
+      },
+      { validate: false }
+    );
+
+    const response = await ownerAgent.get("/events").query({ status: "all" });
+
+    expect(response.status).toBe(200);
+    const flattened = response.body.groups.flatMap((group) => group.events);
+    expect(flattened.filter((event) => event.item_id === weakRecurring.id)).toHaveLength(0);
   });
 });

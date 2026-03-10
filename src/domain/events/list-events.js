@@ -2,11 +2,11 @@
 
 const { models } = require("../../db");
 const { EventQueryError, EVENT_QUERY_ERROR_CATEGORIES } = require("./event-query-errors");
-const { syncItemEvent, projectItemEvents } = require("../items/item-event-sync");
+const { syncItemEvent, projectItemEvents, resolveProjectionBoundary } = require("../items/item-event-sync");
 const { resolveOwnerFilter } = require("../../api/auth/scope-context");
 
 const STATUS_FILTERS = Object.freeze(["all", "pending", "completed"]);
-const CASHFLOW_ITEM_TYPES = new Set(["FinancialCommitment", "FinancialIncome"]);
+const CASHFLOW_ITEM_TYPES = new Set(["FinancialItem"]);
 const FINANCIAL_ITEM_TYPE = "FinancialItem";
 
 function getDeletedAt(attributes) {
@@ -94,7 +94,14 @@ function addYearsUtc(date, count) {
 
 function normalizeInput(input) {
   const payload = isPlainObject(input) ? input : {};
-  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const rawScope = isPlainObject(payload.scope) ? payload.scope : {};
+  const scope = {
+    ...rawScope,
+    actorUserId: normalizeString(rawScope.actorUserId) || normalizeString(payload.actorUserId) || undefined,
+    actorRole: normalizeString(rawScope.actorRole) || normalizeString(payload.actorRole) || undefined,
+    mode: normalizeString(rawScope.mode) || normalizeString(payload.mode) || undefined,
+    lensUserId: normalizeString(rawScope.lensUserId) || normalizeString(payload.lensUserId) || undefined
+  };
   const ownerFilter = resolveOwnerFilter(scope);
   const hasActor = normalizeString(scope.actorUserId).length > 0 || normalizeString(payload.actorUserId).length > 0;
   const status = normalizeString(payload.status).toLowerCase() || "pending";
@@ -156,6 +163,8 @@ function normalizeInput(input) {
   }
 
   return {
+    scope,
+    isAdmin: scope.actorRole === "admin",
     ownerFilter,
     status,
     dueFrom,
@@ -181,6 +190,33 @@ function normalizeEvent(eventInstance) {
     created_at: raw.created_at || raw.createdAt,
     updated_at: raw.updated_at || raw.updatedAt
   };
+}
+
+function isSystemGeneratedEvent(event) {
+  return Boolean(event && event.recurring);
+}
+
+function normalizeSuppressionContext(item) {
+  const boundaryContext = resolveProjectionBoundary(item);
+
+  return {
+    item,
+    boundary: boundaryContext.boundary,
+    canProject: boundaryContext.canProject
+  };
+}
+
+function shouldSuppressPersistedEvent(event, suppressionContext) {
+  if (!isSystemGeneratedEvent(event) || !suppressionContext || !suppressionContext.boundary) {
+    return false;
+  }
+
+  const dueDay = startOfUtcDay(event.due_date);
+  if (!dueDay) {
+    return true;
+  }
+
+  return dueDay.getTime() < suppressionContext.boundary.getTime();
 }
 
 function sourceRank(event) {
@@ -368,9 +404,23 @@ async function listEvents(input) {
     })
   ]);
 
-  const persistedEvents = rows
-    .filter((row) => !getDeletedAt(row.item && row.item.attributes))
-    .map(normalizeEvent);
+  const financialItemMap = new Map(financialItems.map((item) => [item.id, item]));
+  const persistedRows = rows.filter((row) => !getDeletedAt(row.item && row.item.attributes));
+  const persistedEvents = [];
+  let suppressedInvalidProjectedCount = 0;
+
+  persistedRows.forEach((row) => {
+    const normalized = normalizeEvent(row);
+    const financialItem = financialItemMap.get(normalized.item_id) || row.item || null;
+    const suppressionContext = financialItem ? normalizeSuppressionContext(financialItem) : null;
+
+    if (shouldSuppressPersistedEvent(normalized, suppressionContext)) {
+      suppressedInvalidProjectedCount += 1;
+      return;
+    }
+
+    persistedEvents.push(normalized);
+  });
   const persistedByItem = new Map();
 
   persistedEvents.forEach((event) => {
@@ -403,10 +453,18 @@ async function listEvents(input) {
   const allEvents = mergePersistedAndProjectedEvents(persistedEvents, projectedEvents);
   const filtered = sortUpcomingThenHistory(filterByRange(filterByStatus(allEvents, query.status), query.dueFrom, query.dueTo), query.now);
 
-  return {
+  const response = {
     groups: groupEvents(filtered),
     total_count: filtered.length
   };
+
+  if (query.isAdmin) {
+    response.meta = {
+      suppressed_invalid_projected_count: suppressedInvalidProjectedCount
+    };
+  }
+
+  return response;
 }
 
 module.exports = {

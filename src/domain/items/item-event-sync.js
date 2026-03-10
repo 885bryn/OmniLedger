@@ -41,17 +41,39 @@ function maxUtcDate(left, right) {
   return left.getTime() >= right.getTime() ? left : right;
 }
 
+function resolveItemCreationDay(item) {
+  if (!item) {
+    return null;
+  }
+
+  return toUtcDate(item.created_at || item.createdAt);
+}
+
 function resolveOriginBoundaryDate(item, seedDate) {
   const attributes = isPlainObject(item && item.attributes) ? item.attributes : {};
   const explicitOrigin = toUtcDate(
     attributes.originDate || attributes.origin_date || attributes.originAt || attributes.origin_at
   );
+  const creationDay = resolveItemCreationDay(item);
+  let boundary = seedDate;
 
-  if (!explicitOrigin) {
-    return seedDate;
-  }
+  boundary = maxUtcDate(boundary, explicitOrigin);
+  boundary = maxUtcDate(boundary, creationDay);
 
-  return maxUtcDate(seedDate, explicitOrigin);
+  return boundary;
+}
+
+function resolveProjectionBoundary(item, seedDateInput) {
+  const seedDate = toUtcDate(seedDateInput || getDueDate(item && item.attributes, item));
+  const creationDay = resolveItemCreationDay(item);
+  const boundary = resolveOriginBoundaryDate(item, seedDate);
+
+  return {
+    seedDate,
+    creationDay,
+    boundary,
+    canProject: Boolean(seedDate && boundary)
+  };
 }
 
 function addDaysUtc(date, count) {
@@ -223,7 +245,12 @@ function projectItemEvents({
     return [];
   }
 
-  const originBoundary = resolveOriginBoundaryDate(item, seedDate);
+  const originBoundaryContext = resolveProjectionBoundary(item, seedDate);
+  if (!originBoundaryContext.canProject) {
+    return [];
+  }
+
+  const originBoundary = originBoundaryContext.boundary;
 
   const projectionStart = maxUtcDate(toUtcDate(windowStart || today), originBoundary);
   const projectionEnd = toUtcDate(windowEnd || addYearsUtc(today, 3));
@@ -372,5 +399,6 @@ async function syncItemEvent({ item, models, transaction, mode }) {
 module.exports = {
   syncItemEvent,
   materializeItemEventForDate,
-  projectItemEvents
+  projectItemEvents,
+  resolveProjectionBoundary
 };
