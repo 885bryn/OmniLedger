@@ -95,18 +95,52 @@
   },
   "events": {
     "loadError": "Events could not be loaded. Please refresh and try again.",
-    "title": "Due events",
-    "subtitle": "Nearest due groups are shown first so completion actions stay focused on what needs attention now.",
-    "upcomingTitle": "Current and upcoming",
+    "eyebrow": "Ledger",
+    "title": "Events ledger",
+    "subtitle": "Scan upcoming obligations in calm chronological buckets before payment and history workflows arrive.",
+    "tabHint": "Upcoming stays read-only in this phase, and History is intentionally waiting for completed entries.",
+    "upcomingTitle": "Upcoming",
     "historyTitle": "History",
-    "noUpcoming": "No current or upcoming events.",
-    "noHistory": "No historical events yet.",
+    "loadingAria": "Loading events ledger",
+    "groupCount": "{{count}} entries",
     "noPendingTitle": "No pending events",
     "noPendingDescription": "You are caught up. Add a new item to generate upcoming timeline obligations.",
     "createItem": "Create item",
     "returnDashboard": "Return to dashboard",
     "amountPending": "Amount pending",
     "itemLabel": "Item {{itemId}}",
+    "tabs": {
+      "ariaLabel": "Events ledger tabs"
+    },
+    "groups": {
+      "overdue": "Overdue",
+      "thisWeek": "This Week",
+      "thisWeekHint": "Rolling 7-day window: today plus the next 6 calendar days.",
+      "laterThisMonth": "Later This Month",
+      "future": "Future"
+    },
+    "badges": {
+      "overdue": "Urgent"
+    },
+    "card": {
+      "dueDate": "Due date",
+      "amount": "Amount"
+    },
+    "empty": {
+      "title": "Nothing pressing right now.",
+      "description": "Upcoming obligations are clear for the moment. New projected or persisted events will land here in chronological groups."
+    },
+    "historyEmpty": {
+      "title": "History is ready for the next phase.",
+      "description": "Completed events will appear here once the paid flow ships. For now, this tab stays intentionally empty so the ledger surface is already in place."
+    },
+    "error": {
+      "eyebrow": "Ledger status",
+      "title": "We couldn't refresh the events ledger.",
+      "description": "The page stays read-only in this phase. Check your connection, then retry to reload the latest upcoming obligations.",
+      "retry": "Retry loading",
+      "retrying": "Retrying..."
+    },
     "stateLegend": {
       "label": "State:",
       "projected": "Projected",

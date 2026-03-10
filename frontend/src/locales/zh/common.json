@@ -95,18 +95,52 @@
   },
   "events": {
     "loadError": "无法加载事件，请刷新后重试。",
-    "title": "待处理事件",
-    "subtitle": "按最近到期时间分组显示，便于优先完成最紧急的事项。",
-    "upcomingTitle": "当前与即将到期",
+    "eyebrow": "台账",
+    "title": "事件台账",
+    "subtitle": "先用平静清晰的时间分组浏览即将到期事项，再进入后续付款与历史流程。",
+    "tabHint": "本阶段 Upcoming 保持只读，History 也会先以有意留白的状态出现。",
+    "upcomingTitle": "Upcoming",
     "historyTitle": "历史记录",
-    "noUpcoming": "当前没有待处理或即将到期的事件。",
-    "noHistory": "暂无历史事件。",
+    "loadingAria": "正在加载事件台账",
+    "groupCount": "{{count}} 条记录",
     "noPendingTitle": "暂无待处理事件",
     "noPendingDescription": "当前已全部处理完成。可添加新资产以生成后续时间线事项。",
     "createItem": "创建资产",
     "returnDashboard": "返回仪表盘",
     "amountPending": "金额待定",
     "itemLabel": "项目 {{itemId}}",
+    "tabs": {
+      "ariaLabel": "事件台账标签"
+    },
+    "groups": {
+      "overdue": "逾期",
+      "thisWeek": "本周内",
+      "thisWeekHint": "滚动 7 天窗口：从今天起，包含接下来 6 个自然日。",
+      "laterThisMonth": "本月稍后",
+      "future": "未来"
+    },
+    "badges": {
+      "overdue": "紧急"
+    },
+    "card": {
+      "dueDate": "到期日",
+      "amount": "金额"
+    },
+    "empty": {
+      "title": "目前没有紧迫事项。",
+      "description": "当前没有需要处理的即将到期义务。新的预测或已落库事件出现后，会按时间顺序分组显示在这里。"
+    },
+    "historyEmpty": {
+      "title": "历史台账已为下一阶段预留位置。",
+      "description": "待付款流程上线后，已完成事件会出现在这里。本阶段先保持有意留白，让台账结构提前到位。"
+    },
+    "error": {
+      "eyebrow": "台账状态",
+      "title": "暂时无法刷新事件台账。",
+      "description": "本阶段页面保持只读。请检查网络连接后重试，以重新加载最新的即将到期事项。",
+      "retry": "重新加载",
+      "retrying": "重新加载中..."
+    },
     "stateLegend": {
       "label": "状态：",
       "projected": "预测",
