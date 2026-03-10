@@ -69,7 +69,7 @@ describe("POST /events/manual-override", () => {
     });
   }
 
-  async function createEvent({ itemId, dueDate, amount = "100.00", status = "Completed", recurring = false, manualOverride = false }) {
+  async function createEvent({ itemId, dueDate, amount = "100.00", status = "Completed", recurring = false, manualOverride = false, note = null }) {
     return models.Event.create({
       item_id: itemId,
       event_type: "Existing row",
@@ -78,6 +78,7 @@ describe("POST /events/manual-override", () => {
       status,
       is_recurring: recurring,
       is_manual_override: manualOverride,
+      note,
       completed_at: status === "Completed" ? dueDate : null
     });
   }
@@ -107,7 +108,7 @@ describe("POST /events/manual-override", () => {
     await sequelize.close();
   });
 
-  it("creates a completed pre-origin manual override and exposes the flag through /events", async () => {
+  it("creates a completed pre-origin manual override with a trimmed note and exposes it through /events", async () => {
     const owner = await createUser();
     const ownerAgent = await signInAs(owner);
     const item = await createFinancialItem({ userId: owner.id, originDate: "2026-03-16" });
@@ -115,7 +116,8 @@ describe("POST /events/manual-override", () => {
     const response = await ownerAgent.post("/events/manual-override").send({
       item_id: item.id,
       due_date: "2026-01-10",
-      amount: 88.45
+      amount: 88.45,
+      note: "  Paid from archived paper statement.  "
     });
 
     expect(response.status).toBe(201);
@@ -124,7 +126,8 @@ describe("POST /events/manual-override", () => {
       status: "Completed",
       recurring: false,
       is_projected: false,
-      is_manual_override: true
+      is_manual_override: true,
+      note: "Paid from archived paper statement."
     });
     expect(response.body.completed_at).toContain("2026-01-10");
     expect(response.body.warnings).toEqual([]);
@@ -140,7 +143,8 @@ describe("POST /events/manual-override", () => {
       item_id: item.id,
       status: "Completed",
       is_manual_override: true,
-      source_state: "persisted"
+      source_state: "persisted",
+      note: "Paid from archived paper statement."
     });
 
     const audit = await models.AuditLog.findOne({
@@ -173,7 +177,7 @@ describe("POST /events/manual-override", () => {
     ]);
   });
 
-  it("rejects malformed dates, future dates, and bad amounts", async () => {
+  it("rejects malformed dates, future dates, bad amounts, and invalid notes", async () => {
     const owner = await createUser();
     const ownerAgent = await signInAs(owner);
     const item = await createFinancialItem({ userId: owner.id });
@@ -212,6 +216,32 @@ describe("POST /events/manual-override", () => {
     expect(badAmount.body.error.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: "amount", code: "invalid_amount" })
+      ])
+    );
+
+    const invalidNote = await ownerAgent.post("/events/manual-override").send({
+      item_id: item.id,
+      due_date: "2026-01-01",
+      amount: 20,
+      note: 42
+    });
+    expect(invalidNote.status).toBe(422);
+    expect(invalidNote.body.error.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "note", code: "invalid_note" })
+      ])
+    );
+
+    const longNote = await ownerAgent.post("/events/manual-override").send({
+      item_id: item.id,
+      due_date: "2026-01-02",
+      amount: 20,
+      note: "x".repeat(281)
+    });
+    expect(longNote.status).toBe(422);
+    expect(longNote.body.error.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "note", code: "note_too_long" })
       ])
     );
   });
@@ -270,10 +300,14 @@ describe("POST /events/manual-override", () => {
     const allMode = await adminAgent.post("/events/manual-override").send({
       item_id: ownerBItem.id,
       due_date: "2026-01-11",
-      amount: 91
+      amount: 91,
+      note: "Imported from mailed receipt"
     });
     expect(allMode.status).toBe(201);
-    expect(allMode.body.item_id).toBe(ownerBItem.id);
+    expect(allMode.body).toMatchObject({
+      item_id: ownerBItem.id,
+      note: "Imported from mailed receipt"
+    });
 
     const setLens = await adminAgent.patch("/auth/admin-scope").send({
       mode: "owner",

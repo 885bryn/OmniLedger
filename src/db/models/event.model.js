@@ -76,6 +76,13 @@ class Event extends Model {
           allowNull: false,
           defaultValue: false
         },
+        note: {
+          type: DataTypes.STRING(280),
+          allowNull: true,
+          validate: {
+            len: [1, 280]
+          }
+        },
         completed_at: {
           type: DataTypes.DATE,
           allowNull: true

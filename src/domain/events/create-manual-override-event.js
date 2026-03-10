@@ -8,6 +8,7 @@ const { canAccessOwner } = require("../../api/auth/scope-context");
 const COMPLETED_STATUS = "Completed";
 const AUDIT_ACTION = "event.manualoverride.created";
 const EXTREME_HISTORY_WARNING_YEARS = 25;
+const MAX_NOTE_LENGTH = 280;
 
 const MANUAL_OVERRIDE_ERROR_CATEGORIES = Object.freeze({
   NOT_FOUND: "not_found",
@@ -104,6 +105,37 @@ function parseAmount(value) {
   return Number(parsed.toFixed(2));
 }
 
+function parseNote(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    return createIssue(
+      "note",
+      "invalid_note",
+      MANUAL_OVERRIDE_ERROR_CATEGORIES.INVALID_REQUEST,
+      "note must be a string."
+    );
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  if (normalized.length > MAX_NOTE_LENGTH) {
+    return createIssue(
+      "note",
+      "note_too_long",
+      MANUAL_OVERRIDE_ERROR_CATEGORIES.INVALID_REQUEST,
+      `note must be ${MAX_NOTE_LENGTH} characters or less.`
+    );
+  }
+
+  return normalized;
+}
+
 function validateInput(payload, now) {
   const body = isPlainObject(payload) ? payload : {};
   const issues = [];
@@ -137,6 +169,11 @@ function validateInput(payload, now) {
     issues.push(amount);
   }
 
+  const note = parseNote(body.note);
+  if (note && typeof note !== "string") {
+    issues.push(note);
+  }
+
   const today = toUtcDay(now) || toUtcDay(new Date());
   if (dueDate && today && dueDate.getTime() > today.getTime()) {
     issues.push(
@@ -160,7 +197,8 @@ function validateInput(payload, now) {
   return {
     itemId,
     dueDate,
-    amount
+    amount,
+    note: typeof note === "string" ? note : null
   };
 }
 
@@ -208,6 +246,7 @@ function toManualOverridePayload(eventInstance, warnings) {
     item_id: raw.item_id,
     type: raw.event_type,
     amount: raw.amount,
+    note: raw.note || null,
     due_date: raw.due_date,
     status: raw.status,
     recurring: Boolean(raw.is_recurring),
@@ -311,6 +350,7 @@ async function createManualOverrideEvent({ payload, scope, actorUserId, now = ne
         event_type: getEventType(item),
         due_date: input.dueDate,
         amount: input.amount,
+        note: input.note,
         status: COMPLETED_STATUS,
         is_recurring: false,
         is_manual_override: true,
