@@ -89,7 +89,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 27. Frequency Rule Contract | 3/3 | Complete    | 2026-03-08 |
 | 28. Cadence-Normalized Totals | 2/2 | Complete    | 2026-03-08 |
-| 29. Cadence Toggle & Synced Cashflow View | 11/11 | Complete   | 2026-03-09 |
+| 29. Cadence Toggle & Synced Cashflow View | 11/11 | Complete    | 2026-03-10 |
 
 ---
 *Last updated: 2026-03-09 after executing phase 29 plan 10*
