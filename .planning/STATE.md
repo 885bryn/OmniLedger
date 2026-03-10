@@ -6,16 +6,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 31 implementation is complete; manual browser verification on `/events` is required before Phase 32 execution.
+**Current focus:** Phase 32 plan 01 is complete; phase 32 plan 02 and the post-phase browser/API verification gate remain next.
 
 ## Current Position
 
-Phase: 31 - Paid Flow Into History
-Plan: 01/01
-Status: Awaiting manual browser verification before Phase 32
-Last activity: 2026-03-10 - Completed 31-01 inline paid flow into grouped history
+Phase: 32 - Manual Override Boundary Contract
+Plan: 01/02
+Status: In Progress
+Last activity: 2026-03-10 - Completed 32-01 backend boundary hardening and manual override API contract
 
-Progress: [#####-----] 50%
+Progress: [######----] 55%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [#####-----] 50%
 | Phase 29 P11 | 2 min | 2 tasks | 2 files |
 | Phase 30 P01 | 4 min | 2 tasks | 4 files |
 | Phase 31-paid-flow-into-history P01 | 12 min | 2 tasks | 5 files |
+| Phase 32-manual-override-boundary-contract P01 | 5 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -109,22 +110,23 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 30]: Keep History intentionally empty in Phase 30 even when completed rows are fetched so Phase 31 owns populated history.
 - [Phase 31-paid-flow-into-history]: Keep successful rows in local History immediately, then show calm catch-up copy until the server refresh includes the completed row.
 - [Phase 31-paid-flow-into-history]: Group completed history from completed_at month-year keys so paid chronology stays trustworthy and newest-first.
+- [Phase 32-manual-override-boundary-contract]: Use the latest valid date across origin metadata, due-date seed data, and item creation day as the shared safe boundary for projection and suppression.
+- [Phase 32-manual-override-boundary-contract]: Persist manual overrides as completed non-recurring events that bypass only the origin boundary while keeping ownership, date, amount, and duplicate validation intact.
 
 ### Pending Todos
 
 - Next milestone kickoff: include progress-style rollup visual showing completed/total amounts for selected cadence period.
 - Next milestone kickoff: include financial-item event-history tab with past/future events and completion state per event.
-- After Phase 31, run manual browser verification for mark-paid transition and history population before Phase 32.
 - After Phase 32, verify pre-origin manual overrides are allowed while projected pre-origin system events remain blocked before Phase 33.
 - After Phase 33, run final manual browser verification before milestone closeout.
 
 ### Blockers/Concerns
 
-- Manual browser verification on `/events` is required before Phase 32 can start.
+- Phase 32 still requires plan 02 plus browser/API verification on `/events` before Phase 33 starts.
 - v4.3 execution must preserve RBAC, audit attribution, deployment contracts, and existing item/event workflows while adding grouped ledger and manual-history flows.
 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 32 context gathered
-Resume file: `.planning/phases/32-manual-override-boundary-contract/32-CONTEXT.md`
+Stopped at: Completed 32-manual-override-boundary-contract-01-PLAN.md
+Resume file: `.planning/phases/32-manual-override-boundary-contract/32-manual-override-boundary-contract-02-PLAN.md`
