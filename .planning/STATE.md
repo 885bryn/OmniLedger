@@ -6,23 +6,23 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 30 implementation is complete; manual browser verification on `/events` is required before Phase 31 execution.
+**Current focus:** Phase 31 implementation is complete; manual browser verification on `/events` is required before Phase 32 execution.
 
 ## Current Position
 
-Phase: 30 - Upcoming Ledger Foundation
+Phase: 31 - Paid Flow Into History
 Plan: 01/01
-Status: Awaiting manual browser verification before Phase 31
-Last activity: 2026-03-10 - Completed 30-01 read-only events ledger foundation
+Status: Awaiting manual browser verification before Phase 32
+Last activity: 2026-03-10 - Completed 31-01 inline paid flow into grouped history
 
-Progress: [###-------] 25%
+Progress: [#####-----] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 70
+- Total plans completed: 71
 - Average duration: 4 min
-- Total execution time: 5.5 hours
+- Total execution time: 5.7 hours
 
 **By Phase:**
 
@@ -33,8 +33,8 @@ Progress: [###-------] 25%
 | 24-26 (v4.1) | 10 | 41 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 30-01 (4 min), 29-10 (6 min), 29-09 (12 min), 29-08 (4 min), 29-07 (8 min)
-- Trend: v4.3 has started by replacing action-heavy events workflows with a read-only grouped ledger foundation and explicit manual verification gates.
+- Last 5 plans: 31-01 (12 min), 30-01 (4 min), 29-10 (6 min), 29-09 (12 min), 29-08 (4 min)
+- Trend: v4.3 now includes inline paid-flow history movement on the Events ledger while preserving explicit manual browser verification gates between phases.
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
 | Phase 27 P03 | 3 min | 2 tasks | 2 files |
 | Phase 28 P01 | 1 min | 2 tasks | 2 files |
@@ -53,6 +53,7 @@ Progress: [###-------] 25%
 | Phase 29 P10 | 6 min | 2 tasks | 5 files |
 | Phase 29 P11 | 2 min | 2 tasks | 2 files |
 | Phase 30 P01 | 4 min | 2 tasks | 4 files |
+| Phase 31-paid-flow-into-history P01 | 12 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -106,23 +107,24 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 33]: Every v4.3 phase pauses for manual browser testing and explicit approval before the next phase begins.
 - [Phase 30]: Compare due dates as calendar-day keys so overdue and rolling-week buckets stay timezone-stable.
 - [Phase 30]: Keep History intentionally empty in Phase 30 even when completed rows are fetched so Phase 31 owns populated history.
+- [Phase 31-paid-flow-into-history]: Keep successful rows in local History immediately, then show calm catch-up copy until the server refresh includes the completed row.
+- [Phase 31-paid-flow-into-history]: Group completed history from completed_at month-year keys so paid chronology stays trustworthy and newest-first.
 
 ### Pending Todos
 
 - Next milestone kickoff: include progress-style rollup visual showing completed/total amounts for selected cadence period.
 - Next milestone kickoff: include financial-item event-history tab with past/future events and completion state per event.
-- After Phase 30, run manual browser verification for tab switching, sticky grouping, and overdue styling before Phase 31.
 - After Phase 31, run manual browser verification for mark-paid transition and history population before Phase 32.
 - After Phase 32, verify pre-origin manual overrides are allowed while projected pre-origin system events remain blocked before Phase 33.
 - After Phase 33, run final manual browser verification before milestone closeout.
 
 ### Blockers/Concerns
 
-- Manual browser verification on `/events` is required before Phase 31 can start.
+- Manual browser verification on `/events` is required before Phase 32 can start.
 - v4.3 execution must preserve RBAC, audit attribution, deployment contracts, and existing item/event workflows while adding grouped ledger and manual-history flows.
 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 31 context gathered
-Resume file: `.planning/phases/31-paid-flow-into-history/31-CONTEXT.md`
+Stopped at: Completed 31-paid-flow-into-history-01-PLAN.md
+Resume file: `None`

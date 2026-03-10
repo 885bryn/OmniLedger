@@ -12,13 +12,13 @@ Requirements for milestone v4.3 Smart Grouped Ledger & Historical Event Injectio
 - [x] **LEDGER-01**: User can switch the global Events page between `Upcoming` and `History` ledger tabs.
 - [x] **LEDGER-02**: User sees pending and overdue upcoming events grouped into Overdue, This Week, Later This Month, and Future sections.
 - [x] **LEDGER-03**: User sees overdue events styled as urgent and every ledger section labeled with sticky chronological headers.
-- [ ] **LEDGER-04**: User sees completed events in the History tab grouped by month/year in reverse chronological order.
+- [x] **LEDGER-04**: User sees completed events in the History tab grouped by month/year in reverse chronological order.
 
 ### Event State Changes
 
-- [ ] **FLOW-02**: User can mark an upcoming event as paid directly from the Upcoming ledger.
-- [ ] **FLOW-03**: User sees a paid event leave the Upcoming ledger immediately and appear in completed history without a manual refresh.
-- [ ] **FLOW-04**: User sees the paid-event transition animated so ledger reflow remains legible during state changes.
+- [x] **FLOW-02**: User can mark an upcoming event as paid directly from the Upcoming ledger.
+- [x] **FLOW-03**: User sees a paid event leave the Upcoming ledger immediately and appear in completed history without a manual refresh.
+- [x] **FLOW-04**: User sees the paid-event transition animated so ledger reflow remains legible during state changes.
 
 ### Historical Injection
 
@@ -61,10 +61,10 @@ Deferred to a future milestone.
 | LEDGER-01 | Phase 30 | Complete |
 | LEDGER-02 | Phase 30 | Complete |
 | LEDGER-03 | Phase 30 | Complete |
-| FLOW-02 | Phase 31 | Pending |
-| FLOW-03 | Phase 31 | Pending |
-| FLOW-04 | Phase 31 | Pending |
-| LEDGER-04 | Phase 31 | Pending |
+| FLOW-02 | Phase 31 | Complete |
+| FLOW-03 | Phase 31 | Complete |
+| FLOW-04 | Phase 31 | Complete |
+| LEDGER-04 | Phase 31 | Complete |
 | SAFE-02 | Phase 32 | Pending |
 | EVENT-02 | Phase 32 | Pending |
 | EVENT-03 | Phase 32 | Pending |
