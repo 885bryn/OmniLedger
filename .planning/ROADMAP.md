@@ -60,7 +60,9 @@ Plans:
   2. User sees the paid row leave Upcoming and appear in the `History` tab without manually refreshing the page.
   3. User sees completed history grouped by month/year in reverse chronological order.
   4. User sees ledger reflow remain legible during pay completion because the row transition is animated.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] `31-paid-flow-into-history-01-PLAN.md` - Add inline mark-paid behavior, immediate move-to-history ledger state, grouped completed-month history rendering, and focused frontend regressions for pending, failure, and catch-up behavior.
 **Manual Test Gate**: Stop after this phase for browser verification of mark-paid behavior, animation feel, and history arrival before Phase 32 starts.
 
 ### Phase 32: Manual Override Boundary Contract
@@ -91,7 +93,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 30. Upcoming Ledger Foundation | 1/1 | Complete    | 2026-03-10 |
-| 31. Paid Flow Into History | 0/0 | Not started | - |
+| 31. Paid Flow Into History | 0/1 | Not started | - |
 | 32. Manual Override Boundary Contract | 0/0 | Not started | - |
 | 33. Historical Injection UI | 0/0 | Not started | - |
 
