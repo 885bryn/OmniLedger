@@ -186,6 +186,7 @@ function normalizeEvent(eventInstance) {
     recurring: Boolean(raw.is_recurring),
     source_state: "persisted",
     is_projected: false,
+    is_manual_override: Boolean(raw.is_manual_override),
     completed_at: raw.completed_at || null,
     created_at: raw.created_at || raw.createdAt,
     updated_at: raw.updated_at || raw.updatedAt
@@ -193,7 +194,7 @@ function normalizeEvent(eventInstance) {
 }
 
 function isSystemGeneratedEvent(event) {
-  return Boolean(event && event.recurring);
+  return Boolean(event && event.recurring && event.is_manual_override !== true);
 }
 
 function normalizeSuppressionContext(item) {
@@ -446,7 +447,8 @@ async function listEvents(input) {
       }).map((event) => ({
         ...event,
         source_state: "projected",
-        is_projected: true
+        is_projected: true,
+        is_manual_override: false
       }));
     });
 

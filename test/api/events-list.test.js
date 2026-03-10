@@ -183,6 +183,7 @@ describe("GET /events", () => {
       "created_at",
       "due_date",
       "id",
+      "is_manual_override",
       "is_projected",
       "item_id",
       "recurring",

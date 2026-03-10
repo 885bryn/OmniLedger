@@ -71,6 +71,11 @@ class Event extends Model {
           allowNull: false,
           defaultValue: false
         },
+        is_manual_override: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false
+        },
         completed_at: {
           type: DataTypes.DATE,
           allowNull: true
