@@ -6,16 +6,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v4.3 roadmap is defined; Phase 30 upcoming-ledger foundation is next pending manual-gated execution.
+**Current focus:** Phase 30 implementation is complete; manual browser verification on `/events` is required before Phase 31 execution.
 
 ## Current Position
 
 Phase: 30 - Upcoming Ledger Foundation
-Plan: -
-Status: Roadmap ready for execution
-Last activity: 2026-03-10 - Milestone v4.3 roadmap created
+Plan: 01/01
+Status: Awaiting manual browser verification before Phase 31
+Last activity: 2026-03-10 - Completed 30-01 read-only events ledger foundation
 
-Progress: [----------] 0%
+Progress: [###-------] 25%
 
 ## Performance Metrics
 
@@ -33,8 +33,8 @@ Progress: [----------] 0%
 | 24-26 (v4.1) | 10 | 41 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 29-10 (6 min), 29-09 (12 min), 29-08 (4 min), 29-07 (8 min), 29-06 (5 min)
-- Trend: Phase 29 cadence behavior is shifting from run-rate normalization to deterministic period-bounded inclusion rules.
+- Last 5 plans: 30-01 (4 min), 29-10 (6 min), 29-09 (12 min), 29-08 (4 min), 29-07 (8 min)
+- Trend: v4.3 has started by replacing action-heavy events workflows with a read-only grouped ledger foundation and explicit manual verification gates.
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
 | Phase 27 P03 | 3 min | 2 tasks | 2 files |
 | Phase 28 P01 | 1 min | 2 tasks | 2 files |
@@ -52,6 +52,7 @@ Progress: [----------] 0%
 | Phase 29 P09 | 12 min | 2 tasks | 5 files |
 | Phase 29 P10 | 6 min | 2 tasks | 5 files |
 | Phase 29 P11 | 2 min | 2 tasks | 2 files |
+| Phase 30 P01 | 4 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,8 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 31]: Mark-paid behavior must move rows from Upcoming to History immediately and stay legible via shared spring motion.
 - [Phase 32]: Manual historical injection support must be enforced first at the backend/manual-override boundary layer before exposing the item-detail UI.
 - [Phase 33]: Every v4.3 phase pauses for manual browser testing and explicit approval before the next phase begins.
+- [Phase 30]: Compare due dates as calendar-day keys so overdue and rolling-week buckets stay timezone-stable.
+- [Phase 30]: Keep History intentionally empty in Phase 30 even when completed rows are fetched so Phase 31 owns populated history.
 
 ### Pending Todos
 
@@ -115,11 +118,11 @@ Decisions are logged in `.planning/PROJECT.md`.
 
 ### Blockers/Concerns
 
-- Existing unrelated frontend lint item remains: `frontend/src/pages/events/events-page.tsx:255` (`todayStart` unused).
+- Manual browser verification on `/events` is required before Phase 31 can start.
 - v4.3 execution must preserve RBAC, audit attribution, deployment contracts, and existing item/event workflows while adding grouped ledger and manual-history flows.
 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 30 context gathered
-Resume file: `.planning/phases/30-upcoming-ledger-foundation/30-CONTEXT.md`
+Stopped at: Completed 30-01-PLAN.md
+Resume file: `None`

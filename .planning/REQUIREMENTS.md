@@ -9,9 +9,9 @@ Requirements for milestone v4.3 Smart Grouped Ledger & Historical Event Injectio
 
 ### Ledger Experience
 
-- [ ] **LEDGER-01**: User can switch the global Events page between `Upcoming` and `History` ledger tabs.
-- [ ] **LEDGER-02**: User sees pending and overdue upcoming events grouped into Overdue, This Week, Later This Month, and Future sections.
-- [ ] **LEDGER-03**: User sees overdue events styled as urgent and every ledger section labeled with sticky chronological headers.
+- [x] **LEDGER-01**: User can switch the global Events page between `Upcoming` and `History` ledger tabs.
+- [x] **LEDGER-02**: User sees pending and overdue upcoming events grouped into Overdue, This Week, Later This Month, and Future sections.
+- [x] **LEDGER-03**: User sees overdue events styled as urgent and every ledger section labeled with sticky chronological headers.
 - [ ] **LEDGER-04**: User sees completed events in the History tab grouped by month/year in reverse chronological order.
 
 ### Event State Changes
@@ -58,9 +58,9 @@ Deferred to a future milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LEDGER-01 | Phase 30 | Pending |
-| LEDGER-02 | Phase 30 | Pending |
-| LEDGER-03 | Phase 30 | Pending |
+| LEDGER-01 | Phase 30 | Complete |
+| LEDGER-02 | Phase 30 | Complete |
+| LEDGER-03 | Phase 30 | Complete |
 | FLOW-02 | Phase 31 | Pending |
 | FLOW-03 | Phase 31 | Pending |
 | FLOW-04 | Phase 31 | Pending |
