@@ -32,7 +32,7 @@
 
 - [x] **Phase 30: Upcoming Ledger Foundation** - Deliver the read-only grouped Upcoming ledger with clear tabs, sticky chronology, and urgent overdue presentation. (completed 2026-03-10)
 - [x] **Phase 31: Paid Flow Into History** - Let users mark projected events as paid and immediately see them reappear in history with legible motion. (completed 2026-03-10)
-- [ ] **Phase 32: Manual Override Boundary Contract** - Add the backend/manual-override rules that allow explicit pre-origin historical overrides while keeping system-generated guardrails intact.
+- [x] **Phase 32: Manual Override Boundary Contract** - Add the backend/manual-override rules that allow explicit pre-origin historical overrides while keeping system-generated guardrails intact. (completed 2026-03-10)
 - [ ] **Phase 33: Historical Injection UI** - Let users log completed historical events from item detail using the manual-override flow without breaking existing platform guarantees.
 
 ## Phase Details
@@ -97,7 +97,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 30. Upcoming Ledger Foundation | 1/1 | Complete    | 2026-03-10 |
 | 31. Paid Flow Into History | 1/1 | Complete    | 2026-03-10 |
-| 32. Manual Override Boundary Contract | 1/2 | In Progress|  |
+| 32. Manual Override Boundary Contract | 2/2 | Complete   | 2026-03-10 |
 | 33. Historical Injection UI | 0/0 | Not started | - |
 
 ---
