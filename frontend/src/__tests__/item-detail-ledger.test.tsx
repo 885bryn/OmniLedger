@@ -972,8 +972,8 @@ describe('item detail commitments panel', () => {
     expect(await screen.findByText('Obligations due this month (Mar 2026)')).toBeTruthy()
     expect(screen.getByText('Linked due this month (Mar 2026)').closest('article')?.textContent).toMatch(/2/)
 
-    await screen.findByRole('button', { name: 'Commitments' })
-    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+    await screen.findByRole('button', { name: 'Events' })
+    await userEvent.click(screen.getByRole('button', { name: 'Events' }))
 
     expect(await screen.findByRole('link', { name: 'Mortgage' })).toBeTruthy()
     await waitFor(() => {
@@ -987,7 +987,7 @@ describe('item detail commitments panel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Yearly' }))
     expect(await screen.findByText('Linked due this year (2026)')).toBeTruthy()
     expect(screen.getByText('Linked due this year (2026)').closest('article')?.textContent).toMatch(/3/)
-    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Events' }))
     expect(await screen.findByRole('link', { name: 'Annual Insurance' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Mortgage' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Salary' })).toBeTruthy()
@@ -996,7 +996,7 @@ describe('item detail commitments panel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Selected cadence: Weekly' }))
     expect(await screen.findByText('Linked due this week (Mar 8 - Mar 14)')).toBeTruthy()
     expect(screen.getByText('Linked due this week (Mar 8 - Mar 14)').closest('article')?.textContent).toMatch(/2/)
-    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Events' }))
     expect(await screen.findByRole('link', { name: 'Mortgage' })).toBeTruthy()
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Salary' })).toBeTruthy()
@@ -1229,8 +1229,8 @@ describe('item detail commitments panel', () => {
     expect(await screen.findByText('Linked due this month (Mar 2026)')).toBeTruthy()
     expect(screen.getByText('Linked due this month (Mar 2026)').closest('article')?.textContent).toMatch(/0/)
 
-    await screen.findByRole('button', { name: 'Commitments' })
-    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+    await screen.findByRole('button', { name: 'Events' })
+    await userEvent.click(screen.getByRole('button', { name: 'Events' }))
 
     expect(await screen.findByRole('link', { name: 'Mortgage' })).toBeTruthy()
     expect(screen.queryByText('No linked financial items yet.')).toBeNull()
@@ -1326,8 +1326,8 @@ describe('item detail commitments panel', () => {
 
     renderItemDetail('/items/fin-1')
 
-    await screen.findByRole('button', { name: 'Commitments' })
-    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+    await screen.findByRole('button', { name: 'Events' })
+    await userEvent.click(screen.getByRole('button', { name: 'Events' }))
 
     expect(await screen.findByRole('button', { name: /Current & Upcoming/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Historical Ledger/i })).toBeTruthy()
@@ -1424,7 +1424,7 @@ describe('item detail commitments panel', () => {
     const overviewAction = await screen.findByRole('button', { name: 'Log historical entry' })
     expect(overviewAction).toBeTruthy()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Commitments' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Events' }))
     expect(await screen.findAllByRole('button', { name: 'Log historical entry' })).toHaveLength(1)
 
     await userEvent.click(screen.getByRole('button', { name: 'Log historical entry' }))
