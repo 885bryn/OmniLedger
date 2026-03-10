@@ -6,16 +6,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 32 implementation is complete; the post-phase browser/API verification gate must clear before Phase 33 starts.
+**Current focus:** Phase 33 backend note support is complete; Plan 02 now needs to ship the item-detail historical injection dialog and then clear the final browser verification gate.
 
 ## Current Position
 
-Phase: 32 - Manual Override Boundary Contract
-Plan: 02/02
-Status: Complete
-Last activity: 2026-03-10 - Completed 32-02 frontend ledger suppression notice and manual override warning treatment
+Phase: 33 - Historical Injection UI
+Plan: 01/02
+Status: In Progress
+Last activity: 2026-03-10 - Completed 33-01 manual override note persistence and /events read compatibility regressions
 
-Progress: [######----] 56%
+Progress: [######----] 57%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [######----] 56%
 | Phase 31-paid-flow-into-history P01 | 12 min | 2 tasks | 5 files |
 | Phase 32-manual-override-boundary-contract P01 | 5 min | 2 tasks | 7 files |
 | Phase 32 P02 | 3 min | 2 tasks | 4 files |
+| Phase 33-historical-injection-ui P01 | 3 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -115,21 +116,22 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 32-manual-override-boundary-contract]: Persist manual overrides as completed non-recurring events that bypass only the origin boundary while keeping ownership, date, amount, and duplicate validation intact.
 - [Phase 32]: Render suppression feedback inline in the ledger header for admins only so normal users keep a clean /events experience.
 - [Phase 32]: Keep manual override rows inside normal History month groups and distinguish them with warning copy and styling instead of moving them to a separate section.
+- [Phase 33-historical-injection-ui]: Keep note writes exclusive to POST /events/manual-override so projected-event creation and ordinary completion/edit routes stay untouched.
+- [Phase 33-historical-injection-ui]: Expose note data only on manual override rows in /events responses so normal event payloads keep their prior shape.
 
 ### Pending Todos
 
 - Next milestone kickoff: include progress-style rollup visual showing completed/total amounts for selected cadence period.
 - Next milestone kickoff: include financial-item event-history tab with past/future events and completion state per event.
-- After Phase 32, verify pre-origin manual overrides are allowed while projected pre-origin system events remain blocked before Phase 33.
 - After Phase 33, run final manual browser verification before milestone closeout.
 
 ### Blockers/Concerns
 
-- Phase 32 still requires browser/API verification on `/events` before Phase 33 starts.
+- Phase 33 still requires final browser verification of the item-detail historical injection flow before milestone closeout.
 - v4.3 execution must preserve RBAC, audit attribution, deployment contracts, and existing item/event workflows while adding grouped ledger and manual-history flows.
 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 32-manual-override-boundary-contract-02-PLAN.md
+Stopped at: Completed 33-historical-injection-ui-01-PLAN.md
 Resume file: `None`

@@ -22,14 +22,14 @@ Requirements for milestone v4.3 Smart Grouped Ledger & Historical Event Injectio
 
 ### Historical Injection
 
-- [ ] **EVENT-01**: User can log a completed past event from the item-detail page using a dialog with date, amount, and note fields.
+- [x] **EVENT-01**: User can log a completed past event from the item-detail page using a dialog with date, amount, and note fields.
 - [x] **EVENT-02**: User-created historical events are stored as completed materialized events with `is_manual_override = true`.
 - [x] **EVENT-03**: User-created historical override events can exist before the item's normal origin boundary without being rejected by system guardrails.
 
 ### Safety & Compatibility
 
 - [x] **SAFE-02**: System-generated projected events that fall before the item's origin boundary remain rejected.
-- [ ] **SAFE-03**: Existing projection logic, RBAC scoping, audit attribution, and deployment contracts remain intact while ledger and historical-injection features are added.
+- [x] **SAFE-03**: Existing projection logic, RBAC scoping, audit attribution, and deployment contracts remain intact while ledger and historical-injection features are added.
 
 ## v2 Requirements
 
@@ -68,8 +68,8 @@ Deferred to a future milestone.
 | SAFE-02 | Phase 32 | Complete |
 | EVENT-02 | Phase 32 | Complete |
 | EVENT-03 | Phase 32 | Complete |
-| EVENT-01 | Phase 33 | Pending |
-| SAFE-03 | Phase 33 | Pending |
+| EVENT-01 | Phase 33 | Complete |
+| SAFE-03 | Phase 33 | Complete |
 
 **Coverage:**
 - v1 requirements: 12 total

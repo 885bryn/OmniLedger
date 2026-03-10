@@ -88,7 +88,10 @@ Plans:
   1. User can open an item-detail dialog to log a completed historical event with date, amount, and note fields.
   2. User can submit a past completed event from item detail and then find it in history as a completed manual entry.
   3. User can use the historical injection flow without breaking existing RBAC scoping, audit attribution, or deployment-facing behavior.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] `33-historical-injection-ui-01-PLAN.md` - Extend the manual-override backend contract with optional note persistence and read-path compatibility coverage for item-detail historical injection.
+- [ ] `33-historical-injection-ui-02-PLAN.md` - Add the item-detail historical injection dialog, post-save history reveal, and blocking browser verification gate.
 **Manual Test Gate**: Stop after this phase for final browser verification and explicit approval before milestone closeout.
 
 ## Progress
@@ -98,7 +101,7 @@ Plans:
 | 30. Upcoming Ledger Foundation | 1/1 | Complete    | 2026-03-10 |
 | 31. Paid Flow Into History | 1/1 | Complete    | 2026-03-10 |
 | 32. Manual Override Boundary Contract | 2/2 | Complete    | 2026-03-10 |
-| 33. Historical Injection UI | 0/0 | Not started | - |
+| 33. Historical Injection UI | 1/2 | In Progress|  |
 
 ---
-*Last updated: 2026-03-10 after creating milestone v4.3 roadmap*
+*Last updated: 2026-03-10 after creating Phase 33 plans*
