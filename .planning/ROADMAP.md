@@ -93,7 +93,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 30. Upcoming Ledger Foundation | 1/1 | Complete    | 2026-03-10 |
-| 31. Paid Flow Into History | 1/1 | Complete   | 2026-03-10 |
+| 31. Paid Flow Into History | 1/1 | Complete    | 2026-03-10 |
 | 32. Manual Override Boundary Contract | 0/0 | Not started | - |
 | 33. Historical Injection UI | 0/0 | Not started | - |
 
