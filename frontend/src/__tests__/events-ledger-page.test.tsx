@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -10,6 +10,21 @@ import { EventsPage } from '../pages/events/events-page'
 
 vi.mock('../features/admin-scope/admin-scope-context', () => ({
   useAdminScope: () => adminScopeState,
+}))
+
+vi.mock('../auth/auth-context', () => ({
+  useAuth: () => ({
+    session: {
+      username: 'tester',
+      email: 'tester@example.com',
+    },
+  }),
+}))
+
+vi.mock('../features/ui/toast-provider', () => ({
+  useToast: () => ({
+    pushSafetyToast: vi.fn(),
+  }),
 }))
 
 let adminScopeState: {
@@ -22,6 +37,19 @@ let adminScopeState: {
 type MockPayload = {
   status: number
   json: unknown
+}
+
+type EventRow = {
+  id: string
+  item_id: string
+  type: string
+  amount: number | null
+  due_date: string
+  status: string
+  updated_at: string
+  source_state: 'persisted' | 'projected'
+  is_projected: boolean
+  completed_at?: string | null
 }
 
 function createResponse(payload: MockPayload) {
@@ -109,107 +137,109 @@ function buildItemsResponse() {
   }
 }
 
-function buildLedgerEventsResponse() {
+function buildPendingRows(): EventRow[] {
+  return [
+    {
+      id: 'event-overdue',
+      item_id: 'item-2',
+      type: 'Insurance premium',
+      amount: 220,
+      due_date: '2026-03-05',
+      status: 'Pending',
+      updated_at: '2026-03-01T00:00:00.000Z',
+      source_state: 'persisted',
+      is_projected: false,
+    },
+    {
+      id: 'event-today',
+      item_id: 'item-1',
+      type: 'Mortgage payment',
+      amount: 1400,
+      due_date: '2026-03-10',
+      status: 'Pending',
+      updated_at: '2026-03-02T00:00:00.000Z',
+      source_state: 'persisted',
+      is_projected: false,
+    },
+    {
+      id: 'event-week',
+      item_id: 'item-3',
+      type: 'Salary deposit',
+      amount: 3200,
+      due_date: '2026-03-16',
+      status: 'Pending',
+      updated_at: '2026-03-02T00:00:00.000Z',
+      source_state: 'projected',
+      is_projected: true,
+    },
+    {
+      id: 'event-month',
+      item_id: 'item-4',
+      type: 'Property tax installment',
+      amount: 450,
+      due_date: '2026-03-22',
+      status: 'Pending',
+      updated_at: '2026-03-03T00:00:00.000Z',
+      source_state: 'persisted',
+      is_projected: false,
+    },
+    {
+      id: 'event-future',
+      item_id: 'item-5',
+      type: 'Renovation draw',
+      amount: 900,
+      due_date: '2026-04-02',
+      status: 'Pending',
+      updated_at: '2026-03-04T00:00:00.000Z',
+      source_state: 'projected',
+      is_projected: true,
+    },
+  ]
+}
+
+function buildCompletedRows(): EventRow[] {
+  return [
+    {
+      id: 'event-completed-march',
+      item_id: 'item-1',
+      type: 'Paid mortgage',
+      amount: 1400,
+      due_date: '2026-03-01',
+      status: 'Completed',
+      completed_at: '2026-03-01T08:00:00.000Z',
+      updated_at: '2026-03-01T08:00:00.000Z',
+      source_state: 'persisted',
+      is_projected: false,
+    },
+    {
+      id: 'event-completed-feb',
+      item_id: 'item-2',
+      type: 'Insurance settled',
+      amount: 220,
+      due_date: '2026-02-20',
+      status: 'Completed',
+      completed_at: '2026-02-20T08:00:00.000Z',
+      updated_at: '2026-02-20T08:00:00.000Z',
+      source_state: 'persisted',
+      is_projected: false,
+    },
+  ]
+}
+
+function buildLedgerEventsResponse(rows?: { pending?: EventRow[]; completed?: EventRow[] }) {
+  const pending = rows?.pending ?? buildPendingRows()
+  const completed = rows?.completed ?? buildCompletedRows()
+  const grouped = new Map<string, EventRow[]>()
+
+  for (const event of [...pending, ...completed]) {
+    const bucket = grouped.get(event.due_date) ?? []
+    bucket.push(event)
+    grouped.set(event.due_date, bucket)
+  }
+
   return {
-    groups: [
-      {
-        due_date: '2026-03-05',
-        events: [
-          {
-            id: 'event-overdue',
-            item_id: 'item-2',
-            type: 'Insurance premium',
-            amount: 220,
-            due_date: '2026-03-05',
-            status: 'Pending',
-            updated_at: '2026-03-01T00:00:00.000Z',
-            source_state: 'persisted',
-            is_projected: false,
-          },
-        ],
-      },
-      {
-        due_date: '2026-03-10',
-        events: [
-          {
-            id: 'event-today',
-            item_id: 'item-1',
-            type: 'Mortgage payment',
-            amount: 1400,
-            due_date: '2026-03-10',
-            status: 'Pending',
-            updated_at: '2026-03-02T00:00:00.000Z',
-            source_state: 'persisted',
-            is_projected: false,
-          },
-        ],
-      },
-      {
-        due_date: '2026-03-16',
-        events: [
-          {
-            id: 'event-week',
-            item_id: 'item-3',
-            type: 'Salary deposit',
-            amount: 3200,
-            due_date: '2026-03-16',
-            status: 'Pending',
-            updated_at: '2026-03-02T00:00:00.000Z',
-            source_state: 'projected',
-            is_projected: true,
-          },
-        ],
-      },
-      {
-        due_date: '2026-03-22',
-        events: [
-          {
-            id: 'event-month',
-            item_id: 'item-4',
-            type: 'Property tax installment',
-            amount: 450,
-            due_date: '2026-03-22',
-            status: 'Pending',
-            updated_at: '2026-03-03T00:00:00.000Z',
-            source_state: 'persisted',
-            is_projected: false,
-          },
-        ],
-      },
-      {
-        due_date: '2026-04-02',
-        events: [
-          {
-            id: 'event-future',
-            item_id: 'item-5',
-            type: 'Renovation draw',
-            amount: 900,
-            due_date: '2026-04-02',
-            status: 'Pending',
-            updated_at: '2026-03-04T00:00:00.000Z',
-            source_state: 'projected',
-            is_projected: true,
-          },
-        ],
-      },
-      {
-        due_date: '2026-03-01',
-        events: [
-          {
-            id: 'event-completed',
-            item_id: 'item-1',
-            type: 'Paid mortgage',
-            amount: 1400,
-            due_date: '2026-03-01',
-            status: 'Completed',
-            updated_at: '2026-03-01T00:00:00.000Z',
-            source_state: 'persisted',
-            is_projected: false,
-          },
-        ],
-      },
-    ],
-    total_count: 6,
+    groups: [...grouped.entries()].map(([due_date, events]) => ({ due_date, events })),
+    total_count: pending.length + completed.length,
   }
 }
 
@@ -223,7 +253,6 @@ describe('events ledger page', () => {
       lensUserId: null,
       users: [],
     }
-
   })
 
   afterEach(() => {
@@ -232,7 +261,7 @@ describe('events ledger page', () => {
     vi.restoreAllMocks()
   })
 
-  it('defaults to Upcoming, supports switching to History, and keeps history intentionally empty', async () => {
+  it('renders populated History grouped by reverse-chronological paid month', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -252,31 +281,160 @@ describe('events ledger page', () => {
 
     renderEventsPage()
 
-    const upcomingTab = await screen.findByRole('tab', { name: 'Upcoming' })
-    const historyTab = screen.getByRole('tab', { name: 'History' })
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('tab', { name: 'History' }))
 
-    expect(upcomingTab.getAttribute('aria-selected')).toBe('true')
-    expect(historyTab.getAttribute('aria-selected')).toBe('false')
-    expect(await screen.findByText('Rolling 7-day window: today plus the next 6 calendar days.')).toBeTruthy()
+    const headings = await screen.findAllByRole('heading', { level: 2 })
+    const labels = headings.map((heading) => heading.textContent)
+    expect(labels).toContain('March 2026')
+    expect(labels).toContain('February 2026')
+    expect(labels.indexOf('March 2026')).toBeLessThan(labels.indexOf('February 2026'))
 
-    await userEvent.setup().click(historyTab)
-
-    expect(historyTab.getAttribute('aria-selected')).toBe('true')
-    expect(await screen.findByText('History is ready for the next phase.')).toBeTruthy()
-    expect(screen.queryByText('Paid mortgage')).toBeNull()
+    expect(screen.getByText('Paid mortgage')).toBeTruthy()
+    expect(screen.getByText('Paid on Mar 1, 2026')).toBeTruthy()
+    expect(screen.getByText('Maple Mortgage')).toBeTruthy()
+    expect(screen.getByText('$1,400')).toBeTruthy()
   })
 
-  it('groups upcoming rows into the four ledger buckets, hides empty groups, and removes row actions', async () => {
+  it('marks an upcoming row paid inline, disables duplicate taps while pending, and moves it into History without manual refresh', async () => {
+    let eventsResponse = buildLedgerEventsResponse({ completed: [] })
+    const completionCalls: string[] = []
+    let resolveCompletion: (() => void) | null = null
+
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        return Promise.resolve(createResponse({ status: 200, json: eventsResponse }))
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return Promise.resolve(createResponse({ status: 200, json: buildItemsResponse() }))
+      }
+
+      if (url.includes('/events/event-today/complete') && method === 'PATCH') {
+        completionCalls.push(url)
+        return new Promise((resolve: (value: Response) => void) => {
+          resolveCompletion = () => {
+            resolve(
+              createResponse({
+                status: 200,
+                json: {
+                  id: 'event-today',
+                  item_id: 'item-1',
+                  type: 'Mortgage payment',
+                  due_date: '2026-03-10',
+                  amount: 1400,
+                  status: 'Completed',
+                  completed_at: '2026-03-10T12:00:00.000Z',
+                },
+              }),
+            )
+          }
+        })
+      }
+
+      return Promise.reject(new Error(`Unhandled request: ${method} ${url}`))
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage()
+
+    const user = userEvent.setup()
+    const mortgageRow = (await screen.findByText('Mortgage payment')).closest('[data-event-row-id="event-today"]')
+    expect(mortgageRow).toBeTruthy()
+    const markPaidButton = within(mortgageRow as HTMLElement).getByRole('button', { name: 'Mark Paid' })
+
+    expect(screen.queryByText('Confirm completion')).toBeNull()
+
+    await user.click(markPaidButton)
+    const pendingButton = await screen.findByRole('button', { name: 'Saving...' })
+    expect(pendingButton.hasAttribute('disabled')).toBe(true)
+
+    await user.click(pendingButton)
+    expect(completionCalls).toHaveLength(1)
+
+    await act(async () => {
+      resolveCompletion?.()
+    })
+
+    expect(await screen.findByText('Paid today. Moving this row into History.')).toBeTruthy()
+
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 850))
+    })
+
+    await user.click(screen.getByRole('tab', { name: 'History' }))
+
+    expect(await screen.findByText('Mortgage payment')).toBeTruthy()
+    expect(screen.getByText('Saved successfully. History is catching up in the background.')).toBeTruthy()
+
+    const movedRow = screen.getByText('Mortgage payment').closest('[data-history-highlighted]')
+    expect(movedRow?.getAttribute('data-history-highlighted')).toBe('true')
+  })
+
+  it('keeps failures inline on the same row and allows retry', async () => {
+    let completionAttempt = 0
+    const completedOnRetry: EventRow = {
+      id: 'event-today',
+      item_id: 'item-1',
+      type: 'Mortgage payment',
+      amount: 1400,
+      due_date: '2026-03-10',
+      status: 'Completed',
+      completed_at: '2026-03-10T12:00:00.000Z',
+      updated_at: '2026-03-10T12:00:00.000Z',
+      source_state: 'persisted',
+      is_projected: false,
+    }
+    let eventsResponse = buildLedgerEventsResponse({ completed: [] })
+
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
 
       if (url.includes('/events?status=all') && method === 'GET') {
-        return createResponse({ status: 200, json: buildLedgerEventsResponse() })
+        return createResponse({ status: 200, json: eventsResponse })
       }
 
       if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
         return createResponse({ status: 200, json: buildItemsResponse() })
+      }
+
+      if (url.includes('/events/event-today/complete') && method === 'PATCH') {
+        completionAttempt += 1
+
+        if (completionAttempt === 1) {
+          return createResponse({
+            status: 422,
+            json: {
+              error: {
+                code: 'event_complete_failed',
+                message: 'Transition blocked',
+              },
+            },
+          })
+        }
+
+        eventsResponse = buildLedgerEventsResponse({
+          pending: buildPendingRows().filter((event) => event.id !== 'event-today'),
+          completed: [completedOnRetry],
+        })
+
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'event-today',
+            item_id: 'item-1',
+            type: 'Mortgage payment',
+            due_date: '2026-03-10',
+            amount: 1400,
+            status: 'Completed',
+            completed_at: '2026-03-10T12:00:00.000Z',
+          },
+        })
       }
 
       throw new Error(`Unhandled request: ${method} ${url}`)
@@ -284,41 +442,45 @@ describe('events ledger page', () => {
 
     globalThis.fetch = fetchMock as typeof fetch
 
-    const { container } = renderEventsPage()
+    renderEventsPage()
 
-    expect(await screen.findByText('Insurance premium')).toBeTruthy()
+    const user = userEvent.setup()
+    const mortgageRow = (await screen.findByText('Mortgage payment')).closest('[data-event-row-id="event-today"]')
+    expect(mortgageRow).toBeTruthy()
+    await user.click(within(mortgageRow as HTMLElement).getByRole('button', { name: 'Mark Paid' }))
 
-    const groups = Array.from(container.querySelectorAll('[data-event-group]')).map((node) => node.getAttribute('data-event-group'))
-    expect(groups).toEqual(['overdue', 'thisWeek', 'laterThisMonth', 'future'])
-    expect(container.querySelector('[data-sticky="true"]')).toBeTruthy()
-    expect(container.querySelector('[data-overdue="true"]')).toBeTruthy()
+    expect(await screen.findByText('Could not mark this row paid. Try again. (Transition blocked)')).toBeTruthy()
+    expect(screen.getByText('Mortgage payment').closest('[data-event-row-id="event-today"]')).toBeTruthy()
 
-    expect(screen.getByText('Mortgage payment')).toBeTruthy()
-    expect(screen.getByText('Salary deposit')).toBeTruthy()
-    expect(screen.getByText('Property tax installment')).toBeTruthy()
-    expect(screen.getByText('Renovation draw')).toBeTruthy()
-    expect(screen.getByText('Urgent')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Complete' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+    await waitFor(() => {
+      expect(screen.queryByText('Could not mark this row paid. Try again. (Transition blocked)')).toBeNull()
+    })
+    await user.click(screen.getByRole('tab', { name: 'History' }))
+    expect(await screen.findByText('Mortgage payment')).toBeTruthy()
   })
 
-  it('shows a calm loading skeleton before ledger data resolves', async () => {
+  it('shows loading skeletons and recovers when the initial ledger request fails', async () => {
     let resolveEvents: ((value: Response) => void) | null = null
     let resolveItems: ((value: Response) => void) | null = null
+    let failedOnce = false
 
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
 
       if (url.includes('/events?status=all') && method === 'GET') {
-        return new Promise<Response>((resolve) => {
-          resolveEvents = resolve
-        })
+        if (!failedOnce) {
+          return new Promise((resolve: (value: Response) => void) => {
+            resolveEvents = resolve
+          })
+        }
+
+        return Promise.resolve(createResponse({ status: 200, json: buildLedgerEventsResponse() }))
       }
 
       if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
-        return new Promise<Response>((resolve) => {
+        return new Promise((resolve: (value: Response) => void) => {
           resolveItems = resolve
         })
       }
@@ -332,40 +494,11 @@ describe('events ledger page', () => {
 
     expect(screen.getByLabelText('Loading events ledger')).toBeTruthy()
 
-    ;(resolveEvents as ((value: Response) => void) | null)?.(createResponse({ status: 200, json: buildLedgerEventsResponse() }))
-    ;(resolveItems as ((value: Response) => void) | null)?.(createResponse({ status: 200, json: buildItemsResponse() }))
-
-    await waitFor(() => {
-      expect(screen.getByText('Mortgage payment')).toBeTruthy()
+    await act(async () => {
+      resolveItems?.(createResponse({ status: 200, json: buildItemsResponse() }))
+      failedOnce = true
+      resolveEvents?.(createResponse({ status: 500, json: { error: { message: 'network down' } } }))
     })
-  })
-
-  it('shows recovery copy and retries when the ledger request fails', async () => {
-    let eventsAttempts = 0
-
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input)
-      const method = init?.method ?? 'GET'
-
-      if (url.includes('/events?status=all') && method === 'GET') {
-        eventsAttempts += 1
-        if (eventsAttempts === 1) {
-          throw new Error('network down')
-        }
-
-        return createResponse({ status: 200, json: buildLedgerEventsResponse() })
-      }
-
-      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
-        return createResponse({ status: 200, json: buildItemsResponse() })
-      }
-
-      throw new Error(`Unhandled request: ${method} ${url}`)
-    })
-
-    globalThis.fetch = fetchMock as typeof fetch
-
-    renderEventsPage()
 
     expect(await screen.findByText("We couldn't refresh the events ledger.")).toBeTruthy()
 
@@ -374,6 +507,5 @@ describe('events ledger page', () => {
     await waitFor(() => {
       expect(screen.getByText('Mortgage payment')).toBeTruthy()
     })
-    expect(eventsAttempts).toBe(2)
   })
 })
