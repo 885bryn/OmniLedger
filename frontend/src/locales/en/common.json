@@ -349,6 +349,9 @@
         "save": "Save historical entry",
         "pending": "Saving...",
         "cancel": "Cancel",
+        "success": "Historical entry saved. Review it in History.",
+        "viewHistory": "View history",
+        "warningSaved": "Saved with a warning. Review the note below, then close this dialog to continue.",
         "fields": {
           "date": "Completed date",
           "amount": "Amount",

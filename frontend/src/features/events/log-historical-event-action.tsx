@@ -8,7 +8,7 @@ import { Pressable } from '@/components/ui/pressable'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '../../auth/auth-context'
 import { ApiClientError, apiRequest } from '../../lib/api-client'
-import { queryKeys } from '../../lib/query-keys'
+import { queryKeys, type LensScope } from '../../lib/query-keys'
 import { useAdminScope } from '../admin-scope/admin-scope-context'
 import { TargetUserChip, resolveTargetUserAttribution } from '../admin-scope/target-user-chip'
 import { ConfirmationDialog } from '../ui/confirmation-dialog'
@@ -26,6 +26,8 @@ type LogHistoricalEventActionProps = {
   itemId: string
   defaultDueDate: string
   defaultAmount: number | null
+  lensScope: LensScope
+  onSuccess?: () => void
 }
 
 function formatAmountInput(value: number | null) {
@@ -36,11 +38,11 @@ function formatAmountInput(value: number | null) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2)
 }
 
-export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount }: LogHistoricalEventActionProps) {
+export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount, lensScope, onSuccess }: LogHistoricalEventActionProps) {
   const { t } = useTranslation()
   const { session } = useAuth()
   const { isAdmin, mode, lensUserId, users } = useAdminScope()
-  const { pushSafetyToast } = useToast()
+  const { push, pushSafetyToast } = useToast()
   const queryClient = useQueryClient()
 
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -48,6 +50,8 @@ export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount
   const [draftAmount, setDraftAmount] = useState(() => formatAmountInput(defaultAmount))
   const [draftNote, setDraftNote] = useState('')
   const [failureText, setFailureText] = useState<string | null>(null)
+  const [warningTexts, setWarningTexts] = useState<string[]>([])
+  const [savedWithWarnings, setSavedWithWarnings] = useState(false)
 
   const showScopedAttribution = isAdmin && mode === 'owner'
   const hasInvalidLensSelection = showScopedAttribution && (!lensUserId || !users.some((user) => user.id === lensUserId))
@@ -71,6 +75,8 @@ export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount
     setDraftAmount(formatAmountInput(defaultAmount))
     setDraftNote('')
     setFailureText(null)
+    setWarningTexts([])
+    setSavedWithWarnings(false)
   }
 
   function validateDraft() {
@@ -105,13 +111,35 @@ export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount
     },
     onMutate: () => {
       setFailureText(null)
+      setWarningTexts([])
+      setSavedWithWarnings(false)
     },
-    onSuccess: async () => {
+    onSuccess: async (response) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.items.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(itemId, lensScope) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.items.itemLedger(itemId, { status: 'all', ...(lensScope.mode === 'owner' && lensScope.lensUserId ? { scope_mode: 'owner', lens_user_id: lensScope.lensUserId } : { scope_mode: 'all' }) }) }),
       ])
+
+      push({
+        message: t('items.detail.historicalAction.success'),
+        tone: 'success',
+        dedupeKey: `historical-entry:${itemId}`,
+      })
+
+      onSuccess?.()
+
+      const warnings = (response.warnings ?? [])
+        .map((warning) => warning.message?.trim())
+        .filter((warning): warning is string => Boolean(warning))
+
+      if (warnings.length > 0) {
+        setWarningTexts(warnings)
+        setSavedWithWarnings(true)
+        return
+      }
 
       setConfirmOpen(false)
     },
@@ -170,6 +198,15 @@ export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount
               </p>
             </div>
 
+            {savedWithWarnings ? (
+              <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium leading-5 text-amber-900">
+                <p>{t('items.detail.historicalAction.warningSaved')}</p>
+                {warningTexts.map((warning) => (
+                  <p key={warning}>{warning}</p>
+                ))}
+              </div>
+            ) : null}
+
             <div className="space-y-2">
               <Label htmlFor={`historical-event-date-${itemId}`} className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 {t('items.detail.historicalAction.fields.date')}
@@ -178,7 +215,7 @@ export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount
                 id={`historical-event-date-${itemId}`}
                 type="date"
                 value={draftDueDate}
-                disabled={historicalMutation.isPending}
+                disabled={historicalMutation.isPending || savedWithWarnings}
                 onChange={(event) => setDraftDueDate(event.target.value)}
                 className="h-10 w-full bg-background/90 px-3 py-2 text-sm"
               />
@@ -195,7 +232,7 @@ export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount
                 min="0"
                 step="0.01"
                 value={draftAmount}
-                disabled={historicalMutation.isPending}
+                disabled={historicalMutation.isPending || savedWithWarnings}
                 onChange={(event) => setDraftAmount(event.target.value)}
                 className="h-10 w-full bg-background/90 px-3 py-2 text-sm"
               />
@@ -209,7 +246,7 @@ export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount
                 id={`historical-event-note-${itemId}`}
                 rows={3}
                 value={draftNote}
-                disabled={historicalMutation.isPending}
+                disabled={historicalMutation.isPending || savedWithWarnings}
                 onChange={(event) => setDraftNote(event.target.value)}
                 className="min-h-24 bg-background/90 px-3 py-2 text-sm"
                 placeholder={t('items.detail.historicalAction.fields.notePlaceholder')}
@@ -222,11 +259,20 @@ export function LogHistoricalEventAction({ itemId, defaultDueDate, defaultAmount
             {failureText ? <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">{failureText}</p> : null}
           </div>
         }
-        confirmLabel={historicalMutation.isPending ? t('items.detail.historicalAction.pending') : t('items.detail.historicalAction.save')}
+        confirmLabel={savedWithWarnings
+          ? t('items.detail.historicalAction.viewHistory')
+          : historicalMutation.isPending
+            ? t('items.detail.historicalAction.pending')
+            : t('items.detail.historicalAction.save')}
         cancelLabel={t('items.detail.historicalAction.cancel')}
         pending={historicalMutation.isPending}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
+          if (savedWithWarnings) {
+            setConfirmOpen(false)
+            return
+          }
+
           if (hasInvalidLensSelection) {
             setFailureText(t('safety.invalidLens'))
             pushSafetyToast('invalid_lens')

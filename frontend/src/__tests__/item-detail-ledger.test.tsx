@@ -8,6 +8,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { ItemDetailPage } from '../pages/items/item-detail-page'
 
+const toastMocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  pushSafetyToast: vi.fn(),
+}))
+
 vi.mock('../auth/auth-context', () => ({
   useAuth: () => ({
     session: {
@@ -19,6 +24,10 @@ vi.mock('../auth/auth-context', () => ({
 
 vi.mock('../features/admin-scope/admin-scope-context', () => ({
   useAdminScope: () => adminScopeState,
+}))
+
+vi.mock('../features/ui/toast-provider', () => ({
+  useToast: () => toastMocks,
 }))
 
 let adminScopeState: {
@@ -81,6 +90,8 @@ describe('item detail commitments panel', () => {
     window.matchMedia = originalMatchMedia
     vi.useRealTimers()
     vi.restoreAllMocks()
+    toastMocks.push.mockReset()
+    toastMocks.pushSafetyToast.mockReset()
   })
 
   beforeEach(() => {
@@ -1516,6 +1527,121 @@ describe('item detail commitments panel', () => {
     expect((screen.getByLabelText('Completed date') as HTMLInputElement).value).toBe('2026-12-01')
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('95.55')
     expect((screen.getByLabelText('Note') as HTMLTextAreaElement).value).toBe('Backfilled from paper statement')
+  })
+
+  it('closes successful historical injection, reveals history, and marks the saved manual row as exceptional', async () => {
+    let manualOverrideCreated = false
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/fin-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 422,
+          json: {
+            error: {
+              code: 'item_net_status_failed',
+              category: 'wrong_root_type',
+              message: 'Net-status requires an asset root item type.',
+              issues: [],
+            },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              {
+                id: 'fin-1',
+                item_type: 'FinancialItem',
+                type: 'Commitment',
+                title: 'Mortgage',
+                frequency: 'monthly',
+                status: 'Active',
+                default_amount: 1200,
+                attributes: { name: 'Mortgage', dueDate: '2026-03-15' },
+                updated_at: '2026-02-20T00:00:00.000Z',
+              },
+            ],
+          },
+        })
+      }
+
+      if (url.includes('/events/manual-override') && method === 'POST') {
+        manualOverrideCreated = true
+        return createResponse({
+          status: 201,
+          json: {
+            id: 'manual-fin-1',
+            warnings: [],
+          },
+        })
+      }
+
+      if (url.includes('/events?') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [
+              {
+                due_date: '2026-03-15',
+                events: manualOverrideCreated
+                  ? [
+                      {
+                        id: 'manual-fin-1',
+                        item_id: 'fin-1',
+                        type: 'Mortgage',
+                        amount: 1200,
+                        due_date: '2026-01-10',
+                        status: 'Completed',
+                        updated_at: '2026-03-10T00:00:00.000Z',
+                        completed_at: '2026-01-10',
+                        source_state: 'persisted',
+                        is_manual_override: true,
+                        note: 'Backfilled from paper statement',
+                      },
+                    ]
+                  : [],
+              },
+            ],
+            total_count: manualOverrideCreated ? 1 : 0,
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail('/items/fin-1')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Log historical entry' }))
+    await userEvent.clear(screen.getByLabelText('Completed date'))
+    await userEvent.type(screen.getByLabelText('Completed date'), '2026-01-10')
+    await userEvent.type(screen.getByLabelText('Note'), 'Backfilled from paper statement')
+    await userEvent.click(screen.getByRole('button', { name: 'Save historical entry' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save historical entry' })).toBeNull()
+    })
+
+    expect(await screen.findByRole('button', { name: /Historical Ledger/i })).toBeTruthy()
+    expect(await screen.findByText('Manual override')).toBeTruthy()
+    expect(screen.getByText('Logged as an exceptional manual history entry. Review the date and amount against the source record.')).toBeTruthy()
+    expect(screen.getByText('Backfilled from paper statement')).toBeTruthy()
+    const manualOverrideRows = screen.getAllByText('Mortgage')
+      .map((node) => node.closest('[data-manual-override]'))
+      .filter((node): node is HTMLElement => Boolean(node))
+    expect(manualOverrideRows[0]?.getAttribute('data-manual-override')).toBe('true')
+    expect(toastMocks.push).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Historical entry saved. Review it in History.',
+      tone: 'success',
+    }))
   })
 
   it('refetches detail lookups for same item id when admin lens changes', async () => {

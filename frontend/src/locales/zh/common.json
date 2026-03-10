@@ -349,6 +349,9 @@
         "save": "保存历史条目",
         "pending": "保存中...",
         "cancel": "取消",
+        "success": "历史条目已保存，请在 History 中核对。",
+        "viewHistory": "查看历史",
+        "warningSaved": "条目已保存，但伴随提示信息。请先查看下方内容，再关闭此对话框继续。",
         "fields": {
           "date": "完成日期",
           "amount": "金额",

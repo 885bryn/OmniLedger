@@ -201,9 +201,12 @@ type EventRow = {
   due_date: string
   status: string
   updated_at: string
+  completed_at?: string | null
+  note?: string | null
   source_state?: 'projected' | 'persisted' | string
   is_projected?: boolean
   is_exception?: boolean
+  is_manual_override?: boolean
 }
 
 type EventGroup = {
@@ -516,6 +519,10 @@ function isProjectedEvent(event: EventRow) {
 
 function isCompletedEvent(event: EventRow) {
   return event.status.trim().toLowerCase() === 'completed'
+}
+
+function isManualOverrideEvent(event: EventRow) {
+  return event.is_manual_override === true
 }
 
 function isOverduePendingEvent(event: EventRow, todayStart: number) {
@@ -1069,6 +1076,11 @@ export function ItemDetailPage() {
         itemId={itemId}
         defaultDueDate={historicalDefaultDueDate}
         defaultAmount={historicalDefaultAmount}
+        lensScope={lensScope}
+        onSuccess={() => {
+          setActiveTab('commitments')
+          setActiveFinancialEventsTab('history')
+        }}
       />
     </div>
   ) : null
@@ -1593,6 +1605,11 @@ export function ItemDetailPage() {
                       itemId={itemId}
                       defaultDueDate={historicalDefaultDueDate}
                       defaultAmount={historicalDefaultAmount}
+                      lensScope={lensScope}
+                      onSuccess={() => {
+                        setActiveTab('commitments')
+                        setActiveFinancialEventsTab('history')
+                      }}
                     />
                   </div>
 
@@ -1620,11 +1637,15 @@ export function ItemDetailPage() {
                        renderItem={(event) => {
                          const projected = isProjectedEvent(event)
                          const overdue = isOverduePendingEvent(event, toStartOfTodayUtc())
+                         const manualOverride = isManualOverrideEvent(event)
 
                          return (
                            <div
-                              className={`rounded-xl border px-3 py-2 ${
-                                overdue
+                             data-manual-override={manualOverride ? 'true' : 'false'}
+                             className={`rounded-xl border px-3 py-2 ${
+                               manualOverride
+                                 ? 'border-amber-300 bg-[linear-gradient(135deg,rgba(255,251,235,0.98),rgba(255,255,255,0.98))]'
+                                 : overdue
                                   ? 'border-red-300 bg-red-50/60'
                                   : projected
                                     ? 'border-sky-200 bg-sky-50/40'
@@ -1645,8 +1666,15 @@ export function ItemDetailPage() {
                                   {t('events.stateLegend.editedOccurrence')}
                                 </span>
                               ) : null}
+                              {manualOverride ? (
+                                <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-900">
+                                  {t('events.manualOverride.badge')}
+                                </span>
+                              ) : null}
                             </div>
                             <p className="mt-1 text-xs text-muted-foreground">{formatDateLabel(event.due_date)}</p>
+                            {manualOverride ? <p className="mt-2 text-sm font-medium leading-6 text-amber-900">{t('events.manualOverride.description')}</p> : null}
+                            {manualOverride && event.note ? <p className="mt-2 text-xs text-amber-950/80">{event.note}</p> : null}
                             <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                               <span className="text-sm font-medium">{formatEventAmount(event, detailAsItem) ?? t('events.amountPending')}</span>
                               <div className="flex items-center gap-2">
