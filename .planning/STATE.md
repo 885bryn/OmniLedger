@@ -2,20 +2,20 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-03-07)
+See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Milestone v4.2 phase planning and execution starting at Phase 27
+**Current focus:** Milestone v4.3 requirements and roadmap creation starting at Phase 30
 
 ## Current Position
 
-Phase: 29 of 29 (Cadence Toggle & Synced Cashflow View)
-Plan: 11 of 11
-Status: Complete
-Last activity: 2026-03-09 - Executed 29-11 day-safe cadence period labels/filtering and boundary regressions
+Phase: Not started (defining requirements)
+Plan: -
+Status: Defining requirements
+Last activity: 2026-03-10 - Milestone v4.3 started
 
-Progress: [##########] 100%
+Progress: [----------] 0%
 
 ## Performance Metrics
 
@@ -104,6 +104,7 @@ Decisions are logged in `.planning/PROJECT.md`.
 
 - Next milestone kickoff: include progress-style rollup visual showing completed/total amounts for selected cadence period.
 - Next milestone kickoff: include financial-item event-history tab with past/future events and completion state per event.
+- v4.3 must pause after each phase for manual browser verification before planning/executing the next phase.
 
 ### Blockers/Concerns
 

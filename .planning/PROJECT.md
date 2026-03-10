@@ -10,24 +10,19 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ## Current State
 
-- **Latest shipped milestone:** v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion (2026-03-07)
-- **Archive references:** `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.1-REQUIREMENTS.md`, `.planning/milestones/v4.1-MILESTONE-AUDIT.md`
-- **Completion stance:** shipped with non-blocking UX validation debt tracked in milestone audit (`status: tech_debt`)
+- **Latest shipped milestone:** v4.2 Cashflow Frequency Normalization & Cadence Toggle (2026-03-10)
+- **Archive references:** `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
+- **Completion stance:** shipped, with new milestone planning focused on extending ledger workflows rather than revisiting cadence-toggle behavior.
 
-## Current Milestone: v4.2 Cashflow Frequency Normalization & Cadence Toggle
+## Current Milestone: v4.3 Smart Grouped Ledger & Historical Event Injection
 
-**Goal:** Make per-asset cashflow summaries mathematically correct and easier to understand by honoring each financial item's billing frequency and letting users switch rollups between weekly, monthly, and yearly views.
+**Goal:** Turn the events experience into a usable ledger by grouping upcoming obligations, supporting pay/log-history actions, and letting users inject past completed events without breaking origin-boundary safety.
 
 **Target features:**
-- Normalize commitment and income amounts by frequency (`weekly`, `monthly`, `yearly`) before rendering rollup cards.
-- Add a cadence selector on the asset page so users can view obligations, income, and net cashflow in weekly/monthly/yearly terms.
-- Apply one shared calculation contract to all three summary fields so numbers stay internally consistent.
-
-## Next Milestone Goals
-
-- Correct asset-summary cadence math so yearly and weekly financial items no longer display as monthly values by default.
-- Make summary values user-legible by introducing a visible cadence switcher (weekly/monthly/yearly) on the asset summary surface.
-- Preserve existing RBAC, audit visibility, and deployment contracts while changing only rollup logic + summary UX clarity.
+- Replace the global Events page with shadcn `Upcoming` and `History` ledger tabs.
+- Group upcoming pending/overdue events into chronologically meaningful sticky-header sections with strong visual status cues.
+- Let users mark projected upcoming events as paid so they materialize into completed history with motion-backed removal from Upcoming.
+- Add manual historical event injection from item detail using completed events with explicit manual-override semantics.
 
 ## Requirements
 
@@ -45,16 +40,16 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ### Active
 
-- [ ] Users can view obligations with totals normalized to the selected cadence (weekly/monthly/yearly) rather than forced-monthly assumptions.
-- [ ] Users can view income with totals normalized to the selected cadence (weekly/monthly/yearly) rather than forced-monthly assumptions.
-- [ ] Users can view net cashflow computed from cadence-normalized obligation and income totals.
-- [ ] Users can switch cadence on the asset summary surface and see all three summary cards update in sync.
+- [ ] Users can review pending and overdue events in a grouped ledger with separate Upcoming and History views.
+- [ ] Users can mark projected upcoming events as paid and immediately see them leave Upcoming and appear in completed history.
+- [ ] Users can log a completed historical event from item detail even when the event predates the system-generated origin boundary.
+- [ ] Users can trust that system-generated pre-origin events remain blocked unless the event was explicitly created as a manual override.
 
 ### Out of Scope
 
-- Backend/domain model changes - this milestone is limited to frontend UI system and interaction behavior.
-- OS-level theme detection or `prefers-color-scheme` listeners - strict light-mode default is a milestone constraint.
-- Marketing-site redesign or brand repositioning - the dashboard should remain structured, utilitarian, and data-focused.
+- Bulk event import or CSV backfill tooling - this milestone is scoped to one-off historical injection inside the product UI.
+- Progress-meter overlays on cadence summary cards - keep this for a later milestone after ledger/history primitives ship.
+- RBAC, audit attribution, and deployment contract redesign - current security and ops guarantees must remain intact.
 
 ## Constraints
 
@@ -100,4 +95,4 @@ Users can see each asset together with its linked obligations and timeline statu
 </details>
 
 ---
-*Last updated: 2026-03-07 after starting milestone v4.2*
+*Last updated: 2026-03-10 after starting milestone v4.3*
