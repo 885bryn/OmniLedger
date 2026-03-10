@@ -24,7 +24,12 @@ type EventRow = {
   source_state?: 'projected' | 'persisted' | string
   is_projected?: boolean
   is_exception?: boolean
+  is_manual_override?: boolean
   completed_at?: string | null
+}
+
+type EventsMeta = {
+  suppressed_invalid_projected_count?: number
 }
 
 type EventGroup = {
@@ -35,6 +40,7 @@ type EventGroup = {
 type EventsResponse = {
   groups: EventGroup[]
   total_count: number
+  meta?: EventsMeta
 }
 
 type ItemRow = {
@@ -395,6 +401,29 @@ function PaidAcknowledgementRow({ event }: { event: EventRow }) {
   )
 }
 
+function AdminSuppressionNotice({ suppressedCount }: { suppressedCount: number }) {
+  const { t } = useTranslation()
+
+  return (
+    <section
+      role="status"
+      aria-live="polite"
+      className="rounded-2xl border border-sky-200 bg-[linear-gradient(135deg,rgba(239,246,255,0.94),rgba(255,255,255,0.98))] px-4 py-3 shadow-sm"
+    >
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">{t('events.adminNotice.eyebrow')}</p>
+          <p className="mt-1 text-sm font-medium text-foreground">{t('events.adminNotice.title', { count: suppressedCount })}</p>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">{t('events.adminNotice.description')}</p>
+        </div>
+        <span className="rounded-full border border-sky-300 bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700">
+          {t('events.adminNotice.badge', { count: suppressedCount })}
+        </span>
+      </div>
+    </section>
+  )
+}
+
 function EventsErrorState({ onRetry, isRetrying }: { onRetry: () => void; isRetrying: boolean }) {
   const { t } = useTranslation()
 
@@ -417,7 +446,7 @@ function EventsErrorState({ onRetry, isRetrying }: { onRetry: () => void; isRetr
 export function EventsPage() {
   const { t } = useTranslation()
   const location = useLocation()
-  const { mode, lensUserId } = useAdminScope()
+  const { isAdmin, mode, lensUserId } = useAdminScope()
   const [activeTab, setActiveTab] = useState<LedgerTab>('upcoming')
   const [localCompletions, setLocalCompletions] = useState<Record<string, LocalCompletionState>>({})
   const [highlightedHistoryKeys, setHighlightedHistoryKeys] = useState<string[]>([])
@@ -556,6 +585,9 @@ export function EventsPage() {
     [t, todayDateKey, upcomingEvents],
   )
 
+  const suppressedInvalidProjectedCount = eventsQuery.data?.meta?.suppressed_invalid_projected_count ?? 0
+  const showAdminSuppressionNotice = isAdmin && suppressedInvalidProjectedCount > 0
+
   const hasRenderableEvents = Boolean(eventsQuery.data)
   const hasRenderableItems = Boolean(itemsQuery.data)
   const isLoading = (eventsQuery.isLoading && !hasRenderableEvents) || (itemsQuery.isLoading && !hasRenderableItems)
@@ -676,6 +708,7 @@ export function EventsPage() {
               </div>
               <p className="text-xs leading-5 text-muted-foreground">{t('events.tabHint')}</p>
             </div>
+            {showAdminSuppressionNotice ? <AdminSuppressionNotice suppressedCount={suppressedInvalidProjectedCount} /> : null}
           </div>
         </div>
       </motion.header>

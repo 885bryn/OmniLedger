@@ -135,6 +135,12 @@
       "description": "Paid events land here once they are completed, grouped by paid month so the ledger stays easy to trust at a glance."
     },
     "historyGroupHint": "Completed rows stay grouped by paid month, newest sections first.",
+    "adminNotice": {
+      "eyebrow": "Admin signal",
+      "title": "{{count}} invalid projected history rows were hidden from this ledger.",
+      "description": "These pre-origin projected rows were suppressed so the ledger stays clean while you review the underlying item data.",
+      "badge": "{{count}} hidden"
+    },
     "historyPaidBadge": "Paid",
     "historyPaidOn": "Paid on {{date}}",
     "historyCard": {

@@ -135,6 +135,12 @@
       "description": "事件标记为已支付后会出现在这里，并按支付月份分组，方便快速核对。"
     },
     "historyGroupHint": "已完成记录按支付月份分组，最新月份排在最前。",
+    "adminNotice": {
+      "eyebrow": "管理员提示",
+      "title": "此台账已隐藏 {{count}} 条无效的预测历史记录。",
+      "description": "这些早于安全起点的预测记录已被抑制，方便你在保持台账清爽的同时检查相关资产数据。",
+      "badge": "已隐藏 {{count}} 条"
+    },
     "historyPaidBadge": "已支付",
     "historyPaidOn": "支付日期 {{date}}",
     "historyCard": {

@@ -49,7 +49,12 @@ type EventRow = {
   updated_at: string
   source_state: 'persisted' | 'projected'
   is_projected: boolean
+  is_manual_override?: boolean
   completed_at?: string | null
+}
+
+type EventsMeta = {
+  suppressed_invalid_projected_count?: number
 }
 
 function createResponse(payload: MockPayload) {
@@ -226,7 +231,7 @@ function buildCompletedRows(): EventRow[] {
   ]
 }
 
-function buildLedgerEventsResponse(rows?: { pending?: EventRow[]; completed?: EventRow[] }) {
+function buildLedgerEventsResponse(rows?: { pending?: EventRow[]; completed?: EventRow[]; meta?: EventsMeta }) {
   const pending = rows?.pending ?? buildPendingRows()
   const completed = rows?.completed ?? buildCompletedRows()
   const grouped = new Map<string, EventRow[]>()
@@ -240,6 +245,7 @@ function buildLedgerEventsResponse(rows?: { pending?: EventRow[]; completed?: Ev
   return {
     groups: [...grouped.entries()].map(([due_date, events]) => ({ due_date, events })),
     total_count: pending.length + completed.length,
+    ...(rows?.meta ? { meta: rows.meta } : {}),
   }
 }
 
@@ -507,5 +513,73 @@ describe('events ledger page', () => {
     await waitFor(() => {
       expect(screen.getByText('Mortgage payment')).toBeTruthy()
     })
+  })
+
+  it('renders an inline suppression notice only for admins when invalid projected rows were hidden', async () => {
+    adminScopeState = {
+      isAdmin: true,
+      mode: 'all',
+      lensUserId: null,
+      users: [],
+    }
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: buildLedgerEventsResponse({
+            meta: { suppressed_invalid_projected_count: 2 },
+          }),
+        })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({ status: 200, json: buildItemsResponse() })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage()
+
+    expect(await screen.findByText('2 invalid projected history rows were hidden from this ledger.')).toBeTruthy()
+    expect(screen.getByText('These pre-origin projected rows were suppressed so the ledger stays clean while you review the underlying item data.')).toBeTruthy()
+    expect(screen.getByText('2 hidden')).toBeTruthy()
+  })
+
+  it('keeps suppression messaging hidden for normal users even when the API payload includes admin metadata', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: buildLedgerEventsResponse({
+            meta: { suppressed_invalid_projected_count: 3 },
+          }),
+        })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({ status: 200, json: buildItemsResponse() })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage()
+
+    await screen.findByText('Mortgage payment')
+
+    expect(screen.queryByText('3 invalid projected history rows were hidden from this ledger.')).toBeNull()
+    expect(screen.queryByText('These pre-origin projected rows were suppressed so the ledger stays clean while you review the underlying item data.')).toBeNull()
   })
 })
