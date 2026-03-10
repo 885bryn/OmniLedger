@@ -121,5 +121,5 @@ Decisions are logged in `.planning/PROJECT.md`.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Roadmap creation for milestone v4.3
-Resume file: `.planning/ROADMAP.md`
+Stopped at: Phase 30 context gathered
+Resume file: `.planning/phases/30-upcoming-ledger-foundation/30-CONTEXT.md`
