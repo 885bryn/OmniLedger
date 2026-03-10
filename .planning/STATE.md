@@ -6,16 +6,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** v4.3 closeout docs are complete; the project is ready for the next milestone kickoff.
+**Current focus:** v4.4 dashboard redesign planning is queued, centered on a more informational shadcn-based dashboard with strong utility surfaces.
 
 ## Current Position
 
-Phase: 34 - Item Detail Events Tab Clarity
-Plan: 01/01
-Status: Complete
-Last activity: 2026-03-10 - Created v4.3 milestone archive and audit closeout docs
+Phase: 35 - Dashboard Information Architecture
+Plan: 00/02
+Status: Planned
+Last activity: 2026-03-10 - Added v4.4 shadcn dashboard redesign milestone and phase roadmap
 
-Progress: [##########] 100%
+Progress: [----------] 0%
 
 ## Performance Metrics
 
@@ -34,7 +34,7 @@ Progress: [##########] 100%
 
 **Recent Trend:**
 - Last 5 plans: 34-01 (14 min), 33-02 (1 session), 33-01 (3 min), 32-02 (3 min), 32-01 (5 min)
-- Trend: v4.3 finished with browser-approved item-detail events terminology while preserving the manual verification gates used across the milestone.
+- Trend: v4.3 is fully closed out, and the next milestone shifts toward a utility-first shadcn dashboard redesign.
 | Phase 27 P02 | 3 min | 2 tasks | 4 files |
 | Phase 27 P03 | 3 min | 2 tasks | 2 files |
 | Phase 28 P01 | 1 min | 2 tasks | 2 files |
@@ -123,18 +123,20 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 33-historical-injection-ui]: Expose note data only on manual override rows in /events responses so normal event payloads keep their prior shape.
 - [Phase 34]: Kept the existing items.detail.tabs.commitments translation key and changed only the localized values so the user-facing rename stayed low risk.
 - [Phase 34]: Used browser approval as the release gate for this phase because wording clarity is a UX judgment, not just a test result.
+- [Phase 35+]: The next milestone should optimize the dashboard for utility and information density first, using shadcn primitives as the structural system rather than chart-heavy or marketing-style layouts.
 
 ### Pending Todos
 
-- Next milestone kickoff: include progress-style rollup visual showing completed/total amounts for selected cadence period.
-- Next milestone kickoff: include financial-item event-history tab with past/future events and completion state per event.
+- Phase 35 planning: define the shadcn dashboard shell, summary card contract, and primary action/activity surfaces.
+- Phase 36 planning: define the dashboard action queue and dense financial snapshot section.
+- Phase 37 planning: define exception panels, supporting trends, and responsive polish requirements.
 
 ### Blockers/Concerns
 
-- v4.3 execution must preserve RBAC, audit attribution, deployment contracts, and existing item/event workflows while adding grouped ledger and manual-history flows.
+- The dashboard redesign must preserve existing RBAC, item/event contracts, admin scope behavior, and established event-history/manual-override workflows.
 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed `34-item-detail-events-tab-clarity-01-PLAN.md`
-Resume file: `None`
+Stopped at: Phase 35 context gathered
+Resume file: `.planning/phases/35-dashboard-information-architecture/35-CONTEXT.md`
