@@ -176,7 +176,7 @@ function normalizeInput(input) {
 function normalizeEvent(eventInstance) {
   const raw = eventInstance.get({ plain: true });
 
-  return {
+  const normalized = {
     id: raw.id,
     item_id: raw.item_id,
     type: raw.event_type,
@@ -191,6 +191,12 @@ function normalizeEvent(eventInstance) {
     created_at: raw.created_at || raw.createdAt,
     updated_at: raw.updated_at || raw.updatedAt
   };
+
+  if (normalized.is_manual_override || typeof raw.note === "string") {
+    normalized.note = raw.note || null;
+  }
+
+  return normalized;
 }
 
 function isSystemGeneratedEvent(event) {
@@ -391,7 +397,7 @@ async function listEvents(input) {
         {
           model: models.Item,
           as: "item",
-          attributes: ["id", "user_id", "attributes"],
+          attributes: ["id", "user_id", "attributes", "created_at"],
           required: true,
           where: itemWhere
         }

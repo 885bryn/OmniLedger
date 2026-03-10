@@ -87,7 +87,7 @@ describe("GET /events", () => {
     });
   }
 
-  async function createEvent({ itemId, dueDate, status = "Pending", amount = "100.00", recurring = false }) {
+  async function createEvent({ itemId, dueDate, status = "Pending", amount = "100.00", recurring = false, manualOverride = false, note = null }) {
     return models.Event.create({
       item_id: itemId,
       event_type: "MortgagePayment",
@@ -95,6 +95,8 @@ describe("GET /events", () => {
       amount,
       status,
       is_recurring: recurring,
+      is_manual_override: manualOverride,
+      note,
       completed_at: status === "Completed" ? dueDate : null
     });
   }
@@ -239,6 +241,73 @@ describe("GET /events", () => {
       is_projected: true
     });
     expect(sameDateGroup.events[1].id).toMatch(new RegExp(`^projected-${projectedItem.id}-${dueDateKey}$`));
+  });
+
+  it("returns saved manual override notes through /events without changing normal row contracts", async () => {
+    const owner = await createUser();
+    const outsider = await createUser();
+    const admin = await createUser({ email: "admin@example.com" });
+    const ownerAgent = await signInAs(owner);
+    const outsiderAgent = await signInAs(outsider);
+    const adminAgent = await signInAs(admin);
+    const manualItem = await createFinancialItem({
+      userId: owner.id,
+      title: "Historical injection item",
+      dueDate: "2026-03-15"
+    });
+    const standardItem = await createItem(owner.id);
+
+    const manualOverride = await createEvent({
+      itemId: manualItem.id,
+      dueDate: "2026-01-10T00:00:00.000Z",
+      status: "Completed",
+      amount: "88.45",
+      manualOverride: true,
+      note: "Paid from archive"
+    });
+    await createEvent({
+      itemId: standardItem.id,
+      dueDate: "2026-01-12T00:00:00.000Z",
+      status: "Completed",
+      amount: "20.00"
+    });
+
+    const ownerResponse = await ownerAgent.get("/events").query({ status: "all" });
+    expect(ownerResponse.status).toBe(200);
+
+    const ownerEvents = ownerResponse.body.groups.flatMap((group) => group.events);
+    const ownerManual = ownerEvents.find((event) => event.id === manualOverride.id);
+    const ownerNormal = ownerEvents.find((event) => event.item_id === standardItem.id);
+
+    expect(ownerManual).toMatchObject({
+      id: manualOverride.id,
+      is_manual_override: true,
+      note: "Paid from archive"
+    });
+    expect(ownerNormal).toBeTruthy();
+    expect(ownerNormal).not.toHaveProperty("note");
+
+    const outsiderResponse = await outsiderAgent.get("/events").query({ status: "all" });
+    expect(outsiderResponse.status).toBe(200);
+    expect(outsiderResponse.body.groups.flatMap((group) => group.events).some((event) => event.id === manualOverride.id)).toBe(false);
+
+    const adminAllMode = await adminAgent.get("/events").query({ status: "all" });
+    expect(adminAllMode.status).toBe(200);
+    expect(adminAllMode.body.groups.flatMap((group) => group.events)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: manualOverride.id, note: "Paid from archive" })
+      ])
+    );
+
+    const setLens = await adminAgent.patch("/auth/admin-scope").send({
+      mode: "owner",
+      lens_user_id: outsider.id
+    });
+    expect(setLens.status).toBe(200);
+
+    const adminOwnerLens = await adminAgent.get("/events").query({ status: "all" });
+    expect(adminOwnerLens.status).toBe(200);
+    expect(adminOwnerLens.body.groups.flatMap((group) => group.events).some((event) => event.id === manualOverride.id)).toBe(false);
   });
 
   it("supports status and due range filters for page-level event views", async () => {
@@ -528,6 +597,39 @@ describe("GET /events", () => {
       projected.forEach((event) => {
         expect(new Date(event.due_date).getTime()).toBeGreaterThanOrEqual(creationBoundary);
       });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("fast-forwards ancient recurring seed dates to the safe origin boundary instead of projecting junk centuries", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-03-18T12:00:00.000Z"));
+
+    try {
+      const owner = await createUser();
+      const ownerAgent = await signInAs(owner);
+
+      const recurringItem = await createFinancialItem({
+        userId: owner.id,
+        title: "Ancient seed regression",
+        frequency: "monthly",
+        status: "Active",
+        dueDate: "1026-03-10",
+        defaultAmount: 333
+      });
+
+      const response = await ownerAgent.get("/events").query({ status: "all" });
+
+      expect(response.status).toBe(200);
+
+      const projected = response.body.groups
+        .flatMap((group) => group.events)
+        .filter((event) => event.item_id === recurringItem.id && event.source_state === "projected");
+
+      expect(projected.length).toBeGreaterThan(0);
+      expect(projected.some((event) => String(event.due_date).includes("1068-"))).toBe(false);
+      expect(projected.some((event) => new Date(event.due_date).getUTCFullYear() < 2026)).toBe(false);
     } finally {
       jest.useRealTimers();
     }
