@@ -97,8 +97,8 @@
     "loadError": "无法加载事件，请刷新后重试。",
     "eyebrow": "台账",
     "title": "事件台账",
-    "subtitle": "先用平静清晰的时间分组浏览即将到期事项，再进入后续付款与历史流程。",
-    "tabHint": "本阶段 Upcoming 保持只读，History 也会先以有意留白的状态出现。",
+    "subtitle": "直接在 Upcoming 内完成付款，再让台账把已支付行平静地归入分组历史。",
+    "tabHint": "可在 Upcoming 行内直接标记已支付，然后切换到 History 查看按月份分组的完成记录。",
     "upcomingTitle": "Upcoming",
     "historyTitle": "历史记录",
     "loadingAria": "正在加载事件台账",
@@ -131,15 +131,32 @@
       "description": "当前没有需要处理的即将到期义务。新的预测或已落库事件出现后，会按时间顺序分组显示在这里。"
     },
     "historyEmpty": {
-      "title": "历史台账已为下一阶段预留位置。",
-      "description": "待付款流程上线后，已完成事件会出现在这里。本阶段先保持有意留白，让台账结构提前到位。"
+      "title": "暂时还没有完成历史。",
+      "description": "事件标记为已支付后会出现在这里，并按支付月份分组，方便快速核对。"
+    },
+    "historyGroupHint": "已完成记录按支付月份分组，最新月份排在最前。",
+    "historyPaidBadge": "已支付",
+    "historyPaidOn": "支付日期 {{date}}",
+    "historyCard": {
+      "paidDate": "支付日期",
+      "amount": "金额"
     },
     "error": {
       "eyebrow": "台账状态",
       "title": "暂时无法刷新事件台账。",
-      "description": "本阶段页面保持只读。请检查网络连接后重试，以重新加载最新的即将到期事项。",
+      "description": "请检查网络连接后重试，以重新加载最新的台账状态。",
       "retry": "重新加载",
       "retrying": "重新加载中..."
+    },
+    "markPaid": {
+      "button": "标记已支付",
+      "pending": "保存中...",
+      "retry": "重试",
+      "failed": "无法将该行标记为已支付，请重试。",
+      "paidBadge": "已支付",
+      "acknowledged": "今天已支付，正在把这条记录移入 History。",
+      "today": "支付于 {{date}}",
+      "historyCatchingUp": "已保存成功，History 正在后台同步。"
     },
     "stateLegend": {
       "label": "状态：",

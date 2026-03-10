@@ -97,8 +97,8 @@
     "loadError": "Events could not be loaded. Please refresh and try again.",
     "eyebrow": "Ledger",
     "title": "Events ledger",
-    "subtitle": "Scan upcoming obligations in calm chronological buckets before payment and history workflows arrive.",
-    "tabHint": "Upcoming stays read-only in this phase, and History is intentionally waiting for completed entries.",
+    "subtitle": "Resolve upcoming obligations inline, then trust the ledger to move paid rows into calm, grouped history.",
+    "tabHint": "Mark paid directly inside Upcoming, then switch to History to review completed rows by month.",
     "upcomingTitle": "Upcoming",
     "historyTitle": "History",
     "loadingAria": "Loading events ledger",
@@ -131,15 +131,32 @@
       "description": "Upcoming obligations are clear for the moment. New projected or persisted events will land here in chronological groups."
     },
     "historyEmpty": {
-      "title": "History is ready for the next phase.",
-      "description": "Completed events will appear here once the paid flow ships. For now, this tab stays intentionally empty so the ledger surface is already in place."
+      "title": "No completed history yet.",
+      "description": "Paid events land here once they are completed, grouped by paid month so the ledger stays easy to trust at a glance."
+    },
+    "historyGroupHint": "Completed rows stay grouped by paid month, newest sections first.",
+    "historyPaidBadge": "Paid",
+    "historyPaidOn": "Paid on {{date}}",
+    "historyCard": {
+      "paidDate": "Paid date",
+      "amount": "Amount"
     },
     "error": {
       "eyebrow": "Ledger status",
       "title": "We couldn't refresh the events ledger.",
-      "description": "The page stays read-only in this phase. Check your connection, then retry to reload the latest upcoming obligations.",
+      "description": "Check your connection, then retry to reload the latest ledger state.",
       "retry": "Retry loading",
       "retrying": "Retrying..."
+    },
+    "markPaid": {
+      "button": "Mark Paid",
+      "pending": "Saving...",
+      "retry": "Retry",
+      "failed": "Could not mark this row paid. Try again.",
+      "paidBadge": "Paid",
+      "acknowledged": "Paid today. Moving this row into History.",
+      "today": "Paid {{date}}",
+      "historyCatchingUp": "Saved successfully. History is catching up in the background."
     },
     "stateLegend": {
       "label": "State:",

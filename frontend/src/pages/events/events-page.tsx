@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 import { MotionPanelList } from '@/components/ui/motion-panel-list'
+import { MarkPaidLedgerAction } from '../../features/events/mark-paid-ledger-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { formatNullableCurrency } from '../../lib/currency'
@@ -23,6 +24,7 @@ type EventRow = {
   source_state?: 'projected' | 'persisted' | string
   is_projected?: boolean
   is_exception?: boolean
+  completed_at?: string | null
 }
 
 type EventGroup = {
@@ -53,6 +55,19 @@ type ItemsResponse = {
 type LedgerTab = 'upcoming' | 'history'
 
 type UpcomingBucketKey = 'overdue' | 'thisWeek' | 'laterThisMonth' | 'future'
+
+type HistoryGroup = {
+  key: string
+  label: string
+  events: EventRow[]
+}
+
+type LocalCompletionState = {
+  event: EventRow
+  completedAt: string
+  phase: 'acknowledged' | 'history'
+  isSyncing: boolean
+}
 
 function padDatePart(value: number) {
   return String(value).padStart(2, '0')
@@ -120,6 +135,18 @@ function formatDueLabel(value: string) {
   }).format(date)
 }
 
+function formatHistoryHeading(value: string) {
+  const date = fromDateKey(value)
+  if (!date) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+}
+
 function formatCurrency(value: number | null) {
   return formatNullableCurrency(value)
 }
@@ -151,6 +178,42 @@ function isProjectedEvent(event: EventRow) {
 
 function isCompletedEvent(event: EventRow) {
   return event.status.trim().toLowerCase() === 'completed'
+}
+
+function getCompletedDateKey(event: EventRow) {
+  return toDateKey(event.completed_at || event.updated_at || event.due_date)
+}
+
+function getHistoryMonthKey(event: EventRow) {
+  const date = fromDateKey(getCompletedDateKey(event))
+  if (!date) {
+    return getCompletedDateKey(event)
+  }
+
+  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-01`
+}
+
+function compareCompletedEvents(left: EventRow, right: EventRow) {
+  return getCompletedDateKey(right).localeCompare(getCompletedDateKey(left)) || right.updated_at.localeCompare(left.updated_at) || left.id.localeCompare(right.id)
+}
+
+function buildHistoryGroups(events: EventRow[]) {
+  const groups = new Map<string, EventRow[]>()
+
+  events.forEach((event) => {
+    const key = getHistoryMonthKey(event)
+    const rows = groups.get(key) ?? []
+    rows.push(event)
+    groups.set(key, rows)
+  })
+
+  return [...groups.entries()]
+    .sort(([left], [right]) => right.localeCompare(left))
+    .map(([key, rows]) => ({
+      key,
+      label: formatHistoryHeading(key),
+      events: rows.sort(compareCompletedEvents),
+    }))
 }
 
 function getFrequencyLabel(value: string | null | undefined, t: (key: string) => string) {
@@ -307,6 +370,31 @@ function HistoryEmptyState() {
   )
 }
 
+function PaidAcknowledgementRow({ event }: { event: EventRow }) {
+  const { t } = useTranslation()
+
+  return (
+    <article
+      data-event-row-id={event.id}
+      data-paid-acknowledged="true"
+      className="rounded-3xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96),rgba(255,255,255,0.98))] px-4 py-4 shadow-sm"
+    >
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-base font-semibold text-foreground">{event.type}</h3>
+            <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+              {t('events.markPaid.paidBadge')}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">{t('events.markPaid.acknowledged')}</p>
+        </div>
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{t('events.markPaid.today', { date: formatDueLabel(event.completed_at || event.due_date) })}</p>
+      </div>
+    </article>
+  )
+}
+
 function EventsErrorState({ onRetry, isRetrying }: { onRetry: () => void; isRetrying: boolean }) {
   const { t } = useTranslation()
 
@@ -331,6 +419,10 @@ export function EventsPage() {
   const location = useLocation()
   const { mode, lensUserId } = useAdminScope()
   const [activeTab, setActiveTab] = useState<LedgerTab>('upcoming')
+  const [localCompletions, setLocalCompletions] = useState<Record<string, LocalCompletionState>>({})
+  const [highlightedHistoryKeys, setHighlightedHistoryKeys] = useState<string[]>([])
+  const acknowledgementTimersRef = useRef<Record<string, number>>({})
+  const highlightTimersRef = useRef<Record<string, number>>({})
 
   const lensScope = useMemo(
     () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
@@ -367,10 +459,71 @@ export function EventsPage() {
 
   const todayDateKey = useMemo(() => getTodayDateKey(), [])
 
+  useEffect(() => {
+    return () => {
+      Object.values(acknowledgementTimersRef.current).forEach((timerId) => window.clearTimeout(timerId))
+      Object.values(highlightTimersRef.current).forEach((timerId) => window.clearTimeout(timerId))
+    }
+  }, [])
+
+  const serverCompletedEvents = useMemo(() => {
+    const source = eventsQuery.data?.groups ?? []
+    return source.flatMap((group) => group.events).filter((event) => isCompletedEvent(event))
+  }, [eventsQuery.data])
+
+  const serverCompletedIds = useMemo(() => new Set(serverCompletedEvents.map((event) => event.id)), [serverCompletedEvents])
+
+  useEffect(() => {
+    if (serverCompletedIds.size === 0) {
+      return
+    }
+
+    setLocalCompletions((current) => {
+      let changed = false
+      const nextEntries = Object.entries(current).map(([eventId, state]) => {
+        if (state.phase !== 'history' || !state.isSyncing || !serverCompletedIds.has(eventId)) {
+          return [eventId, state] as const
+        }
+
+        changed = true
+        return [eventId, { ...state, isSyncing: false }] as const
+      })
+
+      return changed ? Object.fromEntries(nextEntries) : current
+    })
+  }, [serverCompletedIds])
+
   const upcomingEvents = useMemo(() => {
     const source = eventsQuery.data?.groups ?? []
-    return source.flatMap((group) => group.events).filter((event) => isCompletedEvent(event) === false)
-  }, [eventsQuery.data])
+    return source
+      .flatMap((group) => group.events)
+      .filter((event) => isCompletedEvent(event) === false)
+      .filter((event) => localCompletions[event.id]?.phase !== 'history')
+  }, [eventsQuery.data, localCompletions])
+
+  const historyGroups = useMemo<HistoryGroup[]>(() => {
+    const merged = new Map<string, EventRow>()
+
+    serverCompletedEvents.forEach((event) => {
+      merged.set(event.id, event)
+    })
+
+    Object.values(localCompletions).forEach((state) => {
+      if (state.phase !== 'history') {
+        return
+      }
+
+      const serverEvent = merged.get(state.event.id)
+      merged.set(state.event.id, {
+        ...(serverEvent ?? state.event),
+        status: 'Completed',
+        completed_at: serverEvent?.completed_at || state.completedAt,
+        updated_at: serverEvent?.updated_at || state.completedAt,
+      })
+    })
+
+    return buildHistoryGroups([...merged.values()])
+  }, [localCompletions, serverCompletedEvents])
 
   const nextDueByItemId = useMemo(() => {
     const upcoming = [...upcomingEvents].sort(compareByNearestDue)
@@ -403,13 +556,72 @@ export function EventsPage() {
     [t, todayDateKey, upcomingEvents],
   )
 
-  const isLoading = eventsQuery.isLoading || itemsQuery.isLoading
-  const isError = eventsQuery.isError || itemsQuery.isError
+  const hasRenderableEvents = Boolean(eventsQuery.data)
+  const hasRenderableItems = Boolean(itemsQuery.data)
+  const isLoading = (eventsQuery.isLoading && !hasRenderableEvents) || (itemsQuery.isLoading && !hasRenderableItems)
+  const isError = (!hasRenderableEvents && eventsQuery.isError) || (!hasRenderableItems && itemsQuery.isError)
   const isRetrying = eventsQuery.isFetching || itemsQuery.isFetching
 
   const retryQueries = () => {
     void eventsQuery.refetch()
     void itemsQuery.refetch()
+  }
+
+  const markEventAsPaid = (event: EventRow) => ({
+    ...event,
+    status: 'Completed',
+    completed_at: todayDateKey,
+    updated_at: new Date().toISOString(),
+  })
+
+  const scheduleHistoryHighlight = (eventId: string) => {
+    setHighlightedHistoryKeys((current) => (current.includes(eventId) ? current : [...current, eventId]))
+
+    if (highlightTimersRef.current[eventId]) {
+      window.clearTimeout(highlightTimersRef.current[eventId])
+    }
+
+    highlightTimersRef.current[eventId] = window.setTimeout(() => {
+      setHighlightedHistoryKeys((current) => current.filter((key) => key !== eventId))
+      delete highlightTimersRef.current[eventId]
+    }, 1400)
+  }
+
+  const handleMarkPaidSuccess = (event: EventRow) => {
+    const nextEvent = markEventAsPaid(event)
+
+    setLocalCompletions((current) => ({
+      ...current,
+      [event.id]: {
+        event: nextEvent,
+        completedAt: todayDateKey,
+        phase: 'acknowledged',
+        isSyncing: true,
+      },
+    }))
+
+    if (acknowledgementTimersRef.current[event.id]) {
+      window.clearTimeout(acknowledgementTimersRef.current[event.id])
+    }
+
+    acknowledgementTimersRef.current[event.id] = window.setTimeout(() => {
+      setLocalCompletions((current) => {
+        const state = current[event.id]
+        if (!state) {
+          return current
+        }
+
+        return {
+          ...current,
+          [event.id]: {
+            ...state,
+            phase: 'history',
+          },
+        }
+      })
+      scheduleHistoryHighlight(event.id)
+      delete acknowledgementTimersRef.current[event.id]
+    }, 750)
   }
 
   return (
@@ -491,19 +703,24 @@ export function EventsPage() {
                   </div>
                 </div>
 
-                <MotionPanelList
-                  items={bucket.events}
-                  getItemKey={(event) => event.id}
-                  className="space-y-2"
-                  itemClassName="overflow-hidden rounded-3xl"
-                  renderItem={(event) => {
-                    const item = itemById.get(event.item_id)
-                    const projected = isProjectedEvent(event)
-                    const recurrence = getRecurrenceText(item, event, nextDueByItemId, t)
-                    const overdue = bucket.key === 'overdue'
+                 <MotionPanelList
+                   items={bucket.events}
+                   getItemKey={(event) => event.id}
+                   className="space-y-2"
+                   itemClassName="overflow-hidden rounded-3xl"
+                   renderItem={(event) => {
+                     const localCompletion = localCompletions[event.id]
+                     const item = itemById.get(event.item_id)
+                     const projected = isProjectedEvent(event)
+                     const recurrence = getRecurrenceText(item, event, nextDueByItemId, t)
+                     const overdue = bucket.key === 'overdue'
 
-                    return (
-                      <article
+                     if (localCompletion?.phase === 'acknowledged') {
+                       return <PaidAcknowledgementRow event={localCompletion.event} />
+                     }
+
+                     return (
+                       <article
                         data-event-row-id={event.id}
                         data-overdue={overdue ? 'true' : 'false'}
                         className={`list-none rounded-3xl border px-4 py-4 shadow-sm transition ${
@@ -550,13 +767,90 @@ export function EventsPage() {
                             {recurrence ? <p className="text-xs leading-5 text-muted-foreground">{recurrence}</p> : null}
                           </div>
 
+                           <div className="flex flex-col items-stretch gap-3 lg:items-end">
+                             <dl className="grid min-w-[12rem] grid-cols-2 gap-3 text-sm lg:max-w-xs">
+                               <div className="rounded-2xl bg-background/70 px-3 py-2">
+                                 <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.card.dueDate')}</dt>
+                                 <dd className="mt-1 font-medium text-foreground">{formatDueLabel(event.due_date)}</dd>
+                               </div>
+                               <div className="rounded-2xl bg-background/70 px-3 py-2">
+                                 <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.card.amount')}</dt>
+                                 <dd className="mt-1 font-medium text-foreground">{formatEventAmount(event, item) ?? t('events.amountPending')}</dd>
+                               </div>
+                             </dl>
+                             <MarkPaidLedgerAction eventId={event.id} itemId={event.item_id} onSuccess={() => handleMarkPaidSuccess(event)} />
+                           </div>
+                        </div>
+                      </article>
+                    )
+                  }}
+                />
+              </section>
+            ))
+          )}
+        </section>
+      ) : (
+        <section id="events-panel-history" role="tabpanel" aria-label={t('events.historyTitle')} className="space-y-4">
+          {historyGroups.length === 0 ? (
+            <HistoryEmptyState />
+          ) : (
+            historyGroups.map((group) => (
+              <section key={group.key} data-history-group={group.key} className="space-y-3">
+                <div className="sticky top-28 z-20 rounded-2xl border border-border/70 bg-background/92 px-4 py-3 shadow-sm backdrop-blur">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">{group.label}</h2>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('events.historyGroupHint')}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{t('events.groupCount', { count: group.events.length })}</p>
+                  </div>
+                </div>
+
+                <MotionPanelList
+                  items={group.events}
+                  getItemKey={(event) => event.id}
+                  highlightedKeys={highlightedHistoryKeys}
+                  className="space-y-2"
+                  itemClassName="overflow-hidden rounded-3xl"
+                  renderItem={(event) => {
+                    const item = itemById.get(event.item_id)
+                    const isSyncing = localCompletions[event.id]?.phase === 'history' && localCompletions[event.id]?.isSyncing
+                    const isHighlighted = highlightedHistoryKeys.includes(event.id)
+
+                    return (
+                      <article
+                        data-event-row-id={event.id}
+                        data-history-highlighted={isHighlighted ? 'true' : 'false'}
+                        className="rounded-3xl border border-border/70 bg-card/90 px-4 py-4 shadow-sm"
+                      >
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="min-w-0 space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-base font-semibold text-foreground">{event.type}</h3>
+                              <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                                {t('events.historyPaidBadge')}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{t('events.historyPaidOn', { date: formatDueLabel(event.completed_at || event.due_date) })}</p>
+                            <p className="text-sm text-muted-foreground">
+                              <Link
+                                to={`/items/${event.item_id}`}
+                                state={{ from: location.pathname + location.search }}
+                                className="font-medium text-primary underline-offset-2 hover:underline"
+                              >
+                                {itemNameById.get(event.item_id) ?? t('events.itemLabel', { itemId: event.item_id })}
+                              </Link>
+                            </p>
+                            {isSyncing ? <p className="text-xs leading-5 text-muted-foreground">{t('events.markPaid.historyCatchingUp')}</p> : null}
+                          </div>
+
                           <dl className="grid min-w-[12rem] grid-cols-2 gap-3 text-sm lg:max-w-xs">
                             <div className="rounded-2xl bg-background/70 px-3 py-2">
-                              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.card.dueDate')}</dt>
-                              <dd className="mt-1 font-medium text-foreground">{formatDueLabel(event.due_date)}</dd>
+                              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.historyCard.paidDate')}</dt>
+                              <dd className="mt-1 font-medium text-foreground">{formatDueLabel(event.completed_at || event.due_date)}</dd>
                             </div>
                             <div className="rounded-2xl bg-background/70 px-3 py-2">
-                              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.card.amount')}</dt>
+                              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.historyCard.amount')}</dt>
                               <dd className="mt-1 font-medium text-foreground">{formatEventAmount(event, item) ?? t('events.amountPending')}</dd>
                             </div>
                           </dl>
@@ -568,10 +862,6 @@ export function EventsPage() {
               </section>
             ))
           )}
-        </section>
-      ) : (
-        <section id="events-panel-history" role="tabpanel" aria-label={t('events.historyTitle')}>
-          <HistoryEmptyState />
         </section>
       )}
     </section>
