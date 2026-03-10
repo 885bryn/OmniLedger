@@ -1,28 +1,39 @@
 "use strict";
 
+async function hasIndex(queryInterface, tableName, indexName) {
+  const indexes = await queryInterface.showIndex(tableName);
+  return indexes.some((index) => index && index.name === indexName);
+}
+
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn("AuditLog", "actor_user_id", {
-      type: Sequelize.UUID,
-      allowNull: true,
-      references: {
-        model: "Users",
-        key: "id"
-      },
-      onUpdate: "CASCADE",
-      onDelete: "CASCADE"
-    });
+    const columns = await queryInterface.describeTable("AuditLog");
 
-    await queryInterface.addColumn("AuditLog", "lens_user_id", {
-      type: Sequelize.UUID,
-      allowNull: true,
-      references: {
-        model: "Users",
-        key: "id"
-      },
-      onUpdate: "CASCADE",
-      onDelete: "SET NULL"
-    });
+    if (!columns.actor_user_id) {
+      await queryInterface.addColumn("AuditLog", "actor_user_id", {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: "Users",
+          key: "id"
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE"
+      });
+    }
+
+    if (!columns.lens_user_id) {
+      await queryInterface.addColumn("AuditLog", "lens_user_id", {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: "Users",
+          key: "id"
+        },
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL"
+      });
+    }
 
     await queryInterface.sequelize.query(`
       UPDATE "AuditLog"
@@ -47,13 +58,17 @@ module.exports = {
       onDelete: "CASCADE"
     });
 
-    await queryInterface.addIndex("AuditLog", ["actor_user_id", "timestamp"], {
-      name: "audit_log_actor_timestamp_idx"
-    });
+    if (!(await hasIndex(queryInterface, "AuditLog", "audit_log_actor_timestamp_idx"))) {
+      await queryInterface.addIndex("AuditLog", ["actor_user_id", "timestamp"], {
+        name: "audit_log_actor_timestamp_idx"
+      });
+    }
 
-    await queryInterface.addIndex("AuditLog", ["lens_user_id", "timestamp"], {
-      name: "audit_log_lens_timestamp_idx"
-    });
+    if (!(await hasIndex(queryInterface, "AuditLog", "audit_log_lens_timestamp_idx"))) {
+      await queryInterface.addIndex("AuditLog", ["lens_user_id", "timestamp"], {
+        name: "audit_log_lens_timestamp_idx"
+      });
+    }
   },
 
   async down(queryInterface) {

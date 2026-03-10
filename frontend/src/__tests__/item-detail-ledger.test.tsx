@@ -80,7 +80,7 @@ function renderItemDetail(initialPath = '/items/asset-1', queryClient = createTe
   )
 }
 
-describe('item detail commitments panel', () => {
+describe('item detail events panel', () => {
   const originalFetch = globalThis.fetch
   const originalMatchMedia = window.matchMedia
 
@@ -802,7 +802,7 @@ describe('item detail commitments panel', () => {
     expect(screen.getByText(/One-time portion included in total: -10\.00/)).toBeTruthy()
   })
 
-  it('keeps all linked financial rows visible in the commitments tab while the summary count stays cadence-filtered', async () => {
+  it('keeps all linked financial rows visible in the Events tab while the summary count stays cadence-filtered', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -1135,7 +1135,7 @@ describe('item detail commitments panel', () => {
     expect(screen.getByText('Linked due this month (Mar 1 - Mar 31)').closest('article')?.textContent).toMatch(/2/)
   })
 
-  it('keeps linked financial rows visible in the commitments tab when no in-period events exist', async () => {
+  it('keeps linked financial rows visible in the Events tab when no in-period events exist', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -1338,7 +1338,7 @@ describe('item detail commitments panel', () => {
     expect(await screen.findByText('Completed')).toBeTruthy()
   })
 
-  it('shows historical entry actions on overview and commitments, with defaults and owner-lens attribution in the dialog', async () => {
+  it('shows historical entry actions on overview and Events, with defaults and owner-lens attribution in the dialog', async () => {
     adminScopeState = {
       isAdmin: true,
       mode: 'owner',

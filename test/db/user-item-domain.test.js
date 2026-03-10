@@ -84,23 +84,28 @@ describe("user-item domain models", () => {
     ).rejects.toThrow(/minimum keys/i);
   });
 
-  it("requires parent item for FinancialCommitment", async () => {
+  it("allows standalone FinancialItem commitment without parent item", async () => {
     const user = await User.create({
       username: "owner4",
       email: "owner4@example.com",
       password_hash: "hashed-password"
     });
 
-    await expect(
-      Item.create({
-        user_id: user.id,
-        item_type: "FinancialCommitment",
-        attributes: { amount: 1200, dueDate: "2026-03-01" }
-      })
-    ).rejects.toThrow(/requires parent_item_id/i);
+    const commitment = await Item.create({
+      user_id: user.id,
+      item_type: "FinancialItem",
+      title: "Standalone commitment",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 1200,
+      status: "Active",
+      attributes: { amount: 1200, dueDate: "2026-03-01", financialSubtype: "Commitment" }
+    });
+
+    expect(commitment.get("parent_item_id") ?? null).toBeNull();
   });
 
-  it("rejects FinancialCommitment with nonexistent parent id", async () => {
+  it("rejects FinancialItem commitment with nonexistent parent id", async () => {
     const user = await User.create({
       username: "owner5",
       email: "owner5@example.com",
@@ -110,9 +115,14 @@ describe("user-item domain models", () => {
     await expect(
       Item.create({
         user_id: user.id,
-        item_type: "FinancialCommitment",
+        item_type: "FinancialItem",
+        title: "Orphan commitment",
+        type: "Commitment",
+        frequency: "monthly",
+        default_amount: 1200,
+        status: "Active",
         parent_item_id: "11111111-1111-4111-8111-111111111111",
-        attributes: { amount: 1200, dueDate: "2026-03-01" }
+        attributes: { amount: 1200, dueDate: "2026-03-01", financialSubtype: "Commitment" }
       })
     ).rejects.toThrow();
   });
@@ -135,11 +145,18 @@ describe("user-item domain models", () => {
 
     await Item.create({
       user_id: user.id,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
+      title: "Parent linked commitment",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 1800,
+      status: "Active",
+      linked_asset_item_id: parent.id,
       parent_item_id: parent.id,
       attributes: {
         amount: 1800,
-        dueDate: "2026-03-01"
+        dueDate: "2026-03-01",
+        financialSubtype: "Commitment"
       }
     });
 

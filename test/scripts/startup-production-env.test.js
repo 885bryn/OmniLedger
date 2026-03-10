@@ -1,5 +1,17 @@
 "use strict";
 
+function createSuccessfulChildProcess() {
+  return {
+    on(event, handler) {
+      if (event === "exit") {
+        process.nextTick(() => handler(0));
+      }
+
+      return this;
+    }
+  };
+}
+
 describe("startup production env preflight", () => {
   const originalExitCode = process.exitCode;
   const originalEnv = { ...process.env };
@@ -84,5 +96,44 @@ describe("startup production env preflight", () => {
 
     expect(sequelizeConstructor).not.toHaveBeenCalled();
     expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("runs local sqlite migrations before starting the API when DATABASE_URL is absent", async () => {
+    const spawnMock = jest.fn(() => createSuccessfulChildProcess());
+    const sequelizeConstructor = jest.fn();
+
+    jest.doMock("node:child_process", () => ({
+      spawn: spawnMock
+    }));
+    jest.doMock("sequelize", () => ({
+      Sequelize: sequelizeConstructor
+    }));
+
+    const startup = require("../../src/scripts/startup");
+
+    await expect(
+      startup.run({
+        NODE_ENV: "development",
+        DB_STORAGE: ".tmp/nonexistent-startup-test.sqlite"
+      })
+    ).resolves.toBeUndefined();
+
+    expect(sequelizeConstructor).not.toHaveBeenCalled();
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      1,
+      process.execPath,
+      [expect.stringContaining("sequelize-cli"), "db:migrate"],
+      expect.objectContaining({
+        stdio: "inherit"
+      })
+    );
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      2,
+      process.execPath,
+      ["src/api/server.js"],
+      expect.objectContaining({
+        stdio: "inherit"
+      })
+    );
   });
 });

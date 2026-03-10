@@ -75,8 +75,7 @@ function createQueryClient() {
   })
 }
 
-function renderEventsPage() {
-  const queryClient = createQueryClient()
+function renderEventsPage(queryClient = createQueryClient()) {
 
   return render(
     <QueryClientProvider client={queryClient}>
@@ -529,6 +528,41 @@ describe('events ledger page', () => {
     await waitFor(() => {
       expect(screen.getByText('Mortgage payment')).toBeTruthy()
     })
+  })
+
+  it('refetches on mount so a stale empty response does not leave the ledger blank after navigation', async () => {
+    const queryClient = createQueryClient()
+    queryClient.setQueryData([
+      'events',
+      'list',
+      { status: 'all', scope_mode: 'all' },
+    ], buildLedgerEventsResponse({ pending: [], completed: [] }))
+
+    let eventsRequestCount = 0
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        eventsRequestCount += 1
+
+        return createResponse({ status: 200, json: buildLedgerEventsResponse() })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({ status: 200, json: buildItemsResponse() })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage(queryClient)
+
+    expect(await screen.findByText('Mortgage payment')).toBeTruthy()
+    expect(eventsRequestCount).toBeGreaterThanOrEqual(1)
   })
 
   it('renders an inline suppression notice only for admins when invalid projected rows were hidden', async () => {

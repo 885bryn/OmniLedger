@@ -2,10 +2,14 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn("Events", "note", {
-      type: Sequelize.STRING(280),
-      allowNull: true
-    });
+    const columns = await queryInterface.describeTable("Events");
+
+    if (!columns.note) {
+      await queryInterface.addColumn("Events", "note", {
+        type: Sequelize.STRING(280),
+        allowNull: true
+      });
+    }
   },
 
   async down(queryInterface) {

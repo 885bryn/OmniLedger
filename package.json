@@ -4,8 +4,8 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "start": "node --env-file=.env src/api/server.js",
-    "dev": "node --env-file=.env src/api/server.js",
+    "start": "node --env-file=.env src/scripts/startup.js",
+    "dev": "node --env-file=.env src/scripts/startup.js",
     "start:compose": "node --env-file=.env src/scripts/startup.js",
     "seed:sandbox-user": "node src/scripts/seed-sandbox-user.js",
     "test": "jest --runInBand"

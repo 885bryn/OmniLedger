@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -114,11 +114,9 @@ function LayoutFrame() {
 
           <main className="flex-1 px-1 pb-6 md:px-0 md:pb-8">
             {sessionExpired ? <SessionExpiredBanner /> : null}
-            <AnimatePresence initial={false} mode="wait">
-              <motion.div key={location.pathname} initial="initial" animate="animate" exit="exit" variants={subtlePageShiftVariants}>
-                <Outlet />
-              </motion.div>
-            </AnimatePresence>
+            <motion.div key={location.pathname} initial="initial" animate="animate" variants={subtlePageShiftVariants}>
+              <Outlet />
+            </motion.div>
           </main>
         </div>
       </div>

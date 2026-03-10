@@ -48,6 +48,7 @@ describe("createItem domain service", () => {
 
   beforeEach(async () => {
     await sequelize.query("PRAGMA foreign_keys = OFF");
+    await models.Event.destroy({ where: {}, force: true });
     await models.Item.destroy({ where: {}, force: true });
     await models.User.destroy({ where: {}, force: true });
     await sequelize.query("PRAGMA foreign_keys = ON");
@@ -75,34 +76,51 @@ describe("createItem domain service", () => {
 
     const commitment = await createItem({
       user_id: user.id,
-      item_type: "FinancialCommitment",
-      parent_item_id: parentId,
-      attributes: { amount: 425 }
+      item_type: "FinancialItem",
+      title: "Mortgage",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 425,
+      status: "Active",
+      linked_asset_item_id: parentId,
+      attributes: { amount: 425, dueDate: "2026-08-01" }
     });
 
-    const subscription = await createItem({
+    const commitmentNoParent = await createItem({
       user_id: user.id,
-      item_type: "Subscription",
-      attributes: { amount: 29.99 }
+      item_type: "FinancialItem",
+      title: "Unlinked service",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 29.99,
+      status: "Active",
+      confirm_unlinked_asset: true,
+      attributes: { amount: 29.99, dueDate: "2026-08-01" }
     });
 
     expect(realEstate.attributes.estimatedValue).toBe(0);
     expect(vehicle.attributes.estimatedValue).toBe(0);
-    expect(commitment.attributes.dueDate).toBe("1970-01-01");
-    expect(subscription.attributes.billingCycle).toBe("monthly");
+    expect(commitment.attributes.dueDate).toBe("2026-08-01");
+    expect(commitmentNoParent.attributes.dueDate).toBe("2026-08-01");
 
     const expectedKeys = [
       "attributes",
       "created_at",
+      "default_amount",
+      "frequency",
       "id",
       "item_type",
+      "linked_asset_item_id",
       "parent_item_id",
+      "status",
+      "title",
+      "type",
       "updated_at",
       "user_id"
     ];
 
     expect(Object.keys(realEstate).sort()).toEqual(expectedKeys);
-    expect(Object.keys(subscription).sort()).toEqual(expectedKeys);
+    expect(Object.keys(commitmentNoParent).sort()).toEqual(expectedKeys);
   });
 
   it("keeps client values when default keys overlap and allows extra attributes", async () => {
@@ -160,31 +178,39 @@ describe("createItem domain service", () => {
     });
   });
 
-  it("returns parent-link validation issues when commitment parent is missing or nonexistent", async () => {
+  it("allows unlinked financial items with explicit confirmation but rejects nonexistent parent", async () => {
     const user = await createUser();
 
     await expect(
       createItem({
         user_id: user.id,
-        item_type: "FinancialCommitment",
-        attributes: { amount: 900 }
+        item_type: "FinancialItem",
+        title: "Utilities",
+        type: "Commitment",
+        frequency: "monthly",
+        default_amount: 900,
+        status: "Active",
+        confirm_unlinked_asset: true,
+        attributes: { amount: 900, dueDate: "2026-08-01" }
       })
-    ).rejects.toMatchObject({
-      category: ITEM_CREATE_ERROR_CATEGORIES.PARENT_LINK_FAILURE,
-      issues: [
-        expect.objectContaining({
-          field: "parent_item_id",
-          code: "parent_required"
-        })
-      ]
+    ).resolves.toMatchObject({
+      user_id: user.id,
+      item_type: "FinancialItem",
+      parent_item_id: null
     });
 
     await expect(
       createItem({
         user_id: user.id,
-        item_type: "FinancialCommitment",
+        item_type: "FinancialItem",
+        title: "Utilities",
+        type: "Commitment",
+        frequency: "monthly",
+        default_amount: 900,
+        status: "Active",
         parent_item_id: "11111111-1111-4111-8111-111111111111",
-        attributes: { amount: 900 }
+        confirm_unlinked_asset: true,
+        attributes: { amount: 900, dueDate: "2026-08-01" }
       })
     ).rejects.toMatchObject({
       category: ITEM_CREATE_ERROR_CATEGORIES.PARENT_LINK_FAILURE,
@@ -209,5 +235,31 @@ describe("createItem domain service", () => {
         }
       })
     ).rejects.toBeInstanceOf(ItemCreateValidationError);
+  });
+
+  it("creates a pending event for cashflow items with due dates", async () => {
+    const user = await createUser();
+
+    const created = await createItem({
+      user_id: user.id,
+      item_type: "FinancialItem",
+      title: "Rent collection",
+      type: "Income",
+      frequency: "one_time",
+      default_amount: 1578,
+      status: "Active",
+      confirm_unlinked_asset: true,
+      attributes: {
+        name: "Rent collection",
+        amount: 1578,
+        dueDate: "2026-03-10"
+      }
+    });
+
+    const events = await models.Event.findAll({ where: { item_id: created.id } });
+    expect(events).toHaveLength(1);
+    expect(events[0].event_type).toBe("Rent collection");
+    expect(Number(events[0].amount)).toBe(1578);
+    expect(events[0].status).toBe("Pending");
   });
 });

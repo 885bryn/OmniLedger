@@ -1,6 +1,6 @@
 "use strict";
 
-const ITEM_TYPES = ["RealEstate", "Vehicle", "FinancialCommitment", "Subscription"];
+const ITEM_TYPES = ["RealEstate", "Vehicle", "FinancialCommitment"];
 
 module.exports = {
   async up(queryInterface, Sequelize) {

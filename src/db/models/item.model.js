@@ -3,7 +3,7 @@
 const { DataTypes, Model } = require("sequelize");
 const { minimumAttributeKeys } = require("../../domain/items/minimum-attribute-keys");
 
-const ITEM_TYPES = Object.freeze(["RealEstate", "Vehicle", "FinancialCommitment", "FinancialIncome", "FinancialItem"]);
+const ITEM_TYPES = Object.freeze(["RealEstate", "Vehicle", "FinancialItem"]);
 const FINANCIAL_SUBTYPES = Object.freeze(["Commitment", "Income"]);
 const FINANCIAL_FREQUENCIES = Object.freeze(["one_time", "weekly", "monthly", "yearly"]);
 const FINANCIAL_STATUSES = Object.freeze(["Active", "Closed"]);
@@ -137,34 +137,7 @@ class Item extends Model {
         modelName: "Item",
         tableName: "Items",
         underscored: true,
-        timestamps: true,
-        validate: {
-          financialContractRequiredFields() {
-            if (this.item_type !== "FinancialItem") {
-              return;
-            }
-
-            if (!this.title || String(this.title).trim() === "") {
-              throw new Error("title is required for FinancialItem");
-            }
-
-            if (!this.type) {
-              throw new Error("type is required for FinancialItem");
-            }
-
-            if (!this.frequency) {
-              throw new Error("frequency is required for FinancialItem");
-            }
-
-            if (this.default_amount === null || this.default_amount === undefined || Number(this.default_amount) < 0) {
-              throw new Error("default_amount is required for FinancialItem");
-            }
-
-            if (!this.status) {
-              throw new Error("status is required for FinancialItem");
-            }
-          }
-        }
+        timestamps: true
       }
     );
 

@@ -8,7 +8,7 @@
 - ✅ **v4.0 Interactive Production Deployment for Ugreen NAS** - Phases 19-23 shipped 2026-03-07 (`.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.0-REQUIREMENTS.md`, `.planning/milestones/v4.0-MILESTONE-AUDIT.md`)
 - ✅ **v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion** - Phases 24-26 shipped 2026-03-07 (`.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.1-REQUIREMENTS.md`, `.planning/milestones/v4.1-MILESTONE-AUDIT.md`)
 - ✅ **v4.2 Cashflow Frequency Normalization & Cadence Toggle** - Phases 27-29 shipped 2026-03-10
-- ✅ **v4.3 Smart Grouped Ledger & Historical Event Injection** - Phases 30-34 shipped 2026-03-10
+- ✅ **v4.3 Smart Grouped Ledger & Historical Event Injection** - Phases 30-34 shipped 2026-03-10 (`.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.3-REQUIREMENTS.md`, `.planning/milestones/v4.3-MILESTONE-AUDIT.md`)
 
 ## Phases
 
@@ -119,4 +119,4 @@ Plans:
 | 34. Item Detail Events Tab Clarity | 1/1 | Complete   | 2026-03-10 |
 
 ---
-*Last updated: 2026-03-10 after completing Phase 34*
+*Last updated: 2026-03-10 after v4.3 closeout docs*

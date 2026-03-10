@@ -222,10 +222,17 @@ describe("POST /items", () => {
       .post("/items")
       .send({
         user_id: user.id,
-        item_type: "FinancialCommitment",
+        item_type: "FinancialItem",
+        title: "Missing parent contract",
+        type: "Commitment",
+        frequency: "one_time",
+        default_amount: 500,
+        status: "Active",
+        confirm_unlinked_asset: true,
         parent_item_id: "11111111-1111-4111-8111-111111111111",
         attributes: {
-          amount: 500
+          amount: 500,
+          dueDate: "2026-03-01"
         }
       });
 
@@ -244,7 +251,13 @@ describe("POST /items", () => {
       .post("/items")
       .send({
         user_id: outsider.id,
-        item_type: "FinancialCommitment",
+        item_type: "FinancialItem",
+        title: "Cross-owner loan",
+        type: "Commitment",
+        frequency: "one_time",
+        default_amount: 300,
+        status: "Active",
+        confirm_unlinked_asset: true,
         parent_item_id: foreignParentId,
         attributes: {
           amount: 300,
@@ -281,10 +294,17 @@ describe("POST /items", () => {
       .post("/items")
       .send({
         user_id: user.id,
-        item_type: "FinancialCommitment",
+        item_type: "FinancialItem",
+        title: "Linked commitment",
+        type: "Commitment",
+        frequency: "one_time",
+        default_amount: 700,
+        status: "Active",
+        confirm_unlinked_asset: true,
         parent_item_id: validParentId,
         attributes: {
-          amount: 700
+          amount: 700,
+          dueDate: "2026-03-01"
         }
       });
 
@@ -300,7 +320,13 @@ describe("POST /items", () => {
       .post("/items")
       .send({
         user_id: user.id,
-        item_type: "FinancialIncome",
+        item_type: "FinancialItem",
+        title: "1578 rent",
+        type: "Income",
+        frequency: "one_time",
+        default_amount: 1578,
+        status: "Active",
+        confirm_unlinked_asset: true,
         attributes: {
           name: "1578 rent",
           amount: 1578,
@@ -332,7 +358,13 @@ describe("POST /items", () => {
       .post("/items")
       .send({
         user_id: user.id,
-        item_type: "FinancialCommitment",
+        item_type: "FinancialItem",
+        title: "e300 testing payment",
+        type: "Commitment",
+        frequency: "one_time",
+        default_amount: 300,
+        status: "Active",
+        confirm_unlinked_asset: true,
         parent_item_id: parentId,
         attributes: {
           name: "e300 testing payment",
@@ -407,6 +439,91 @@ describe("POST /items", () => {
     expect(createdEvents).toHaveLength(1);
     expect(createdEvents[0].status).toBe("Pending");
     expect(createdEvents[0].event_type).toBe("Mortgage");
+  });
+
+  it("persists FinancialItem linked parent context with compatibility attributes", async () => {
+    const user = await createUser();
+    const agent = await signInAs(user);
+    const parentId = await createParentItem(user.id);
+
+    const response = await agent.post("/items").send(
+      buildFinancialItemPayload({
+        title: "Home electricity",
+        type: "Commitment",
+        frequency: "weekly",
+        default_amount: 240,
+        status: "Active",
+        linked_asset_item_id: parentId,
+        confirm_unlinked_asset: false,
+        attributes: {
+          dueDate: "2026-03-03"
+        }
+      })
+    );
+
+    expect(response.status).toBe(201);
+    expect(response.body.linked_asset_item_id).toBe(parentId);
+    expect(response.body.parent_item_id).toBe(parentId);
+    expect(response.body.title).toBe("Home electricity");
+    expect(Number(response.body.default_amount)).toBe(240);
+    expect(response.body.attributes).toMatchObject({
+      dueDate: "2026-03-03",
+      name: "Home electricity",
+      financialSubtype: "Commitment",
+      billingCycle: "weekly",
+      amount: 240,
+      nextPaymentAmount: 240,
+      linkedAssetItemId: parentId,
+      parentItemId: parentId
+    });
+  });
+
+  it("surfaces linked FinancialItem in commitments list and parent net-status", async () => {
+    const user = await createUser();
+    const agent = await signInAs(user);
+    const parentId = await createParentItem(user.id);
+
+    const created = await agent.post("/items").send(
+      buildFinancialItemPayload({
+        title: "Condo water",
+        type: "Commitment",
+        frequency: "weekly",
+        default_amount: 125,
+        status: "Active",
+        linked_asset_item_id: parentId,
+        confirm_unlinked_asset: false,
+        attributes: {
+          dueDate: "2026-03-03"
+        }
+      })
+    );
+
+    expect(created.status).toBe(201);
+
+    const commitments = await agent.get("/items").query({ filter: "commitments", sort: "recently_updated" });
+    expect(commitments.status).toBe(200);
+    expect(commitments.body.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: created.body.id,
+          item_type: "FinancialItem",
+          title: "Condo water",
+          linked_asset_item_id: parentId
+        })
+      ])
+    );
+
+    const parentNetStatus = await agent.get(`/items/${parentId}/net-status`);
+    expect(parentNetStatus.status).toBe(200);
+    expect(parentNetStatus.body.child_commitments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: created.body.id,
+          item_type: "FinancialItem",
+          linked_asset_item_id: parentId
+        })
+      ])
+    );
   });
 
   it("rejects invalid linked asset reference and rolls back one-time create", async () => {

@@ -6,14 +6,14 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 34 is complete and browser-approved; v4.3 is ready for milestone transition after the Financial Item detail `Events` tab clarity rename.
+**Current focus:** v4.3 closeout docs are complete; the project is ready for the next milestone kickoff.
 
 ## Current Position
 
 Phase: 34 - Item Detail Events Tab Clarity
 Plan: 01/01
 Status: Complete
-Last activity: 2026-03-10 - Completed the browser-approved Financial Item detail `Events` tab clarity rename
+Last activity: 2026-03-10 - Created v4.3 milestone archive and audit closeout docs
 
 Progress: [##########] 100%
 

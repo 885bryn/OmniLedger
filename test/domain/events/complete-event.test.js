@@ -13,7 +13,7 @@ jest.mock("../../../src/db", () => {
 });
 
 const { sequelize, models } = require("../../../src/db");
-const { completeEvent } = require("../../../src/domain/events/complete-event");
+const { completeEvent, undoEventCompletion } = require("../../../src/domain/events/complete-event");
 const {
   EventCompletionError,
   EVENT_COMPLETION_ERROR_CATEGORIES
@@ -39,6 +39,27 @@ describe("completeEvent domain service", () => {
       attributes: {
         address: "42 Ledger Way",
         estimatedValue: 350000
+      }
+    });
+  }
+
+  async function createCommitment({ userId, remainingBalance = 5000 }) {
+    return models.Item.create({
+      user_id: userId,
+      item_type: "FinancialItem",
+      title: "Mortgage - Test",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 1000,
+      status: "Active",
+      attributes: {
+        name: "Mortgage - Test",
+        financialSubtype: "Commitment",
+        amount: 1000,
+        dueDate: "2026-04-01",
+        dynamicTrackingEnabled: true,
+        trackingStartingRemainingBalance: remainingBalance,
+        remainingBalance
       }
     });
   }
@@ -171,7 +192,7 @@ describe("completeEvent domain service", () => {
     });
   });
 
-  it("throws forbidden category when actor does not own the parent item", async () => {
+  it("hides forbidden ownership mismatches behind not_found responses", async () => {
     const owner = await createUser();
     const outsider = await createUser();
     const item = await createItem({ userId: owner.id });
@@ -184,11 +205,11 @@ describe("completeEvent domain service", () => {
         now: new Date("2026-04-03T10:15:00.000Z")
       })
     ).rejects.toMatchObject({
-      category: EVENT_COMPLETION_ERROR_CATEGORIES.FORBIDDEN,
+      category: EVENT_COMPLETION_ERROR_CATEGORIES.NOT_FOUND,
       issues: [
         expect.objectContaining({
           field: "event_id",
-          code: "forbidden"
+          code: "not_found"
         })
       ]
     });
@@ -223,6 +244,94 @@ describe("completeEvent domain service", () => {
       }
     });
     expect(audits).toHaveLength(1);
+  });
+
+  it("reduces commitment remaining balance when payment event is completed", async () => {
+    const owner = await createUser();
+    const commitment = await createCommitment({ userId: owner.id, remainingBalance: 5000 });
+    const event = await createEvent({ itemId: commitment.id, amount: "1200.50" });
+
+    await completeEvent({
+      eventId: event.id,
+      actorUserId: owner.id,
+      now: new Date("2026-06-03T10:00:00.000Z")
+    });
+
+    const updatedCommitment = await models.Item.findByPk(commitment.id);
+    expect(updatedCommitment.attributes.remainingBalance).toBe(3799.5);
+    expect(updatedCommitment.attributes.lastPaymentAmount).toBe(1200.5);
+    expect(updatedCommitment.attributes.lastPaymentDate).toBe("2026-06-03");
+  });
+
+  it("does not update rollups when dynamic tracking is disabled", async () => {
+    const owner = await createUser();
+    const commitment = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      title: "Legacy disabled tracking",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 45,
+      status: "Active",
+      attributes: {
+        amount: 45,
+        dueDate: "2026-06-01",
+        financialSubtype: "Commitment",
+        dynamicTrackingEnabled: false,
+        remainingBalance: 200
+      }
+    });
+
+    const event = await createEvent({ itemId: commitment.id, amount: "40.00" });
+
+    const result = await completeEvent({
+      eventId: event.id,
+      actorUserId: owner.id,
+      now: new Date("2026-06-04T10:00:00.000Z")
+    });
+
+    expect(result.status).toBe("Completed");
+    expect(result.prompt_next_date).toBe(true);
+
+    const unchanged = await models.Item.findByPk(commitment.id);
+    expect(unchanged.attributes.remainingBalance).toBe(200);
+    expect(unchanged.attributes.lastPaymentAmount).toBeUndefined();
+  });
+
+  it("undoes completion, restores pending status, and reverses totals", async () => {
+    const owner = await createUser();
+    const commitment = await createCommitment({ userId: owner.id, remainingBalance: 900 });
+    const event = await createEvent({ itemId: commitment.id, amount: "100.00" });
+
+    await completeEvent({
+      eventId: event.id,
+      actorUserId: owner.id,
+      now: new Date("2026-06-05T10:00:00.000Z")
+    });
+
+    const undone = await undoEventCompletion({
+      eventId: event.id,
+      actorUserId: owner.id,
+      now: new Date("2026-06-05T11:00:00.000Z")
+    });
+
+    expect(undone.status).toBe("Pending");
+    expect(undone.completed_at).toBeNull();
+    expect(undone.prompt_next_date).toBe(false);
+
+    const updatedEvent = await models.Event.findByPk(event.id);
+    expect(updatedEvent.status).toBe("Pending");
+
+    const updatedItem = await models.Item.findByPk(commitment.id);
+    expect(updatedItem.attributes.remainingBalance).toBe(900);
+
+    const undoAudits = await models.AuditLog.findAll({
+      where: {
+        action: "event.reopened",
+        entity: `event:${event.id}`
+      }
+    });
+    expect(undoAudits).toHaveLength(1);
   });
 
   it("emits EventCompletionError for guarded domain failures", async () => {

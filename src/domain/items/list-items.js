@@ -3,6 +3,7 @@
 const { models } = require("../../db");
 const { ItemQueryError, ITEM_QUERY_ERROR_CATEGORIES } = require("./item-query-errors");
 const { resolveOwnerFilter } = require("../../api/auth/scope-context");
+const { applyComputedFinancialProgress } = require("./financial-metrics");
 
 const CANONICAL_ITEM_FIELDS = Object.freeze([
   "id",
@@ -23,8 +24,6 @@ const CANONICAL_ITEM_FIELDS = Object.freeze([
 const FILTERS = Object.freeze(["all", "assets", "commitments", "income", "active", "deleted"]);
 const SORTS = Object.freeze(["recently_updated", "oldest_updated", "due_soon", "alphabetical", "amount_high_to_low", "amount_low_to_high"]);
 const ASSET_TYPES = new Set(["RealEstate", "Vehicle"]);
-const COMMITMENT_TYPES = new Set(["FinancialCommitment"]);
-const INCOME_TYPES = new Set(["FinancialIncome"]);
 const FINANCIAL_ITEM_TYPE = "FinancialItem";
 
 function isPlainObject(value) {
@@ -46,7 +45,14 @@ function normalizeString(value) {
 
 function normalizeInput(input) {
   const payload = isPlainObject(input) ? input : {};
-  const scope = isPlainObject(payload.scope) ? payload.scope : {};
+  const rawScope = isPlainObject(payload.scope) ? payload.scope : {};
+  const scope = {
+    ...rawScope,
+    actorUserId: normalizeString(rawScope.actorUserId) || normalizeString(payload.actorUserId) || undefined,
+    actorRole: normalizeString(rawScope.actorRole) || normalizeString(payload.actorRole) || undefined,
+    mode: normalizeString(rawScope.mode) || normalizeString(payload.mode) || undefined,
+    lensUserId: normalizeString(rawScope.lensUserId) || normalizeString(payload.lensUserId) || undefined
+  };
   const ownerFilter = resolveOwnerFilter(scope);
   const hasActor = normalizeString(scope.actorUserId).length > 0 || normalizeString(payload.actorUserId).length > 0;
   const search = normalizeString(payload.search).toLowerCase();
@@ -154,7 +160,16 @@ function matchesSearch(item, search) {
 }
 
 function isFinancialItemSubtype(item, subtype) {
-  return item.item_type === FINANCIAL_ITEM_TYPE && normalizeString(item.type).toLowerCase() === subtype.toLowerCase();
+  if (item.item_type !== FINANCIAL_ITEM_TYPE) {
+    return false;
+  }
+
+  const explicitSubtype = normalizeString(item.type);
+  const attributes = isPlainObject(item.attributes) ? item.attributes : {};
+  const attributeSubtype = normalizeString(attributes.financialSubtype || attributes.type);
+  const resolvedSubtype = explicitSubtype || attributeSubtype;
+
+  return resolvedSubtype.toLowerCase() === subtype.toLowerCase();
 }
 
 function applyFilter(items, filter) {
@@ -167,11 +182,11 @@ function applyFilter(items, filter) {
   }
 
   if (filter === "commitments") {
-    return items.filter((item) => COMMITMENT_TYPES.has(item.item_type) || isFinancialItemSubtype(item, "Commitment"));
+    return items.filter((item) => isFinancialItemSubtype(item, "Commitment"));
   }
 
   if (filter === "income") {
-    return items.filter((item) => INCOME_TYPES.has(item.item_type) || isFinancialItemSubtype(item, "Income"));
+    return items.filter((item) => isFinancialItemSubtype(item, "Income"));
   }
 
   if (filter === "active") {
@@ -235,21 +250,21 @@ function amountKey(item) {
   const attrs = item.attributes;
   let candidate = null;
 
-  if (item.item_type === "FinancialCommitment") {
-    const hasRemainingBalance = Number.isFinite(Number(attrs.remainingBalance));
-    const hasOriginalPrincipal = Number.isFinite(Number(attrs.originalPrincipal));
-
-    if (hasRemainingBalance) {
-      candidate = attrs.remainingBalance;
-    } else if (hasOriginalPrincipal) {
-      candidate = attrs.originalPrincipal;
+  if (item.item_type === FINANCIAL_ITEM_TYPE) {
+    if (isFinancialItemSubtype(item, "Income")) {
+      candidate = attrs.amount ?? item.default_amount ?? attrs.collectedTotal;
     } else {
-      candidate = attrs.nextPaymentAmount ?? attrs.amount;
+      const hasRemainingBalance = Number.isFinite(Number(attrs.remainingBalance));
+      const hasOriginalPrincipal = Number.isFinite(Number(attrs.originalPrincipal));
+
+      if (hasRemainingBalance) {
+        candidate = attrs.remainingBalance;
+      } else if (hasOriginalPrincipal) {
+        candidate = attrs.originalPrincipal;
+      } else {
+        candidate = attrs.nextPaymentAmount ?? attrs.amount ?? item.default_amount;
+      }
     }
-  } else if (item.item_type === "FinancialIncome") {
-    candidate = attrs.collectedTotal ?? attrs.amount;
-  } else if (item.item_type === FINANCIAL_ITEM_TYPE) {
-    candidate = attrs.nextPaymentAmount ?? attrs.amount ?? item.default_amount;
   } else {
     candidate = attrs.nextPaymentAmount ?? attrs.amount;
   }
@@ -334,7 +349,7 @@ async function listItems(input) {
     where
   });
 
-  const canonicalItems = rows.map(toCanonicalItem);
+  const canonicalItems = await applyComputedFinancialProgress(rows.map(toCanonicalItem), models);
   const visibilityFiltered = query.includeDeleted ? canonicalItems : canonicalItems.filter((item) => !isSoftDeleted(item));
   const filteredItems = applyFilter(visibilityFiltered, query.filter).filter((item) => matchesSearch(item, query.search));
   const sortedItems = applySort(filteredItems, query.sort);

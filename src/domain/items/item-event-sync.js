@@ -94,6 +94,22 @@ function addYearsUtc(date, count) {
   return addMonthsUtc(date, count * 12);
 }
 
+function rewindByFrequency(date, frequency) {
+  if (frequency === "weekly") {
+    return addDaysUtc(date, -7);
+  }
+
+  if (frequency === "monthly") {
+    return addMonthsUtc(date, -1);
+  }
+
+  if (frequency === "yearly") {
+    return addYearsUtc(date, -1);
+  }
+
+  return null;
+}
+
 function advanceByFrequency(date, frequency) {
   if (frequency === "weekly") {
     return addDaysUtc(date, 7);
@@ -108,6 +124,68 @@ function advanceByFrequency(date, frequency) {
   }
 
   return null;
+}
+
+function seekProjectionCursor(seedDate, boundaryDate, frequency) {
+  if (!seedDate || !boundaryDate || seedDate.getTime() >= boundaryDate.getTime()) {
+    return {
+      cursor: seedDate,
+      latestBeforeBoundary: null
+    };
+  }
+
+  let cursor = seedDate;
+
+  if (frequency === "weekly") {
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const diffWeeks = Math.floor((boundaryDate.getTime() - seedDate.getTime()) / weekMs);
+    cursor = addDaysUtc(seedDate, Math.max(diffWeeks, 0) * 7);
+  } else if (frequency === "monthly") {
+    const diffMonths = Math.max(
+      0,
+      (boundaryDate.getUTCFullYear() - seedDate.getUTCFullYear()) * 12 +
+      (boundaryDate.getUTCMonth() - seedDate.getUTCMonth())
+    );
+    cursor = addMonthsUtc(seedDate, diffMonths);
+  } else if (frequency === "yearly") {
+    const diffYears = Math.max(0, boundaryDate.getUTCFullYear() - seedDate.getUTCFullYear());
+    cursor = addYearsUtc(seedDate, diffYears);
+  }
+
+  let latestBeforeBoundary = null;
+  let guard = 0;
+
+  while (cursor.getTime() < boundaryDate.getTime() && guard < 24) {
+    latestBeforeBoundary = cursor;
+    const nextCursor = advanceByFrequency(cursor, frequency);
+    if (!nextCursor) {
+      return {
+        cursor: null,
+        latestBeforeBoundary
+      };
+    }
+    cursor = nextCursor;
+    guard += 1;
+  }
+
+  if (!latestBeforeBoundary && cursor.getTime() >= boundaryDate.getTime()) {
+    const previousCursor = rewindByFrequency(cursor, frequency);
+    if (previousCursor && previousCursor.getTime() >= seedDate.getTime()) {
+      latestBeforeBoundary = previousCursor;
+    }
+  }
+
+  if (cursor.getTime() < boundaryDate.getTime()) {
+    return {
+      cursor: null,
+      latestBeforeBoundary
+    };
+  }
+
+  return {
+    cursor,
+    latestBeforeBoundary
+  };
 }
 
 function isPlainObject(value) {
@@ -265,19 +343,14 @@ function projectItemEvents({
   );
 
   const projected = [];
-  let cursor = seedDate;
-  let latestBeforeProjectionStart = null;
-  let guard = 0;
-
-  while (cursor.getTime() < projectionStart.getTime() && guard < 500) {
-    latestBeforeProjectionStart = cursor;
-    const nextCursor = advanceByFrequency(cursor, item.frequency);
-    if (!nextCursor) {
-      return [];
-    }
-    cursor = nextCursor;
-    guard += 1;
+  const projectionCursor = seekProjectionCursor(seedDate, projectionStart, item.frequency);
+  if (!projectionCursor.cursor) {
+    return [];
   }
+
+  let cursor = projectionCursor.cursor;
+  const latestBeforeProjectionStart = projectionCursor.latestBeforeBoundary;
+  let guard = 0;
 
   const overdueDateKey = toDateKey(latestBeforeProjectionStart);
   const canProjectOverdueOccurrence =

@@ -470,6 +470,8 @@ export function EventsPage() {
       const params = new URLSearchParams(listParams)
       return apiRequest<EventsResponse>(`/events?${params.toString()}`)
     },
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   const itemsQuery = useQuery({
@@ -478,7 +480,14 @@ export function EventsPage() {
       const params = new URLSearchParams({ filter: 'all', sort: 'recently_updated', ...lensParams })
       return apiRequest<ItemsResponse>(`/items?${params.toString()}`)
     },
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
+
+  useEffect(() => {
+    void eventsQuery.refetch()
+    void itemsQuery.refetch()
+  }, [eventsQuery.refetch, itemsQuery.refetch, location.pathname, location.search])
 
   const itemById = useMemo(() => {
     const rows = itemsQuery.data?.items ?? []
@@ -594,7 +603,9 @@ export function EventsPage() {
 
   const hasRenderableEvents = Boolean(eventsQuery.data)
   const hasRenderableItems = Boolean(itemsQuery.data)
-  const isLoading = (eventsQuery.isLoading && !hasRenderableEvents) || (itemsQuery.isLoading && !hasRenderableItems)
+  const waitingForEventsRefresh = eventsQuery.isFetching && ((eventsQuery.data?.total_count ?? 0) === 0)
+  const waitingForItemsRefresh = itemsQuery.isFetching && !hasRenderableItems
+  const isLoading = (eventsQuery.isLoading && !hasRenderableEvents) || (itemsQuery.isLoading && !hasRenderableItems) || waitingForEventsRefresh || waitingForItemsRefresh
   const isError = (!hasRenderableEvents && eventsQuery.isError) || (!hasRenderableItems && itemsQuery.isError)
   const isRetrying = eventsQuery.isFetching || itemsQuery.isFetching
 

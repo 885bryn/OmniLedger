@@ -58,13 +58,18 @@ describe("listItems domain service", () => {
     });
     const deletedItem = await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialCommitment",
-      attributes: { amount: 50, dueDate: "2026-08-01", _deleted_at: "2026-01-01T00:00:00.000Z" }
+      item_type: "FinancialItem",
+      title: "Archived commitment",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 50,
+      status: "Active",
+      attributes: { amount: 50, dueDate: "2026-08-01", financialSubtype: "Commitment", _deleted_at: "2026-01-01T00:00:00.000Z" }
     });
 
-    await models.Item.update({ updated_at: "2026-01-01T00:00:00.000Z" }, { where: { id: oldItem.id }, silent: true });
-    await models.Item.update({ updated_at: "2026-02-01T00:00:00.000Z" }, { where: { id: recentItem.id }, silent: true });
-    await models.Item.update({ updated_at: "2026-03-01T00:00:00.000Z" }, { where: { id: deletedItem.id }, silent: true });
+    await models.Item.update({ updatedAt: "2026-01-01T00:00:00.000Z" }, { where: { id: oldItem.id }, silent: true });
+    await models.Item.update({ updatedAt: "2026-02-01T00:00:00.000Z" }, { where: { id: recentItem.id }, silent: true });
+    await models.Item.update({ updatedAt: "2026-03-01T00:00:00.000Z" }, { where: { id: deletedItem.id }, silent: true });
 
     const result = await listItems({ actorUserId: owner.id });
     expect(result.items.map((item) => item.id)).toEqual([recentItem.id, oldItem.id]);
@@ -95,27 +100,45 @@ describe("listItems domain service", () => {
 
     const lateDue = await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
+      title: "Late commitment",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 220,
+      status: "Active",
       parent_item_id: rootAsset.id,
       attributes: {
+        financialSubtype: "Commitment",
         amount: 220,
         dueDate: "2026-06-15"
       }
     });
     const soonDue = await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
+      title: "Soon commitment",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 120,
+      status: "Active",
       parent_item_id: rootAsset.id,
       attributes: {
+        financialSubtype: "Commitment",
         amount: 120,
         dueDate: "2026-04-10"
       }
     });
     const income = await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialIncome",
+      item_type: "FinancialItem",
+      title: "Rent A",
+      type: "Income",
+      frequency: "monthly",
+      default_amount: 1000,
+      status: "Active",
       parent_item_id: rootAsset.id,
       attributes: {
+        financialSubtype: "Income",
         name: "Rent A",
         amount: 1000,
         collectedTotal: 1200,
@@ -124,9 +147,15 @@ describe("listItems domain service", () => {
     });
     const oneTimeCommitment = await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
+      title: "One-time fee",
+      type: "Commitment",
+      frequency: "one_time",
+      default_amount: 350,
+      status: "Active",
       parent_item_id: rootAsset.id,
       attributes: {
+        financialSubtype: "Commitment",
         name: "One-time fee",
         amount: 350,
         dueDate: "2026-07-01"
@@ -142,6 +171,7 @@ describe("listItems domain service", () => {
       status: "Active",
       linked_asset_item_id: rootAsset.id,
       attributes: {
+        financialSubtype: "Commitment",
         dueDate: "2026-08-05"
       }
     });
@@ -155,14 +185,21 @@ describe("listItems domain service", () => {
       status: "Active",
       linked_asset_item_id: rootAsset.id,
       attributes: {
+        financialSubtype: "Income",
         dueDate: "2026-04-02"
       }
     });
     const loanLowInstallmentHighBalance = await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
+      title: "Loan A",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 50,
+      status: "Active",
       parent_item_id: rootAsset.id,
       attributes: {
+        financialSubtype: "Commitment",
         name: "Loan A",
         amount: 50,
         remainingBalance: 5000,
@@ -171,8 +208,14 @@ describe("listItems domain service", () => {
     });
     await models.Item.create({
       user_id: owner.id,
-      item_type: "FinancialCommitment",
+      item_type: "FinancialItem",
+      title: "Unlinked commitment",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 50,
+      status: "Active",
       attributes: {
+        financialSubtype: "Commitment",
         amount: 50,
         dueDate: "2026-09-01"
       }

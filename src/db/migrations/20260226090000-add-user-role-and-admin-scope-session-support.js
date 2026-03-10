@@ -22,11 +22,15 @@ function getConfiguredAdminEmail() {
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn("Users", "role", {
-      type: Sequelize.STRING,
-      allowNull: true,
-      defaultValue: ROLE_USER
-    });
+    const columns = await queryInterface.describeTable("Users");
+
+    if (!columns.role) {
+      await queryInterface.addColumn("Users", "role", {
+        type: Sequelize.STRING,
+        allowNull: true,
+        defaultValue: ROLE_USER
+      });
+    }
 
     await queryInterface.sequelize.query(
       `UPDATE "Users" SET "role" = :roleUser WHERE "role" IS NULL`,

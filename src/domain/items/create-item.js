@@ -1,13 +1,13 @@
 "use strict";
 
 const { sequelize, models } = require("../../db");
-const { ITEM_TYPES } = require("../../db/models/item.model");
 const { defaultAttributesByType } = require("./default-attributes");
 const { minimumAttributeKeys } = require("./minimum-attribute-keys");
 const { ItemCreateValidationError, ITEM_CREATE_ERROR_CATEGORIES } = require("./item-create-errors");
 const { syncItemEvent } = require("./item-event-sync");
 
 const FINANCIAL_ITEM_TYPE = "FinancialItem";
+const SUPPORTED_ITEM_TYPES = Object.freeze(["RealEstate", "Vehicle", "FinancialItem"]);
 const FINANCIAL_SUBTYPES = Object.freeze(["Commitment", "Income"]);
 const FINANCIAL_FREQUENCIES = Object.freeze(["one_time", "weekly", "monthly", "yearly"]);
 const FINANCIAL_STATUSES = Object.freeze(["Active", "Closed"]);
@@ -35,6 +35,19 @@ function isPlainObject(value) {
 
 function isUuidLike(value) {
   return typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value);
+}
+
+function toFiniteNumber(value) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
 }
 
 function buildValidationError(issues) {
@@ -116,12 +129,12 @@ function normalizeInput(input) {
     });
   }
 
-  if (ITEM_TYPES.includes(payload.item_type) === false) {
+  if (SUPPORTED_ITEM_TYPES.includes(payload.item_type) === false) {
     issues.push({
       field: "item_type",
       code: "invalid_item_type",
       category: ITEM_CREATE_ERROR_CATEGORIES.INVALID_ITEM_TYPE,
-      message: `item_type must be one of: ${ITEM_TYPES.join(", ")}.`
+      message: `item_type must be one of: ${SUPPORTED_ITEM_TYPES.join(", ")}.`
     });
   }
 
@@ -156,7 +169,7 @@ function normalizeInput(input) {
   const attributes = isPlainObject(payload.attributes) ? payload.attributes : {};
   const mergedAttributes = { ...defaults, ...attributes };
 
-  if (ITEM_TYPES.includes(payload.item_type)) {
+  if (SUPPORTED_ITEM_TYPES.includes(payload.item_type)) {
     const requiredKeys = minimumAttributeKeys[payload.item_type] || [];
     const missingKeys = requiredKeys.filter((key) => mergedAttributes[key] === undefined || mergedAttributes[key] === null || mergedAttributes[key] === "");
 
@@ -172,6 +185,8 @@ function normalizeInput(input) {
   }
 
   if (payload.item_type === FINANCIAL_ITEM_TYPE) {
+    const isRecurringContract = frequency && frequency !== "one_time";
+
     if (title === "") {
       issues.push({
         field: "title",
@@ -225,18 +240,71 @@ function normalizeInput(input) {
         message: "confirm_unlinked_asset must be true when linked_asset_item_id is omitted."
       });
     }
+
+    if (title !== "" && (mergedAttributes.name === undefined || mergedAttributes.name === null || String(mergedAttributes.name).trim() === "")) {
+      mergedAttributes.name = title;
+    }
+
+    if (subtype && (mergedAttributes.financialSubtype === undefined || mergedAttributes.financialSubtype === null || String(mergedAttributes.financialSubtype).trim() === "")) {
+      mergedAttributes.financialSubtype = subtype;
+    }
+
+    if (frequency && (mergedAttributes.billingCycle === undefined || mergedAttributes.billingCycle === null || String(mergedAttributes.billingCycle).trim() === "")) {
+      mergedAttributes.billingCycle = frequency;
+    }
+
+    if (status && (mergedAttributes.status === undefined || mergedAttributes.status === null || String(mergedAttributes.status).trim() === "")) {
+      mergedAttributes.status = status;
+    }
+
+    if (linkedAssetItemId && (mergedAttributes.linkedAssetItemId === undefined || mergedAttributes.linkedAssetItemId === null || String(mergedAttributes.linkedAssetItemId).trim() === "")) {
+      mergedAttributes.linkedAssetItemId = linkedAssetItemId;
+    }
+
+    if (linkedAssetItemId && (mergedAttributes.parentItemId === undefined || mergedAttributes.parentItemId === null || String(mergedAttributes.parentItemId).trim() === "")) {
+      mergedAttributes.parentItemId = linkedAssetItemId;
+    }
+
+    if (Number.isFinite(Number(defaultAmount))) {
+      const normalizedDefaultAmount = Number(defaultAmount);
+
+      if (mergedAttributes.amount === undefined || mergedAttributes.amount === null || Number.isFinite(Number(mergedAttributes.amount)) === false) {
+        mergedAttributes.amount = normalizedDefaultAmount;
+      }
+    }
+
+    if (isRecurringContract && mergedAttributes.dynamicTrackingEnabled === undefined) {
+      mergedAttributes.dynamicTrackingEnabled = true;
+    }
+
+    if (isRecurringContract && subtype === "Commitment" && mergedAttributes.trackingStartingRemainingBalance === undefined) {
+      const startingRemaining = toFiniteNumber(mergedAttributes.remainingBalance)
+        ?? toFiniteNumber(mergedAttributes.originalPrincipal);
+
+      if (startingRemaining !== null) {
+        mergedAttributes.trackingStartingRemainingBalance = startingRemaining;
+      }
+    }
+
+    if (isRecurringContract && subtype === "Income" && mergedAttributes.trackingStartingCollectedTotal === undefined) {
+      const startingCollected = toFiniteNumber(mergedAttributes.collectedTotal) ?? 0;
+      mergedAttributes.trackingStartingCollectedTotal = startingCollected;
+    }
   }
 
   if (issues.length > 0) {
     throw buildValidationError(issues);
   }
 
+  const parentItemId = payload.parent_item_id || null;
+  const effectiveParentItemId = payload.item_type === FINANCIAL_ITEM_TYPE ? parentItemId || linkedAssetItemId || null : parentItemId;
+
   return {
     scope,
     user_id: ownerUserId,
     item_type: payload.item_type,
     attributes: mergedAttributes,
-    parent_item_id: payload.parent_item_id || null,
+    parent_item_id: effectiveParentItemId,
     title: title || null,
     type: subtype || null,
     frequency: frequency || null,
@@ -299,7 +367,13 @@ async function createItem(input) {
 
   try {
     return await sequelize.transaction(async (transaction) => {
-      if (payload.parent_item_id) {
+      const parentDerivedFromLinkedAsset =
+        payload.item_type === FINANCIAL_ITEM_TYPE &&
+        payload.parent_item_id &&
+        payload.linked_asset_item_id &&
+        payload.parent_item_id === payload.linked_asset_item_id;
+
+      if (payload.parent_item_id && !parentDerivedFromLinkedAsset) {
         const parent = await models.Item.findByPk(payload.parent_item_id, { transaction });
 
         if (!parent) {

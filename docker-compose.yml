@@ -12,10 +12,14 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-change_me_local}
       JWT_SECRET: ${JWT_SECRET:-change_me_jwt_secret}
+      SESSION_SECRET: ${SESSION_SECRET:-change_me_session_secret}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
       HOST: 0.0.0.0
       PORT: 8080
       STARTUP_DB_MAX_RETRIES: ${STARTUP_DB_MAX_RETRIES:-30}
       STARTUP_DB_RETRY_MS: ${STARTUP_DB_RETRY_MS:-2000}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
+      HACT_ADMIN_EMAIL: ${HACT_ADMIN_EMAIL:-}
     ports:
       - "8080:8080"
     depends_on:

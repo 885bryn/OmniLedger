@@ -2,11 +2,11 @@ name: house-erp-prod
 
 services:
   frontend:
-    image: ghcr.io/${GHCR_OWNER:?GHCR_OWNER is required}/omniledger-frontend:${IMAGE_TAG:?IMAGE_TAG is required}
+    image: ghcr.io/${GHCR_OWNER}/omniledger-frontend:${IMAGE_TAG}
     restart: unless-stopped
     environment:
-      NAS_STATIC_IP: ${NAS_STATIC_IP:?NAS_STATIC_IP is required}
-      API_URL: http://${NAS_STATIC_IP:?NAS_STATIC_IP is required}:8085/api
+      NAS_STATIC_IP: ${NAS_STATIC_IP}
+      API_URL: http://${NAS_STATIC_IP}:${FRONTEND_PORT:-8085}/api
     ports:
       - "${FRONTEND_PORT:-8085}:80"
     healthcheck:
@@ -22,7 +22,7 @@ services:
         condition: service_healthy
 
   backend:
-    image: ghcr.io/${GHCR_OWNER:?GHCR_OWNER is required}/omniledger-backend:${IMAGE_TAG:?IMAGE_TAG is required}
+    image: ghcr.io/${GHCR_OWNER}/omniledger-backend:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -32,16 +32,16 @@ services:
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-hact_prod}
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-hact_prod}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
-      HACT_ADMIN_EMAIL: ${HACT_ADMIN_EMAIL:?HACT_ADMIN_EMAIL is required}
-      FRONTEND_ORIGIN: http://${NAS_STATIC_IP:?NAS_STATIC_IP is required}:${FRONTEND_PORT:-8085}
+      HACT_ADMIN_EMAIL: ${HACT_ADMIN_EMAIL}
+      FRONTEND_ORIGIN: http://${NAS_STATIC_IP}:${FRONTEND_PORT:-8085}
       STARTUP_DB_MAX_RETRIES: ${STARTUP_DB_MAX_RETRIES:-30}
       STARTUP_DB_RETRY_MS: ${STARTUP_DB_RETRY_MS:-2000}
-      API_URL: http://${NAS_STATIC_IP:?NAS_STATIC_IP is required}:8085/api
+      API_URL: http://${NAS_STATIC_IP}:${FRONTEND_PORT:-8085}/api
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
@@ -64,7 +64,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-hact_prod}
       POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - /volume1/docker/house-erp/db-data:/var/lib/postgresql/data
     healthcheck:

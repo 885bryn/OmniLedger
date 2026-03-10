@@ -2,11 +2,15 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn("Events", "is_exception", {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    });
+    const columns = await queryInterface.describeTable("Events");
+
+    if (!columns.is_exception) {
+      await queryInterface.addColumn("Events", "is_exception", {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      });
+    }
   },
 
   async down(queryInterface) {
