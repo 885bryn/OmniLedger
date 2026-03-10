@@ -126,5 +126,5 @@ Decisions are logged in `.planning/PROJECT.md`.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 31-paid-flow-into-history-01-PLAN.md
-Resume file: `None`
+Stopped at: Phase 32 context gathered
+Resume file: `.planning/phases/32-manual-override-boundary-contract/32-CONTEXT.md`
