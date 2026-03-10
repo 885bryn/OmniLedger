@@ -46,7 +46,9 @@
   2. User sees pending and overdue upcoming events grouped into Overdue, This Week, Later This Month, and Future sections.
   3. User sees sticky chronological section headers remain visible while scrolling long upcoming ledgers.
   4. User can immediately distinguish overdue events from other upcoming rows through urgent visual treatment.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] `30-upcoming-ledger-foundation-01-PLAN.md` - Rebuild the global Events page into the read-only grouped ledger foundation with compact upcoming buckets, sticky chronology, calm state handling, and focused frontend regressions.
 **Manual Test Gate**: Stop after this phase for browser verification of ledger grouping, sticky headers, and tab behavior before Phase 31 starts.
 
 ### Phase 31: Paid Flow Into History
@@ -88,7 +90,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 30. Upcoming Ledger Foundation | 0/0 | Not started | - |
+| 30. Upcoming Ledger Foundation | 0/1 | Not started | - |
 | 31. Paid Flow Into History | 0/0 | Not started | - |
 | 32. Manual Override Boundary Contract | 0/0 | Not started | - |
 | 33. Historical Injection UI | 0/0 | Not started | - |
