@@ -6,14 +6,15 @@ import { MotionPanelList } from '@/components/ui/motion-panel-list'
 import { Pressable } from '@/components/ui/pressable'
 import { Button } from '@/components/ui/button'
 import { DataCard } from '../../features/dashboard/data-card'
+import { DashboardNeedsAttention } from '../../features/dashboard/dashboard-needs-attention'
 import { DashboardBody, DashboardDescription, DashboardEyebrow, DashboardHeader, DashboardLayout, DashboardSection, DashboardTitle } from '../../features/dashboard/dashboard-layout'
+import { DashboardRecentActivity } from '../../features/dashboard/dashboard-recent-activity'
 import { DashboardSummaryCard } from '../../features/dashboard/dashboard-summary-card'
-import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { formatCurrency } from '../../lib/currency'
-import { compareByNearestDue, compareGroupsByNearestDue } from '../../lib/date-ordering'
-import { getItemDisplayName, isIncomeItem } from '../../lib/item-display'
+import { compareByNearestDue } from '../../lib/date-ordering'
+import { getItemDisplayName } from '../../lib/item-display'
 import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type EventRow = {
@@ -94,54 +95,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function normalizeSubtype(value: unknown) {
-  return typeof value === 'string' ? value.trim().toLowerCase() : ''
-}
-
-function isOutflowItem(item: ItemRow | undefined) {
-  if (!item || item.item_type !== 'FinancialItem') {
-    return false
-  }
-
-  const attributes = isRecord(item.attributes) ? item.attributes : {}
-  const subtype = normalizeSubtype(item.type) || normalizeSubtype(attributes.financialSubtype) || normalizeSubtype(attributes.type)
-  return subtype === 'commitment'
-}
-
-function formatDueLabel(value: string) {
-  const date = parseCalendarDate(value)
-  if (!date) {
-    return value
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(date)
-}
-
-function formatEventAmount(value: number | null, isIncome: boolean) {
-  if (value === null || Number.isNaN(value)) {
-    return null
-  }
-
-  const formatted = formatCurrency(Number(value))
-  return isIncome ? `+${formatted}` : formatted
-}
-
-function formatUpdatedLabel(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return 'Updated recently'
-  }
-
-  return `Updated ${new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-  }).format(date)}`
-}
-
 function formatDateRange(values: string[]) {
   const parsed = values.map((value) => parseCalendarDate(value)).filter((value): value is Date => value !== null)
   if (parsed.length === 0) {
@@ -173,20 +126,6 @@ function parseCalendarDate(value: string) {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-function toCalendarDayKey(value: string) {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (match) {
-    return `${match[1]}-${match[2]}-${match[3]}`
-  }
-
-  const parsed = parseCalendarDate(value)
-  if (!parsed) {
-    return value
-  }
-
-  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`
-}
-
 function formatPeriodLabel(period: { start_date?: string; end_date?: string; label?: string } | undefined, fallback: string) {
   if (period?.label && period.label.trim().length > 0) {
     return period.label
@@ -197,21 +136,6 @@ function formatPeriodLabel(period: { start_date?: string; end_date?: string; lab
   }
 
   return fallback
-}
-
-function groupMergedEvents(events: EventRow[]): EventGroup[] {
-  const grouped = new Map<string, EventRow[]>()
-
-  events.forEach((event) => {
-    const key = toCalendarDayKey(event.due_date)
-    const rows = grouped.get(key) ?? []
-    rows.push(event)
-    grouped.set(key, rows)
-  })
-
-  return Array.from(grouped.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([due_date, rows]) => ({ due_date, events: rows.sort(compareByNearestDue) }))
 }
 
 function resolveNetSummary(summary: NetStatusResponse['summary']) {
@@ -344,7 +268,6 @@ export function DashboardPage() {
     const groups = eventsQuery.data?.groups ?? []
     return groups.flatMap((group) => group.events).sort(compareByNearestDue)
   }, [eventsQuery.data])
-  const grouped = useMemo(() => groupMergedEvents(attentionEvents).sort(compareGroupsByNearestDue), [attentionEvents])
   const completedEvents = useMemo(() => {
     const groups = recentActivityQuery.data?.groups ?? []
     return groups.flatMap((group) => group.events).sort(compareActivityByLatest)
@@ -359,7 +282,6 @@ export function DashboardPage() {
   }, [itemLookupQuery.data?.items])
 
   const assets = assetsQuery.data?.items ?? []
-  const recentItems = useMemo(() => (itemLookupQuery.data?.items ?? []).slice(0, 4), [itemLookupQuery.data?.items])
   const assetNetStatusQuery = useQuery({
     queryKey: [...queryKeys.dashboard.lens(lensScope), 'asset-net-status', assets.map((asset) => asset.id)],
     enabled: assets.length > 0,
@@ -398,10 +320,6 @@ export function DashboardPage() {
         return total
       }
 
-      if (!isOutflowItem(itemById.get(event.item_id))) {
-        return total
-      }
-
       return total + Number(event.amount ?? 0)
     }, 0)
     const dueRange = formatDateRange(attentionEvents.map((event) => event.due_date))
@@ -423,7 +341,7 @@ export function DashboardPage() {
       activityRows: activityRows.length,
       manualOverrideCount,
     }
-  }, [assetNetStatusQuery.data, attentionEvents, completedEvents, itemById, t])
+  }, [assetNetStatusQuery.data, attentionEvents, completedEvents, t])
 
   const metricCards = [
     {
@@ -517,8 +435,8 @@ export function DashboardPage() {
 
       <DashboardBody>
         <DashboardSection
-          title="Needs Attention"
-          description="Overdue and upcoming obligations stay in the primary work column so urgent decisions stay impossible to miss."
+          title={t('dashboard.sections.needsAttention.title')}
+          description={t('dashboard.sections.needsAttention.description')}
           action={
             <Button asChild size="sm" variant="ghost">
               <Link to="/events">{t('dashboard.openEvents')}</Link>
@@ -526,72 +444,48 @@ export function DashboardPage() {
           }
           data-dashboard-section="needs-attention"
         >
-          {grouped.length === 0 ? (
+          {attentionEvents.length === 0 ? (
             <DashboardEmptyState />
           ) : (
-            <MotionPanelList
-              items={grouped}
-              getItemKey={(group) => group.due_date}
-              className="space-y-4"
-              renderItem={(group) => (
-                <DataCard
-                  as="section"
-                  cardClassName="bg-card"
-                  contentClassName="pt-0"
-                  eyebrow={formatDueLabel(group.due_date)}
-                  title={`${group.events.length} ${group.events.length === 1 ? 'event' : 'events'} due`}
-                >
-                  <MotionPanelList
-                    items={group.events.slice(0, 4)}
-                    getItemKey={(event) => event.id}
-                    className="space-y-2"
-                    renderItem={(event) => (
-                      <div className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3.5 shadow-sm shadow-black/5 dark:shadow-none md:flex-row md:items-center md:justify-between">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium">{event.type}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
-                              {itemNameById.get(event.item_id) ?? t('dashboard.itemLabel', { itemId: event.item_id })}
-                            </Link>{' '}
-                            - {formatEventAmount(event.amount, isIncomeItem(itemById.get(event.item_id) ?? { item_type: 'Unknown' })) ?? t('dashboard.amountPending')}
-                          </p>
-                        </div>
-                        <CompleteEventRowAction eventId={event.id} itemId={event.item_id} />
-                      </div>
-                    )}
-                  />
-                </DataCard>
-              )}
+            <DashboardNeedsAttention
+              events={attentionEvents}
+              itemById={itemById}
+              itemNameById={itemNameById}
+              returnTo={location.pathname + location.search}
+              labels={{
+                overdue: t('dashboard.attention.overdue'),
+                dueSoon: t('dashboard.attention.dueSoon'),
+                dueDate: t('dashboard.attention.dueDate'),
+                amount: t('dashboard.attention.amount'),
+                linkedItem: t('dashboard.attention.linkedItem'),
+                amountPending: t('dashboard.amountPending'),
+                itemLabel: (itemId) => t('dashboard.itemLabel', { itemId }),
+              }}
             />
           )}
         </DashboardSection>
 
         <DashboardSection
-          title="Recent Activity"
-          description="A calmer companion feed keeps the newest item changes nearby without competing with the action queue."
+          title={t('dashboard.sections.recentActivity.title')}
+          description={t('dashboard.sections.recentActivity.description')}
           data-dashboard-section="recent-activity"
         >
           <DataCard as="section" cardClassName="bg-card" contentClassName="space-y-3">
-            {recentItems.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Recent item changes will appear here once your dashboard has active records.</p>
+            {completedEvents.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('dashboard.recentActivity.empty')}</p>
             ) : (
-              <MotionPanelList
-                items={recentItems}
-                getItemKey={(item) => item.id}
-                className="space-y-3"
-                renderItem={(item) => (
-                  <Link
-                    to={`/items/${item.id}`}
-                    state={{ from: location.pathname + location.search }}
-                    className="hover-lift flex rounded-xl border border-border bg-background/80 px-4 py-3 shadow-sm shadow-black/5 dark:shadow-none"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{getItemDisplayName(item)}</p>
-                      <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{item.item_type}</p>
-                      <p className="mt-2 text-xs text-muted-foreground">{formatUpdatedLabel(item.updated_at)}</p>
-                    </div>
-                  </Link>
-                )}
+              <DashboardRecentActivity
+                events={completedEvents.slice(0, 5)}
+                itemById={itemById}
+                itemNameById={itemNameById}
+                returnTo={location.pathname + location.search}
+                labels={{
+                  completed: t('dashboard.recentActivity.completedBadge'),
+                  manualOverride: t('events.manualOverride.badge'),
+                  paidOn: (date) => t('dashboard.recentActivity.paidOn', { date }),
+                  amountPending: t('dashboard.amountPending'),
+                  itemLabel: (itemId) => t('dashboard.itemLabel', { itemId }),
+                }}
               />
             )}
           </DataCard>
@@ -600,7 +494,7 @@ export function DashboardPage() {
 
       <DashboardSection
         title={t('dashboard.assetsTitle')}
-        description="Supporting portfolio context stays available below the primary action and activity bands so the dashboard remains useful without losing its hierarchy."
+        description={t('dashboard.sections.portfolio.description')}
         action={
           <Button asChild size="sm" variant="ghost">
             <Link to="/items?filter=assets">{t('dashboard.viewAllItems')}</Link>

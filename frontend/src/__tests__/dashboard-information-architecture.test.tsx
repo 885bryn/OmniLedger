@@ -304,26 +304,37 @@ describe('dashboard information architecture', () => {
     expect(within(cards[3]).getByText('2 recent completions, including 1 manual overrides.')).toBeTruthy()
   })
 
-  it('keeps the summary-first hierarchy with attention before activity and support sections', async () => {
+  it('renders overdue-first attention rows and a calmer recent activity feed with existing pathways', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
     globalThis.fetch = createDashboardFetchMock() as typeof fetch
 
     renderDashboardPage()
 
-    await screen.findByRole('heading', { name: 'Current position' })
+    await screen.findByRole('heading', { name: 'Needs Attention' })
 
-    const summary = screen.getByRole('heading', { name: 'Current position' })
     const needsAttention = screen.getByRole('heading', { name: 'Needs Attention' })
     const recentActivity = screen.getByRole('heading', { name: 'Recent Activity' })
     const portfolio = screen.getByRole('heading', { name: 'Portfolio snapshot' })
 
-    expect(summary.compareDocumentPosition(needsAttention) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(needsAttention.compareDocumentPosition(recentActivity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(recentActivity.compareDocumentPosition(portfolio) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
-    expect(screen.getByText('Mortgage')).toBeTruthy()
-    expect(screen.getAllByText('Home Insurance').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Primary Home').length).toBeGreaterThan(0)
+    const attentionRows = screen.getAllByRole('listitem').filter((node) => node.getAttribute('data-attention-row-id'))
+    expect(attentionRows).toHaveLength(2)
+    expect(attentionRows[0]?.getAttribute('data-overdue')).toBe('true')
+    expect(within(attentionRows[0]).getByText('Insurance')).toBeTruthy()
+    expect(within(attentionRows[0]).getByText('Home Insurance')).toBeTruthy()
+    expect(within(attentionRows[1]).getByText('Mortgage')).toBeTruthy()
+    expect(within(attentionRows[1]).getByText('Maple Mortgage')).toBeTruthy()
+
+    const recentRows = screen.getAllByRole('listitem').filter((node) => node.getAttribute('data-recent-activity-row-id'))
+    expect(recentRows).toHaveLength(2)
+    expect(within(recentRows[0]).getByText('Completed')).toBeTruthy()
+    expect(within(recentRows[1]).getByText('Manual override')).toBeTruthy()
+    expect(within(recentRows[1]).getByText('Paid on Mar 9, 2026')).toBeTruthy()
+
+    expect(screen.getAllByRole('link', { name: /Open events/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('link', { name: 'Maple Mortgage' }).length).toBeGreaterThan(0)
   })
 
   it('locks the summary band to a stacked mobile order instead of a cramped small-screen grid', async () => {
