@@ -6,6 +6,7 @@ import { MotionPanelList } from '@/components/ui/motion-panel-list'
 import { Pressable } from '@/components/ui/pressable'
 import { Button } from '@/components/ui/button'
 import { DataCard } from '../../features/dashboard/data-card'
+import { DashboardBody, DashboardDescription, DashboardEyebrow, DashboardHeader, DashboardLayout, DashboardSection, DashboardTitle } from '../../features/dashboard/dashboard-layout'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
@@ -91,6 +92,18 @@ function formatEventAmount(value: number | null, isIncome: boolean) {
   return isIncome ? `+${formatted}` : formatted
 }
 
+function formatUpdatedLabel(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return 'Updated recently'
+  }
+
+  return `Updated ${new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+  }).format(date)}`
+}
+
 function formatDateRange(values: string[]) {
   const parsed = values.map((value) => Date.parse(value)).filter((value) => !Number.isNaN(value))
   if (parsed.length === 0) {
@@ -128,18 +141,30 @@ function groupMergedEvents(events: EventRow[]): EventGroup[] {
 
 function DashboardSkeleton() {
   return (
-    <section className="space-y-5" aria-label="Loading dashboard">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <DashboardLayout aria-label="Loading dashboard">
+      <div className="space-y-2">
+        <div className="h-4 w-24 animate-pulse rounded bg-muted/70" />
+        <div className="h-8 w-64 animate-pulse rounded bg-muted/70" />
+        <div className="h-5 w-full max-w-2xl animate-pulse rounded bg-muted/60" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div key={index} className="h-32 animate-pulse rounded-xl border border-border bg-card/80 shadow-sm shadow-black/5 dark:shadow-none" />
         ))}
       </div>
-      <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm shadow-black/5 dark:shadow-none">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="h-14 animate-pulse rounded-lg bg-muted/80" />
-        ))}
-      </div>
-    </section>
+      <DashboardBody>
+        <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm shadow-black/5 dark:shadow-none">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-16 animate-pulse rounded-lg bg-muted/80" />
+          ))}
+        </div>
+        <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm shadow-black/5 dark:shadow-none">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="h-20 animate-pulse rounded-lg bg-muted/80" />
+          ))}
+        </div>
+      </DashboardBody>
+    </DashboardLayout>
   )
 }
 
@@ -149,6 +174,7 @@ function DashboardEmptyState() {
   return (
     <DataCard
       as="section"
+      cardClassName="border-dashed bg-muted/20"
       contentClassName="pt-0"
       description={t('dashboard.noDueEventsDescription')}
       title={t('dashboard.noDueEventsTitle')}
@@ -217,6 +243,7 @@ export function DashboardPage() {
   }, [itemLookupQuery.data?.items])
 
   const assets = assetsQuery.data?.items ?? []
+  const recentItems = useMemo(() => (itemLookupQuery.data?.items ?? []).slice(0, 4), [itemLookupQuery.data?.items])
 
   const assetGridClassName = useMemo(() => {
     if (assets.length <= 1) {
@@ -288,100 +315,163 @@ export function DashboardPage() {
   }
 
   return (
-    <section className="space-y-5">
-      <MotionPanelList
-        items={metricCards}
-        getItemKey={(metric) => metric.key}
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-        itemClassName="h-full"
-        highlightOnMount
-        renderItem={(metric) => (
-          <DataCard
-            as="article"
-            cardClassName="hover-lift"
-            className="h-full"
-            data-dashboard-metric-card="true"
-            description={metric.description}
-            eyebrow={metric.label}
-            value={<span className={metric.valueClassName}>{metric.value}</span>}
-          />
-        )}
-      />
+    <DashboardLayout>
+      <DashboardHeader>
+        <DashboardEyebrow>Finance cockpit</DashboardEyebrow>
+        <DashboardTitle>Dashboard</DashboardTitle>
+        <DashboardDescription>
+          Review current position first, then move straight into urgent obligations and the latest item changes.
+        </DashboardDescription>
+      </DashboardHeader>
 
-      <DataCard
-        as="section"
+      <DashboardSection
+        title="Current position"
+        description="High-level signals stay in a single priority band so the page answers where things stand before it asks for action."
+        data-dashboard-section="summary"
+      >
+        <div data-dashboard-summary-band="true">
+          <MotionPanelList
+            items={metricCards}
+            getItemKey={(metric) => metric.key}
+            className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4"
+            itemClassName="h-full"
+            highlightOnMount
+            renderItem={(metric) => (
+              <DataCard
+                as="article"
+                cardClassName="hover-lift h-full bg-card"
+                className="h-full"
+                data-dashboard-metric-card="true"
+                description={metric.description}
+                descriptionClassName="text-xs leading-5"
+                eyebrow={metric.label}
+                headerClassName="gap-2"
+                value={<span className={metric.valueClassName}>{metric.value}</span>}
+                valueClassName="text-2xl md:text-3xl"
+              />
+            )}
+          />
+        </div>
+      </DashboardSection>
+
+      <DashboardBody>
+        <DashboardSection
+          title="Needs Attention"
+          description="Overdue and upcoming obligations stay in the primary work column so urgent decisions stay impossible to miss."
+          action={
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/events">{t('dashboard.openEvents')}</Link>
+            </Button>
+          }
+          data-dashboard-section="needs-attention"
+        >
+          {grouped.length === 0 ? (
+            <DashboardEmptyState />
+          ) : (
+            <MotionPanelList
+              items={grouped}
+              getItemKey={(group) => group.due_date}
+              className="space-y-4"
+              renderItem={(group) => (
+                <DataCard
+                  as="section"
+                  cardClassName="bg-card"
+                  contentClassName="pt-0"
+                  eyebrow={formatDueLabel(group.due_date)}
+                  title={`${group.events.length} ${group.events.length === 1 ? 'event' : 'events'} due`}
+                >
+                  <MotionPanelList
+                    items={group.events.slice(0, 4)}
+                    getItemKey={(event) => event.id}
+                    className="space-y-2"
+                    renderItem={(event) => (
+                      <div className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3.5 shadow-sm shadow-black/5 dark:shadow-none md:flex-row md:items-center md:justify-between">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{event.type}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
+                              {itemNameById.get(event.item_id) ?? t('dashboard.itemLabel', { itemId: event.item_id })}
+                            </Link>{' '}
+                            - {formatEventAmount(event.amount, isIncomeItem(itemById.get(event.item_id) ?? { item_type: 'Unknown' })) ?? t('dashboard.amountPending')}
+                          </p>
+                        </div>
+                        <CompleteEventRowAction eventId={event.id} itemId={event.item_id} />
+                      </div>
+                    )}
+                  />
+                </DataCard>
+              )}
+            />
+          )}
+        </DashboardSection>
+
+        <DashboardSection
+          title="Recent Activity"
+          description="A calmer companion feed keeps the newest item changes nearby without competing with the action queue."
+          data-dashboard-section="recent-activity"
+        >
+          <DataCard as="section" cardClassName="bg-card" contentClassName="space-y-3">
+            {recentItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Recent item changes will appear here once your dashboard has active records.</p>
+            ) : (
+              <MotionPanelList
+                items={recentItems}
+                getItemKey={(item) => item.id}
+                className="space-y-3"
+                renderItem={(item) => (
+                  <Link
+                    to={`/items/${item.id}`}
+                    state={{ from: location.pathname + location.search }}
+                    className="hover-lift flex rounded-xl border border-border bg-background/80 px-4 py-3 shadow-sm shadow-black/5 dark:shadow-none"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{getItemDisplayName(item)}</p>
+                      <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{item.item_type}</p>
+                      <p className="mt-2 text-xs text-muted-foreground">{formatUpdatedLabel(item.updated_at)}</p>
+                    </div>
+                  </Link>
+                )}
+              />
+            )}
+          </DataCard>
+        </DashboardSection>
+      </DashboardBody>
+
+      <DashboardSection
+        title={t('dashboard.assetsTitle')}
+        description="Supporting portfolio context stays available below the primary action and activity bands so the dashboard remains useful without losing its hierarchy."
         action={
           <Button asChild size="sm" variant="ghost">
             <Link to="/items?filter=assets">{t('dashboard.viewAllItems')}</Link>
           </Button>
         }
-        eyebrow={t('dashboard.assetsTitle')}
+        data-dashboard-section="portfolio-snapshot"
       >
-        {assets.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('dashboard.assetsEmpty')}</p>
-        ) : (
-          <MotionPanelList
-            items={assets}
-            getItemKey={(asset) => asset.id}
-            className={assetGridClassName}
-            itemClassName="h-full w-full min-w-0"
-            renderItem={(asset) => (
-              <Pressable className="!flex h-full !w-full min-w-0">
-                <Link
-                  to={`/items/${asset.id}`}
-                  state={{ from: location.pathname + location.search }}
-                  className="hover-lift flex h-full w-full flex-col rounded-xl border border-border bg-background/80 p-4 shadow-sm shadow-black/5 dark:shadow-none"
-                >
-                  <span className="text-sm font-semibold text-primary underline-offset-2 hover:underline">{getItemDisplayName(asset)}</span>
-                  <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{asset.item_type}</p>
-                </Link>
-              </Pressable>
-            )}
-          />
-        )}
-      </DataCard>
-
-      {grouped.length === 0 ? (
-        <DashboardEmptyState />
-      ) : (
-        <MotionPanelList
-          items={grouped}
-          getItemKey={(group) => group.due_date}
-          className="space-y-4"
-          renderItem={(group) => (
-            <DataCard
-              as="section"
-              action={
-                <Button asChild size="sm" variant="ghost">
-                  <Link to="/events">{t('dashboard.openEvents')}</Link>
-                </Button>
-              }
-              contentClassName="pt-0"
-              eyebrow={formatDueLabel(group.due_date)}
-            >
-              <MotionPanelList
-                items={group.events.slice(0, 4)}
-                getItemKey={(event) => event.id}
-                className="space-y-2"
-                renderItem={(event) => (
-                  <div className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-3.5 shadow-sm shadow-black/5 dark:shadow-none md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{event.type}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        <Link to={`/items/${event.item_id}`} state={{ from: location.pathname + location.search }} className="text-primary underline-offset-2 hover:underline">
-                          {itemNameById.get(event.item_id) ?? t('dashboard.itemLabel', { itemId: event.item_id })}
-                        </Link>{' '}
-                        - {formatEventAmount(event.amount, isIncomeItem(itemById.get(event.item_id) ?? { item_type: 'Unknown' })) ?? t('dashboard.amountPending')}
-                      </p>
-                    </div>
-                    <CompleteEventRowAction eventId={event.id} itemId={event.item_id} />
-                  </div>
-                )}
-              />
-            </DataCard>
+        <DataCard as="section" cardClassName="bg-card" contentClassName="pt-0">
+          {assets.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('dashboard.assetsEmpty')}</p>
+          ) : (
+            <MotionPanelList
+              items={assets}
+              getItemKey={(asset) => asset.id}
+              className={assetGridClassName}
+              itemClassName="h-full w-full min-w-0"
+              renderItem={(asset) => (
+                <Pressable className="!flex h-full !w-full min-w-0">
+                  <Link
+                    to={`/items/${asset.id}`}
+                    state={{ from: location.pathname + location.search }}
+                    className="hover-lift flex h-full w-full flex-col rounded-xl border border-border bg-background/80 p-4 shadow-sm shadow-black/5 dark:shadow-none"
+                  >
+                    <span className="text-sm font-semibold text-primary underline-offset-2 hover:underline">{getItemDisplayName(asset)}</span>
+                    <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{asset.item_type}</p>
+                  </Link>
+                </Pressable>
+              )}
+            />
           )}
-        />
-      )}
-    </section>
+        </DataCard>
+      </DashboardSection>
+    </DashboardLayout>
   )
 }

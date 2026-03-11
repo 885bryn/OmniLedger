@@ -9,8 +9,12 @@ type DataCardProps = ComponentPropsWithoutRef<'div'> & {
   contentClassName?: string
   description?: ReactNode
   eyebrow?: ReactNode
+  headerClassName?: string
+  titleClassName?: string
+  descriptionClassName?: string
   title?: ReactNode
   value?: ReactNode
+  valueClassName?: string
 }
 
 export function DataCard({
@@ -21,25 +25,29 @@ export function DataCard({
   cardClassName,
   contentClassName,
   description,
+  descriptionClassName,
   eyebrow,
+  headerClassName,
   title,
+  titleClassName,
   value,
+  valueClassName,
   ...props
 }: DataCardProps) {
   return (
     <Comp className={className} {...props}>
       <Card className={cn('h-full border border-border bg-card/95 shadow-sm shadow-black/5 dark:bg-card dark:shadow-none', cardClassName)}>
         {eyebrow || title || description || action || value ? (
-          <CardHeader className="gap-3">
+          <CardHeader className={cn('gap-3', headerClassName)}>
             {(eyebrow || action) && (
               <div className="flex items-center justify-between gap-3">
                 {eyebrow ? <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{eyebrow}</p> : <span />}
                 {action ? <CardAction>{action}</CardAction> : null}
               </div>
             )}
-            {title ? <CardTitle>{title}</CardTitle> : null}
-            {description ? <CardDescription>{description}</CardDescription> : null}
-            {value ? <div className="text-3xl font-semibold tracking-tight text-foreground">{value}</div> : null}
+            {title ? <CardTitle className={titleClassName}>{title}</CardTitle> : null}
+            {description ? <CardDescription className={descriptionClassName}>{description}</CardDescription> : null}
+            {value ? <div className={cn('text-3xl font-semibold tracking-tight text-foreground', valueClassName)}>{value}</div> : null}
           </CardHeader>
         ) : null}
         {children ? <CardContent className={cn(title || description || value || eyebrow || action ? 'pt-0' : '', contentClassName)}>{children}</CardContent> : null}
