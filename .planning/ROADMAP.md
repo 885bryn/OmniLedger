@@ -9,6 +9,7 @@
 - ✅ **v4.1 Frontend UI/UX Overhaul: High-Contrast Dual Theme (Light Mode Default) & Fluid MacOS-Style Motion** - Phases 24-26 shipped 2026-03-07 (`.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.1-REQUIREMENTS.md`, `.planning/milestones/v4.1-MILESTONE-AUDIT.md`)
 - ✅ **v4.2 Cashflow Frequency Normalization & Cadence Toggle** - Phases 27-29 shipped 2026-03-10
 - ✅ **v4.3 Smart Grouped Ledger & Historical Event Injection** - Phases 30-34 shipped 2026-03-10 (`.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.3-REQUIREMENTS.md`, `.planning/milestones/v4.3-MILESTONE-AUDIT.md`)
+- 🚧 **v4.4 Dashboard Utility Redesign with shadcn/ui** - Phases 35-37 (planned)
 
 ## Phases
 
@@ -35,6 +36,16 @@
 - [x] **Phase 32: Manual Override Boundary Contract** - Add the backend/manual-override rules that allow explicit pre-origin historical overrides while keeping system-generated guardrails intact. (completed 2026-03-10)
 - [x] **Phase 33: Historical Injection UI** - Let users log completed historical events from item detail using the manual-override flow without breaking existing platform guarantees. (completed 2026-03-10)
 - [x] **Phase 34: Item Detail Events Tab Clarity** - Rename the Financial Item detail `Commitments` tab to `Events` so the tab label matches the event history and event actions it contains. (completed 2026-03-10)
+
+### 🚧 v4.4 Dashboard Utility Redesign with shadcn/ui
+
+**Milestone Goal:** Turn the dashboard into an information-dense household finance control center using `shadcn/ui` primitives, with clear period summaries, action-oriented event triage, and direct pathways into item/event workflows.
+
+**Execution Gate:** Pause after each phase for browser verification and explicit approval before starting the next phase.
+
+- [ ] **Phase 35: Dashboard Information Architecture** - Rebuild the dashboard shell around utility-first sections for summary, attention, and activity instead of a generic overview surface.
+- [ ] **Phase 36: Action Queue and Financial Snapshot** - Add a high-utility dashboard action queue plus a reusable financial-items snapshot section with dense scan-friendly rows.
+- [ ] **Phase 37: Exceptions, Trends, and Dashboard Polish** - Add exception/notice surfaces, period-aware supporting insights, and responsive polish that ties the redesigned dashboard together.
 
 ## Phase Details
 
@@ -108,6 +119,48 @@ Plans:
 - [x] `34-item-detail-events-tab-clarity-01-PLAN.md` - Rename the Financial Item detail `Commitments` tab to `Events`, update related item-detail copy and accessibility text, and lock the behavior with focused frontend regressions.
 **Manual Test Gate**: Stop after this phase for browser verification that the renamed tab remains clear, accessible, and behaviorally unchanged before milestone closeout.
 
+### Phase 35: Dashboard Information Architecture
+**Goal**: Users can understand their current financial position and next actions from the dashboard without hunting across separate pages.
+**Depends on**: Phase 34
+**Requirements**: DASH-01, DASH-02, DASH-03
+**Success Criteria** (what must be TRUE):
+  1. User sees a redesigned dashboard built from `shadcn/ui` layout primitives with clear top-level sections instead of a loosely organized overview surface.
+  2. User sees period-aware summary cards for net cashflow, upcoming due, overdue count, and completed activity that feel informational and immediately scannable.
+  3. User can recognize a dedicated `Needs Attention` area and a dedicated `Recent Activity` area as the dashboard's primary action and feedback surfaces.
+**Plans**: 2 plans
+Plans:
+- [ ] `35-dashboard-information-architecture-01-PLAN.md` - Establish the shadcn dashboard shell, section hierarchy, and responsive layout scaffolding for the redesigned overview.
+- [ ] `35-dashboard-information-architecture-02-PLAN.md` - Add period-aware summary cards plus the first-pass `Needs Attention` and `Recent Activity` surfaces with focused frontend coverage.
+**Manual Test Gate**: Stop after this phase for browser verification that the new dashboard hierarchy feels clearer and more actionable than the previous overview.
+
+### Phase 36: Action Queue and Financial Snapshot
+**Goal**: Users can act on urgent events and scan financial item status directly from the dashboard.
+**Depends on**: Phase 35
+**Requirements**: DASH-04, DASH-05, DASH-06
+**Success Criteria** (what must be TRUE):
+  1. User can review overdue and upcoming obligations from a dashboard action queue with direct links or inline-safe actions.
+  2. User can scan a dashboard financial snapshot section showing dense but readable financial item rows with the most important metadata.
+  3. User can move from dashboard summary/action surfaces into the existing events and item-detail workflows without confusion.
+**Plans**: 2 plans
+Plans:
+- [ ] `36-action-queue-and-financial-snapshot-01-PLAN.md` - Build the dashboard action queue for overdue/upcoming event triage using existing event data and safe action affordances.
+- [ ] `36-action-queue-and-financial-snapshot-02-PLAN.md` - Add the reusable financial snapshot section with scan-friendly rows, metadata, and direct navigation into item detail.
+**Manual Test Gate**: Stop after this phase for browser verification that the dashboard now supports real task completion and quick item scanning.
+
+### Phase 37: Exceptions, Trends, and Dashboard Polish
+**Goal**: Users can trust the dashboard as an operational control center because it highlights exceptions, contextual trends, and responsive utility without clutter.
+**Depends on**: Phase 36
+**Requirements**: DASH-07, DASH-08, DASH-09
+**Success Criteria** (what must be TRUE):
+  1. User sees exception and notice surfaces that highlight meaningful issues like overdue spikes or manual-override/admin signals without overwhelming the main dashboard.
+  2. User sees supporting timeline/trend context that helps interpret upcoming and recent activity for the selected period.
+  3. User can use the redesigned dashboard comfortably on desktop and mobile, with the same utility-first hierarchy preserved across breakpoints.
+**Plans**: 2 plans
+Plans:
+- [ ] `37-exceptions-trends-and-dashboard-polish-01-PLAN.md` - Add exception and notice panels plus admin-aware dashboard context using the existing data contracts.
+- [ ] `37-exceptions-trends-and-dashboard-polish-02-PLAN.md` - Add supporting trend/timeline context, responsive polish, and final shadcn dashboard refinements with focused regressions.
+**Manual Test Gate**: Stop after this phase for final browser verification and explicit approval before milestone closeout.
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -117,6 +170,9 @@ Plans:
 | 32. Manual Override Boundary Contract | 2/2 | Complete    | 2026-03-10 |
 | 33. Historical Injection UI | 2/2 | Complete    | 2026-03-10 |
 | 34. Item Detail Events Tab Clarity | 1/1 | Complete   | 2026-03-10 |
+| 35. Dashboard Information Architecture | 1/2 | In Progress|  |
+| 36. Action Queue and Financial Snapshot | 0/2 | Planned |  |
+| 37. Exceptions, Trends, and Dashboard Polish | 0/2 | Planned |  |
 
 ---
-*Last updated: 2026-03-10 after v4.3 closeout docs*
+*Last updated: 2026-03-10 after planning v4.4 dashboard redesign milestone*

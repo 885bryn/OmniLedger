@@ -5,9 +5,21 @@
 
 ## v1 Requirements
 
-Requirements for milestone v4.3 Smart Grouped Ledger & Historical Event Injection.
+Requirements for milestone v4.4 Dashboard Utility Redesign with shadcn/ui.
 
-### Ledger Experience
+### Dashboard Utility
+
+- [x] **DASH-01**: User sees a dashboard organized into clear utility-first sections instead of a generic overview layout.
+- [ ] **DASH-02**: User sees period-aware summary cards for net cashflow, upcoming due, overdue count, and completed activity.
+- [ ] **DASH-03**: User sees dedicated `Needs Attention` and `Recent Activity` dashboard sections that make next actions and recent changes obvious.
+- [ ] **DASH-04**: User can review overdue and upcoming obligations from a dashboard action queue and jump directly into the relevant workflow.
+- [ ] **DASH-05**: User can scan a financial snapshot section that shows dense but readable item-level status and metadata.
+- [ ] **DASH-06**: User can navigate from dashboard summary and queue surfaces into `/events` and item detail pages without losing context.
+- [ ] **DASH-07**: User sees exceptions and notices surfaced calmly on the dashboard when manual overrides, admin-only signals, or unusual conditions matter.
+- [ ] **DASH-08**: User sees supporting trend or timeline context that helps interpret upcoming and recent activity for the active period.
+- [ ] **DASH-09**: User can use the redesigned dashboard comfortably on desktop and mobile with the same information hierarchy preserved.
+
+### Prior Milestone Coverage
 
 - [x] **LEDGER-01**: User can switch the global Events page between `Upcoming` and `History` ledger tabs.
 - [x] **LEDGER-02**: User sees pending and overdue upcoming events grouped into Overdue, This Week, Later This Month, and Future sections.
@@ -62,25 +74,21 @@ Deferred to a future milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LEDGER-01 | Phase 30 | Complete |
-| LEDGER-02 | Phase 30 | Complete |
-| LEDGER-03 | Phase 30 | Complete |
-| FLOW-02 | Phase 31 | Complete |
-| FLOW-03 | Phase 31 | Complete |
-| FLOW-04 | Phase 31 | Complete |
-| LEDGER-04 | Phase 31 | Complete |
-| SAFE-02 | Phase 32 | Complete |
-| EVENT-02 | Phase 32 | Complete |
-| EVENT-03 | Phase 32 | Complete |
-| EVENT-01 | Phase 33 | Complete |
-| SAFE-03 | Phase 33 | Complete |
-| UX-01 | Phase 34 | Complete |
+| DASH-01 | Phase 35 | Planned |
+| DASH-02 | Phase 35 | Planned |
+| DASH-03 | Phase 35 | Planned |
+| DASH-04 | Phase 36 | Planned |
+| DASH-05 | Phase 36 | Planned |
+| DASH-06 | Phase 36 | Planned |
+| DASH-07 | Phase 37 | Planned |
+| DASH-08 | Phase 37 | Planned |
+| DASH-09 | Phase 37 | Planned |
 
 **Coverage:**
-- v1 requirements: 13 total
-- Mapped to phases: 13
+- v1 requirements: 9 total
+- Mapped to phases: 9
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-10*
-*Last updated: 2026-03-10 after completing Phase 34*
+*Last updated: 2026-03-10 after planning v4.4 dashboard redesign milestone*

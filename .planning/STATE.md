@@ -6,16 +6,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** v4.4 dashboard redesign planning is queued, centered on a more informational shadcn-based dashboard with strong utility surfaces.
+**Current focus:** v4.4 dashboard redesign is in progress with the new shell hierarchy shipped and richer dashboard surfaces queued next.
 
 ## Current Position
 
 Phase: 35 - Dashboard Information Architecture
-Plan: 00/02
-Status: Planned
-Last activity: 2026-03-10 - Added v4.4 shadcn dashboard redesign milestone and phase roadmap
+Plan: 01/02
+Status: In Progress
+Last activity: 2026-03-11 - Completed dashboard shell hierarchy and responsive layout regressions for Plan 01
 
-Progress: [----------] 0%
+Progress: [#####-----] 50%
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [----------] 0%
 | Phase 33-historical-injection-ui P01 | 3 min | 2 tasks | 6 files |
 | Phase 33 P02 | 1 session | 3 tasks | 6 files |
 | Phase 34 P01 | 14 min | 2 tasks | 4 files |
+| Phase 35-dashboard-information-architecture P01 | 3 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -124,10 +125,12 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 34]: Kept the existing items.detail.tabs.commitments translation key and changed only the localized values so the user-facing rename stayed low risk.
 - [Phase 34]: Used browser approval as the release gate for this phase because wording clarity is a UX judgment, not just a test result.
 - [Phase 35+]: The next milestone should optimize the dashboard for utility and information density first, using shadcn primitives as the structural system rather than chart-heavy or marketing-style layouts.
+- [Phase 35-dashboard-information-architecture]: Used existing dashboard event and item queries for the new Recent Activity companion so Phase 35 could improve information architecture without expanding data contracts.
+- [Phase 35-dashboard-information-architecture]: Kept Needs Attention ahead of Recent Activity in DOM and responsive order so mobile collapse preserves the same priority hierarchy.
 
 ### Pending Todos
 
-- Phase 35 planning: define the shadcn dashboard shell, summary card contract, and primary action/activity surfaces.
+- Phase 35 plan 02: add richer summary-card content plus first-pass Needs Attention and Recent Activity data surfaces.
 - Phase 36 planning: define the dashboard action queue and dense financial snapshot section.
 - Phase 37 planning: define exception panels, supporting trends, and responsive polish requirements.
 
@@ -137,6 +140,6 @@ Decisions are logged in `.planning/PROJECT.md`.
 
 ## Session Continuity
 
-Last session: 2026-03-10
-Stopped at: Phase 35 context gathered
-Resume file: `.planning/phases/35-dashboard-information-architecture/35-CONTEXT.md`
+Last session: 2026-03-11
+Stopped at: Completed 35-dashboard-information-architecture-01-PLAN.md
+Resume file: `.planning/phases/35-dashboard-information-architecture/35-dashboard-information-architecture-02-PLAN.md`
