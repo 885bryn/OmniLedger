@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
@@ -98,6 +98,43 @@ function createDashboardFetchMock() {
       })
     }
 
+    if (url.pathname === '/events' && url.searchParams.get('status') === 'completed' && method === 'GET') {
+      return createResponse({
+        status: 200,
+        json: {
+          groups: [
+            {
+              due_date: '2026-03-08',
+              events: [
+                {
+                  id: 'event-3',
+                  item_id: 'item-1',
+                  type: 'Mortgage',
+                  amount: 1450,
+                  due_date: '2026-03-08',
+                  status: 'Completed',
+                  updated_at: '2026-03-10T00:00:00.000Z',
+                  completed_at: '2026-03-10T00:00:00.000Z',
+                },
+                {
+                  id: 'event-4',
+                  item_id: 'item-2',
+                  type: 'Insurance',
+                  amount: 220,
+                  due_date: '2026-03-07',
+                  status: 'Completed',
+                  updated_at: '2026-03-09T00:00:00.000Z',
+                  completed_at: '2026-03-09T00:00:00.000Z',
+                  is_manual_override: true,
+                },
+              ],
+            },
+          ],
+          total_count: 2,
+        },
+      })
+    }
+
     if (url.pathname === '/items' && url.searchParams.get('filter') === 'assets' && method === 'GET') {
       return createResponse({
         status: 200,
@@ -159,6 +196,70 @@ function createDashboardFetchMock() {
       })
     }
 
+    if (url.pathname === '/items/asset-1/net-status' && method === 'GET') {
+      return createResponse({
+        status: 200,
+        json: {
+          id: 'asset-1',
+          summary: {
+            net_monthly_cashflow: 980,
+            active_period: {
+              cadence: 'monthly',
+              start_date: '2026-03-01',
+              end_date: '2026-03-31',
+              label: 'Mar 1 - Mar 31',
+            },
+            cadence_totals: {
+              total: {
+                net_cashflow: {
+                  monthly: 980,
+                },
+                active_periods: {
+                  monthly: {
+                    start_date: '2026-03-01',
+                    end_date: '2026-03-31',
+                    label: 'Mar 1 - Mar 31',
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+    }
+
+    if (url.pathname === '/items/asset-2/net-status' && method === 'GET') {
+      return createResponse({
+        status: 200,
+        json: {
+          id: 'asset-2',
+          summary: {
+            net_monthly_cashflow: -180,
+            active_period: {
+              cadence: 'monthly',
+              start_date: '2026-03-01',
+              end_date: '2026-03-31',
+              label: 'Mar 1 - Mar 31',
+            },
+            cadence_totals: {
+              total: {
+                net_cashflow: {
+                  monthly: -180,
+                },
+                active_periods: {
+                  monthly: {
+                    start_date: '2026-03-01',
+                    end_date: '2026-03-31',
+                    label: 'Mar 1 - Mar 31',
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+    }
+
     throw new Error(`Unhandled request: ${method} ${url.pathname}${url.search}`)
   })
 }
@@ -169,10 +270,42 @@ describe('dashboard information architecture', () => {
   afterEach(() => {
     cleanup()
     globalThis.fetch = originalFetch
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
-  it('renders the summary-first hierarchy with attention before activity and support', async () => {
+  it('renders four period-aware summary cards in the locked priority order', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
+    globalThis.fetch = createDashboardFetchMock() as typeof fetch
+
+    renderDashboardPage()
+
+    await screen.findByText('Net cashflow')
+
+    const metricLabels = Array.from(document.querySelectorAll('[data-dashboard-metric-card="true"] p'))
+      .map((node) => node.textContent?.trim())
+      .filter(Boolean)
+
+    expect(metricLabels.slice(0, 4)).toEqual(['Net cashflow', 'Upcoming due', 'Overdue', 'Completed activity'])
+
+    const cards = screen.getAllByRole('article').filter((node) => node.getAttribute('data-dashboard-metric-card') === 'true')
+    expect(cards).toHaveLength(4)
+
+    expect(within(cards[0]).getByText('$800')).toBeTruthy()
+    expect(within(cards[0]).getByText('Across Mar 1 - Mar 31 from your asset summaries.')).toBeTruthy()
+
+    expect(within(cards[1]).getByText('$1,450')).toBeTruthy()
+    expect(within(cards[1]).getByText('1 upcoming rows across Mar 9 - Mar 14.')).toBeTruthy()
+
+    expect(within(cards[2]).getByText('1')).toBeTruthy()
+    expect(within(cards[2]).getByText('1 row needs attention right now.')).toBeTruthy()
+
+    expect(within(cards[3]).getByText('2')).toBeTruthy()
+    expect(within(cards[3]).getByText('2 recent completions, including 1 manual overrides.')).toBeTruthy()
+  })
+
+  it('keeps the summary-first hierarchy with attention before activity and support sections', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
     globalThis.fetch = createDashboardFetchMock() as typeof fetch
 
     renderDashboardPage()
@@ -194,11 +327,12 @@ describe('dashboard information architecture', () => {
   })
 
   it('locks the summary band to a stacked mobile order instead of a cramped small-screen grid', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
     globalThis.fetch = createDashboardFetchMock() as typeof fetch
 
     renderDashboardPage()
 
-    await screen.findByText('Due events')
+    await screen.findByText('Net cashflow')
 
     const summaryBand = document.querySelector('[data-dashboard-summary-band="true"]') as HTMLElement | null
     expect(summaryBand).toBeTruthy()
@@ -209,6 +343,6 @@ describe('dashboard information architecture', () => {
       .map((node) => node.textContent?.trim())
       .filter(Boolean)
 
-    expect(metricLabels.slice(0, 4)).toEqual(['Due events', 'Overdue', 'Due in 7 days', 'Upcoming amount'])
+    expect(metricLabels.slice(0, 4)).toEqual(['Net cashflow', 'Upcoming due', 'Overdue', 'Completed activity'])
   })
 })

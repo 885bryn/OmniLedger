@@ -76,7 +76,11 @@
     }
   },
   "dashboard": {
+    "eyebrow": "Finance cockpit",
+    "title": "Dashboard",
+    "description": "Review current position first, then move straight into urgent obligations and the latest completed changes.",
     "loadError": "Dashboard data could not be loaded. Please refresh and try again.",
+    "currentMonthFallback": "current month",
     "dueEvents": "Due events",
     "overdue": "Overdue",
     "dueInWeek": "Due in 7 days",
@@ -91,7 +95,56 @@
     "addItem": "Add an item",
     "openEvents": "Open events",
     "amountPending": "Amount pending",
-    "itemLabel": "Item {{itemId}}"
+    "itemLabel": "Item {{itemId}}",
+    "sections": {
+      "currentPosition": {
+        "title": "Current position",
+        "description": "High-level signals stay in one priority band so the page answers where things stand before it asks for action."
+      },
+      "needsAttention": {
+        "title": "Needs Attention",
+        "description": "Overdue rows land first, then due-soon obligations, so the main work queue stays easy to scan."
+      },
+      "recentActivity": {
+        "title": "Recent Activity",
+        "description": "A calmer companion feed keeps the latest completions and manual overrides nearby without competing with the queue."
+      },
+      "portfolio": {
+        "description": "Supporting portfolio context stays below the main queue so the dashboard keeps its hierarchy without losing useful context."
+      }
+    },
+    "summaryCards": {
+      "netCashflow": {
+        "label": "Net cashflow",
+        "support": "Across {{period}} from your asset summaries."
+      },
+      "upcomingDue": {
+        "label": "Upcoming due",
+        "support": "{{count}} upcoming rows across {{range}}.",
+        "supportMissing": "{{count}} upcoming rows with dates still settling."
+      },
+      "overdue": {
+        "label": "Overdue",
+        "support_one": "{{count}} row needs attention right now.",
+        "support_other": "{{count}} rows need attention right now."
+      },
+      "completedActivity": {
+        "label": "Completed activity",
+        "support": "{{count}} recent completions, including {{manualCount}} manual overrides."
+      }
+    },
+    "attention": {
+      "overdue": "Overdue",
+      "dueSoon": "Due soon",
+      "dueDate": "Due date",
+      "amount": "Amount",
+      "linkedItem": "Linked item"
+    },
+    "recentActivity": {
+      "empty": "Completed events will appear here once activity starts landing in history.",
+      "completedBadge": "Completed",
+      "paidOn": "Paid on {{date}}"
+    }
   },
   "events": {
     "loadError": "Events could not be loaded. Please refresh and try again.",

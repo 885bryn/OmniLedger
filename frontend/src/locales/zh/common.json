@@ -76,7 +76,11 @@
     }
   },
   "dashboard": {
+    "eyebrow": "财务驾驶台",
+    "title": "仪表盘",
+    "description": "先查看当前资金位置，再直接进入紧急义务与最新完成动态。",
     "loadError": "无法加载仪表盘数据，请刷新后重试。",
+    "currentMonthFallback": "当前月份",
     "dueEvents": "待处理事件",
     "overdue": "逾期",
     "dueInWeek": "7 天内到期",
@@ -91,7 +95,56 @@
     "addItem": "添加资产",
     "openEvents": "打开事件页",
     "amountPending": "金额待定",
-    "itemLabel": "项目 {{itemId}}"
+    "itemLabel": "项目 {{itemId}}",
+    "sections": {
+      "currentPosition": {
+        "title": "当前状态",
+        "description": "高层信号集中在同一优先带中，让页面先回答整体位置，再进入下一步动作。"
+      },
+      "needsAttention": {
+        "title": "需要关注",
+        "description": "逾期事项优先，其次是即将到期义务，让主工作队列保持紧凑且易于扫描。"
+      },
+      "recentActivity": {
+        "title": "最近动态",
+        "description": "更平静的陪伴式动态流会保留最新完成和手动覆盖信息，但不会与主队列争抢注意力。"
+      },
+      "portfolio": {
+        "description": "补充性的资产上下文放在主队列下方，让仪表盘保持清晰层级，同时不丢失有用背景。"
+      }
+    },
+    "summaryCards": {
+      "netCashflow": {
+        "label": "净现金流",
+        "support": "来自你的资产汇总，覆盖 {{period}}。"
+      },
+      "upcomingDue": {
+        "label": "即将到期",
+        "support": "{{count}} 条即将到期记录，时间覆盖 {{range}}。",
+        "supportMissing": "{{count}} 条即将到期记录，日期仍在整理中。"
+      },
+      "overdue": {
+        "label": "逾期",
+        "support_one": "当前有 {{count}} 条记录需要立即处理。",
+        "support_other": "当前有 {{count}} 条记录需要立即处理。"
+      },
+      "completedActivity": {
+        "label": "已完成动态",
+        "support": "最近 {{count}} 条完成记录，其中 {{manualCount}} 条为手动覆盖。"
+      }
+    },
+    "attention": {
+      "overdue": "逾期",
+      "dueSoon": "即将到期",
+      "dueDate": "到期日",
+      "amount": "金额",
+      "linkedItem": "关联项目"
+    },
+    "recentActivity": {
+      "empty": "当完成记录开始进入历史后，会显示在这里。",
+      "completedBadge": "已完成",
+      "paidOn": "完成于 {{date}}"
+    }
   },
   "events": {
     "loadError": "无法加载事件，请刷新后重试。",

@@ -7,6 +7,7 @@ import { Pressable } from '@/components/ui/pressable'
 import { Button } from '@/components/ui/button'
 import { DataCard } from '../../features/dashboard/data-card'
 import { DashboardBody, DashboardDescription, DashboardEyebrow, DashboardHeader, DashboardLayout, DashboardSection, DashboardTitle } from '../../features/dashboard/dashboard-layout'
+import { DashboardSummaryCard } from '../../features/dashboard/dashboard-summary-card'
 import { CompleteEventRowAction } from '../../features/events/complete-event-row-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
@@ -23,6 +24,8 @@ type EventRow = {
   due_date: string
   status: string
   updated_at: string
+  completed_at?: string | null
+  is_manual_override?: boolean
 }
 
 type EventGroup = {
@@ -48,6 +51,45 @@ type ItemsResponse = {
   total_count: number
 }
 
+type NetStatusResponse = {
+  id: string
+  summary: {
+    net_monthly_cashflow: number
+    active_period?: {
+      cadence?: string
+      start_date?: string
+      end_date?: string
+      label?: string
+    }
+    cadence_totals?: {
+      total?: {
+        net_cashflow?: {
+          weekly?: number
+          monthly?: number
+          yearly?: number
+        }
+        active_periods?: {
+          weekly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+          monthly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+          yearly?: {
+            start_date?: string
+            end_date?: string
+            label?: string
+          }
+        }
+      }
+    }
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -57,11 +99,7 @@ function normalizeSubtype(value: unknown) {
 }
 
 function isOutflowItem(item: ItemRow | undefined) {
-  if (!item) {
-    return false
-  }
-
-  if (item.item_type !== 'FinancialItem') {
+  if (!item || item.item_type !== 'FinancialItem') {
     return false
   }
 
@@ -71,8 +109,8 @@ function isOutflowItem(item: ItemRow | undefined) {
 }
 
 function formatDueLabel(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
+  const date = parseCalendarDate(value)
+  if (!date) {
     return value
   }
 
@@ -105,13 +143,14 @@ function formatUpdatedLabel(value: string) {
 }
 
 function formatDateRange(values: string[]) {
-  const parsed = values.map((value) => Date.parse(value)).filter((value) => !Number.isNaN(value))
+  const parsed = values.map((value) => parseCalendarDate(value)).filter((value): value is Date => value !== null)
   if (parsed.length === 0) {
     return null
   }
 
-  const min = new Date(Math.min(...parsed))
-  const max = new Date(Math.max(...parsed))
+  const sorted = [...parsed].sort((left, right) => left.getTime() - right.getTime())
+  const min = sorted[0]
+  const max = sorted[sorted.length - 1]
   const formatter = new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
@@ -124,11 +163,47 @@ function formatDateRange(values: string[]) {
   return `${formatter.format(min)} - ${formatter.format(max)}`
 }
 
+function parseCalendarDate(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  }
+
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function toCalendarDayKey(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (match) {
+    return `${match[1]}-${match[2]}-${match[3]}`
+  }
+
+  const parsed = parseCalendarDate(value)
+  if (!parsed) {
+    return value
+  }
+
+  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`
+}
+
+function formatPeriodLabel(period: { start_date?: string; end_date?: string; label?: string } | undefined, fallback: string) {
+  if (period?.label && period.label.trim().length > 0) {
+    return period.label
+  }
+
+  if (period?.start_date && period.end_date) {
+    return formatDateRange([period.start_date, period.end_date]) ?? fallback
+  }
+
+  return fallback
+}
+
 function groupMergedEvents(events: EventRow[]): EventGroup[] {
   const grouped = new Map<string, EventRow[]>()
 
   events.forEach((event) => {
-    const key = new Date(event.due_date).toISOString().slice(0, 10)
+    const key = toCalendarDayKey(event.due_date)
     const rows = grouped.get(key) ?? []
     rows.push(event)
     grouped.set(key, rows)
@@ -137,6 +212,37 @@ function groupMergedEvents(events: EventRow[]): EventGroup[] {
   return Array.from(grouped.entries())
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([due_date, rows]) => ({ due_date, events: rows.sort(compareByNearestDue) }))
+}
+
+function resolveNetSummary(summary: NetStatusResponse['summary']) {
+  const cadence = summary.active_period?.cadence
+  const cadencePeriods = summary.cadence_totals?.total?.active_periods
+  const cadenceNet = summary.cadence_totals?.total?.net_cashflow
+
+  if (cadence === 'weekly' || cadence === 'monthly' || cadence === 'yearly') {
+    const value = cadenceNet?.[cadence]
+    if (Number.isFinite(value)) {
+      return {
+        net: Number(value),
+        periodLabel: formatPeriodLabel(cadencePeriods?.[cadence], formatPeriodLabel(summary.active_period, 'current period')),
+      }
+    }
+  }
+
+  return {
+    net: Number(summary.net_monthly_cashflow ?? 0),
+    periodLabel: formatPeriodLabel(summary.active_period, 'current month'),
+  }
+}
+
+function compareActivityByLatest(left: EventRow, right: EventRow) {
+  const leftTime = Date.parse(left.completed_at || left.updated_at || left.due_date)
+  const rightTime = Date.parse(right.completed_at || right.updated_at || right.due_date)
+  if (leftTime !== rightTime) {
+    return rightTime - leftTime
+  }
+
+  return left.id.localeCompare(right.id)
 }
 
 function DashboardSkeleton() {
@@ -210,6 +316,14 @@ export function DashboardPage() {
     },
   })
 
+  const recentActivityQuery = useQuery({
+    queryKey: [...queryKeys.dashboard.lens(lensScope), 'recent-activity'],
+    queryFn: async () => {
+      const params = new URLSearchParams({ status: 'completed', ...lensParams })
+      return apiRequest<EventsResponse>(`/events?${params.toString()}`)
+    },
+  })
+
   const assetsQuery = useQuery({
     queryKey: queryKeys.items.list({ scope: 'dashboard-assets', filter: 'assets', sort: 'recently_updated', ...lensParams }),
     queryFn: async () => {
@@ -226,13 +340,15 @@ export function DashboardPage() {
     },
   })
 
-  const grouped = useMemo(() => {
+  const attentionEvents = useMemo(() => {
     const groups = eventsQuery.data?.groups ?? []
-    const merged = groups.flatMap((group) => group.events)
-    return groupMergedEvents(merged).sort(compareGroupsByNearestDue)
+    return groups.flatMap((group) => group.events).sort(compareByNearestDue)
   }, [eventsQuery.data])
-
-  const allEvents = useMemo(() => grouped.flatMap((group) => group.events), [grouped])
+  const grouped = useMemo(() => groupMergedEvents(attentionEvents).sort(compareGroupsByNearestDue), [attentionEvents])
+  const completedEvents = useMemo(() => {
+    const groups = recentActivityQuery.data?.groups ?? []
+    return groups.flatMap((group) => group.events).sort(compareActivityByLatest)
+  }, [recentActivityQuery.data])
   const itemById = useMemo(() => {
     const rows = itemLookupQuery.data?.items ?? []
     return new Map(rows.map((item) => [item.id, item]))
@@ -244,6 +360,11 @@ export function DashboardPage() {
 
   const assets = assetsQuery.data?.items ?? []
   const recentItems = useMemo(() => (itemLookupQuery.data?.items ?? []).slice(0, 4), [itemLookupQuery.data?.items])
+  const assetNetStatusQuery = useQuery({
+    queryKey: [...queryKeys.dashboard.lens(lensScope), 'asset-net-status', assets.map((asset) => asset.id)],
+    enabled: assets.length > 0,
+    queryFn: async () => Promise.all(assets.map((asset) => apiRequest<NetStatusResponse>(`/items/${asset.id}/net-status`))),
+  })
 
   const assetGridClassName = useMemo(() => {
     if (assets.length <= 1) {
@@ -263,50 +384,94 @@ export function DashboardPage() {
 
   const metrics = useMemo(() => {
     const now = Date.now()
-    const overdue = allEvents.filter((event) => Date.parse(event.due_date) < now).length
-    const thisWeekCount = allEvents.filter((event) => {
+    const overdueEvents = attentionEvents.filter((event) => Date.parse(event.due_date) < now)
+    const upcomingEvents = attentionEvents.filter((event) => {
       const due = Date.parse(event.due_date)
       if (Number.isNaN(due)) {
         return false
       }
 
-      return due - now <= 7 * 24 * 60 * 60 * 1000 && due >= now
+      return due >= now
     }).length
-    const dueAmount = allEvents.reduce((total, event) => {
+    const upcomingAmount = attentionEvents.reduce((total, event) => {
+      if (Date.parse(event.due_date) < now) {
+        return total
+      }
+
       if (!isOutflowItem(itemById.get(event.item_id))) {
         return total
       }
 
       return total + Number(event.amount ?? 0)
     }, 0)
-    const dueRange = formatDateRange(allEvents.map((event) => event.due_date))
+    const dueRange = formatDateRange(attentionEvents.map((event) => event.due_date))
+    const activityRows = completedEvents.slice(0, 5)
+    const manualOverrideCount = activityRows.filter((event) => event.is_manual_override).length
+    const netSummaries = assetNetStatusQuery.data ?? []
+    const resolvedNetSummaries = netSummaries.map((entry) => resolveNetSummary(entry.summary))
+    const netCashflow = resolvedNetSummaries.reduce((total, entry) => total + entry.net, 0)
+    const netPeriodLabel = resolvedNetSummaries[0]?.periodLabel ?? t('dashboard.currentMonthFallback')
 
     return {
-      totalDue: allEvents.length,
-      overdue,
-      thisWeekCount,
-      dueAmount,
+      netCashflow,
+      netPeriodLabel,
+      totalDue: upcomingEvents,
+      overdue: overdueEvents.length,
+      upcomingAmount,
       dueRange,
+      completedActivity: completedEvents.length,
+      activityRows: activityRows.length,
+      manualOverrideCount,
     }
-  }, [allEvents, itemById])
+  }, [assetNetStatusQuery.data, attentionEvents, completedEvents, itemById, t])
 
   const metricCards = [
-    { key: 'totalDue', label: t('dashboard.dueEvents'), value: metrics.totalDue },
-    { key: 'overdue', label: t('dashboard.overdue'), value: metrics.overdue, valueClassName: 'text-destructive' },
-    { key: 'thisWeekCount', label: t('dashboard.dueInWeek'), value: metrics.thisWeekCount },
     {
-      key: 'dueAmount',
-      label: t('dashboard.upcomingAmount'),
-      value: formatCurrency(metrics.dueAmount),
-      description: metrics.dueRange ? t('dashboard.upcomingRange', { range: metrics.dueRange }) : t('dashboard.upcomingRangeMissing'),
+      key: 'netCashflow',
+      label: t('dashboard.summaryCards.netCashflow.label'),
+      value: formatCurrency(metrics.netCashflow),
+      description: t('dashboard.summaryCards.netCashflow.support', { period: metrics.netPeriodLabel }),
+      to: '/items?filter=assets',
+      linkLabel: t('dashboard.viewAllItems'),
+      valueClassName: metrics.netCashflow < 0 ? 'text-destructive' : undefined,
+    },
+    {
+      key: 'upcomingDue',
+      label: t('dashboard.summaryCards.upcomingDue.label'),
+      value: formatCurrency(metrics.upcomingAmount),
+      description: metrics.dueRange
+        ? t('dashboard.summaryCards.upcomingDue.support', { count: metrics.totalDue, range: metrics.dueRange })
+        : t('dashboard.summaryCards.upcomingDue.supportMissing', { count: metrics.totalDue }),
+      to: '/events',
+      linkLabel: t('dashboard.openEvents'),
+    },
+    {
+      key: 'overdue',
+      label: t('dashboard.summaryCards.overdue.label'),
+      value: metrics.overdue,
+      description: t('dashboard.summaryCards.overdue.support', { count: metrics.overdue }),
+      to: '/events',
+      linkLabel: t('dashboard.openEvents'),
+      valueClassName: 'text-destructive',
+    },
+    {
+      key: 'completedActivity',
+      label: t('dashboard.summaryCards.completedActivity.label'),
+      value: metrics.completedActivity,
+      description: t('dashboard.summaryCards.completedActivity.support', {
+        count: metrics.activityRows,
+        manualCount: metrics.manualOverrideCount,
+      }),
+      to: '/events',
+      linkLabel: t('events.historyTitle'),
     },
   ]
 
-  if (eventsQuery.isLoading || assetsQuery.isLoading || itemLookupQuery.isLoading) {
+  if (eventsQuery.isLoading || recentActivityQuery.isLoading || assetsQuery.isLoading || itemLookupQuery.isLoading || (assets.length > 0 && assetNetStatusQuery.isLoading)) {
     return <DashboardSkeleton />
   }
 
-  if (eventsQuery.isError || assetsQuery.isError || itemLookupQuery.isError) {
+  if (eventsQuery.isError || recentActivityQuery.isError || assetsQuery.isError || itemLookupQuery.isError || assetNetStatusQuery.isError) {
     return (
       <DataCard as="section" title={t('dashboard.loadError')}>
         <p className="text-sm text-destructive">{t('dashboard.loadError')}</p>
@@ -317,16 +482,16 @@ export function DashboardPage() {
   return (
     <DashboardLayout>
       <DashboardHeader>
-        <DashboardEyebrow>Finance cockpit</DashboardEyebrow>
-        <DashboardTitle>Dashboard</DashboardTitle>
+        <DashboardEyebrow>{t('dashboard.eyebrow')}</DashboardEyebrow>
+        <DashboardTitle>{t('dashboard.title')}</DashboardTitle>
         <DashboardDescription>
-          Review current position first, then move straight into urgent obligations and the latest item changes.
+          {t('dashboard.description')}
         </DashboardDescription>
       </DashboardHeader>
 
       <DashboardSection
-        title="Current position"
-        description="High-level signals stay in a single priority band so the page answers where things stand before it asks for action."
+        title={t('dashboard.sections.currentPosition.title')}
+        description={t('dashboard.sections.currentPosition.description')}
         data-dashboard-section="summary"
       >
         <div data-dashboard-summary-band="true">
@@ -337,17 +502,13 @@ export function DashboardPage() {
             itemClassName="h-full"
             highlightOnMount
             renderItem={(metric) => (
-              <DataCard
-                as="article"
-                cardClassName="hover-lift h-full bg-card"
-                className="h-full"
-                data-dashboard-metric-card="true"
-                description={metric.description}
-                descriptionClassName="text-xs leading-5"
-                eyebrow={metric.label}
-                headerClassName="gap-2"
-                value={<span className={metric.valueClassName}>{metric.value}</span>}
-                valueClassName="text-2xl md:text-3xl"
+              <DashboardSummaryCard
+                label={metric.label}
+                linkLabel={metric.linkLabel}
+                supportingText={metric.description}
+                to={metric.to}
+                value={metric.value}
+                valueClassName={metric.valueClassName}
               />
             )}
           />
