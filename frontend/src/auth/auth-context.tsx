@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiClientError, SESSION_EXPIRED_EVENT, apiRequest } from '../lib/api-client'
 
 const DEFAULT_AUTH_REDIRECT = '/dashboard'
@@ -113,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [sessionScope, setSessionScope] = useState<SessionScope | null>(null)
   const [loading, setLoading] = useState(true)
   const [sessionExpiredReturnTo, setSessionExpiredReturnTo] = useState<string | null>(null)
+  const authStateVersionRef = useRef(0)
 
   const clearSessionExpired = useCallback(() => {
     setSessionExpiredReturnTo(null)
@@ -125,15 +126,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshSession = useCallback(async () => {
+    const requestVersion = authStateVersionRef.current
+
     try {
       const response = await apiRequest<SessionPayload>('/auth/session')
+      if (requestVersion !== authStateVersionRef.current) {
+        return
+      }
+
       setSession(response.session.authenticated ? response.user : null)
       setSessionScope(response.session.authenticated ? response.session.scope ?? null : null)
     } catch {
+      if (requestVersion !== authStateVersionRef.current) {
+        return
+      }
+
       setSession(null)
       setSessionScope(null)
     } finally {
-      setLoading(false)
+      if (requestVersion === authStateVersionRef.current) {
+        setLoading(false)
+      }
     }
   }, [])
 
@@ -202,8 +215,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       })
 
+      authStateVersionRef.current += 1
       setSession(payload.user)
       setSessionScope(payload.session.scope ?? null)
+      setLoading(false)
       clearSessionExpired()
       persistSessionExpiredNotice(false)
       return { redirectTo: consumeReturnTo(returnTo) }
@@ -221,8 +236,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       })
 
+      authStateVersionRef.current += 1
       setSession(payload.user)
       setSessionScope(payload.session.scope ?? null)
+      setLoading(false)
       clearSessionExpired()
       persistSessionExpiredNotice(false)
       return { redirectTo: consumeReturnTo(returnTo) }
@@ -240,9 +257,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error
       }
     } finally {
+      authStateVersionRef.current += 1
       persistReturnTo(null)
       clearSessionExpired()
       persistSessionExpiredNotice(false)
+      setLoading(false)
       setSession(null)
       setSessionScope(null)
     }

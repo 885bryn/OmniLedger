@@ -18,6 +18,18 @@ function createJsonResponse(status: number, payload: unknown) {
   })
 }
 
+function createDeferredResponse() {
+  let resolve: ((value: Response) => void) | null = null
+  const promise = new Promise<Response>((resolver) => {
+    resolve = resolver
+  })
+
+  return {
+    promise,
+    resolve: (response: Response) => resolve?.(response),
+  }
+}
+
 function LocationEcho() {
   const location = useLocation()
   return <p data-testid="location-echo">{`${location.pathname}${location.search}${location.hash}`}</p>
@@ -99,6 +111,72 @@ describe('auth routes and login guard flow', () => {
 
     expect(await screen.findByText('Item edit page')).toBeTruthy()
     expect(screen.getByTestId('location-echo').textContent).toBe('/items/item-9/edit?tab=history#panel')
+  })
+
+  it('keeps the signed-in dashboard route when the initial session probe resolves stale after login', async () => {
+    const deferredSession = createDeferredResponse()
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/auth/session') && method === 'GET') {
+        return deferredSession.promise
+      }
+
+      if (url.includes('/auth/login') && method === 'POST') {
+        return createJsonResponse(200, {
+          user: { id: 'user-1', username: 'alpha', email: 'alpha@example.com' },
+          session: { authenticated: true },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/login',
+          element: <LoginPage />,
+        },
+        {
+          path: '/dashboard',
+          element: (
+            <RequireAuth>
+              <p>Dashboard</p>
+            </RequireAuth>
+          ),
+        },
+      ],
+      { initialEntries: ['/login'] },
+    )
+
+    render(
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>,
+    )
+
+    await userEvent.type(await screen.findByLabelText('Email'), 'alpha@example.com')
+    await userEvent.type(screen.getByLabelText('Password'), 'StrongPass123!')
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(await screen.findByText('Dashboard')).toBeTruthy()
+
+    deferredSession.resolve(
+      createJsonResponse(200, {
+        user: null,
+        session: { authenticated: false },
+      }),
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Dashboard')).toBeTruthy()
+    })
+    expect(screen.queryByRole('heading', { name: 'Sign in' })).toBeNull()
   })
 
   it('keeps email, clears password, and shows generic top plus inline feedback on failed sign-in', async () => {
