@@ -214,6 +214,10 @@ describe('dashboard financial snapshot', () => {
     const row = within(section).getAllByTestId('dashboard-financial-snapshot-row')[0]
     expect(row.className).toContain('grid-cols-1')
     expect(row.className).toContain('sm:grid-cols-')
+    expect(within(row).getByText('Status')).toBeTruthy()
+    expect(within(row).getByText('Next due')).toBeTruthy()
+    expect(within(row).getByText('Amount')).toBeTruthy()
+    expect(within(row).getByRole('link', { name: 'Open item' })).toBeTruthy()
 
     const snapshotItemLinks = within(section)
       .getAllByRole('link')
