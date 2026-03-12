@@ -212,12 +212,16 @@ describe('dashboard financial snapshot', () => {
 
     const section = await screen.findByTestId('dashboard-financial-snapshot')
     const row = within(section).getAllByTestId('dashboard-financial-snapshot-row')[0]
-    expect(row.className).toContain('grid-cols-1')
-    expect(row.className).toContain('sm:grid-cols-')
-    expect(within(row).getByText('Status')).toBeTruthy()
+    const statusBlock = within(row).getByTestId('dashboard-financial-snapshot-status')
+    const actionBlock = within(row).getByTestId('dashboard-financial-snapshot-action')
+
+    expect(statusBlock.className).toContain('justify-between')
+    expect(statusBlock.className).toContain('items-start')
+    expect(within(statusBlock).getByText('Status')).toBeTruthy()
     expect(within(row).getByText('Next due')).toBeTruthy()
     expect(within(row).getByText('Amount')).toBeTruthy()
-    expect(within(row).getByRole('link', { name: 'Open item' })).toBeTruthy()
+    expect(actionBlock.className).toContain('justify-end')
+    expect(within(actionBlock).getByRole('link', { name: 'Open item' })).toBeTruthy()
 
     const snapshotItemLinks = within(section)
       .getAllByRole('link')
