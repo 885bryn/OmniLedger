@@ -233,4 +233,37 @@ describe('dashboard financial snapshot', () => {
     expect(openEventsLinks.length).toBeGreaterThan(0)
     expect(openEventsLinks.some((link) => link.getAttribute('href') === '/events')).toBe(true)
   })
+
+  it('adds a mobile-first jump link so financial snapshot stays reachable when upcoming queue rows grow', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date(fixedNow).getTime())
+
+    const pendingGroups: DashboardGroup[] = [
+      {
+        due_date: toDayString(fixedNow, 1),
+        events: Array.from({ length: 12 }, (_, index) => ({
+          id: `event-upcoming-${index + 1}`,
+          item_id: 'item-income-upcoming',
+          type: `Upcoming ${index + 1}`,
+          amount: 200 + index,
+          due_date: toDayString(fixedNow, 1 + index),
+          status: 'Pending',
+          updated_at: '2026-03-14T00:00:00.000Z',
+        })),
+      },
+    ]
+
+    globalThis.fetch = createFetchMock(pendingGroups) as typeof fetch
+    renderDashboardPage()
+
+    const jumpLink = await screen.findByRole('link', { name: 'Jump to financial snapshot' })
+    expect(jumpLink.getAttribute('href')).toBe('#dashboard-financial-snapshot')
+    expect(jumpLink.className).toContain('xl:hidden')
+
+    const snapshotHeading = await screen.findByRole('heading', { name: 'Financial snapshot' })
+    expect(snapshotHeading.closest('section')?.getAttribute('id')).toBe('dashboard-financial-snapshot')
+
+    const upcomingRows = within(screen.getByTestId('dashboard-action-queue-upcoming')).getAllByTestId('dashboard-action-queue-row')
+    expect(upcomingRows.length).toBeGreaterThan(5)
+    expect(jumpLink.compareDocumentPosition(upcomingRows[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
 })

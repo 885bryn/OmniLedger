@@ -493,9 +493,14 @@ export function DashboardPage() {
           title={t('dashboard.sections.needsAttention.title')}
           description={t('dashboard.sections.needsAttention.description')}
           action={
-            <Button asChild size="sm" variant="ghost">
-              <Link to="/events">{t('dashboard.openEvents')}</Link>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/events">{t('dashboard.openEvents')}</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="xl:hidden" data-testid="dashboard-financial-snapshot-jump-link">
+                <a href="#dashboard-financial-snapshot">{t('dashboard.sections.needsAttention.jumpToSnapshot')}</a>
+              </Button>
+            </div>
           }
           data-dashboard-section="needs-attention"
         >
@@ -523,6 +528,7 @@ export function DashboardPage() {
         </DashboardSection>
 
         <DashboardSection
+          id="dashboard-financial-snapshot"
           title={t('dashboard.sections.financialSnapshot.title')}
           description={t('dashboard.sections.financialSnapshot.description')}
           data-dashboard-section="financial-snapshot"

@@ -103,7 +103,8 @@
       },
       "needsAttention": {
         "title": "Needs Attention",
-        "description": "Overdue rows land first, then due-soon obligations, so the main work queue stays easy to scan."
+        "description": "Overdue rows land first, then due-soon obligations, so the main work queue stays easy to scan.",
+        "jumpToSnapshot": "Jump to financial snapshot"
       },
       "recentActivity": {
         "title": "Recent Activity",

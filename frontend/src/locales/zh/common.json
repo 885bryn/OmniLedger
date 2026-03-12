@@ -103,7 +103,8 @@
       },
       "needsAttention": {
         "title": "需要关注",
-        "description": "逾期事项优先，其次是即将到期义务，让主工作队列保持紧凑且易于扫描。"
+        "description": "逾期事项优先，其次是即将到期义务，让主工作队列保持紧凑且易于扫描。",
+        "jumpToSnapshot": "跳转到财务快照"
       },
       "recentActivity": {
         "title": "最近动态",
