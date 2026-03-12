@@ -171,15 +171,15 @@ describe('dashboard financial snapshot', () => {
     const rows = within(section).getAllByTestId('dashboard-financial-snapshot-row')
 
     expect(rows).toHaveLength(3)
-    expect(within(rows[0]).getByText('Mortgage')).toBeTruthy()
+    expect(within(rows[0]).getByRole('link', { name: 'Mortgage' })).toBeTruthy()
     expect(within(rows[0]).getByText('Commitment')).toBeTruthy()
-    expect(within(rows[0]).getByText('Overdue')).toBeTruthy()
-    expect(within(rows[0]).getByText(/Due/i)).toBeTruthy()
+    expect(within(rows[0]).getByText(/Overdue/)).toBeTruthy()
+    expect(within(rows[0]).getByText(/^Due /)).toBeTruthy()
     expect(within(rows[0]).getByText('$1,500')).toBeTruthy()
 
     expect(within(rows[1]).getByText('Tenant Rent')).toBeTruthy()
     expect(within(rows[1]).getByText('Income')).toBeTruthy()
-    expect(within(rows[1]).getByText('Upcoming')).toBeTruthy()
+    expect(within(rows[1]).getByText(/Upcoming/)).toBeTruthy()
     expect(within(rows[1]).getByText('+$2,200')).toBeTruthy()
 
     expect(within(rows[2]).getByText('Cloud Backup')).toBeTruthy()

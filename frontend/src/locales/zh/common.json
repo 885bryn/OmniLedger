@@ -109,6 +109,10 @@
         "title": "最近动态",
         "description": "更平静的陪伴式动态流会保留最新完成和手动覆盖信息，但不会与主队列争抢注意力。"
       },
+      "financialSnapshot": {
+        "title": "财务快照",
+        "description": "用高密度条目同时显示子类型、状态、到期上下文和金额，在进入详情前先完成快速扫描。"
+      },
       "portfolio": {
         "description": "补充性的资产上下文放在主队列下方，让仪表盘保持清晰层级，同时不丢失有用背景。"
       }
@@ -152,6 +156,23 @@
         "1-7d": "1-7d",
         "8-30d": "8-30d",
         "30+d": "30+d"
+      }
+    },
+    "financialSnapshot": {
+      "empty": "暂无可用于快照扫描的财务项目。",
+      "openItem": "打开项目",
+      "noPending": "暂无待处理事件",
+      "nextDue": "到期 {{date}}",
+      "columns": {
+        "item": "项目",
+        "status": "状态",
+        "due": "下次到期",
+        "amount": "金额"
+      },
+      "status": {
+        "overdue": "逾期 {{days}} 天",
+        "upcoming": "{{days}} 天后到期",
+        "clear": "清晰"
       }
     },
     "recentActivity": {

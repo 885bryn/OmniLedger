@@ -8,6 +8,7 @@ type DashboardSummaryCardProps = {
   value: ReactNode
   supportingText: string
   to?: string
+  linkState?: Record<string, unknown>
   linkLabel?: string
   valueClassName?: string
 }
@@ -17,6 +18,7 @@ export function DashboardSummaryCard({
   value,
   supportingText,
   to,
+  linkState,
   linkLabel,
   valueClassName,
 }: DashboardSummaryCardProps) {
@@ -37,6 +39,7 @@ export function DashboardSummaryCard({
         <div className="flex pt-1">
           <Link
             to={to}
+            state={linkState}
             className="inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
           >
             <span>{linkLabel}</span>

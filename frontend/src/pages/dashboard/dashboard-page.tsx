@@ -6,6 +6,7 @@ import { MotionPanelList } from '@/components/ui/motion-panel-list'
 import { Pressable } from '@/components/ui/pressable'
 import { Button } from '@/components/ui/button'
 import { DashboardActionQueue } from '../../features/dashboard/dashboard-action-queue'
+import { DashboardFinancialSnapshot, type DashboardFinancialSnapshotRow } from '../../features/dashboard/dashboard-financial-snapshot'
 import { DataCard } from '../../features/dashboard/data-card'
 import { DashboardBody, DashboardDescription, DashboardEyebrow, DashboardHeader, DashboardLayout, DashboardSection, DashboardTitle } from '../../features/dashboard/dashboard-layout'
 import { DashboardRecentActivity } from '../../features/dashboard/dashboard-recent-activity'
@@ -14,7 +15,7 @@ import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { formatCurrency } from '../../lib/currency'
 import { compareByNearestDue } from '../../lib/date-ordering'
-import { getItemDisplayName, isIncomeItem } from '../../lib/item-display'
+import { getFinancialSubtype, getItemDisplayName, isIncomeItem } from '../../lib/item-display'
 import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type EventRow = {
@@ -109,6 +110,19 @@ function compareActivityByLatest(left: EventRow, right: EventRow) {
   }
 
   return left.id.localeCompare(right.id)
+}
+
+function formatDateLabel(value: string) {
+  const parsed = parseCalendarDate(value)
+  if (!parsed) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(parsed)
 }
 
 function DashboardSkeleton() {
@@ -224,6 +238,10 @@ export function DashboardPage() {
   }, [itemLookupQuery.data?.items])
 
   const assets = assetsQuery.data?.items ?? []
+  const financialItems = useMemo(() => {
+    const rows = itemLookupQuery.data?.items ?? []
+    return rows.filter((item) => item.item_type === 'FinancialItem')
+  }, [itemLookupQuery.data?.items])
 
   const assetGridClassName = useMemo(() => {
     if (assets.length <= 1) {
@@ -316,6 +334,7 @@ export function DashboardPage() {
       description: t('dashboard.summaryCards.netCashflow.support', { period: metrics.netPeriodLabel }),
       to: '/items?filter=assets',
       linkLabel: t('dashboard.viewAllItems'),
+      linkState: { from: location.pathname + location.search },
       valueClassName: metrics.netCashflow < 0 ? 'text-destructive' : undefined,
     },
     {
@@ -328,6 +347,7 @@ export function DashboardPage() {
       }),
       to: '/events',
       linkLabel: t('dashboard.openEvents'),
+      linkState: { from: location.pathname + location.search },
     },
     {
       key: 'overdue',
@@ -336,6 +356,7 @@ export function DashboardPage() {
       description: t('dashboard.summaryCards.overdue.support', { count: metrics.overdue, period: metrics.netPeriodLabel }),
       to: '/events',
       linkLabel: t('dashboard.openEvents'),
+      linkState: { from: location.pathname + location.search },
       valueClassName: 'text-destructive',
     },
     {
@@ -349,8 +370,74 @@ export function DashboardPage() {
       }),
       to: '/events',
       linkLabel: t('events.historyTitle'),
+      linkState: { from: location.pathname + location.search },
     },
   ]
+
+  const financialSnapshotRows = useMemo<DashboardFinancialSnapshotRow[]>(() => {
+    const pendingByItemId = new Map<string, EventRow[]>()
+    for (const event of attentionEvents) {
+      const rows = pendingByItemId.get(event.item_id) ?? []
+      rows.push(event)
+      pendingByItemId.set(event.item_id, rows)
+    }
+
+    const today = new Date(Date.now())
+    const todayDayKey = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
+
+    return financialItems
+      .map((item) => {
+        const candidateEvents = (pendingByItemId.get(item.id) ?? []).filter((event) => toCalendarDayKey(event.due_date) !== null)
+        const sortedEvents = candidateEvents.sort(compareByNearestDue)
+        const nextEvent = sortedEvents[0]
+        const dueDayKey = nextEvent ? toCalendarDayKey(nextEvent.due_date) : null
+        const dueDayOffset = dueDayKey === null ? null : dueDayKey - todayDayKey
+        const subtype = getFinancialSubtype(item) ?? item.type ?? item.item_type
+        const dueLabel = nextEvent
+          ? t('dashboard.financialSnapshot.nextDue', { date: formatDateLabel(nextEvent.due_date) })
+          : t('dashboard.financialSnapshot.noPending')
+        const amountLabel =
+          nextEvent && nextEvent.amount !== null && !Number.isNaN(nextEvent.amount)
+            ? `${isIncomeItem(item) ? '+' : ''}${formatCurrency(Math.abs(Number(nextEvent.amount)))}`
+            : t('dashboard.amountPending')
+
+        let statusTone: DashboardFinancialSnapshotRow['statusTone'] = 'clear'
+        let statusLabel = t('dashboard.financialSnapshot.status.clear')
+
+        if (dueDayOffset !== null && dueDayOffset < 0) {
+          statusTone = 'overdue'
+          statusLabel = t('dashboard.financialSnapshot.status.overdue', { days: Math.abs(dueDayOffset) })
+        } else if (dueDayOffset !== null) {
+          statusTone = 'upcoming'
+          statusLabel = t('dashboard.financialSnapshot.status.upcoming', { days: dueDayOffset })
+        }
+
+        return {
+          itemId: item.id,
+          itemName: getItemDisplayName(item),
+          subtype,
+          nextEventType: nextEvent?.type ?? null,
+          statusTone,
+          statusLabel,
+          dueLabel,
+          amountLabel,
+          sortScore: dueDayOffset === null ? Number.POSITIVE_INFINITY : dueDayOffset,
+          updatedAt: Date.parse(item.updated_at),
+        }
+      })
+      .sort((left, right) => {
+        if (left.sortScore !== right.sortScore) {
+          return left.sortScore - right.sortScore
+        }
+
+        if (left.updatedAt !== right.updatedAt) {
+          return right.updatedAt - left.updatedAt
+        }
+
+        return left.itemName.localeCompare(right.itemName)
+      })
+      .map(({ sortScore: _sortScore, updatedAt: _updatedAt, ...row }) => row)
+  }, [attentionEvents, financialItems, t])
 
   if (eventsQuery.isLoading || recentActivityQuery.isLoading || assetsQuery.isLoading || itemLookupQuery.isLoading) {
     return <DashboardSkeleton />
@@ -389,6 +476,7 @@ export function DashboardPage() {
             renderItem={(metric) => (
               <DashboardSummaryCard
                 label={metric.label}
+                linkState={metric.linkState}
                 linkLabel={metric.linkLabel}
                 supportingText={metric.description}
                 to={metric.to}
@@ -432,6 +520,25 @@ export function DashboardPage() {
               }}
             />
           )}
+        </DashboardSection>
+
+        <DashboardSection
+          title={t('dashboard.sections.financialSnapshot.title')}
+          description={t('dashboard.sections.financialSnapshot.description')}
+          data-dashboard-section="financial-snapshot"
+        >
+          <DashboardFinancialSnapshot
+            rows={financialSnapshotRows}
+            returnTo={location.pathname + location.search}
+            labels={{
+              itemColumn: t('dashboard.financialSnapshot.columns.item'),
+              statusColumn: t('dashboard.financialSnapshot.columns.status'),
+              dueColumn: t('dashboard.financialSnapshot.columns.due'),
+              amountColumn: t('dashboard.financialSnapshot.columns.amount'),
+              openItem: t('dashboard.financialSnapshot.openItem'),
+              empty: t('dashboard.financialSnapshot.empty'),
+            }}
+          />
         </DashboardSection>
 
         <DashboardSection

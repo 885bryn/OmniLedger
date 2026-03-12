@@ -109,6 +109,10 @@
         "title": "Recent Activity",
         "description": "A calmer companion feed keeps the latest completions and manual overrides nearby without competing with the queue."
       },
+      "financialSnapshot": {
+        "title": "Financial snapshot",
+        "description": "Dense item-level rows keep subtype, status, due timing, and amount context visible before you drill into details."
+      },
       "portfolio": {
         "description": "Supporting portfolio context stays below the main queue so the dashboard keeps its hierarchy without losing useful context."
       }
@@ -152,6 +156,23 @@
         "1-7d": "1-7d",
         "8-30d": "8-30d",
         "30+d": "30+d"
+      }
+    },
+    "financialSnapshot": {
+      "empty": "No financial items available for snapshot scanning yet.",
+      "openItem": "Open item",
+      "noPending": "No pending events",
+      "nextDue": "Due {{date}}",
+      "columns": {
+        "item": "Item",
+        "status": "Status",
+        "due": "Next due",
+        "amount": "Amount"
+      },
+      "status": {
+        "overdue": "Overdue {{days}}d",
+        "upcoming": "Upcoming {{days}}d",
+        "clear": "Clear"
       }
     },
     "recentActivity": {
