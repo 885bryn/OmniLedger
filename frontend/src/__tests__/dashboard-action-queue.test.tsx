@@ -146,9 +146,9 @@ describe('dashboard action queue', () => {
 
     const overdueRows = within(overdueSection).getAllByTestId('dashboard-action-queue-row')
     expect(overdueRows).toHaveLength(3)
-    expect(within(overdueRows[0]).getByText('Mortgage')).toBeTruthy()
-    expect(within(overdueRows[1]).getByText('Insurance')).toBeTruthy()
-    expect(within(overdueRows[2]).getByText('Utilities')).toBeTruthy()
+    expect(within(overdueRows[0]).getAllByText('Mortgage').length).toBeGreaterThan(0)
+    expect(within(overdueRows[1]).getAllByText('Insurance').length).toBeGreaterThan(0)
+    expect(within(overdueRows[2]).getAllByText('Utilities').length).toBeGreaterThan(0)
     expect(within(overdueRows[0]).getByText('30+d')).toBeTruthy()
     expect(within(overdueRows[1]).getByText('8-30d')).toBeTruthy()
     expect(within(overdueRows[2]).getByText('1-7d')).toBeTruthy()

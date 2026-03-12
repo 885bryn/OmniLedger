@@ -116,29 +116,43 @@
     "summaryCards": {
       "netCashflow": {
         "label": "净现金流",
-        "support": "来自你的资产汇总，覆盖 {{period}}。"
+        "support": "基于 {{period}} 内到期事件计算。"
       },
       "upcomingDue": {
         "label": "即将到期",
-        "support": "{{count}} 条即将到期记录，时间覆盖 {{range}}。",
-        "supportMissing": "{{count}} 条即将到期记录，日期仍在整理中。"
+        "support": "{{period}} 内有 {{count}} 条即将到期记录。",
+        "supportMissing": "本月有 {{count}} 条即将到期记录。"
       },
       "overdue": {
         "label": "逾期",
-        "support_one": "当前有 {{count}} 条记录需要立即处理。",
-        "support_other": "当前有 {{count}} 条记录需要立即处理。"
+        "support_one": "{{period}} 内有 {{count}} 条记录已逾期。",
+        "support_other": "{{period}} 内有 {{count}} 条记录已逾期。"
       },
       "completedActivity": {
         "label": "已完成动态",
-        "support": "最近 {{count}} 条完成记录，其中 {{manualCount}} 条为手动覆盖。"
+        "support": "{{period}} 内完成 {{count}} 条，其中 {{manualCount}} 条为手动覆盖。"
       }
     },
     "attention": {
       "overdue": "逾期",
       "dueSoon": "即将到期",
+      "filterAll": "全部",
+      "filterOverdue": "逾期",
+      "filterDueSoon": "即将到期",
+      "totalRows": "操作队列",
+      "emptyForFilter": "当前筛选下没有记录。",
       "dueDate": "到期日",
       "amount": "金额",
-      "linkedItem": "关联项目"
+      "linkedItem": "关联项目",
+      "previewHint": "当前展示 {{shown}} / {{total}} 条记录。"
+    },
+    "actionQueue": {
+      "upcoming": "即将到期",
+      "ageBuckets": {
+        "1-7d": "1-7d",
+        "8-30d": "8-30d",
+        "30+d": "30+d"
+      }
     },
     "recentActivity": {
       "empty": "当完成记录开始进入历史后，会显示在这里。",

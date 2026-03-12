@@ -116,29 +116,43 @@
     "summaryCards": {
       "netCashflow": {
         "label": "Net cashflow",
-        "support": "Across {{period}} from your asset summaries."
+        "support": "Based on events due in {{period}}."
       },
       "upcomingDue": {
         "label": "Upcoming due",
-        "support": "{{count}} upcoming rows across {{range}}.",
-        "supportMissing": "{{count}} upcoming rows with dates still settling."
+        "support": "{{count}} upcoming rows due in {{period}}.",
+        "supportMissing": "{{count}} upcoming rows due this month."
       },
       "overdue": {
         "label": "Overdue",
-        "support_one": "{{count}} row needs attention right now.",
-        "support_other": "{{count}} rows need attention right now."
+        "support_one": "{{count}} row overdue in {{period}}.",
+        "support_other": "{{count}} rows overdue in {{period}}."
       },
       "completedActivity": {
         "label": "Completed activity",
-        "support": "{{count}} recent completions, including {{manualCount}} manual overrides."
+        "support": "{{count}} completed in {{period}}, including {{manualCount}} manual overrides."
       }
     },
     "attention": {
       "overdue": "Overdue",
       "dueSoon": "Due soon",
+      "filterAll": "All",
+      "filterOverdue": "Overdue",
+      "filterDueSoon": "Due soon",
+      "totalRows": "Action queue",
+      "emptyForFilter": "No rows match this filter right now.",
       "dueDate": "Due date",
       "amount": "Amount",
-      "linkedItem": "Linked item"
+      "linkedItem": "Linked item",
+      "previewHint": "Showing first {{shown}} of {{total}} rows."
+    },
+    "actionQueue": {
+      "upcoming": "Upcoming",
+      "ageBuckets": {
+        "1-7d": "1-7d",
+        "8-30d": "8-30d",
+        "30+d": "30+d"
+      }
     },
     "recentActivity": {
       "empty": "Completed events will appear here once activity starts landing in history.",

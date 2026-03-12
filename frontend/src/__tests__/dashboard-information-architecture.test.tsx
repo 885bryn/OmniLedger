@@ -54,7 +54,82 @@ function renderDashboardPage() {
   )
 }
 
-function createDashboardFetchMock() {
+type DashboardEventGroup = {
+  due_date: string
+  events: Array<Record<string, unknown>>
+}
+
+const DEFAULT_PENDING_GROUPS: DashboardEventGroup[] = [
+  {
+    due_date: '2026-03-14',
+    events: [
+      {
+        id: 'event-1',
+        item_id: 'item-1',
+        type: 'Mortgage',
+        amount: 1450,
+        due_date: '2026-03-14',
+        status: 'Pending',
+        updated_at: '2026-03-10T00:00:00.000Z',
+      },
+    ],
+  },
+  {
+    due_date: '2026-03-09',
+    events: [
+      {
+        id: 'event-2',
+        item_id: 'item-2',
+        type: 'Insurance',
+        amount: 220,
+        due_date: '2026-03-09',
+        status: 'Pending',
+        updated_at: '2026-03-08T00:00:00.000Z',
+      },
+    ],
+  },
+]
+
+const DEFAULT_COMPLETED_GROUPS: DashboardEventGroup[] = [
+  {
+    due_date: '2026-03-08',
+    events: [
+      {
+        id: 'event-3',
+        item_id: 'item-1',
+        type: 'Mortgage',
+        amount: 1450,
+        due_date: '2026-03-08',
+        status: 'Completed',
+        updated_at: '2026-03-10T00:00:00.000Z',
+        completed_at: '2026-03-10T00:00:00.000Z',
+      },
+      {
+        id: 'event-4',
+        item_id: 'item-2',
+        type: 'Insurance',
+        amount: 220,
+        due_date: '2026-03-07',
+        status: 'Completed',
+        updated_at: '2026-03-09T00:00:00.000Z',
+        completed_at: '2026-03-09T00:00:00.000Z',
+        is_manual_override: true,
+      },
+    ],
+  },
+]
+
+function countEvents(groups: DashboardEventGroup[]) {
+  return groups.reduce((total, group) => total + group.events.length, 0)
+}
+
+function createDashboardFetchMock(options: {
+  pendingGroups?: DashboardEventGroup[]
+  completedGroups?: DashboardEventGroup[]
+} = {}) {
+  const pendingGroups = options.pendingGroups ?? DEFAULT_PENDING_GROUPS
+  const completedGroups = options.completedGroups ?? DEFAULT_COMPLETED_GROUPS
+
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), 'http://localhost')
     const method = init?.method ?? 'GET'
@@ -63,37 +138,8 @@ function createDashboardFetchMock() {
       return createResponse({
         status: 200,
         json: {
-          groups: [
-            {
-              due_date: '2026-03-14',
-              events: [
-                {
-                  id: 'event-1',
-                  item_id: 'item-1',
-                  type: 'Mortgage',
-                  amount: 1450,
-                  due_date: '2026-03-14',
-                  status: 'Pending',
-                  updated_at: '2026-03-10T00:00:00.000Z',
-                },
-              ],
-            },
-            {
-              due_date: '2026-03-09',
-              events: [
-                {
-                  id: 'event-2',
-                  item_id: 'item-2',
-                  type: 'Insurance',
-                  amount: 220,
-                  due_date: '2026-03-09',
-                  status: 'Pending',
-                  updated_at: '2026-03-08T00:00:00.000Z',
-                },
-              ],
-            },
-          ],
-          total_count: 2,
+          groups: pendingGroups,
+          total_count: countEvents(pendingGroups),
         },
       })
     }
@@ -102,35 +148,8 @@ function createDashboardFetchMock() {
       return createResponse({
         status: 200,
         json: {
-          groups: [
-            {
-              due_date: '2026-03-08',
-              events: [
-                {
-                  id: 'event-3',
-                  item_id: 'item-1',
-                  type: 'Mortgage',
-                  amount: 1450,
-                  due_date: '2026-03-08',
-                  status: 'Completed',
-                  updated_at: '2026-03-10T00:00:00.000Z',
-                  completed_at: '2026-03-10T00:00:00.000Z',
-                },
-                {
-                  id: 'event-4',
-                  item_id: 'item-2',
-                  type: 'Insurance',
-                  amount: 220,
-                  due_date: '2026-03-07',
-                  status: 'Completed',
-                  updated_at: '2026-03-09T00:00:00.000Z',
-                  completed_at: '2026-03-09T00:00:00.000Z',
-                  is_manual_override: true,
-                },
-              ],
-            },
-          ],
-          total_count: 2,
+          groups: completedGroups,
+          total_count: countEvents(completedGroups),
         },
       })
     }
@@ -291,17 +310,233 @@ describe('dashboard information architecture', () => {
     const cards = screen.getAllByRole('article').filter((node) => node.getAttribute('data-dashboard-metric-card') === 'true')
     expect(cards).toHaveLength(4)
 
-    expect(within(cards[0]).getByText('$800')).toBeTruthy()
-    expect(within(cards[0]).getByText('Across Mar 1 - Mar 31 from your asset summaries.')).toBeTruthy()
+    expect(within(cards[0]).getByText('-$3,340')).toBeTruthy()
+    expect(within(cards[0]).getByText('Based on events due in Mar 1 - Mar 31.')).toBeTruthy()
 
     expect(within(cards[1]).getByText('$1,450')).toBeTruthy()
-    expect(within(cards[1]).getByText('1 upcoming rows across Mar 9 - Mar 14.')).toBeTruthy()
+    expect(within(cards[1]).getByText('1 upcoming rows due in Mar 1 - Mar 31.')).toBeTruthy()
 
     expect(within(cards[2]).getByText('1')).toBeTruthy()
-    expect(within(cards[2]).getByText('1 row needs attention right now.')).toBeTruthy()
+    expect(within(cards[2]).getByText('1 row overdue in Mar 1 - Mar 31.')).toBeTruthy()
 
     expect(within(cards[3]).getByText('2')).toBeTruthy()
-    expect(within(cards[3]).getByText('2 recent completions, including 1 manual overrides.')).toBeTruthy()
+    expect(within(cards[3]).getByText('2 completed in Mar 1 - Mar 31, including 1 manual overrides.')).toBeTruthy()
+  })
+
+  it('keeps dashboard summary math month-bounded across net, upcoming, overdue, and completed cards', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
+    globalThis.fetch = createDashboardFetchMock({
+      pendingGroups: [
+        {
+          due_date: '2026-03-05',
+          events: [
+            {
+              id: 'pending-overdue-march',
+              item_id: 'item-1',
+              type: 'Mortgage',
+              amount: 100,
+              due_date: '2026-03-05',
+              status: 'Pending',
+              updated_at: '2026-03-09T00:00:00.000Z',
+            },
+          ],
+        },
+        {
+          due_date: '2026-03-20',
+          events: [
+            {
+              id: 'pending-upcoming-march',
+              item_id: 'item-2',
+              type: 'Insurance',
+              amount: 300,
+              due_date: '2026-03-20',
+              status: 'Pending',
+              updated_at: '2026-03-10T00:00:00.000Z',
+            },
+          ],
+        },
+        {
+          due_date: '2026-04-02',
+          events: [
+            {
+              id: 'pending-next-month',
+              item_id: 'item-1',
+              type: 'Mortgage',
+              amount: 999,
+              due_date: '2026-04-02',
+              status: 'Pending',
+              updated_at: '2026-03-10T00:00:00.000Z',
+            },
+          ],
+        },
+      ],
+      completedGroups: [
+        {
+          due_date: '2026-03-10',
+          events: [
+            {
+              id: 'completed-income-march',
+              item_id: 'item-3',
+              type: 'Income',
+              amount: 2000,
+              due_date: '2026-03-10',
+              status: 'Completed',
+              updated_at: '2026-03-10T00:00:00.000Z',
+              completed_at: '2026-03-10T00:00:00.000Z',
+            },
+            {
+              id: 'completed-commitment-march',
+              item_id: 'item-2',
+              type: 'Insurance',
+              amount: 400,
+              due_date: '2026-03-03',
+              status: 'Completed',
+              updated_at: '2026-03-03T00:00:00.000Z',
+              completed_at: '2026-03-03T00:00:00.000Z',
+              is_manual_override: true,
+            },
+          ],
+        },
+        {
+          due_date: '2026-02-28',
+          events: [
+            {
+              id: 'completed-last-month',
+              item_id: 'item-1',
+              type: 'Mortgage',
+              amount: 900,
+              due_date: '2026-02-28',
+              status: 'Completed',
+              updated_at: '2026-02-28T00:00:00.000Z',
+              completed_at: '2026-02-28T00:00:00.000Z',
+            },
+          ],
+        },
+      ],
+    }) as typeof fetch
+
+    renderDashboardPage()
+
+    await screen.findByText('Net cashflow')
+
+    const cards = screen.getAllByRole('article').filter((node) => node.getAttribute('data-dashboard-metric-card') === 'true')
+    expect(cards).toHaveLength(4)
+
+    expect(within(cards[0]).getByText('$1,200')).toBeTruthy()
+    expect(within(cards[1]).getByText('$300')).toBeTruthy()
+    expect(within(cards[2]).getByText('1')).toBeTruthy()
+    expect(within(cards[3]).getByText('2')).toBeTruthy()
+    expect(within(cards[3]).getByText('2 completed in Mar 1 - Mar 31, including 1 manual overrides.')).toBeTruthy()
+  })
+
+  it('keeps monthly net cashflow stable when a row moves from pending to completed', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
+
+    globalThis.fetch = createDashboardFetchMock({
+      pendingGroups: [
+        {
+          due_date: '2026-03-15',
+          events: [
+            {
+              id: 'income-transition-row',
+              item_id: 'item-3',
+              type: 'Income',
+              amount: 500,
+              due_date: '2026-03-15',
+              status: 'Pending',
+              updated_at: '2026-03-10T00:00:00.000Z',
+            },
+          ],
+        },
+      ],
+      completedGroups: [],
+    }) as typeof fetch
+
+    renderDashboardPage()
+    await screen.findByText('Net cashflow')
+
+    let cards = screen.getAllByRole('article').filter((node) => node.getAttribute('data-dashboard-metric-card') === 'true')
+    expect(within(cards[0]).getByText('$500')).toBeTruthy()
+
+    cleanup()
+
+    globalThis.fetch = createDashboardFetchMock({
+      pendingGroups: [],
+      completedGroups: [
+        {
+          due_date: '2026-03-15',
+          events: [
+            {
+              id: 'income-transition-row',
+              item_id: 'item-3',
+              type: 'Income',
+              amount: 500,
+              due_date: '2026-03-15',
+              status: 'Completed',
+              updated_at: '2026-03-15T00:00:00.000Z',
+              completed_at: '2026-03-15T00:00:00.000Z',
+            },
+          ],
+        },
+      ],
+    }) as typeof fetch
+
+    renderDashboardPage()
+    await screen.findByText('Net cashflow')
+
+    cards = screen.getAllByRole('article').filter((node) => node.getAttribute('data-dashboard-metric-card') === 'true')
+    expect(within(cards[0]).getByText('$500')).toBeTruthy()
+  })
+
+  it('ignores completed rows with due dates outside the active month for summary math', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
+
+    globalThis.fetch = createDashboardFetchMock({
+      pendingGroups: [
+        {
+          due_date: '2026-03-18',
+          events: [
+            {
+              id: 'march-pending-obligation',
+              item_id: 'item-1',
+              type: 'Mortgage',
+              amount: 100,
+              due_date: '2026-03-18',
+              status: 'Pending',
+              updated_at: '2026-03-10T00:00:00.000Z',
+            },
+          ],
+        },
+      ],
+      completedGroups: [
+        {
+          due_date: '2026-04-05',
+          events: [
+            {
+              id: 'april-income-completed-in-march',
+              item_id: 'item-3',
+              type: 'Income',
+              amount: 1000,
+              due_date: '2026-04-05',
+              status: 'Completed',
+              updated_at: '2026-03-11T00:00:00.000Z',
+              completed_at: '2026-03-11T00:00:00.000Z',
+            },
+          ],
+        },
+      ],
+    }) as typeof fetch
+
+    renderDashboardPage()
+    await screen.findByText('Net cashflow')
+
+    const cards = screen.getAllByRole('article').filter((node) => node.getAttribute('data-dashboard-metric-card') === 'true')
+    expect(cards).toHaveLength(4)
+
+    expect(within(cards[0]).getByText('-$100')).toBeTruthy()
+    expect(within(cards[1]).getByText('$100')).toBeTruthy()
+    expect(within(cards[2]).getByText('0')).toBeTruthy()
+    expect(within(cards[3]).getByText('0')).toBeTruthy()
   })
 
   it('renders overdue-first attention rows and a calmer recent activity feed with existing pathways', async () => {
@@ -319,13 +554,18 @@ describe('dashboard information architecture', () => {
     expect(needsAttention.compareDocumentPosition(recentActivity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(recentActivity.compareDocumentPosition(portfolio) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
-    const attentionRows = screen.getAllByRole('listitem').filter((node) => node.getAttribute('data-attention-row-id'))
-    expect(attentionRows).toHaveLength(2)
-    expect(attentionRows[0]?.getAttribute('data-overdue')).toBe('true')
-    expect(within(attentionRows[0]).getByText('Insurance')).toBeTruthy()
-    expect(within(attentionRows[0]).getByText('Home Insurance')).toBeTruthy()
-    expect(within(attentionRows[1]).getByText('Mortgage')).toBeTruthy()
-    expect(within(attentionRows[1]).getByText('Maple Mortgage')).toBeTruthy()
+    const overdueSection = screen.getByTestId('dashboard-action-queue-overdue')
+    const upcomingSection = screen.getByTestId('dashboard-action-queue-upcoming')
+    const overdueRows = within(overdueSection).getAllByTestId('dashboard-action-queue-row')
+    const upcomingRows = within(upcomingSection).getAllByTestId('dashboard-action-queue-row')
+
+    expect(overdueRows).toHaveLength(1)
+    expect(within(overdueRows[0]).getAllByText('Insurance').length).toBeGreaterThan(0)
+    expect(within(overdueRows[0]).getByText('1-7d')).toBeTruthy()
+
+    expect(upcomingRows).toHaveLength(1)
+    expect(within(upcomingRows[0]).getAllByText('Mortgage').length).toBeGreaterThan(0)
+    expect(within(upcomingRows[0]).getByText('Maple Mortgage')).toBeTruthy()
 
     const recentRows = screen.getAllByRole('listitem').filter((node) => node.getAttribute('data-recent-activity-row-id'))
     expect(recentRows).toHaveLength(2)
@@ -335,6 +575,87 @@ describe('dashboard information architecture', () => {
 
     expect(screen.getAllByRole('link', { name: /Open events/i }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('link', { name: 'Maple Mortgage' }).length).toBeGreaterThan(0)
+  })
+
+  it('keeps action queue split into overdue and upcoming sections with the 14-day upcoming window', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
+    globalThis.fetch = createDashboardFetchMock({
+      pendingGroups: [
+        {
+          due_date: '2026-03-09',
+          events: [
+            {
+              id: 'event-overdue',
+              item_id: 'item-2',
+              type: 'Insurance',
+              amount: 220,
+              due_date: '2026-03-09',
+              status: 'Pending',
+              updated_at: '2026-03-08T00:00:00.000Z',
+            },
+            {
+              id: 'event-upcoming-window',
+              item_id: 'item-1',
+              type: 'Mortgage',
+              amount: 1450,
+              due_date: '2026-03-20',
+              status: 'Pending',
+              updated_at: '2026-03-10T00:00:00.000Z',
+            },
+            {
+              id: 'event-upcoming-outside-window',
+              item_id: 'item-1',
+              type: 'Mortgage',
+              amount: 1450,
+              due_date: '2026-03-31',
+              status: 'Pending',
+              updated_at: '2026-03-10T00:00:00.000Z',
+            },
+          ],
+        },
+      ],
+    }) as typeof fetch
+
+    renderDashboardPage()
+
+    const overdueSection = await screen.findByTestId('dashboard-action-queue-overdue')
+    const overdueRows = within(overdueSection).getAllByTestId('dashboard-action-queue-row')
+    expect(overdueRows).toHaveLength(1)
+    expect(within(overdueRows[0]).getAllByText('Insurance').length).toBeGreaterThan(0)
+
+    const upcomingSection = screen.getByTestId('dashboard-action-queue-upcoming')
+    const upcomingRows = within(upcomingSection).getAllByTestId('dashboard-action-queue-row')
+    expect(upcomingRows).toHaveLength(1)
+    expect(within(upcomingRows[0]).getAllByText('Mortgage').length).toBeGreaterThan(0)
+    expect(within(upcomingSection).queryByText('Mar 31, 2026')).toBeNull()
+  })
+
+  it('renders full overdue queue without truncation and keeps recent activity section visible', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
+    globalThis.fetch = createDashboardFetchMock({
+      pendingGroups: [
+        {
+          due_date: '2026-03-08',
+          events: Array.from({ length: 9 }, (_, index) => ({
+            id: `event-overflow-${index + 1}`,
+            item_id: index % 2 === 0 ? 'item-1' : 'item-2',
+            type: index % 2 === 0 ? 'Mortgage' : 'Insurance',
+            amount: index % 2 === 0 ? 1450 : 220,
+            due_date: `2026-03-${String(index + 1).padStart(2, '0')}`,
+            status: 'Pending',
+            updated_at: '2026-03-10T00:00:00.000Z',
+          })),
+        },
+      ],
+    }) as typeof fetch
+
+    renderDashboardPage()
+
+    const overdueSection = await screen.findByTestId('dashboard-action-queue-overdue')
+    const attentionRows = within(overdueSection).getAllByTestId('dashboard-action-queue-row')
+    expect(attentionRows).toHaveLength(9)
+    expect(screen.queryByText('Showing first 6 of 9 rows.')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Recent Activity' })).toBeTruthy()
   })
 
   it('locks the summary band to a stacked mobile order instead of a cramped small-screen grid', async () => {

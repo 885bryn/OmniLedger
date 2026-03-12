@@ -5,8 +5,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { MotionPanelList } from '@/components/ui/motion-panel-list'
 import { Pressable } from '@/components/ui/pressable'
 import { Button } from '@/components/ui/button'
+import { DashboardActionQueue } from '../../features/dashboard/dashboard-action-queue'
 import { DataCard } from '../../features/dashboard/data-card'
-import { DashboardNeedsAttention } from '../../features/dashboard/dashboard-needs-attention'
 import { DashboardBody, DashboardDescription, DashboardEyebrow, DashboardHeader, DashboardLayout, DashboardSection, DashboardTitle } from '../../features/dashboard/dashboard-layout'
 import { DashboardRecentActivity } from '../../features/dashboard/dashboard-recent-activity'
 import { DashboardSummaryCard } from '../../features/dashboard/dashboard-summary-card'
@@ -14,7 +14,7 @@ import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { formatCurrency } from '../../lib/currency'
 import { compareByNearestDue } from '../../lib/date-ordering'
-import { getItemDisplayName } from '../../lib/item-display'
+import { getItemDisplayName, isIncomeItem } from '../../lib/item-display'
 import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type EventRow = {
@@ -52,49 +52,6 @@ type ItemsResponse = {
   total_count: number
 }
 
-type NetStatusResponse = {
-  id: string
-  summary: {
-    net_monthly_cashflow: number
-    active_period?: {
-      cadence?: string
-      start_date?: string
-      end_date?: string
-      label?: string
-    }
-    cadence_totals?: {
-      total?: {
-        net_cashflow?: {
-          weekly?: number
-          monthly?: number
-          yearly?: number
-        }
-        active_periods?: {
-          weekly?: {
-            start_date?: string
-            end_date?: string
-            label?: string
-          }
-          monthly?: {
-            start_date?: string
-            end_date?: string
-            label?: string
-          }
-          yearly?: {
-            start_date?: string
-            end_date?: string
-            label?: string
-          }
-        }
-      }
-    }
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
 function formatDateRange(values: string[]) {
   const parsed = values.map((value) => parseCalendarDate(value)).filter((value): value is Date => value !== null)
   if (parsed.length === 0) {
@@ -126,37 +83,22 @@ function parseCalendarDate(value: string) {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-function formatPeriodLabel(period: { start_date?: string; end_date?: string; label?: string } | undefined, fallback: string) {
-  if (period?.label && period.label.trim().length > 0) {
-    return period.label
+function toCalendarDayKey(value: string) {
+  const parsed = parseCalendarDate(value) ?? new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return null
   }
 
-  if (period?.start_date && period.end_date) {
-    return formatDateRange([period.start_date, period.end_date]) ?? fallback
-  }
-
-  return fallback
+  return parsed.getFullYear() * 10000 + (parsed.getMonth() + 1) * 100 + parsed.getDate()
 }
 
-function resolveNetSummary(summary: NetStatusResponse['summary']) {
-  const cadence = summary.active_period?.cadence
-  const cadencePeriods = summary.cadence_totals?.total?.active_periods
-  const cadenceNet = summary.cadence_totals?.total?.net_cashflow
-
-  if (cadence === 'weekly' || cadence === 'monthly' || cadence === 'yearly') {
-    const value = cadenceNet?.[cadence]
-    if (Number.isFinite(value)) {
-      return {
-        net: Number(value),
-        periodLabel: formatPeriodLabel(cadencePeriods?.[cadence], formatPeriodLabel(summary.active_period, 'current period')),
-      }
-    }
+function eventSignedAmount(event: EventRow, item: ItemRow | undefined) {
+  if (event.amount === null || Number.isNaN(event.amount)) {
+    return 0
   }
 
-  return {
-    net: Number(summary.net_monthly_cashflow ?? 0),
-    periodLabel: formatPeriodLabel(summary.active_period, 'current month'),
-  }
+  const magnitude = Math.abs(Number(event.amount))
+  return item && isIncomeItem(item) ? magnitude : -magnitude
 }
 
 function compareActivityByLatest(left: EventRow, right: EventRow) {
@@ -282,11 +224,6 @@ export function DashboardPage() {
   }, [itemLookupQuery.data?.items])
 
   const assets = assetsQuery.data?.items ?? []
-  const assetNetStatusQuery = useQuery({
-    queryKey: [...queryKeys.dashboard.lens(lensScope), 'asset-net-status', assets.map((asset) => asset.id)],
-    enabled: assets.length > 0,
-    queryFn: async () => Promise.all(assets.map((asset) => apiRequest<NetStatusResponse>(`/items/${asset.id}/net-status`))),
-  })
 
   const assetGridClassName = useMemo(() => {
     if (assets.length <= 1) {
@@ -306,42 +243,70 @@ export function DashboardPage() {
 
   const metrics = useMemo(() => {
     const now = Date.now()
-    const overdueEvents = attentionEvents.filter((event) => Date.parse(event.due_date) < now)
-    const upcomingEvents = attentionEvents.filter((event) => {
-      const due = Date.parse(event.due_date)
-      if (Number.isNaN(due)) {
+    const nowDate = new Date(now)
+    const currentDayKey = nowDate.getFullYear() * 10000 + (nowDate.getMonth() + 1) * 100 + nowDate.getDate()
+    const monthStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1)
+    const monthEnd = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 0)
+    const monthStartDayKey = monthStart.getFullYear() * 10000 + (monthStart.getMonth() + 1) * 100 + monthStart.getDate()
+    const monthEndDayKey = monthEnd.getFullYear() * 10000 + (monthEnd.getMonth() + 1) * 100 + monthEnd.getDate()
+    const monthPeriodLabel = formatDateRange([
+      `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}-${String(monthStart.getDate()).padStart(2, '0')}`,
+      `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`,
+    ]) ?? t('dashboard.currentMonthFallback')
+
+    const monthlyPendingEvents = attentionEvents.filter((event) => {
+      const dueDayKey = toCalendarDayKey(event.due_date)
+      if (dueDayKey === null) {
         return false
       }
 
-      return due >= now
-    }).length
-    const upcomingAmount = attentionEvents.reduce((total, event) => {
-      if (Date.parse(event.due_date) < now) {
-        return total
+      return dueDayKey >= monthStartDayKey && dueDayKey <= monthEndDayKey
+    })
+
+    const overdueEvents = monthlyPendingEvents.filter((event) => {
+      const dueDayKey = toCalendarDayKey(event.due_date)
+      return dueDayKey !== null && dueDayKey < currentDayKey
+    })
+
+    const upcomingEvents = monthlyPendingEvents.filter((event) => {
+      const dueDayKey = toCalendarDayKey(event.due_date)
+      return dueDayKey !== null && dueDayKey >= currentDayKey
+    })
+
+    const upcomingAmount = upcomingEvents.reduce((total, event) => total + Number(event.amount ?? 0), 0)
+    const monthlyCompletedEvents = completedEvents.filter((event) => {
+      const dueDayKey = toCalendarDayKey(event.due_date)
+      if (dueDayKey === null) {
+        return false
       }
 
-      return total + Number(event.amount ?? 0)
-    }, 0)
-    const dueRange = formatDateRange(attentionEvents.map((event) => event.due_date))
-    const activityRows = completedEvents.slice(0, 5)
+      return dueDayKey >= monthStartDayKey && dueDayKey <= monthEndDayKey
+    })
+
+    const activityRows = monthlyCompletedEvents.slice(0, 5)
     const manualOverrideCount = activityRows.filter((event) => event.is_manual_override).length
-    const netSummaries = assetNetStatusQuery.data ?? []
-    const resolvedNetSummaries = netSummaries.map((entry) => resolveNetSummary(entry.summary))
-    const netCashflow = resolvedNetSummaries.reduce((total, entry) => total + entry.net, 0)
-    const netPeriodLabel = resolvedNetSummaries[0]?.periodLabel ?? t('dashboard.currentMonthFallback')
+    const monthlyLedgerById = new Map<string, EventRow>()
+
+    for (const event of [...monthlyPendingEvents, ...monthlyCompletedEvents]) {
+      monthlyLedgerById.set(event.id, event)
+    }
+
+    const netCashflow = Array.from(monthlyLedgerById.values()).reduce(
+      (total, event) => total + eventSignedAmount(event, itemById.get(event.item_id)),
+      0,
+    )
 
     return {
       netCashflow,
-      netPeriodLabel,
-      totalDue: upcomingEvents,
+      netPeriodLabel: monthPeriodLabel,
+      totalDue: upcomingEvents.length,
       overdue: overdueEvents.length,
       upcomingAmount,
-      dueRange,
-      completedActivity: completedEvents.length,
+      completedActivity: monthlyCompletedEvents.length,
       activityRows: activityRows.length,
       manualOverrideCount,
     }
-  }, [assetNetStatusQuery.data, attentionEvents, completedEvents, t])
+  }, [attentionEvents, completedEvents, itemById, t])
 
   const metricCards = [
     {
@@ -357,9 +322,10 @@ export function DashboardPage() {
       key: 'upcomingDue',
       label: t('dashboard.summaryCards.upcomingDue.label'),
       value: formatCurrency(metrics.upcomingAmount),
-      description: metrics.dueRange
-        ? t('dashboard.summaryCards.upcomingDue.support', { count: metrics.totalDue, range: metrics.dueRange })
-        : t('dashboard.summaryCards.upcomingDue.supportMissing', { count: metrics.totalDue }),
+      description: t('dashboard.summaryCards.upcomingDue.support', {
+        count: metrics.totalDue,
+        period: metrics.netPeriodLabel,
+      }),
       to: '/events',
       linkLabel: t('dashboard.openEvents'),
     },
@@ -367,7 +333,7 @@ export function DashboardPage() {
       key: 'overdue',
       label: t('dashboard.summaryCards.overdue.label'),
       value: metrics.overdue,
-      description: t('dashboard.summaryCards.overdue.support', { count: metrics.overdue }),
+      description: t('dashboard.summaryCards.overdue.support', { count: metrics.overdue, period: metrics.netPeriodLabel }),
       to: '/events',
       linkLabel: t('dashboard.openEvents'),
       valueClassName: 'text-destructive',
@@ -379,17 +345,18 @@ export function DashboardPage() {
       description: t('dashboard.summaryCards.completedActivity.support', {
         count: metrics.activityRows,
         manualCount: metrics.manualOverrideCount,
+        period: metrics.netPeriodLabel,
       }),
       to: '/events',
       linkLabel: t('events.historyTitle'),
     },
   ]
 
-  if (eventsQuery.isLoading || recentActivityQuery.isLoading || assetsQuery.isLoading || itemLookupQuery.isLoading || (assets.length > 0 && assetNetStatusQuery.isLoading)) {
+  if (eventsQuery.isLoading || recentActivityQuery.isLoading || assetsQuery.isLoading || itemLookupQuery.isLoading) {
     return <DashboardSkeleton />
   }
 
-  if (eventsQuery.isError || recentActivityQuery.isError || assetsQuery.isError || itemLookupQuery.isError || assetNetStatusQuery.isError) {
+  if (eventsQuery.isError || recentActivityQuery.isError || assetsQuery.isError || itemLookupQuery.isError) {
     return (
       <DataCard as="section" title={t('dashboard.loadError')}>
         <p className="text-sm text-destructive">{t('dashboard.loadError')}</p>
@@ -447,19 +414,21 @@ export function DashboardPage() {
           {attentionEvents.length === 0 ? (
             <DashboardEmptyState />
           ) : (
-            <DashboardNeedsAttention
+            <DashboardActionQueue
               events={attentionEvents}
               itemById={itemById}
               itemNameById={itemNameById}
               returnTo={location.pathname + location.search}
               labels={{
                 overdue: t('dashboard.attention.overdue'),
-                dueSoon: t('dashboard.attention.dueSoon'),
+                upcoming: t('dashboard.actionQueue.upcoming'),
                 dueDate: t('dashboard.attention.dueDate'),
                 amount: t('dashboard.attention.amount'),
-                linkedItem: t('dashboard.attention.linkedItem'),
                 amountPending: t('dashboard.amountPending'),
                 itemLabel: (itemId) => t('dashboard.itemLabel', { itemId }),
+                openEvents: t('dashboard.openEvents'),
+                linkedItem: t('dashboard.attention.linkedItem'),
+                ageBucket: (bucket) => t(`dashboard.actionQueue.ageBuckets.${bucket}`),
               }}
             />
           )}
