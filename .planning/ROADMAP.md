@@ -44,7 +44,7 @@
 **Execution Gate:** Pause after each phase for browser verification and explicit approval before starting the next phase.
 
 - [ ] **Phase 35: Dashboard Information Architecture** - Rebuild the dashboard shell around utility-first sections for summary, attention, and activity instead of a generic overview surface.
-- [ ] **Phase 36: Action Queue and Financial Snapshot** - Add a high-utility dashboard action queue plus a reusable financial-items snapshot section with dense scan-friendly rows.
+- [x] **Phase 36: Action Queue and Financial Snapshot** - Add a high-utility dashboard action queue plus a reusable financial-items snapshot section with dense scan-friendly rows. (completed 2026-03-12)
 - [ ] **Phase 37: Exceptions, Trends, and Dashboard Polish** - Add exception/notice surfaces, period-aware supporting insights, and responsive polish that ties the redesigned dashboard together.
 
 ## Phase Details
@@ -171,7 +171,7 @@ Plans:
 | 33. Historical Injection UI | 2/2 | Complete    | 2026-03-10 |
 | 34. Item Detail Events Tab Clarity | 1/1 | Complete   | 2026-03-10 |
 | 35. Dashboard Information Architecture | 2/2 | Complete   | 2026-03-11 |
-| 36. Action Queue and Financial Snapshot | 1/2 | In Progress|  |
+| 36. Action Queue and Financial Snapshot | 2/2 | Complete   | 2026-03-12 |
 | 37. Exceptions, Trends, and Dashboard Polish | 0/2 | Planned |  |
 
 ---

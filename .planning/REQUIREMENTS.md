@@ -13,7 +13,7 @@ Requirements for milestone v4.4 Dashboard Utility Redesign with shadcn/ui.
 - [x] **DASH-02**: User sees period-aware summary cards for net cashflow, upcoming due, overdue count, and completed activity.
 - [x] **DASH-03**: User sees dedicated `Needs Attention` and `Recent Activity` dashboard sections that make next actions and recent changes obvious.
 - [x] **DASH-04**: User can review overdue and upcoming obligations from a dashboard action queue and jump directly into the relevant workflow.
-- [ ] **DASH-05**: User can scan a financial snapshot section that shows dense but readable item-level status and metadata.
+- [x] **DASH-05**: User can scan a financial snapshot section that shows dense but readable item-level status and metadata.
 - [x] **DASH-06**: User can navigate from dashboard summary and queue surfaces into `/events` and item detail pages without losing context.
 - [ ] **DASH-07**: User sees exceptions and notices surfaced calmly on the dashboard when manual overrides, admin-only signals, or unusual conditions matter.
 - [ ] **DASH-08**: User sees supporting trend or timeline context that helps interpret upcoming and recent activity for the active period.
@@ -77,9 +77,9 @@ Deferred to a future milestone.
 | DASH-01 | Phase 35 | Complete |
 | DASH-02 | Phase 35 | Complete |
 | DASH-03 | Phase 35 | Complete |
-| DASH-04 | Phase 36 | Planned |
-| DASH-05 | Phase 36 | Planned |
-| DASH-06 | Phase 36 | Planned |
+| DASH-04 | Phase 36 | Complete |
+| DASH-05 | Phase 36 | Complete |
+| DASH-06 | Phase 36 | Complete |
 | DASH-07 | Phase 37 | Planned |
 | DASH-08 | Phase 37 | Planned |
 | DASH-09 | Phase 37 | Planned |
@@ -91,4 +91,4 @@ Deferred to a future milestone.
 
 ---
 *Requirements defined: 2026-03-10*
-*Last updated: 2026-03-11 after closing Phase 35 dashboard information architecture*
+*Last updated: 2026-03-12 after closing Phase 36 action queue and financial snapshot*
