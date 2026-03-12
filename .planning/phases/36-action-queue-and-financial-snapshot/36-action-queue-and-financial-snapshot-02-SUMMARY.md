@@ -69,7 +69,7 @@ Each task was committed atomically:
 2. **Task 2: Implement reusable dashboard financial snapshot section** - `43feae5` (feat), `a671436` (fix), `9d04d4b` (fix), `ea13a21` (fix)
 3. **Task 3: Validate dashboard task-completion utility in browser** - Human checkpoint approved (no code commit)
 
-**Plan metadata:** `TBD` (docs: complete plan)
+**Plan metadata:** `a0dddf5` (docs: complete plan)
 
 ## Files Created/Modified
 - `frontend/src/features/dashboard/dashboard-financial-snapshot.tsx` - Reusable dense snapshot section for item-level operational scanning.
