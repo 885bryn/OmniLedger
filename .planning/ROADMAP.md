@@ -129,8 +129,8 @@ Plans:
   3. User can recognize a dedicated `Needs Attention` area and a dedicated `Recent Activity` area as the dashboard's primary action and feedback surfaces.
 **Plans**: 2 plans
 Plans:
-- [ ] `35-dashboard-information-architecture-01-PLAN.md` - Establish the shadcn dashboard shell, section hierarchy, and responsive layout scaffolding for the redesigned overview.
-- [ ] `35-dashboard-information-architecture-02-PLAN.md` - Add period-aware summary cards plus the first-pass `Needs Attention` and `Recent Activity` surfaces with focused frontend coverage.
+- [x] `35-dashboard-information-architecture-01-PLAN.md` - Establish the shadcn dashboard shell, section hierarchy, and responsive layout scaffolding for the redesigned overview.
+- [x] `35-dashboard-information-architecture-02-PLAN.md` - Add period-aware summary cards plus the first-pass `Needs Attention` and `Recent Activity` surfaces with focused frontend coverage.
 **Manual Test Gate**: Stop after this phase for browser verification that the new dashboard hierarchy feels clearer and more actionable than the previous overview.
 
 ### Phase 36: Action Queue and Financial Snapshot
@@ -170,9 +170,9 @@ Plans:
 | 32. Manual Override Boundary Contract | 2/2 | Complete    | 2026-03-10 |
 | 33. Historical Injection UI | 2/2 | Complete    | 2026-03-10 |
 | 34. Item Detail Events Tab Clarity | 1/1 | Complete   | 2026-03-10 |
-| 35. Dashboard Information Architecture | 1/2 | In Progress|  |
+| 35. Dashboard Information Architecture | 2/2 | Complete   | 2026-03-11 |
 | 36. Action Queue and Financial Snapshot | 0/2 | Planned |  |
 | 37. Exceptions, Trends, and Dashboard Polish | 0/2 | Planned |  |
 
 ---
-*Last updated: 2026-03-10 after planning v4.4 dashboard redesign milestone*
+*Last updated: 2026-03-11 after closing Phase 35 dashboard information architecture*

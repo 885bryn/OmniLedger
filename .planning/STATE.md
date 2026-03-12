@@ -127,12 +127,14 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 35+]: The next milestone should optimize the dashboard for utility and information density first, using shadcn primitives as the structural system rather than chart-heavy or marketing-style layouts.
 - [Phase 35-dashboard-information-architecture]: Used existing dashboard event and item queries for the new Recent Activity companion so Phase 35 could improve information architecture without expanding data contracts.
 - [Phase 35-dashboard-information-architecture]: Kept Needs Attention ahead of Recent Activity in DOM and responsive order so mobile collapse preserves the same priority hierarchy.
+- [Phase 35-dashboard-information-architecture]: Month-standard dashboard summary math should stay bound to event due-date boundaries; completion timing must not shift a row across monthly cards.
+- [Phase 35-dashboard-information-architecture]: Future dashboard milestones should add an automatic midnight month-rollover refresh so long-lived open tabs recalculate cards exactly when the calendar month changes.
 
 ### Pending Todos
 
-- Phase 35 plan 02: add richer summary-card content plus first-pass Needs Attention and Recent Activity data surfaces.
 - Phase 36 planning: define the dashboard action queue and dense financial snapshot section.
 - Phase 37 planning: define exception panels, supporting trends, and responsive polish requirements.
+- Future milestone note: add dashboard month-rollover auto-refresh at local midnight for open tabs.
 
 ### Blockers/Concerns
 
@@ -141,5 +143,5 @@ Decisions are logged in `.planning/PROJECT.md`.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 35-dashboard-information-architecture-01-PLAN.md
-Resume file: `.planning/phases/35-dashboard-information-architecture/35-dashboard-information-architecture-02-PLAN.md`
+Stopped at: Closed Phase 35 dashboard information architecture (plans 01 and 02).
+Resume file: `.planning/ROADMAP.md`
