@@ -171,7 +171,7 @@ Plans:
 | 33. Historical Injection UI | 2/2 | Complete    | 2026-03-10 |
 | 34. Item Detail Events Tab Clarity | 1/1 | Complete   | 2026-03-10 |
 | 35. Dashboard Information Architecture | 2/2 | Complete   | 2026-03-11 |
-| 36. Action Queue and Financial Snapshot | 0/2 | Planned |  |
+| 36. Action Queue and Financial Snapshot | 1/2 | In Progress|  |
 | 37. Exceptions, Trends, and Dashboard Polish | 0/2 | Planned |  |
 
 ---

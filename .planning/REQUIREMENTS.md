@@ -12,9 +12,9 @@ Requirements for milestone v4.4 Dashboard Utility Redesign with shadcn/ui.
 - [x] **DASH-01**: User sees a dashboard organized into clear utility-first sections instead of a generic overview layout.
 - [x] **DASH-02**: User sees period-aware summary cards for net cashflow, upcoming due, overdue count, and completed activity.
 - [x] **DASH-03**: User sees dedicated `Needs Attention` and `Recent Activity` dashboard sections that make next actions and recent changes obvious.
-- [ ] **DASH-04**: User can review overdue and upcoming obligations from a dashboard action queue and jump directly into the relevant workflow.
+- [x] **DASH-04**: User can review overdue and upcoming obligations from a dashboard action queue and jump directly into the relevant workflow.
 - [ ] **DASH-05**: User can scan a financial snapshot section that shows dense but readable item-level status and metadata.
-- [ ] **DASH-06**: User can navigate from dashboard summary and queue surfaces into `/events` and item detail pages without losing context.
+- [x] **DASH-06**: User can navigate from dashboard summary and queue surfaces into `/events` and item detail pages without losing context.
 - [ ] **DASH-07**: User sees exceptions and notices surfaced calmly on the dashboard when manual overrides, admin-only signals, or unusual conditions matter.
 - [ ] **DASH-08**: User sees supporting trend or timeline context that helps interpret upcoming and recent activity for the active period.
 - [ ] **DASH-09**: User can use the redesigned dashboard comfortably on desktop and mobile with the same information hierarchy preserved.

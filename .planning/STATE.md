@@ -10,10 +10,10 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 
 ## Current Position
 
-Phase: 35 - Dashboard Information Architecture
+Phase: 36 - Action Queue and Financial Snapshot
 Plan: 01/02
 Status: In Progress
-Last activity: 2026-03-11 - Completed dashboard shell hierarchy and responsive layout regressions for Plan 01
+Last activity: 2026-03-12 - Completed Plan 01 urgency-first action queue with overdue/upcoming contracts and regressions
 
 Progress: [#####-----] 50%
 
@@ -60,6 +60,7 @@ Progress: [#####-----] 50%
 | Phase 33 P02 | 1 session | 3 tasks | 6 files |
 | Phase 34 P01 | 14 min | 2 tasks | 4 files |
 | Phase 35-dashboard-information-architecture P01 | 3 min | 2 tasks | 5 files |
+| Phase 36-action-queue-and-financial-snapshot P01 | 5 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -129,10 +130,12 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 35-dashboard-information-architecture]: Kept Needs Attention ahead of Recent Activity in DOM and responsive order so mobile collapse preserves the same priority hierarchy.
 - [Phase 35-dashboard-information-architecture]: Month-standard dashboard summary math should stay bound to event due-date boundaries; completion timing must not shift a row across monthly cards.
 - [Phase 35-dashboard-information-architecture]: Future dashboard milestones should add an automatic midnight month-rollover refresh so long-lived open tabs recalculate cards exactly when the calendar month changes.
+- [Phase 36-action-queue-and-financial-snapshot]: Implemented queue ordering from calendar-day offsets so overdue and upcoming sections stay deterministic across timezone boundaries.
+- [Phase 36-action-queue-and-financial-snapshot]: Kept queue handoff inside existing workflows by linking rows to /events and /items/:itemId with preserved return state instead of adding new write actions.
 
 ### Pending Todos
 
-- Phase 36 planning: define the dashboard action queue and dense financial snapshot section.
+- Phase 36 plan 02: implement the dense financial snapshot section.
 - Phase 37 planning: define exception panels, supporting trends, and responsive polish requirements.
 - Future milestone note: add dashboard month-rollover auto-refresh at local midnight for open tabs.
 
@@ -142,6 +145,6 @@ Decisions are logged in `.planning/PROJECT.md`.
 
 ## Session Continuity
 
-Last session: 2026-03-11
-Stopped at: Closed Phase 35 dashboard information architecture (plans 01 and 02).
+Last session: 2026-03-12
+Stopped at: Completed 36-action-queue-and-financial-snapshot-01-PLAN.md.
 Resume file: `.planning/ROADMAP.md`
