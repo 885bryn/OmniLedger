@@ -452,7 +452,8 @@
       },
       "tabs": {
         "overview": "概览",
-        "commitments": "财务项目",
+        "events": "事件",
+        "financialItems": "财务项目",
         "activity": "动态"
       },
       "ledger": {

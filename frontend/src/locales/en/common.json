@@ -452,7 +452,8 @@
       },
       "tabs": {
         "overview": "Overview",
-        "commitments": "Financial items",
+        "events": "Events",
+        "financialItems": "Financial Items",
         "activity": "Activity"
       },
       "ledger": {

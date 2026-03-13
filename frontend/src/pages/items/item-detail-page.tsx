@@ -1283,7 +1283,9 @@ export function ItemDetailPage() {
                 activeTab === tab ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground',
               ].join(' ')}
             >
-              {t(`items.detail.tabs.${tab}`)}
+              {tab === 'commitments'
+                ? (isFinancialDetail ? t('items.detail.tabs.events') : t('items.detail.tabs.financialItems'))
+                : t(`items.detail.tabs.${tab}`)}
             </motion.button>
           </Pressable>
         ))}
