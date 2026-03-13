@@ -49,7 +49,11 @@
   2. User can omit reconciliation inputs and the saved completion still resolves to projected amount and today's date from backend defaults.
   3. User can trust reconciliation completion to keep existing owner scoping, audit attribution, projected-event materialization behavior, and `completed_at` system timestamps intact.
 **Manual Gate**: Stop after execution for manual browser testing and explicit approval before Phase 39 begins.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 38-reconciliation-contract-and-safe-completion-api-01-PLAN.md - Add reconciliation event schema + domain completion defaults while preserving safety invariants.
+- [ ] 38-reconciliation-contract-and-safe-completion-api-02-PLAN.md - Wire completion API reconciliation payload contract, lock integration coverage, and run manual browser gate.
 
 ### Phase 39: Reconciliation Modal and Completion UX
 **Goal**: Users can initiate reconciliation from the Upcoming ledger in a shadcn-first flow instead of instant completion.
@@ -78,7 +82,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 38. Reconciliation Contract and Safe Completion API | 0/TBD | Not started | - |
+| 38. Reconciliation Contract and Safe Completion API | 1/2 | In Progress|  |
 | 39. Reconciliation Modal and Completion UX | 0/TBD | Not started | - |
 | 40. Actual-Based History and Metrics | 0/TBD | Not started | - |
 
