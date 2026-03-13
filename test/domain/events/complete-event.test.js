@@ -22,6 +22,10 @@ const {
 describe("completeEvent domain service", () => {
   let counter = 0;
 
+  function toBusinessDate(value) {
+    return new Date(value).toISOString().slice(0, 10);
+  }
+
   async function createUser() {
     counter += 1;
 
@@ -244,6 +248,101 @@ describe("completeEvent domain service", () => {
       }
     });
     expect(audits).toHaveLength(1);
+  });
+
+  it("persists provided reconciliation actuals without mutating projected amount or due_date", async () => {
+    const owner = await createUser();
+    const commitment = await createCommitment({ userId: owner.id, remainingBalance: 8000 });
+    const dueDate = "2026-06-10T00:00:00.000Z";
+    const projectedAmount = "1200.50";
+    const event = await createEvent({ itemId: commitment.id, dueDate, amount: projectedAmount });
+
+    const result = await completeEvent({
+      eventId: event.id,
+      actorUserId: owner.id,
+      now: new Date("2026-06-11T14:25:00.000Z"),
+      actual_amount: "1275.25",
+      actual_date: "2026-06-09"
+    });
+
+    expect(result.amount).toBe(projectedAmount);
+    expect(new Date(result.due_date).toISOString()).toBe(dueDate);
+    expect(result.actual_amount).toBe("1275.25");
+    expect(toBusinessDate(result.actual_date)).toBe("2026-06-09");
+
+    const persisted = await models.Event.findByPk(event.id);
+    expect(persisted.amount).toBe(projectedAmount);
+    expect(new Date(persisted.due_date).toISOString()).toBe(dueDate);
+    expect(persisted.actual_amount).toBe("1275.25");
+    expect(toBusinessDate(persisted.actual_date)).toBe("2026-06-09");
+  });
+
+  it("defaults actuals to projected amount and completion business date when omitted", async () => {
+    const owner = await createUser();
+    const commitment = await createCommitment({ userId: owner.id, remainingBalance: 4000 });
+    const event = await createEvent({ itemId: commitment.id, amount: "900.00" });
+    const completionTime = new Date("2026-07-02T21:15:00.000Z");
+
+    const result = await completeEvent({
+      eventId: event.id,
+      actorUserId: owner.id,
+      now: completionTime
+    });
+
+    expect(result.actual_amount).toBe("900.00");
+    expect(toBusinessDate(result.actual_date)).toBe("2026-07-02");
+
+    const persisted = await models.Event.findByPk(event.id);
+    expect(persisted.actual_amount).toBe("900.00");
+    expect(toBusinessDate(persisted.actual_date)).toBe("2026-07-02");
+
+    const secondResult = await completeEvent({
+      eventId: event.id,
+      actorUserId: owner.id,
+      now: new Date("2026-07-03T10:00:00.000Z"),
+      actual_amount: "999.99",
+      actual_date: "2026-07-03"
+    });
+
+    expect(secondResult.actual_amount).toBe("900.00");
+    expect(toBusinessDate(secondResult.actual_date)).toBe("2026-07-02");
+  });
+
+  it("materializes projected ids and preserves scope-safe audit attribution tuple", async () => {
+    const owner = await createUser();
+    const admin = await createUser();
+    const commitment = await createCommitment({ userId: owner.id, remainingBalance: 1500 });
+    const dueDate = "2026-08-01";
+
+    const result = await completeEvent({
+      eventId: `projected-${commitment.id}-${dueDate}`,
+      actorUserId: admin.id,
+      scope: {
+        actorRole: "admin",
+        actorUserId: admin.id,
+        mode: "owner",
+        lensUserId: owner.id
+      },
+      now: new Date("2026-08-02T12:00:00.000Z")
+    });
+
+    const materializedEvent = await models.Event.findByPk(result.id);
+    expect(materializedEvent).toBeTruthy();
+    expect(materializedEvent.item_id).toBe(commitment.id);
+    expect(materializedEvent.actual_amount).toBe(materializedEvent.amount);
+    expect(toBusinessDate(materializedEvent.actual_date)).toBe("2026-08-02");
+    expect(new Date(materializedEvent.completed_at).toISOString()).toBe("2026-08-02T12:00:00.000Z");
+
+    const completionAudit = await models.AuditLog.findOne({
+      where: {
+        action: "event.completed",
+        entity: `event:${materializedEvent.id}`
+      }
+    });
+
+    expect(completionAudit).toBeTruthy();
+    expect(completionAudit.actor_user_id).toBe(admin.id);
+    expect(completionAudit.lens_user_id).toBe(owner.id);
   });
 
   it("reduces commitment remaining balance when payment event is completed", async () => {
