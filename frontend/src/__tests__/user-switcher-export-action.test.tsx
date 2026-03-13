@@ -245,4 +245,9 @@ describe('resolveApiBaseUrl', () => {
   it('derives production-style target from VITE_NAS_STATIC_IP when explicit base URL is absent', () => {
     expect(resolveApiBaseUrl({ VITE_NAS_STATIC_IP: '192.168.1.40' })).toBe('http://192.168.1.40:8080')
   })
+
+  it('uses the current browser host for local fallback to keep auth cookies first-party', () => {
+    expect(resolveApiBaseUrl({}, '127.0.0.1', 'http:')).toBe('http://127.0.0.1:8080')
+    expect(resolveApiBaseUrl({}, 'localhost', 'http:')).toBe('http://localhost:8080')
+  })
 })

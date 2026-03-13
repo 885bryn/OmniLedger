@@ -434,6 +434,7 @@
       "relatedCommitments": "相关财务项目",
       "addLinkedCommitment": "添加关联财务项目（支出）",
       "addLinkedIncome": "添加关联财务项目（收入）",
+      "backToDashboard": "返回仪表盘",
       "showTechnical": "显示技术详情",
       "hideTechnical": "隐藏技术详情",
       "technicalTitle": "技术 JSON",

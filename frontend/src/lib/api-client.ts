@@ -143,7 +143,27 @@ function normalizeBaseUrl(value: string | undefined) {
   return value.trim().replace(/\/+$/, '')
 }
 
-export function resolveApiBaseUrl(env: Record<string, string | boolean | undefined> = import.meta.env) {
+function normalizeHost(value: string | undefined) {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  return value.trim().replace(/^\[|\]$/g, '')
+}
+
+function formatHostForUrl(host: string) {
+  if (!host.includes(':')) {
+    return host
+  }
+
+  return host.startsWith('[') && host.endsWith(']') ? host : `[${host}]`
+}
+
+export function resolveApiBaseUrl(
+  env: Record<string, string | boolean | undefined> = import.meta.env,
+  runtimeHost?: string,
+  runtimeProtocol?: string,
+) {
   const explicitBaseUrl = normalizeBaseUrl(env.VITE_API_BASE_URL as string | undefined)
   if (explicitBaseUrl.length > 0) {
     return explicitBaseUrl
@@ -152,6 +172,15 @@ export function resolveApiBaseUrl(env: Record<string, string | boolean | undefin
   const nasStaticIp = normalizeBaseUrl(env.VITE_NAS_STATIC_IP as string | undefined)
   if (nasStaticIp.length > 0) {
     return `http://${nasStaticIp}:8080`
+  }
+
+  const browserHost = normalizeHost(
+    runtimeHost ?? (typeof window !== 'undefined' ? window.location.hostname : ''),
+  )
+  if (browserHost.length > 0) {
+    const protocol = runtimeProtocol ?? (typeof window !== 'undefined' ? window.location.protocol : 'http:')
+    const normalizedProtocol = protocol === 'https:' ? 'https' : 'http'
+    return `${normalizedProtocol}://${formatHostForUrl(browserHost)}:8080`
   }
 
   return 'http://localhost:8080'

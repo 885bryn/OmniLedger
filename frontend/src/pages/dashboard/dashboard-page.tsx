@@ -315,7 +315,14 @@ export function DashboardPage() {
       return dueDayKey !== null && dueDayKey >= currentDayKey
     })
 
-    const upcomingAmount = upcomingEvents.reduce((total, event) => total + Number(event.amount ?? 0), 0)
+    const upcomingAmount = upcomingEvents.reduce((total, event) => {
+      const item = itemById.get(event.item_id)
+      if (item && isIncomeItem(item)) {
+        return total
+      }
+
+      return total + Number(event.amount ?? 0)
+    }, 0)
     const oldestOverdueEvent = [...overdueEvents].sort(compareByNearestDue)[0] ?? null
     const nextUpcomingEvent = [...upcomingEvents].sort(compareByNearestDue)[0] ?? null
     const monthlyCompletedEvents = completedEvents.filter((event) => {

@@ -754,6 +754,8 @@ export function ItemDetailPage() {
   const cadenceTransitionTimerRef = useRef<number | null>(null)
   const locationState = (typeof location.state === 'object' && location.state !== null ? location.state : null) as ItemDetailLocationState | null
   const returnTo = String(locationState?.from ?? '')
+  const hasExplicitReturnTarget = returnTo.length > 0 && returnTo !== location.pathname + location.search
+  const detailRouteState = hasExplicitReturnTarget ? { from: returnTo } : { from: location.pathname + location.search }
   const [highlightHeader, setHighlightHeader] = useState(locationState?.highlightItemId === itemId)
   const lensScope = useMemo(
     () => ({ mode, lensUserId: mode === 'owner' ? lensUserId : null }),
@@ -1219,6 +1221,19 @@ export function ItemDetailPage() {
           {recurrenceSummary ? <p className="mt-1 text-xs text-muted-foreground">{recurrenceSummary}</p> : null}
         </div>
         <div className="flex flex-wrap gap-2">
+          {hasExplicitReturnTarget ? (
+            <Pressable className="rounded-lg">
+              <motion.button
+                type="button"
+                onClick={() => navigate(returnTo)}
+                transition={motionSpring}
+                whileTap={{ scale: pressScale }}
+                className="rounded-lg border border-border px-3 py-2 text-xs font-medium"
+              >
+                {t('items.detail.backToDashboard')}
+              </motion.button>
+            </Pressable>
+          ) : null}
           <Pressable className="rounded-lg">
             <motion.button
               type="button"
@@ -1232,7 +1247,7 @@ export function ItemDetailPage() {
           </Pressable>
           <Pressable className="rounded-lg">
             <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
-              <Link to={`/items/${itemId}/edit`} className="block rounded-lg border border-border px-3 py-2 text-xs font-medium">
+              <Link to={`/items/${itemId}/edit`} state={detailRouteState} className="block rounded-lg border border-border px-3 py-2 text-xs font-medium">
                 {t('items.editAction')}
               </Link>
             </motion.div>
@@ -1331,7 +1346,7 @@ export function ItemDetailPage() {
                     <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
                       <Link
                         to={`/items/${parentItem.id}`}
-                        state={{ from: location.pathname + location.search }}
+                        state={detailRouteState}
                         className="block rounded-xl border border-border bg-background/80 px-3 py-3 text-sm font-medium text-foreground shadow-sm"
                       >
                         <span className="text-primary underline-offset-2 hover:underline">{getItemDisplayName(parentItem)}</span>
@@ -1355,7 +1370,7 @@ export function ItemDetailPage() {
                         <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
                           <Link
                             to={`/items/${sibling.id}`}
-                            state={{ from: location.pathname + location.search }}
+                            state={detailRouteState}
                             className="block rounded-xl border border-border bg-background/80 px-3 py-3 text-sm font-medium text-primary underline-offset-2 hover:underline"
                           >
                             {getItemDisplayName(sibling)}
@@ -1535,7 +1550,7 @@ export function ItemDetailPage() {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <Pressable className="rounded-lg">
                             <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
-                              <Link to={`/items/${commitment.id}`} state={{ from: location.pathname + location.search }} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
+                              <Link to={`/items/${commitment.id}`} state={detailRouteState} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
                                 {getItemDisplayName(commitment)}
                               </Link>
                             </motion.div>
@@ -1554,7 +1569,7 @@ export function ItemDetailPage() {
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <Pressable className="rounded-lg">
                             <motion.div whileTap={{ scale: pressScale }} transition={motionSpring}>
-                              <Link to={`/items/${commitment.id}/edit`} className="block rounded-lg border border-border px-3 py-1 text-xs font-medium">
+                              <Link to={`/items/${commitment.id}/edit`} state={detailRouteState} className="block rounded-lg border border-border px-3 py-1 text-xs font-medium">
                                 {t('items.editAction')}
                               </Link>
                             </motion.div>

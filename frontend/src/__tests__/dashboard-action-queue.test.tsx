@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
@@ -186,5 +187,66 @@ describe('dashboard action queue', () => {
     const itemLinks = screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('/items/'))
     expect(itemLinks.length).toBeGreaterThan(0)
     expect(itemLinks.some((link) => link.getAttribute('href') === '/items/item-up-1')).toBe(true)
+  })
+
+  it('lets users complete dashboard queue events inline without leaving the dashboard', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date(fixedNow).getTime())
+
+    let pendingStatus: 'Pending' | 'Completed' = 'Pending'
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input), 'http://localhost')
+      const method = init?.method ?? 'GET'
+
+      if (url.pathname === '/events' && url.searchParams.get('status') === 'pending' && method === 'GET') {
+        return createResponse({
+          groups: pendingStatus === 'Pending'
+            ? [{
+                due_date: toDayString(fixedNow, -2),
+                events: [
+                  { id: 'event-inline-1', item_id: 'item-over-1', type: 'Mortgage', amount: 1500, due_date: toDayString(fixedNow, -2), status: 'Pending', updated_at: '2026-03-14T00:00:00.000Z' },
+                ],
+              }]
+            : [],
+          total_count: pendingStatus === 'Pending' ? 1 : 0,
+        })
+      }
+
+      if (url.pathname === '/events' && url.searchParams.get('status') === 'completed' && method === 'GET') {
+        return createResponse({ groups: [], total_count: 0 })
+      }
+
+      if (url.pathname === '/events/event-inline-1/complete' && method === 'PATCH') {
+        pendingStatus = 'Completed'
+        return createResponse({ id: 'event-inline-1' })
+      }
+
+      if (url.pathname === '/items' && url.searchParams.get('filter') === 'assets' && method === 'GET') {
+        return createResponse({ items: [], total_count: 0 })
+      }
+
+      if (url.pathname === '/items' && url.searchParams.get('filter') === 'all' && method === 'GET') {
+        return createResponse({
+          items: [
+            { id: 'item-over-1', item_type: 'FinancialItem', type: 'Commitment', attributes: { name: 'Mortgage' }, updated_at: '2026-03-15T00:00:00.000Z' },
+          ],
+          total_count: 1,
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url.pathname}${url.search}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+    renderDashboardPage()
+
+    const overdueSection = await screen.findByTestId('dashboard-action-queue-overdue')
+    const queueRow = within(overdueSection).getByTestId('dashboard-action-queue-row')
+    expect(within(queueRow).getByRole('button', { name: 'Complete' })).toBeTruthy()
+
+    await userEvent.click(within(queueRow).getByRole('button', { name: 'Complete' }))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Complete' }))
+
+    expect(await screen.findByText('No due events yet')).toBeTruthy()
+    expect(screen.queryByTestId('dashboard-action-queue-row')).toBeNull()
   })
 })

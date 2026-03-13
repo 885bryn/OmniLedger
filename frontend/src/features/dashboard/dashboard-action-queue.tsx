@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../../components/ui/button'
+import { CompleteEventRowAction } from '../events/complete-event-row-action'
 import { formatCurrency } from '../../lib/currency'
 import { isIncomeItem } from '../../lib/item-display'
 
@@ -154,15 +155,20 @@ export function DashboardActionQueue({
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{labels.dueDate}: {formatDateLabel(row.event.due_date)}</p>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
-                      <span>{labels.amount}: {amount ?? labels.amountPending}</span>
-                      <span>{labels.linkedItem}:</span>
-                      <Link to={`/items/${row.event.item_id}`} state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
-                        {itemNameById.get(row.event.item_id) ?? labels.itemLabel(row.event.item_id)}
-                      </Link>
-                      <Link to="/events" state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
-                        {labels.openEvents}
-                      </Link>
+                    <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+                        <span>{labels.amount}: {amount ?? labels.amountPending}</span>
+                        <span>{labels.linkedItem}:</span>
+                        <Link to={`/items/${row.event.item_id}`} state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
+                          {itemNameById.get(row.event.item_id) ?? labels.itemLabel(row.event.item_id)}
+                        </Link>
+                        <Link to="/events" state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
+                          {labels.openEvents}
+                        </Link>
+                      </div>
+                      <div className="flex shrink-0 items-start">
+                        <CompleteEventRowAction eventId={row.event.id} itemId={row.event.item_id} eventStatus={row.event.status} />
+                      </div>
                     </div>
                   </article>
                 </li>
@@ -212,15 +218,20 @@ export function DashboardActionQueue({
                     <article className="rounded-xl border border-border/70 bg-card p-3">
                       <p className="text-sm font-semibold text-foreground">{row.event.type}</p>
                       <p className="mt-1 text-xs text-muted-foreground">{labels.dueDate}: {formatDateLabel(row.event.due_date)}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
-                        <span>{labels.amount}: {amount ?? labels.amountPending}</span>
-                        <span>{labels.linkedItem}:</span>
-                        <Link to={`/items/${row.event.item_id}`} state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
-                          {itemNameById.get(row.event.item_id) ?? labels.itemLabel(row.event.item_id)}
-                        </Link>
-                        <Link to="/events" state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
-                          {labels.openEvents}
-                        </Link>
+                      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+                          <span>{labels.amount}: {amount ?? labels.amountPending}</span>
+                          <span>{labels.linkedItem}:</span>
+                          <Link to={`/items/${row.event.item_id}`} state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
+                            {itemNameById.get(row.event.item_id) ?? labels.itemLabel(row.event.item_id)}
+                          </Link>
+                          <Link to="/events" state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
+                            {labels.openEvents}
+                          </Link>
+                        </div>
+                        <div className="flex shrink-0 items-start">
+                          <CompleteEventRowAction eventId={row.event.id} itemId={row.event.item_id} eventStatus={row.event.status} />
+                        </div>
                       </div>
                     </article>
                   </li>

@@ -434,6 +434,7 @@
       "relatedCommitments": "Related financial items",
       "addLinkedCommitment": "Add linked financial item (Commitment)",
       "addLinkedIncome": "Add linked financial item (Income)",
+      "backToDashboard": "Back to dashboard",
       "showTechnical": "Show technical details",
       "hideTechnical": "Hide technical details",
       "technicalTitle": "Technical JSON",

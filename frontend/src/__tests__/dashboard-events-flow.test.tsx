@@ -199,27 +199,29 @@ describe('dashboard/events completion flow', () => {
     expect(eventsHeader).toBeTruthy()
     expect(eventsHeader?.className.includes('animate-fade-up')).toBe(false)
     expect(screen.getByText('Mortgage').closest('[data-event-row-id="event-1"]')).toBeTruthy()
-    expect(document.querySelector('[data-event-group-id="upcoming-2026-02-26"]')).toBeTruthy()
-    expect(screen.getByText('Current and upcoming')).toBeTruthy()
-    expect(screen.getByRole('button', { name: /History/i })).toBeTruthy()
+    expect(document.querySelector('[data-event-group="overdue"]')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Upcoming' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'History' })).toBeTruthy()
     expect(screen.getByText(/Monthly, (next on|no upcoming date)/)).toBeTruthy()
-    await userEvent.click(screen.getByRole('button', { name: 'Complete' }))
-    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Complete' }))
-
-    await userEvent.click(screen.getByRole('button', { name: /History/i }))
-    expect((await screen.findAllByRole('button', { name: 'Undo' })).length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Completed').length).toBeGreaterThan(0)
+    await userEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Schedule the next date')).toBeNull()
     })
+
+    expect(await screen.findByText('Nothing pressing right now.')).toBeTruthy()
+
+    await new Promise((resolve) => window.setTimeout(resolve, 850))
+
+    await userEvent.click(screen.getByRole('tab', { name: 'History' }))
+    expect(screen.getAllByText('Paid').length).toBeGreaterThan(0)
 
     await waitFor(() => {
       expect(listCalls).toBeGreaterThan(1)
     })
 
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Complete' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Mark Paid' })).toBeNull()
     })
   })
 
@@ -278,15 +280,14 @@ describe('dashboard/events completion flow', () => {
     renderEventsPage()
 
     await screen.findByText('Mortgage')
-    await userEvent.click(screen.getByRole('button', { name: 'Complete' }))
-    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Complete' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Schedule the next date')).toBeNull()
     })
   })
 
-  it('uses inline undo action for completed history rows', async () => {
+  it('keeps completed history rows read-only without an inline undo action', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -323,26 +324,6 @@ describe('dashboard/events completion flow', () => {
         })
       }
 
-      if (url.includes('/events/event-2/undo-complete') && method === 'PATCH') {
-        return createResponse({
-          status: 200,
-          json: {
-            id: 'event-2',
-            prompt_next_date: false,
-          },
-        })
-      }
-
-      if (url.includes('/events/event-1/complete') && method === 'PATCH') {
-        return createResponse({
-          status: 200,
-          json: {
-            id: 'event-1',
-            prompt_next_date: false,
-          },
-        })
-      }
-
       throw new Error(`Unhandled request: ${method} ${url}`)
     })
 
@@ -351,17 +332,16 @@ describe('dashboard/events completion flow', () => {
     renderEventsPage()
 
     await screen.findByText('Mortgage')
-    await userEvent.click(screen.getByRole('button', { name: /History/i }))
+    await userEvent.click(screen.getByRole('tab', { name: 'History' }))
     await screen.findByText('Insurance')
-    await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
-    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Undo' }))
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/events/event-2/undo-complete'), expect.anything())
-    })
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
+    expect(screen.getByText('Paid on Feb 10, 2026')).toBeTruthy()
   })
 
   it('computes upcoming amount from outflows only, excluding income events', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-10T12:00:00.000Z').getTime())
+
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -375,14 +355,14 @@ describe('dashboard/events completion flow', () => {
           json: {
             groups: [
               {
-                due_date: '2026-02-26',
+                due_date: '2026-03-10',
                 events: [
                   {
                     id: 'event-1',
                     item_id: 'item-commitment',
                     type: 'Mortgage',
                     amount: 1400,
-                    due_date: '2026-02-26',
+                    due_date: '2026-03-10',
                     status: 'Pending',
                     updated_at: '2026-02-25T00:00:00.000Z',
                     source_state: 'persisted',
@@ -393,7 +373,7 @@ describe('dashboard/events completion flow', () => {
                     item_id: 'item-income',
                     type: 'Renting out SUV',
                     amount: 2200,
-                    due_date: '2026-02-26',
+                    due_date: '2026-03-12',
                     status: 'Pending',
                     updated_at: '2026-02-25T00:00:00.000Z',
                     source_state: 'persisted',
@@ -449,8 +429,8 @@ describe('dashboard/events completion flow', () => {
 
     renderDashboardPage()
 
-    await screen.findByText('Upcoming amount')
-    const upcomingAmountCard = screen.getByText('Upcoming amount').closest('[data-dashboard-metric-card="true"]') as HTMLElement | null
+    await screen.findByText('Upcoming due')
+    const upcomingAmountCard = screen.getByText('Upcoming due').closest('[data-dashboard-metric-card="true"]') as HTMLElement | null
     expect(upcomingAmountCard).toBeTruthy()
 
     if (!upcomingAmountCard) {
@@ -463,6 +443,8 @@ describe('dashboard/events completion flow', () => {
   })
 
   it('renders cents consistently in dashboard metrics and event rows for non-whole amounts', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-10T12:00:00.000Z').getTime())
+
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -532,6 +514,16 @@ describe('dashboard/events completion flow', () => {
         })
       }
 
+      if (url.includes('/events?status=completed') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [],
+            total_count: 0,
+          },
+        })
+      }
+
       if (url.includes('/events?status=all') && method === 'GET') {
         return createResponse({
           status: 200,
@@ -566,7 +558,7 @@ describe('dashboard/events completion flow', () => {
 
     renderDashboardPage()
 
-    await screen.findByText('Upcoming amount')
+    await screen.findByText('Upcoming due')
     expect(screen.getByText('$707.40')).toBeTruthy()
 
     cleanup()
@@ -655,59 +647,41 @@ describe('dashboard/events completion flow', () => {
     renderEventsPage()
 
     await screen.findAllByText('Persisted Mortgage')
-    expect(screen.getAllByText('State:').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Projected').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Persisted').length).toBeGreaterThan(0)
 
-    const rows = screen.getAllByRole('listitem')
-    expect(within(rows[0]).getByText('Persisted')).toBeTruthy()
-    expect(within(rows[1]).getByText('Projected')).toBeTruthy()
+    const rows = Array.from(document.querySelectorAll('[data-event-row-id]'))
+    expect(rows).toHaveLength(2)
+    expect(within(rows[0] as HTMLElement).getByText('Persisted')).toBeTruthy()
+    expect(within(rows[1] as HTMLElement).getByText('Projected')).toBeTruthy()
   })
 
-  it('edits a projected row with save-exception confirmation and shows edited occurrence state after refetch', async () => {
-    let listCalls = 0
+  it('shows edited occurrence state on persisted exception rows', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
 
       if (url.includes('/events?status=all') && method === 'GET') {
-        listCalls += 1
         return createResponse({
           status: 200,
           json: {
             groups: [
               {
                 due_date: '2026-03-03',
-                events:
-                  listCalls === 1
-                    ? [
-                        {
-                          id: 'projected-item-1-2026-03-03',
-                          item_id: 'item-1',
-                          type: 'Mortgage',
-                          amount: 1400,
-                          due_date: '2026-03-03',
-                          status: 'Pending',
-                          updated_at: '2026-03-03T00:00:00.000Z',
-                          source_state: 'projected',
-                          is_projected: true,
-                          is_exception: false,
-                        },
-                      ]
-                    : [
-                        {
-                          id: 'event-1',
-                          item_id: 'item-1',
-                          type: 'Mortgage',
-                          amount: 1500,
-                          due_date: '2026-03-05',
-                          status: 'Pending',
-                          updated_at: '2026-03-03T00:00:00.000Z',
-                          source_state: 'persisted',
-                          is_projected: false,
-                          is_exception: true,
-                        },
-                      ],
+                events: [
+                  {
+                    id: 'event-1',
+                    item_id: 'item-1',
+                    type: 'Mortgage',
+                    amount: 1500,
+                    due_date: '2026-03-05',
+                    status: 'Pending',
+                    updated_at: '2026-03-03T00:00:00.000Z',
+                    source_state: 'persisted',
+                    is_projected: false,
+                    is_exception: true,
+                  },
+                ],
               },
             ],
             total_count: 1,
@@ -734,17 +708,22 @@ describe('dashboard/events completion flow', () => {
         })
       }
 
-      if (url.includes('/events/projected-item-1-2026-03-03') && method === 'PATCH') {
-        const body = typeof init?.body === 'string' ? JSON.parse(init.body) : {}
-        expect(body).toMatchObject({
-          due_date: '2026-03-05',
-          amount: 1500,
-        })
-
+      if (url.includes('/events?status=completed') && method === 'GET') {
         return createResponse({
           status: 200,
           json: {
-            id: 'event-1',
+            groups: [],
+            total_count: 0,
+          },
+        })
+      }
+
+      if (url.includes('/events?status=completed') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            groups: [],
+            total_count: 0,
           },
         })
       }
@@ -757,22 +736,7 @@ describe('dashboard/events completion flow', () => {
     renderEventsPage()
 
     await screen.findByText('Mortgage')
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await screen.findByText('Saving this projected occurrence creates a persisted exception for this date.')
-    await userEvent.clear(screen.getByLabelText('Due date'))
-    await userEvent.type(screen.getByLabelText('Due date'), '2026-03-05')
-    await userEvent.clear(screen.getByLabelText('Amount'))
-    await userEvent.type(screen.getByLabelText('Amount'), '1500')
-
-    expect(screen.getByText(/Date:\s*2026-03-03\s*->\s*2026-03-05/)).toBeTruthy()
-    expect(screen.getByText(/Amount:\s*1400\s*->\s*1500/)).toBeTruthy()
-
-    await userEvent.click(within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: 'Save exception' }))
-
-    await waitFor(() => {
-      expect(screen.getByText('Edited occurrence')).toBeTruthy()
-    })
+    expect(screen.getByText('Edited occurrence')).toBeTruthy()
     expect(document.querySelector('[data-event-row-id="event-1"]')).toBeTruthy()
-    expect(screen.queryByText('Saving this projected occurrence creates a persisted exception for this date.')).toBeNull()
   })
 })

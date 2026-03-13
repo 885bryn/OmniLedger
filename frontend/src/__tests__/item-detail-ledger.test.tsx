@@ -60,7 +60,7 @@ function createTestQueryClient() {
   })
 }
 
-function renderItemDetail(initialPath = '/items/asset-1', queryClient = createTestQueryClient()) {
+function renderItemDetail(initialEntry: string | { pathname: string; state?: unknown } = '/items/asset-1', queryClient = createTestQueryClient()) {
   const router = createMemoryRouter(
     [
       {
@@ -69,8 +69,9 @@ function renderItemDetail(initialPath = '/items/asset-1', queryClient = createTe
       },
       { path: '/items/:itemId/edit', element: <div>edit route</div> },
       { path: '/items', element: <div>items route</div> },
+      { path: '/dashboard', element: <div>dashboard route</div> },
     ],
-    { initialEntries: [initialPath] },
+    { initialEntries: [initialEntry] },
   )
 
   return render(
@@ -1336,6 +1337,56 @@ describe('item detail events panel', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /Historical Ledger/i }))
     expect(await screen.findByText('Completed')).toBeTruthy()
+  })
+
+  it('shows a first-class back-to-dashboard action when opened from the dashboard', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/items/asset-1/net-status') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            id: 'asset-1',
+            item_type: 'RealEstate',
+            user_id: 'owner-1',
+            child_commitments: [],
+            summary: {
+              monthly_obligation_total: 1200,
+              monthly_income_total: 1800,
+              net_monthly_cashflow: 600,
+              excluded_row_count: 0,
+            },
+            attributes: { address: 'Maple Street' },
+          },
+        })
+      }
+
+      if (url.includes('/items?filter=all') && method === 'GET') {
+        return createResponse({
+          status: 200,
+          json: {
+            items: [
+              { id: 'asset-1', item_type: 'RealEstate', attributes: { address: 'Maple Street' }, updated_at: '2026-02-20T00:00:00.000Z' },
+            ],
+          },
+        })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderItemDetail({ pathname: '/items/asset-1', state: { from: '/dashboard' } })
+
+    const backButton = await screen.findByRole('button', { name: 'Back to dashboard' })
+    expect(backButton).toBeTruthy()
+
+    await userEvent.click(backButton)
+
+    expect(await screen.findByText('dashboard route')).toBeTruthy()
   })
 
   it('shows historical entry actions on overview and Events, with defaults and owner-lens attribution in the dialog', async () => {
