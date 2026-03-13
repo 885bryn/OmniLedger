@@ -33,6 +33,8 @@ function toCompletionPayload(eventInstance, promptNextDate = true) {
     type: event.type,
     due_date: event.due_date,
     amount: event.amount,
+    actual_amount: event.actual_amount,
+    actual_date: event.actual_date,
     status: event.status,
     recurring: event.recurring,
     created_at: event.created_at,
@@ -96,6 +98,33 @@ function isPlainObject(value) {
 
 function normalizeActorUserId(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function withResolvedActorScope(scope, actorUserId) {
+  const normalizedScope = isPlainObject(scope) ? { ...scope } : {};
+
+  if (!normalizeActorUserId(normalizedScope.actorUserId)) {
+    normalizedScope.actorUserId = actorUserId;
+  }
+
+  return normalizedScope;
+}
+
+function hasActualAmountInput(value) {
+  return value !== null && value !== undefined && value !== "";
+}
+
+function hasActualDateInput(value) {
+  return value !== null && value !== undefined && value !== "";
+}
+
+function toBusinessDate(value) {
+  const parsed = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.toISOString().slice(0, 10);
 }
 
 function resolveAuditAttribution({ scope, fallbackUserId }) {
@@ -203,12 +232,13 @@ async function resolveTargetEvent({ eventId, scope, actorUserId, transaction }) 
   return models.Event.findByPk(eventId, { transaction });
 }
 
-async function completeEvent({ eventId, scope, actorUserId, now = new Date() }) {
-  const scopeContext = isPlainObject(scope) ? scope : {};
-  const resolvedActorUserId = normalizeActorUserId(scopeContext.actorUserId) || normalizeActorUserId(actorUserId);
+async function completeEvent({ eventId, scope, actorUserId, now = new Date(), actual_amount, actual_date }) {
+  const initialScope = isPlainObject(scope) ? scope : {};
+  const resolvedActorUserId = normalizeActorUserId(initialScope.actorUserId) || normalizeActorUserId(actorUserId);
   if (!resolvedActorUserId) {
     throwInvalidState(eventId);
   }
+  const scopeContext = withResolvedActorScope(initialScope, resolvedActorUserId);
   const attribution = resolveAuditAttribution({ scope: scopeContext, fallbackUserId: resolvedActorUserId });
   const completedAt = now instanceof Date ? now : new Date(now);
 
@@ -241,8 +271,13 @@ async function completeEvent({ eventId, scope, actorUserId, now = new Date() }) 
       return toCompletionPayload(event);
     }
 
+    const resolvedActualAmount = hasActualAmountInput(actual_amount) ? actual_amount : event.amount;
+    const resolvedActualDate = hasActualDateInput(actual_date) ? actual_date : toBusinessDate(completedAt);
+
     event.status = COMPLETED_STATUS;
     event.completed_at = completedAt;
+    event.actual_amount = resolvedActualAmount;
+    event.actual_date = resolvedActualDate;
     await event.save({ transaction });
 
     const paymentItem = await models.Item.findByPk(event.item_id, { transaction });
@@ -265,11 +300,12 @@ async function completeEvent({ eventId, scope, actorUserId, now = new Date() }) 
 }
 
 async function undoEventCompletion({ eventId, scope, actorUserId, now = new Date() }) {
-  const scopeContext = isPlainObject(scope) ? scope : {};
-  const resolvedActorUserId = normalizeActorUserId(scopeContext.actorUserId) || normalizeActorUserId(actorUserId);
+  const initialScope = isPlainObject(scope) ? scope : {};
+  const resolvedActorUserId = normalizeActorUserId(initialScope.actorUserId) || normalizeActorUserId(actorUserId);
   if (!resolvedActorUserId) {
     throwInvalidState(eventId);
   }
+  const scopeContext = withResolvedActorScope(initialScope, resolvedActorUserId);
   const attribution = resolveAuditAttribution({ scope: scopeContext, fallbackUserId: resolvedActorUserId });
   const undoneAt = now instanceof Date ? now : new Date(now);
 

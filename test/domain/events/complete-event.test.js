@@ -110,6 +110,8 @@ describe("completeEvent domain service", () => {
     });
 
     expect(Object.keys(result).sort()).toEqual([
+      "actual_amount",
+      "actual_date",
       "amount",
       "completed_at",
       "created_at",
@@ -265,15 +267,15 @@ describe("completeEvent domain service", () => {
       actual_date: "2026-06-09"
     });
 
-    expect(result.amount).toBe(projectedAmount);
+    expect(Number(result.amount)).toBe(Number(projectedAmount));
     expect(new Date(result.due_date).toISOString()).toBe(dueDate);
-    expect(result.actual_amount).toBe("1275.25");
+    expect(Number(result.actual_amount)).toBe(1275.25);
     expect(toBusinessDate(result.actual_date)).toBe("2026-06-09");
 
     const persisted = await models.Event.findByPk(event.id);
-    expect(persisted.amount).toBe(projectedAmount);
+    expect(Number(persisted.amount)).toBe(Number(projectedAmount));
     expect(new Date(persisted.due_date).toISOString()).toBe(dueDate);
-    expect(persisted.actual_amount).toBe("1275.25");
+    expect(Number(persisted.actual_amount)).toBe(1275.25);
     expect(toBusinessDate(persisted.actual_date)).toBe("2026-06-09");
   });
 
@@ -289,11 +291,11 @@ describe("completeEvent domain service", () => {
       now: completionTime
     });
 
-    expect(result.actual_amount).toBe("900.00");
+    expect(Number(result.actual_amount)).toBe(900);
     expect(toBusinessDate(result.actual_date)).toBe("2026-07-02");
 
     const persisted = await models.Event.findByPk(event.id);
-    expect(persisted.actual_amount).toBe("900.00");
+    expect(Number(persisted.actual_amount)).toBe(900);
     expect(toBusinessDate(persisted.actual_date)).toBe("2026-07-02");
 
     const secondResult = await completeEvent({
@@ -304,7 +306,7 @@ describe("completeEvent domain service", () => {
       actual_date: "2026-07-03"
     });
 
-    expect(secondResult.actual_amount).toBe("900.00");
+    expect(Number(secondResult.actual_amount)).toBe(900);
     expect(toBusinessDate(secondResult.actual_date)).toBe("2026-07-02");
   });
 
