@@ -79,7 +79,20 @@ Each task was committed atomically where code changes occurred:
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] Applied manual STATE.md updates when state automation commands could not parse the existing format**
+- **Found during:** Post-task bookkeeping (state update step)
+- **Issue:** `state advance-plan`, `state update-progress`, and `state record-session` returned parse errors against the current `STATE.md` structure.
+- **Fix:** Updated `Current focus`, `Current Position`, and `Session Continuity` entries in `.planning/STATE.md` manually while still running other gsd-tools updates that succeeded.
+- **Files modified:** `.planning/STATE.md`
+- **Verification:** Confirmed `STATE.md` reflects phase 38 plan 02 completion, 100% progress, and updated stopped-at pointer.
+- **Committed in:** follow-up docs metadata commit after summary finalization
+
+---
+
+**Total deviations:** 1 auto-fixed (1 blocking)
+**Impact on plan:** Bookkeeping completed successfully with no product-scope changes.
 
 ## Authentication Gates
 
