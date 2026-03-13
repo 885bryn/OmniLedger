@@ -53,6 +53,32 @@ class Event extends Model {
             }
           }
         },
+        actual_amount: {
+          type: DataTypes.DECIMAL(12, 2),
+          allowNull: true,
+          validate: {
+            nonNegativeActualAmount(value) {
+              if (value === null || value === undefined) {
+                return;
+              }
+
+              assertNonNegativeAmount(value);
+            }
+          }
+        },
+        actual_date: {
+          type: DataTypes.DATEONLY,
+          allowNull: true,
+          validate: {
+            validActualDate(value) {
+              if (value === null || value === undefined) {
+                return;
+              }
+
+              assertValidDueDate(value);
+            }
+          }
+        },
         status: {
           type: DataTypes.ENUM(...EVENT_STATUSES),
           allowNull: false,
