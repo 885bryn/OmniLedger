@@ -45,7 +45,7 @@
 
 - [ ] **Phase 35: Dashboard Information Architecture** - Rebuild the dashboard shell around utility-first sections for summary, attention, and activity instead of a generic overview surface.
 - [x] **Phase 36: Action Queue and Financial Snapshot** - Add a high-utility dashboard action queue plus a reusable financial-items snapshot section with dense scan-friendly rows. (completed 2026-03-12)
-- [ ] **Phase 37: Exceptions, Trends, and Dashboard Polish** - Add exception/notice surfaces, period-aware supporting insights, and responsive polish that ties the redesigned dashboard together.
+- [x] **Phase 37: Exceptions, Trends, and Dashboard Polish** - Add exception/notice surfaces, period-aware supporting insights, and responsive polish that ties the redesigned dashboard together. (completed 2026-03-13)
 
 ## Phase Details
 
@@ -157,8 +157,8 @@ Plans:
   3. User can use the redesigned dashboard comfortably on desktop and mobile, with the same utility-first hierarchy preserved across breakpoints.
 **Plans**: 2 plans
 Plans:
-- [ ] `37-exceptions-trends-and-dashboard-polish-01-PLAN.md` - Remove duplicate financial snapshot surface, move portfolio into a right-rail companion, and add prominent overdue exception signals using existing data.
-- [ ] `37-exceptions-trends-and-dashboard-polish-02-PLAN.md` - Convert Recent Activity into a compact audit-log surface, add supporting period trend context, and lock exact Current position precision microcopy.
+- [x] `37-exceptions-trends-and-dashboard-polish-01-PLAN.md` - Remove duplicate financial snapshot surface, move portfolio into a right-rail companion, and add prominent overdue exception signals using existing data.
+- [x] `37-exceptions-trends-and-dashboard-polish-02-PLAN.md` - Convert Recent Activity into a compact audit-log surface, add supporting period trend context, and lock exact Current position precision microcopy.
 **Manual Test Gate**: Stop after this phase for final browser verification and explicit approval before milestone closeout.
 
 ## Progress
@@ -172,7 +172,7 @@ Plans:
 | 34. Item Detail Events Tab Clarity | 1/1 | Complete   | 2026-03-10 |
 | 35. Dashboard Information Architecture | 2/2 | Complete   | 2026-03-11 |
 | 36. Action Queue and Financial Snapshot | 2/2 | Complete    | 2026-03-12 |
-| 37. Exceptions, Trends, and Dashboard Polish | 1/2 | In Progress|  |
+| 37. Exceptions, Trends, and Dashboard Polish | 2/2 | Complete   | 2026-03-13 |
 
 ---
-*Last updated: 2026-03-13 after completing Phase 37 Plan 01 dashboard hierarchy polish*
+*Last updated: 2026-03-13 after completing Phase 37 dashboard polish*

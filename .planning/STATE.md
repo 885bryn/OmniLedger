@@ -1,28 +1,21 @@
 # Project State
-
 ## Project Reference
-
 See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** v4.4 dashboard redesign is in progress with the queue/right-rail hierarchy shipped and supporting trend polish queued next.
-
+**Current focus:** v4.4 dashboard redesign is complete and ready for milestone closeout.
 ## Current Position
-
 Phase: 37 - Exceptions, Trends, and Dashboard Polish
-Plan: 01/02
-Status: In Progress
-Last activity: 2026-03-13 - Completed Plan 01 dashboard de-duplication, right-rail portfolio, and exception notice refactor
-
-Progress: [#####-----] 50%
-
+Plan: 02/02
+Status: Complete
+Last activity: 2026-03-13 - Completed Plan 02 compact activity polish, trend strip, and precision microcopy lock
+Progress: [##########] 100%
 ## Performance Metrics
-
 **Velocity:**
-- Total plans completed: 75
+- Total plans completed: 76
 - Average duration: 4 min
-- Total execution time: 6.1 hours
+- Total execution time: 6.4 hours
 
 **By Phase:**
 
@@ -60,6 +53,7 @@ Progress: [#####-----] 50%
 | Phase 36-action-queue-and-financial-snapshot P01 | 5 min | 2 tasks | 6 files |
 | Phase 36 P02 | 1 min | 3 tasks | 6 files |
 | Phase 37-exceptions-trends-and-dashboard-polish P01 | 8 min | 2 tasks | 6 files |
+| Phase 37 P02 | 16 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -133,10 +127,11 @@ Progress: [#####-----] 50%
 - [Phase 37]: Removed the dashboard financial snapshot list so Needs Attention remains the only due-work list on the page.
 - [Phase 37]: Moved portfolio cards and exception notices into the right rail while keeping Recent Activity below the dashboard body.
 - [Phase 37]: Derived overdue asset alerts from existing linked asset ids on financial items instead of adding new backend fields.
+- [Phase 37]: Kept Recent Activity intentionally compact and low-contrast so Needs Attention remains the primary task surface.
+- [Phase 37]: Derived dashboard trend context from existing pending and completed event datasets instead of expanding backend contracts.
+- [Phase 37]: Locked Current position support copy to exact date-boundary wording with literal UI regressions because the phrasing carries financial meaning.
 
 ### Pending Todos
-
-- Phase 37 Plan 02: add supporting trend context and lock exact current-position precision microcopy.
 - Future milestone note: add dashboard month-rollover auto-refresh at local midnight for open tabs.
 
 ### Blockers/Concerns
@@ -144,7 +139,6 @@ Progress: [#####-----] 50%
 - The dashboard redesign must preserve existing RBAC, item/event contracts, admin scope behavior, and established event-history/manual-override workflows.
 
 ## Session Continuity
-
 Last session: 2026-03-13
-Stopped at: Completed 37-exceptions-trends-and-dashboard-polish-01-PLAN.md.
+Stopped at: Completed 37-exceptions-trends-and-dashboard-polish-02-PLAN.md.
 Resume file: `None`

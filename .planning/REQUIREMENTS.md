@@ -16,7 +16,7 @@ Requirements for milestone v4.4 Dashboard Utility Redesign with shadcn/ui.
 - [x] **DASH-05**: User can scan a financial snapshot section that shows dense but readable item-level status and metadata.
 - [x] **DASH-06**: User can navigate from dashboard summary and queue surfaces into `/events` and item detail pages without losing context.
 - [x] **DASH-07**: User sees exceptions and notices surfaced calmly on the dashboard when manual overrides, admin-only signals, or unusual conditions matter.
-- [ ] **DASH-08**: User sees supporting trend or timeline context that helps interpret upcoming and recent activity for the active period.
+- [x] **DASH-08**: User sees supporting trend or timeline context that helps interpret upcoming and recent activity for the active period.
 - [x] **DASH-09**: User can use the redesigned dashboard comfortably on desktop and mobile with the same information hierarchy preserved.
 
 ### Prior Milestone Coverage
@@ -80,9 +80,9 @@ Deferred to a future milestone.
 | DASH-04 | Phase 36 | Complete |
 | DASH-05 | Phase 36 | Complete |
 | DASH-06 | Phase 36 | Complete |
-| DASH-07 | Phase 37 | Planned |
-| DASH-08 | Phase 37 | Planned |
-| DASH-09 | Phase 37 | Planned |
+| DASH-07 | Phase 37 | Complete |
+| DASH-08 | Phase 37 | Complete |
+| DASH-09 | Phase 37 | Complete |
 
 **Coverage:**
 - v1 requirements: 9 total
@@ -91,4 +91,4 @@ Deferred to a future milestone.
 
 ---
 *Requirements defined: 2026-03-10*
-*Last updated: 2026-03-12 after closing Phase 36 action queue and financial snapshot*
+*Last updated: 2026-03-13 after closing Phase 37 dashboard polish*
