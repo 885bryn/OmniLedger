@@ -154,6 +154,8 @@ describe("PATCH /events/:id/complete", () => {
 
     expect(response.status).toBe(200);
     expect(Object.keys(response.body).sort()).toEqual([
+      "actual_amount",
+      "actual_date",
       "amount",
       "completed_at",
       "created_at",
@@ -175,7 +177,84 @@ describe("PATCH /events/:id/complete", () => {
       recurring: false,
       prompt_next_date: true
     });
+    expect(Number(response.body.actual_amount)).toBeCloseTo(1200.5, 2);
+    expect(response.body.actual_date).toBe(response.body.completed_at.slice(0, 10));
     expect(response.body.completed_at).toEqual(expect.any(String));
+  });
+
+  it("persists explicit reconciliation actual amount/date and keeps projected fields unchanged", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const item = await createItem({ userId: owner.id });
+    const event = await createEvent({
+      itemId: item.id,
+      recurring: false,
+      dueDate: "2026-07-01T00:00:00.000Z",
+      amount: "1200.50"
+    });
+
+    const response = await ownerAgent.patch(`/events/${event.id}/complete`).send({
+      actual_amount: "1300.75",
+      actual_date: "2026-07-02"
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: event.id,
+      item_id: item.id,
+      due_date: "2026-07-01T00:00:00.000Z",
+      actual_date: "2026-07-02",
+      status: "Completed",
+      prompt_next_date: true
+    });
+    expect(Number(response.body.amount)).toBeCloseTo(1200.5, 2);
+    expect(Number(response.body.actual_amount)).toBeCloseTo(1300.75, 2);
+    expect(response.body.completed_at).toEqual(expect.any(String));
+
+    const persisted = await models.Event.findByPk(event.id);
+    expect(Number(persisted.amount)).toBeCloseTo(1200.5, 2);
+    expect(persisted.due_date.toISOString()).toBe("2026-07-01T00:00:00.000Z");
+    expect(Number(persisted.actual_amount)).toBeCloseTo(1300.75, 2);
+    expect(persisted.actual_date).toBe("2026-07-02");
+    expect(persisted.completed_at).toBeTruthy();
+
+    const audits = await models.AuditLog.findAll({
+      where: {
+        action: "event.completed",
+        entity: `event:${event.id}`
+      }
+    });
+
+    expect(audits).toHaveLength(1);
+    expect(audits[0].actor_user_id).toBe(owner.id);
+    expect(audits[0].lens_user_id).toBe(owner.id);
+  });
+
+  it("defaults omitted reconciliation inputs to projected amount and completion business date", async () => {
+    const owner = await createUser();
+    const ownerAgent = await signInAs(owner);
+    const item = await createItem({ userId: owner.id });
+    const event = await createEvent({
+      itemId: item.id,
+      recurring: false,
+      dueDate: "2026-08-01T00:00:00.000Z",
+      amount: "88.40"
+    });
+
+    const response = await ownerAgent.patch(`/events/${event.id}/complete`);
+
+    expect(response.status).toBe(200);
+    expect(Number(response.body.amount)).toBeCloseTo(88.4, 2);
+    expect(Number(response.body.actual_amount)).toBeCloseTo(88.4, 2);
+    expect(response.body.actual_date).toEqual(expect.any(String));
+    expect(response.body.completed_at).toEqual(expect.any(String));
+    expect(response.body.actual_date).toBe(response.body.completed_at.slice(0, 10));
+
+    const persisted = await models.Event.findByPk(event.id);
+    expect(Number(persisted.amount)).toBeCloseTo(88.4, 2);
+    expect(Number(persisted.actual_amount)).toBeCloseTo(88.4, 2);
+    expect(persisted.actual_date).toBe(response.body.actual_date);
+    expect(persisted.status).toBe("Completed");
   });
 
   it("keeps prompt metadata in recurring completion responses", async () => {
@@ -508,7 +587,7 @@ describe("PATCH /events/:id/complete", () => {
     expect(audits).toHaveLength(1);
   });
 
-  it("keeps completed projected occurrences visible in status=all event reads", async () => {
+  it("materializes projected occurrences into a stable completed persisted row", async () => {
     const owner = await createUser();
     const ownerAgent = await signInAs(owner);
     const recurring = await createFinancialItem({
@@ -527,16 +606,19 @@ describe("PATCH /events/:id/complete", () => {
     expect(completion.body.status).toBe("Completed");
     expect(completion.body.item_id).toBe(recurring.id);
 
-    const refreshed = await ownerAgent.get("/events").query({ status: "all" });
+    const persistedCompleted = await models.Event.findByPk(completion.body.id);
+    expect(persistedCompleted).toBeTruthy();
+    expect(persistedCompleted.item_id).toBe(recurring.id);
+    expect(persistedCompleted.status).toBe("Completed");
+    expect(persistedCompleted.due_date.toISOString()).toContain("2026-03-03");
 
-    expect(refreshed.status).toBe(200);
-    const flattened = refreshed.body.groups.flatMap((group) => group.events);
-    const completedRow = flattened.find((event) => event.item_id === recurring.id && event.status === "Completed");
-
-    expect(completedRow).toBeTruthy();
-    expect(completedRow.id).toBe(completion.body.id);
-    expect(completedRow.id).not.toBe(projectedId);
-    expect(completedRow.due_date).toContain("2026-03-03");
+    const duplicateRows = await models.Event.findAll({
+      where: {
+        item_id: recurring.id,
+        due_date: "2026-03-03T00:00:00.000Z"
+      }
+    });
+    expect(duplicateRows).toHaveLength(1);
   });
 
   it("returns 404 when completing projected occurrence for foreign owner", async () => {
