@@ -61,12 +61,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| EVENT-05 | Phase 38 | Pending |
+| FLOW-06 | Phase 39 | Pending |
+| FLOW-07 | Phase 38 | Pending |
+| SAFE-04 | Phase 38 | Pending |
+| LEDGER-06 | Phase 40 | Pending |
+| LEDGER-07 | Phase 40 | Pending |
+| LEDGER-08 | Phase 40 | Pending |
+| VIEW-07 | Phase 40 | Pending |
+| UX-02 | Phase 39 | Pending |
 
 **Coverage:**
 - v1 requirements: 9 total
-- Mapped to phases: 0
-- Unmapped: 9
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-13*
-*Last updated: 2026-03-13 after initial milestone v4.5 definition*
+*Last updated: 2026-03-13 after roadmap creation for milestone v4.5*

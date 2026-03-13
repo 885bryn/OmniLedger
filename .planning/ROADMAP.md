@@ -10,6 +10,7 @@
 - ✅ **v4.2 Cashflow Frequency Normalization & Cadence Toggle** - Phases 27-29 shipped 2026-03-10
 - ✅ **v4.3 Smart Grouped Ledger & Historical Event Injection** - Phases 30-34 shipped 2026-03-10 (`.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.3-REQUIREMENTS.md`, `.planning/milestones/v4.3-MILESTONE-AUDIT.md`)
 - ✅ **v4.4 Dashboard Utility Redesign with shadcn/ui** - Phases 35-37 shipped 2026-03-13 (`.planning/milestones/v4.4-ROADMAP.md`, `.planning/milestones/v4.4-REQUIREMENTS.md`, `.planning/milestones/v4.4-MILESTONE-AUDIT.md`)
+- 📋 **v4.5 Financial Reconciliation Flow (Projected vs. Actuals)** - Phases 38-40 planned
 
 ## Phases
 
@@ -27,21 +28,59 @@
 
 </details>
 
-### Planning Next Milestone
+### 📋 v4.5 Financial Reconciliation Flow (Projected vs. Actuals)
 
-- No active milestone is currently planned. Start the next one with `/gsd-new-milestone`.
+**Milestone Goal:** Turn event completion into an explicit reconciliation flow that preserves projected fields, captures actual paid values, and rolls settled actuals into history and completion-derived metrics.
+
+**Execution Gate:** After each phase is executed, stop for manual browser testing and explicit user approval before planning or executing the next phase.
+
+- [ ] **Phase 38: Reconciliation Contract and Safe Completion API** - Add immutable projected-vs-actual event completion fields and backend-authoritative defaults, then pause for browser approval.
+- [ ] **Phase 39: Reconciliation Modal and Completion UX** - Replace instant Upcoming completion with a shadcn reconciliation dialog that works on desktop and mobile, then pause for browser approval.
+- [ ] **Phase 40: Actual-Based History and Metrics** - Show actual-paid chronology, variance, and completion-derived actual math wherever this milestone changes settled outcomes, then pause for final browser approval.
 
 ## Phase Details
 
-- v4.4 dashboard milestone archived to `.planning/milestones/v4.4-ROADMAP.md`
+### Phase 38: Reconciliation Contract and Safe Completion API
+**Goal**: Users can complete an upcoming event through a reconciliation-aware backend contract that preserves the projection and safely records actual payment data.
+**Depends on**: Phase 37
+**Requirements**: EVENT-05, FLOW-07, SAFE-04
+**Success Criteria** (what must be TRUE):
+  1. User can complete an upcoming event and the system keeps projected `amount` and `due_date` unchanged while storing nullable `actual_amount` and `actual_date` on the event.
+  2. User can omit reconciliation inputs and the saved completion still resolves to projected amount and today's date from backend defaults.
+  3. User can trust reconciliation completion to keep existing owner scoping, audit attribution, projected-event materialization behavior, and `completed_at` system timestamps intact.
+**Manual Gate**: Stop after execution for manual browser testing and explicit approval before Phase 39 begins.
+**Plans**: TBD
+
+### Phase 39: Reconciliation Modal and Completion UX
+**Goal**: Users can initiate reconciliation from the Upcoming ledger in a shadcn-first flow instead of instant completion.
+**Depends on**: Phase 38
+**Requirements**: FLOW-06, UX-02
+**Success Criteria** (what must be TRUE):
+  1. User can open a reconciliation dialog from an Upcoming ledger row instead of instantly marking the event complete.
+  2. User can complete the reconciliation flow through shadcn dialog and input primitives that feel consistent with the current dashboard UI language.
+  3. User can use the reconciliation flow on desktop and mobile without the dialog becoming unusable or obscuring the required completion controls.
+**Manual Gate**: Stop after execution for manual browser testing and explicit approval before Phase 40 begins.
+**Plans**: TBD
+
+### Phase 40: Actual-Based History and Metrics
+**Goal**: Users can review settled event outcomes using actual paid values, actual paid chronology, and visible variance wherever this milestone changes completion-derived math.
+**Depends on**: Phase 39
+**Requirements**: LEDGER-06, LEDGER-07, LEDGER-08, VIEW-07
+**Success Criteria** (what must be TRUE):
+  1. User sees completed History rows show actual paid amount and actual paid date instead of the original projected completion values.
+  2. User sees completed History grouped and ordered by actual paid date so chronology reflects when payment happened.
+  3. User sees a clear overpayment or underpayment indicator whenever actual amount differs from the projection.
+  4. User can trust completion-derived tracking metrics affected by settled payments to use `actual_amount` and `actual_date` where applicable.
+**Manual Gate**: Stop after execution for manual browser testing and explicit approval before milestone closeout.
+**Plans**: TBD
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 35. Dashboard Information Architecture | 2/2 | Complete   | 2026-03-11 |
-| 36. Action Queue and Financial Snapshot | 2/2 | Complete    | 2026-03-12 |
-| 37. Exceptions, Trends, and Dashboard Polish | 2/2 | Complete    | 2026-03-13 |
+| 38. Reconciliation Contract and Safe Completion API | 0/TBD | Not started | - |
+| 39. Reconciliation Modal and Completion UX | 0/TBD | Not started | - |
+| 40. Actual-Based History and Metrics | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-03-13 after archiving milestone v4.4*
+*Last updated: 2026-03-13 after creating milestone v4.5 roadmap*
