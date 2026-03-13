@@ -6,6 +6,7 @@ import { MotionPanelList } from '@/components/ui/motion-panel-list'
 import { Pressable } from '@/components/ui/pressable'
 import { Button } from '@/components/ui/button'
 import { DashboardActionQueue } from '../../features/dashboard/dashboard-action-queue'
+import { DashboardActivityTrendStrip } from '../../features/dashboard/dashboard-activity-trend-strip'
 import { DashboardExceptionNotices, type DashboardExceptionNotice } from '../../features/dashboard/dashboard-exception-notices'
 import { DataCard } from '../../features/dashboard/data-card'
 import { DashboardBody, DashboardDescription, DashboardEyebrow, DashboardHeader, DashboardLayout, DashboardSection, DashboardTitle } from '../../features/dashboard/dashboard-layout'
@@ -74,6 +75,19 @@ function formatDateRange(values: string[]) {
   }
 
   return `${formatter.format(min)} - ${formatter.format(max)}`
+}
+
+function formatDateLabel(value: string) {
+  const parsed = parseCalendarDate(value)
+  if (!parsed) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(parsed)
 }
 
 function parseCalendarDate(value: string) {
@@ -302,6 +316,8 @@ export function DashboardPage() {
     })
 
     const upcomingAmount = upcomingEvents.reduce((total, event) => total + Number(event.amount ?? 0), 0)
+    const oldestOverdueEvent = [...overdueEvents].sort(compareByNearestDue)[0] ?? null
+    const nextUpcomingEvent = [...upcomingEvents].sort(compareByNearestDue)[0] ?? null
     const monthlyCompletedEvents = completedEvents.filter((event) => {
       const dueDayKey = toCalendarDayKey(event.due_date)
       if (dueDayKey === null) {
@@ -312,6 +328,7 @@ export function DashboardPage() {
     })
 
     const activityRows = monthlyCompletedEvents.slice(0, 5)
+    const latestCompletedEvent = monthlyCompletedEvents[0] ?? null
     const manualOverrideCount = activityRows.filter((event) => event.is_manual_override).length
     const monthlyLedgerById = new Map<string, EventRow>()
 
@@ -333,6 +350,11 @@ export function DashboardPage() {
       completedActivity: monthlyCompletedEvents.length,
       activityRows: activityRows.length,
       manualOverrideCount,
+      oldestOverdueDateLabel: oldestOverdueEvent ? formatDateLabel(oldestOverdueEvent.due_date) : null,
+      nextUpcomingDateLabel: nextUpcomingEvent ? formatDateLabel(nextUpcomingEvent.due_date) : null,
+      latestCompletedDateLabel: latestCompletedEvent
+        ? formatDateLabel(latestCompletedEvent.completed_at || latestCompletedEvent.updated_at || latestCompletedEvent.due_date)
+        : null,
     }
   }, [attentionEvents, completedEvents, currentDayKey, itemById, t])
 
@@ -613,7 +635,47 @@ export function DashboardPage() {
         description={t('dashboard.sections.recentActivity.description')}
         data-dashboard-section="recent-activity"
       >
-        <DataCard as="section" cardClassName="bg-card/90" contentClassName="space-y-3 pt-0">
+        <DataCard as="section" cardClassName="bg-card/90" contentClassName="space-y-4 pt-0">
+          <DashboardActivityTrendStrip
+            title={t('dashboard.activityTrendStrip.title')}
+            description={t('dashboard.activityTrendStrip.description', { period: metrics.netPeriodLabel })}
+            items={[
+              {
+                id: 'overdue',
+                label: t('dashboard.activityTrendStrip.overdue.label'),
+                value: String(metrics.overdue),
+                detail: t('dashboard.activityTrendStrip.overdue.detail', { count: metrics.overdue }),
+                hint: metrics.oldestOverdueDateLabel
+                  ? t('dashboard.activityTrendStrip.overdue.hint', { date: metrics.oldestOverdueDateLabel })
+                  : t('dashboard.activityTrendStrip.overdue.hintClear', { period: metrics.netPeriodLabel }),
+                tone: metrics.overdue > 0 ? 'warning' : 'neutral',
+              },
+              {
+                id: 'upcoming',
+                label: t('dashboard.activityTrendStrip.upcoming.label'),
+                value: String(metrics.totalDue),
+                detail: t('dashboard.activityTrendStrip.upcoming.detail', { count: metrics.totalDue }),
+                hint: metrics.nextUpcomingDateLabel
+                  ? t('dashboard.activityTrendStrip.upcoming.hint', { date: metrics.nextUpcomingDateLabel })
+                  : t('dashboard.activityTrendStrip.upcoming.hintClear', { period: metrics.netPeriodLabel }),
+                tone: 'neutral',
+              },
+              {
+                id: 'completed',
+                label: t('dashboard.activityTrendStrip.completed.label'),
+                value: String(metrics.completedActivity),
+                detail: t('dashboard.activityTrendStrip.completed.detail', {
+                  count: metrics.completedActivity,
+                  period: metrics.netPeriodLabel,
+                }),
+                hint: metrics.latestCompletedDateLabel
+                  ? t('dashboard.activityTrendStrip.completed.hint', { date: metrics.latestCompletedDateLabel })
+                  : t('dashboard.activityTrendStrip.completed.hintClear', { period: metrics.netPeriodLabel }),
+                tone: metrics.completedActivity > 0 ? 'positive' : 'neutral',
+              },
+            ]}
+          />
+
           {completedEvents.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('dashboard.recentActivity.empty')}</p>
           ) : (

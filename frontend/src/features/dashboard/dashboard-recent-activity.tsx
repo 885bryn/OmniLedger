@@ -67,7 +67,13 @@ export function DashboardRecentActivity({
   labels,
 }: DashboardRecentActivityProps) {
   return (
-    <ul className="space-y-3" aria-label="Recent Activity list">
+    <ul
+      className="space-y-2"
+      aria-label="Recent Activity list"
+      data-testid="dashboard-recent-activity-list"
+      data-recent-activity-density="compact"
+      data-recent-activity-style="audit-log"
+    >
       {events.map((event) => {
         const item = itemById.get(event.item_id)
         const amount = formatEventAmount(event.amount, isIncomeItem(item ?? { item_type: 'Unknown' }))
@@ -75,31 +81,37 @@ export function DashboardRecentActivity({
         const manualOverride = event.is_manual_override === true
 
         return (
-          <li key={event.id} data-recent-activity-row-id={event.id} data-manual-override={manualOverride ? 'true' : 'false'}>
+          <li
+            key={event.id}
+            data-recent-activity-row-id={event.id}
+            data-manual-override={manualOverride ? 'true' : 'false'}
+            data-recent-activity-variant="audit-log-row"
+          >
             <article
               className={[
-                'rounded-2xl border px-4 py-4 shadow-sm',
+                'rounded-xl border px-3 py-2.5',
                 manualOverride
-                  ? 'border-amber-300 bg-[linear-gradient(135deg,rgba(255,251,235,0.98),rgba(255,255,255,0.98))]'
-                  : 'border-border/70 bg-card/95',
+                  ? 'border-amber-300/80 bg-[linear-gradient(135deg,rgba(255,251,235,0.94),rgba(255,255,255,0.96))]'
+                  : 'border-border/60 bg-muted/20',
               ].join(' ')}
             >
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-semibold text-foreground">{event.type}</h3>
-                  <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                    {labels.completed}
-                  </span>
-                  {manualOverride ? (
-                    <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.16em] text-amber-900">
-                      {labels.manualOverride}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-medium text-foreground">{event.type}</h3>
+                    <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                      {labels.completed}
                     </span>
-                  ) : null}
+                    {manualOverride ? (
+                      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-amber-900">
+                        {labels.manualOverride}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{labels.paidOn(completedOn)}</p>
                 </div>
 
-                <p className="text-xs text-muted-foreground sm:text-sm">{labels.paidOn(completedOn)}</p>
-
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground sm:text-sm">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                   <Link
                     to={`/items/${event.item_id}`}
                     state={{ from: returnTo }}

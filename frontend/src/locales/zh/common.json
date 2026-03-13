@@ -183,6 +183,31 @@
         "description": "{{period}} 内没有手动覆盖或逾期资产激增信号。"
       }
     },
+    "activityTrendStrip": {
+      "title": "周期动态趋势",
+      "description": "先用当前周期汇总判断未结压力和完成节奏，再查看 {{period}} 内的审计日志细节。",
+      "overdue": {
+        "label": "逾期压力",
+        "detail_one": "仍有 {{count}} 条逾期记录未关闭",
+        "detail_other": "仍有 {{count}} 条逾期记录未关闭",
+        "hint": "最早未结记录到期于 {{date}}",
+        "hintClear": "{{period}} 内没有仍未关闭的逾期记录。"
+      },
+      "upcoming": {
+        "label": "本周期待处理",
+        "detail_one": "本周期还剩 {{count}} 条即将到期记录",
+        "detail_other": "本周期还剩 {{count}} 条即将到期记录",
+        "hint": "下一条到期于 {{date}}",
+        "hintClear": "{{period}} 内没有更多即将到期记录。"
+      },
+      "completed": {
+        "label": "本周期已完成",
+        "detail_one": "{{period}} 内已关闭 {{count}} 条完成记录",
+        "detail_other": "{{period}} 内已关闭 {{count}} 条完成记录",
+        "hint": "最近一次完成落在 {{date}}",
+        "hintClear": "{{period}} 内还没有完成记录。"
+      }
+    },
     "recentActivity": {
       "empty": "当完成记录开始进入历史后，会显示在这里。",
       "completedBadge": "已完成",

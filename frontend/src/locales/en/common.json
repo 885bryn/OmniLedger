@@ -183,6 +183,31 @@
         "description": "No manual overrides or overdue-linked asset spikes are active in {{period}}."
       }
     },
+    "activityTrendStrip": {
+      "title": "Period activity trend",
+      "description": "Use the active-period counts to read open pressure and closeout pace before scanning the audit log for detail in {{period}}.",
+      "overdue": {
+        "label": "Overdue pressure",
+        "detail_one": "{{count}} overdue row still open",
+        "detail_other": "{{count}} overdue rows still open",
+        "hint": "Oldest open row due {{date}}",
+        "hintClear": "No overdue rows are still open in {{period}}."
+      },
+      "upcoming": {
+        "label": "Upcoming this period",
+        "detail_one": "{{count}} upcoming row left this period",
+        "detail_other": "{{count}} upcoming rows left this period",
+        "hint": "Next due {{date}}",
+        "hintClear": "No more upcoming rows are due in {{period}}."
+      },
+      "completed": {
+        "label": "Completed this period",
+        "detail_one": "{{count}} completed row closed in {{period}}",
+        "detail_other": "{{count}} completed rows closed in {{period}}",
+        "hint": "Latest closeout landed {{date}}",
+        "hintClear": "No completed rows have landed in {{period}} yet."
+      }
+    },
     "recentActivity": {
       "empty": "Completed events will appear here once activity starts landing in history.",
       "completedBadge": "Completed",
