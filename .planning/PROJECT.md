@@ -20,10 +20,20 @@ Users can see each asset together with its linked obligations and timeline statu
 - Frontend utility work now centers on shared shadcn/ui primitives, spring motion, and dashboard-first workflows rather than isolated overview widgets.
 - Known follow-up debt remains mostly in planning/verification artifacts: missing Phase 35 verification, stale Phase 36 verification markdown, and manual dashboard comfort sign-off for DASH-09.
 
+## Current Milestone: v4.5 Financial Reconciliation Flow (Projected vs. Actuals)
+
+**Goal:** Turn event completion into an explicit reconciliation step that preserves projections, captures actual paid values, and makes variance visible in History.
+
+**Target features:**
+- Add nullable `actual_amount` and `actual_date` fields to events while preserving projected `amount` and `due_date`.
+- Replace Upcoming ledger instant-complete behavior with a shadcn-based reconciliation modal that prefills actuals and submits the updated completion payload.
+- Show completed History rows using actual paid amount/date plus visible over/under variance against the projection.
+
 ## Next Milestone Goals
 
-- Define the next milestone through `/gsd-new-milestone` with fresh requirements and roadmap scope.
-- Consider follow-on work for progress/reconciliation (`VIEW-06`, `FLOW-05`), ledger filtering/editing (`LEDGER-05`, `EVENT-04`), and dashboard quality-of-life follow-ups like midnight month-rollover refresh.
+- Ship projected-vs-actual reconciliation in the Events ledger with backend-defaulted actual values and shadcn-first UI.
+- Keep item-level and dashboard tracking math aligned with settled actuals where completion-derived metrics depend on paid amount/date.
+- Defer broader follow-on work like progress dashboards, ledger filtering/editing, reversals, and month-rollover refresh until after reconciliation ships cleanly.
 
 ## Requirements
 
@@ -46,16 +56,15 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ### Active
 
-- [ ] Users can see completed/total obligation and income progress for the selected cadence period, based on completed events vs total due events in-period.
-- [ ] Users can reconcile multiple historical events in one bulk logging workflow.
-- [ ] Users can filter or search the History ledger by item, date range, or note text.
-- [ ] Users can edit or reverse a manually injected historical event from the UI.
-- [ ] Users can keep long-lived dashboard tabs period-accurate through automatic local-midnight month-rollover refresh.
+- [ ] Users can reconcile an upcoming event before completion by confirming actual amount paid and date paid without losing the original projection.
+- [ ] Users can rely on backend-authoritative defaults so omitted reconciliation inputs fall back to projected amount and today's date.
+- [ ] Users can review completed History rows using actual paid values and immediately see overpayment or underpayment variance against the projection.
 
 ### Out of Scope
 
-- Bulk event import or CSV backfill tooling - this milestone is scoped to one-off historical injection inside the product UI.
-- Progress-meter overlays on cadence summary cards - keep this for a later milestone after ledger/history primitives ship.
+- Bulk reconciliation or CSV backfill tooling - this milestone is scoped to one-event reconciliation from the existing Upcoming ledger.
+- History filtering, edit/reverse flows, and dashboard month-rollover refresh - keep focus on the projected-vs-actual completion path first.
+- Dashboard and item-detail rollout of new actual/variance presentation beyond completion-derived metrics - defer until the ledger contract settles.
 - RBAC, audit attribution, and deployment contract redesign - current security and ops guarantees must remain intact.
 
 ## Constraints
@@ -69,6 +78,14 @@ Users can see each asset together with its linked obligations and timeline statu
 - **Visual language:** Preserve a structured, high-contrast, developer-tool dashboard aesthetic rather than a marketing-style redesign.
 - **Motion model:** Layout changes should use Framer Motion spring physics instead of generic linear CSS transitions where the UI reflows.
 - **UI primitives:** Use shadcn/ui Nova components from `@/components/ui` for buttons, cards, forms, dialogs, tabs, and toast surfaces instead of bespoke Tailwind primitives.
+
+## Key Decisions
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Preserve projected fields and add actual reconciliation fields | The product needs projected-vs-actual comparison, not destructive overwrites of the forecast. | - Pending |
+| Treat `actual_date` as the business paid date and keep `completed_at` as the system completion timestamp | Users need reconciliation history that reflects when payment happened, while audit/system timing stays intact. | - Pending |
+| Use shadcn primitives for the reconciliation modal and variance badge | Matches the current frontend direction and avoids introducing another dialog/badge pattern mid-stream. | - Pending |
 
 <details>
 <summary>Archived Prior Milestone Snapshot (v4.3 In-Progress Framing)</summary>
@@ -117,4 +134,4 @@ Users can see each asset together with its linked obligations and timeline statu
 </details>
 
 ---
-*Last updated: 2026-03-13 after completing milestone v4.4*
+*Last updated: 2026-03-13 after starting milestone v4.5*

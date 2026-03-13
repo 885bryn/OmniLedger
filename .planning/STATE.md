@@ -4,13 +4,13 @@ See: `.planning/PROJECT.md` (updated 2026-03-13)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.4-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Planning the next milestone after shipping v4.4.
+**Current focus:** Defining milestone v4.5 Financial Reconciliation Flow (Projected vs. Actuals).
 ## Current Position
-Phase: Milestone Closeout
-Plan: v4.4 archive
-Status: Complete
-Last activity: 2026-03-13 - Archived milestone v4.4 planning artifacts and prepared next-milestone handoff
-Progress: [##########] 100%
+Phase: Not started (defining requirements)
+Plan: -
+Status: Defining requirements
+Last activity: 2026-03-13 - Milestone v4.5 started
+Progress: [----------] 0%
 ## Performance Metrics
 **Velocity:**
 - Total plans completed: 76
@@ -130,9 +130,12 @@ Progress: [##########] 100%
 - [Phase 37]: Kept Recent Activity intentionally compact and low-contrast so Needs Attention remains the primary task surface.
 - [Phase 37]: Derived dashboard trend context from existing pending and completed event datasets instead of expanding backend contracts.
 - [Phase 37]: Locked Current position support copy to exact date-boundary wording with literal UI regressions because the phrasing carries financial meaning.
+- [Milestone v4.5]: Keep projected `amount` and `due_date` immutable, add `actual_amount` and `actual_date` for reconciliation, and use actuals for settled-history presentation.
+- [Milestone v4.5]: Prefer shadcn-based dialog and badge primitives for reconciliation UI rather than extending the older custom confirmation pattern.
 
 ### Pending Todos
 - Future milestone note: add dashboard month-rollover auto-refresh at local midnight for open tabs.
+- Future milestone note: roll actual/variance presentation deeper into dashboard and item-detail surfaces after the ledger contract ships.
 
 ### Blockers/Concerns
 
