@@ -186,14 +186,16 @@ function createDashboardFetchMock(options: {
               id: 'item-1',
               item_type: 'FinancialItem',
               type: 'Commitment',
-              attributes: { name: 'Maple Mortgage', financialSubtype: 'Commitment' },
+              linked_asset_item_id: 'asset-1',
+              attributes: { name: 'Maple Mortgage', financialSubtype: 'Commitment', linkedAssetItemId: 'asset-1' },
               updated_at: '2026-03-10T00:00:00.000Z',
             },
             {
               id: 'item-2',
               item_type: 'FinancialItem',
               type: 'Commitment',
-              attributes: { name: 'Home Insurance', financialSubtype: 'Commitment' },
+              linked_asset_item_id: 'asset-2',
+              attributes: { name: 'Home Insurance', financialSubtype: 'Commitment', linkedAssetItemId: 'asset-2' },
               updated_at: '2026-03-09T00:00:00.000Z',
             },
             {
@@ -539,7 +541,7 @@ describe('dashboard information architecture', () => {
     expect(within(cards[3]).getByText('0')).toBeTruthy()
   })
 
-  it('renders overdue-first attention rows and a calmer recent activity feed with existing pathways', async () => {
+  it('keeps needs attention dominant while moving portfolio and exception notices into the right rail', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
     globalThis.fetch = createDashboardFetchMock() as typeof fetch
 
@@ -548,11 +550,24 @@ describe('dashboard information architecture', () => {
     await screen.findByRole('heading', { name: 'Needs Attention' })
 
     const needsAttention = screen.getByRole('heading', { name: 'Needs Attention' })
-    const recentActivity = screen.getByRole('heading', { name: 'Recent Activity' })
     const portfolio = screen.getByRole('heading', { name: 'Portfolio snapshot' })
+    const exceptions = screen.getByRole('heading', { name: 'Exceptions and notices' })
+    const recentActivity = screen.getByRole('heading', { name: 'Recent Activity' })
 
-    expect(needsAttention.compareDocumentPosition(recentActivity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(recentActivity.compareDocumentPosition(portfolio) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const primaryColumn = needsAttention.closest('[data-dashboard-body-column="primary"]')
+    const secondaryColumn = portfolio.closest('[data-dashboard-body-column="secondary"]')
+
+    expect(primaryColumn).toBeTruthy()
+    expect(secondaryColumn).toBeTruthy()
+    expect(exceptions.closest('[data-dashboard-body-column="secondary"]')).toBe(secondaryColumn)
+    expect(primaryColumn).not.toBe(secondaryColumn)
+
+    expect(within(secondaryColumn as HTMLElement).getByRole('heading', { name: 'Portfolio snapshot' })).toBeTruthy()
+    expect(within(secondaryColumn as HTMLElement).getByRole('heading', { name: 'Exceptions and notices' })).toBeTruthy()
+
+    expect(needsAttention.compareDocumentPosition(portfolio) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(portfolio.compareDocumentPosition(exceptions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(exceptions.compareDocumentPosition(recentActivity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     const overdueSection = screen.getByTestId('dashboard-action-queue-overdue')
     const upcomingSection = screen.getByTestId('dashboard-action-queue-upcoming')
@@ -566,6 +581,15 @@ describe('dashboard information architecture', () => {
     expect(upcomingRows).toHaveLength(1)
     expect(within(upcomingRows[0]).getAllByText('Mortgage').length).toBeGreaterThan(0)
     expect(within(upcomingRows[0]).getByText('Maple Mortgage')).toBeTruthy()
+
+    const exceptionPanel = screen.getByTestId('dashboard-exception-notices')
+    expect(within(exceptionPanel).getByText('Manual overrides in period')).toBeTruthy()
+    expect(within(exceptionPanel).getByText('1 completed row landed through a manual override in Mar 1 - Mar 31.')).toBeTruthy()
+
+    const primaryHomeCard = screen.getByTestId('dashboard-asset-card-asset-1')
+    expect(primaryHomeCard.getAttribute('data-dashboard-asset-alert')).toBe('overdue')
+    expect(within(primaryHomeCard).getByText('Needs Attention')).toBeTruthy()
+    expect(within(primaryHomeCard).getByText('1 overdue linked row')).toBeTruthy()
 
     const recentRows = screen.getAllByRole('listitem').filter((node) => node.getAttribute('data-recent-activity-row-id'))
     expect(recentRows).toHaveLength(2)

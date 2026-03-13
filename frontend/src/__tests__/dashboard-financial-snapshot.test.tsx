@@ -74,7 +74,8 @@ function createFetchMock(pendingGroups: DashboardGroup[]) {
             id: 'item-commitment-overdue',
             item_type: 'FinancialItem',
             type: 'Commitment',
-            attributes: { name: 'Mortgage' },
+            linked_asset_item_id: 'asset-1',
+            attributes: { name: 'Mortgage', linkedAssetItemId: 'asset-1' },
             updated_at: '2026-03-14T00:00:00.000Z',
           },
           {
@@ -135,7 +136,7 @@ describe('dashboard financial snapshot', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders dense item rows in stable urgency-first order with subtype, status, due, and amount metadata', async () => {
+  it('does not render the old financial snapshot list surface on the dashboard', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(new Date(fixedNow).getTime())
 
     const pendingGroups: DashboardGroup[] = [
@@ -167,27 +168,15 @@ describe('dashboard financial snapshot', () => {
     globalThis.fetch = createFetchMock(pendingGroups) as typeof fetch
     renderDashboardPage()
 
-    const section = await screen.findByTestId('dashboard-financial-snapshot')
-    const rows = within(section).getAllByTestId('dashboard-financial-snapshot-row')
+    await screen.findByRole('heading', { name: 'Portfolio snapshot' })
 
-    expect(rows).toHaveLength(3)
-    expect(within(rows[0]).getByRole('link', { name: 'Mortgage' })).toBeTruthy()
-    expect(within(rows[0]).getByText('Commitment')).toBeTruthy()
-    expect(within(rows[0]).getByText(/Overdue/)).toBeTruthy()
-    expect(within(rows[0]).getByText(/^Due /)).toBeTruthy()
-    expect(within(rows[0]).getByText('$1,500')).toBeTruthy()
-
-    expect(within(rows[1]).getByText('Tenant Rent')).toBeTruthy()
-    expect(within(rows[1]).getByText('Income')).toBeTruthy()
-    expect(within(rows[1]).getByText(/Upcoming/)).toBeTruthy()
-    expect(within(rows[1]).getByText('+$2,200')).toBeTruthy()
-
-    expect(within(rows[2]).getByText('Cloud Backup')).toBeTruthy()
-    expect(within(rows[2]).getByText('No pending events')).toBeTruthy()
-    expect(within(rows[2]).getByText('Amount pending')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Financial snapshot' })).toBeNull()
+    expect(screen.queryByTestId('dashboard-financial-snapshot')).toBeNull()
+    expect(screen.queryByTestId('dashboard-financial-snapshot-row')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Jump to financial snapshot' })).toBeNull()
   })
 
-  it('keeps snapshot rows and summary/action handoffs wired to existing /items and /events workflows', async () => {
+  it('keeps portfolio cards wired to /items while the queue continues using /events handoffs', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(new Date(fixedNow).getTime())
 
     const pendingGroups: DashboardGroup[] = [
@@ -210,60 +199,16 @@ describe('dashboard financial snapshot', () => {
     globalThis.fetch = createFetchMock(pendingGroups) as typeof fetch
     renderDashboardPage()
 
-    const section = await screen.findByTestId('dashboard-financial-snapshot')
-    const row = within(section).getAllByTestId('dashboard-financial-snapshot-row')[0]
-    const statusBlock = within(row).getByTestId('dashboard-financial-snapshot-status')
-    const actionBlock = within(row).getByTestId('dashboard-financial-snapshot-action')
+    const portfolio = await screen.findByRole('heading', { name: 'Portfolio snapshot' })
+    const portfolioSection = portfolio.closest('section') as HTMLElement
+    const card = within(portfolioSection).getByTestId('dashboard-asset-card-asset-1')
+    const cardLink = within(card).getByRole('link', { name: 'Primary Home' })
 
-    expect(statusBlock.className).toContain('justify-between')
-    expect(statusBlock.className).toContain('items-start')
-    expect(within(statusBlock).getByText('Status')).toBeTruthy()
-    expect(within(row).getByText('Next due')).toBeTruthy()
-    expect(within(row).getByText('Amount')).toBeTruthy()
-    expect(actionBlock.className).toContain('justify-end')
-    expect(within(actionBlock).getByRole('link', { name: 'Open item' })).toBeTruthy()
-
-    const snapshotItemLinks = within(section)
-      .getAllByRole('link')
-      .filter((link) => link.getAttribute('href')?.startsWith('/items/'))
-    expect(snapshotItemLinks.length).toBeGreaterThan(0)
-    expect(snapshotItemLinks.some((link) => link.getAttribute('href') === '/items/item-income-upcoming')).toBe(true)
+    expect(card.getAttribute('data-dashboard-asset-alert')).toBe('clear')
+    expect(cardLink.getAttribute('href')).toBe('/items/asset-1')
 
     const openEventsLinks = screen.getAllByRole('link', { name: /Open events/i })
     expect(openEventsLinks.length).toBeGreaterThan(0)
     expect(openEventsLinks.some((link) => link.getAttribute('href') === '/events')).toBe(true)
-  })
-
-  it('adds a mobile-first jump link so financial snapshot stays reachable when upcoming queue rows grow', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(new Date(fixedNow).getTime())
-
-    const pendingGroups: DashboardGroup[] = [
-      {
-        due_date: toDayString(fixedNow, 1),
-        events: Array.from({ length: 12 }, (_, index) => ({
-          id: `event-upcoming-${index + 1}`,
-          item_id: 'item-income-upcoming',
-          type: `Upcoming ${index + 1}`,
-          amount: 200 + index,
-          due_date: toDayString(fixedNow, 1 + index),
-          status: 'Pending',
-          updated_at: '2026-03-14T00:00:00.000Z',
-        })),
-      },
-    ]
-
-    globalThis.fetch = createFetchMock(pendingGroups) as typeof fetch
-    renderDashboardPage()
-
-    const jumpLink = await screen.findByRole('link', { name: 'Jump to financial snapshot' })
-    expect(jumpLink.getAttribute('href')).toBe('#dashboard-financial-snapshot')
-    expect(jumpLink.className).toContain('xl:hidden')
-
-    const snapshotHeading = await screen.findByRole('heading', { name: 'Financial snapshot' })
-    expect(snapshotHeading.closest('section')?.getAttribute('id')).toBe('dashboard-financial-snapshot')
-
-    const upcomingRows = within(screen.getByTestId('dashboard-action-queue-upcoming')).getAllByTestId('dashboard-action-queue-row')
-    expect(upcomingRows.length).toBeGreaterThan(5)
-    expect(jumpLink.compareDocumentPosition(upcomingRows[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })
