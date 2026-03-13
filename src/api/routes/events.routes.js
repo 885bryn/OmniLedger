@@ -115,9 +115,12 @@ function createEventsRouter() {
 
   router.patch("/events/:id/complete", async (req, res, next) => {
     try {
+      const payload = req.body && typeof req.body === "object" ? req.body : {};
       const completed = await completeEvent({
         eventId: req.params.id,
-        scope: req.scope
+        scope: req.scope,
+        actual_amount: payload.actual_amount,
+        actual_date: payload.actual_date
       });
 
       res.status(200).json(completed);
