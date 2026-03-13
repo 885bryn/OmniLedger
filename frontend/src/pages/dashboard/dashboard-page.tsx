@@ -274,14 +274,14 @@ export function DashboardPage() {
     }
 
     if (assets.length === 2) {
-      return 'grid gap-3 grid-cols-1 sm:grid-cols-2'
+      return 'grid gap-3 grid-cols-1 2xl:grid-cols-2'
     }
 
     if (assets.length === 3) {
-      return 'grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+      return 'grid gap-3 grid-cols-1 xl:grid-cols-2'
     }
 
-    return 'grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4'
+    return 'grid gap-3 grid-cols-1 xl:grid-cols-2'
   }, [assets.length])
 
   const metrics = useMemo(() => {
@@ -550,6 +550,9 @@ export function DashboardPage() {
                   itemLabel: (itemId) => t('dashboard.itemLabel', { itemId }),
                   openEvents: t('dashboard.openEvents'),
                   linkedItem: t('dashboard.attention.linkedItem'),
+                  upcomingPreview: ({ shown, total }) => t('dashboard.actionQueue.previewHint', { shown, total }),
+                  showAllUpcoming: ({ total }) => t('dashboard.actionQueue.showAllRows', { total }),
+                  showFewerUpcoming: t('dashboard.actionQueue.showFewerRows'),
                   ageBucket: (bucket) => t(`dashboard.actionQueue.ageBuckets.${bucket}`),
                 }}
               />

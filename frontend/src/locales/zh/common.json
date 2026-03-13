@@ -152,6 +152,9 @@
     },
     "actionQueue": {
       "upcoming": "即将到期",
+      "previewHint": "当前展示前 {{shown}} / {{total}} 条记录。",
+      "showAllRows": "展开全部 {{total}} 条记录",
+      "showFewerRows": "收起额外记录",
       "ageBuckets": {
         "1-7d": "1-7d",
         "8-30d": "8-30d",

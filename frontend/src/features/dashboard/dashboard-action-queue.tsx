@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Button } from '../../components/ui/button'
 import { formatCurrency } from '../../lib/currency'
 import { isIncomeItem } from '../../lib/item-display'
 
@@ -31,12 +33,16 @@ type DashboardActionQueueProps = {
     linkedItem: string
     amountPending: string
     openEvents: string
+    upcomingPreview: (values: { shown: number; total: number }) => string
+    showAllUpcoming: (values: { total: number }) => string
+    showFewerUpcoming: string
     itemLabel: (itemId: string) => string
     ageBucket: (bucket: '1-7d' | '8-30d' | '30+d') => string
   }
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
+const DEFAULT_UPCOMING_VISIBLE_ROWS = 6
 
 function parseCalendarDate(value: string) {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
@@ -103,6 +109,7 @@ export function DashboardActionQueue({
   returnTo,
   labels,
 }: DashboardActionQueueProps) {
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false)
   const today = new Date(Date.now())
   const queueRows = events
     .map((event) => ({ event, dayOffset: dueOffsetInDays(event.due_date, today) }))
@@ -115,6 +122,8 @@ export function DashboardActionQueue({
   const upcomingRows = queueRows
     .filter((row) => row.dayOffset >= 0 && row.dayOffset <= 14)
     .sort((left, right) => left.dayOffset - right.dayOffset)
+  const visibleUpcomingRows = showAllUpcoming ? upcomingRows : upcomingRows.slice(0, DEFAULT_UPCOMING_VISIBLE_ROWS)
+  const isUpcomingCapped = upcomingRows.length > DEFAULT_UPCOMING_VISIBLE_ROWS
 
   return (
     <div className="space-y-4" data-dashboard-action-queue="true">
@@ -174,31 +183,51 @@ export function DashboardActionQueue({
         {upcomingRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">0</p>
         ) : (
-          <ul className="space-y-2" aria-label={`${labels.upcoming} queue`}>
-            {upcomingRows.map((row) => {
-              const item = itemById.get(row.event.item_id)
-              const amount = formatEventAmount(row.event.amount, isIncomeItem(item ?? { item_type: 'Unknown' }))
+          <div className="space-y-3" data-dashboard-upcoming-cap={isUpcomingCapped ? 'true' : 'false'}>
+            {isUpcomingCapped ? (
+              <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-muted/15 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  {labels.upcomingPreview({ shown: visibleUpcomingRows.length, total: upcomingRows.length })}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-expanded={showAllUpcoming}
+                  className="h-auto justify-start px-0 py-0 text-xs font-semibold sm:justify-end"
+                  onClick={() => setShowAllUpcoming((current) => !current)}
+                >
+                  {showAllUpcoming ? labels.showFewerUpcoming : labels.showAllUpcoming({ total: upcomingRows.length })}
+                </Button>
+              </div>
+            ) : null}
 
-              return (
-                <li key={row.event.id} data-testid="dashboard-action-queue-row" data-action-queue-row="upcoming">
-                  <article className="rounded-xl border border-border/70 bg-card p-3">
-                    <p className="text-sm font-semibold text-foreground">{row.event.type}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{labels.dueDate}: {formatDateLabel(row.event.due_date)}</p>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
-                      <span>{labels.amount}: {amount ?? labels.amountPending}</span>
-                      <span>{labels.linkedItem}:</span>
-                      <Link to={`/items/${row.event.item_id}`} state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
-                        {itemNameById.get(row.event.item_id) ?? labels.itemLabel(row.event.item_id)}
-                      </Link>
-                      <Link to="/events" state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
-                        {labels.openEvents}
-                      </Link>
-                    </div>
-                  </article>
-                </li>
-              )
-            })}
-          </ul>
+            <ul className="space-y-2" aria-label={`${labels.upcoming} queue`}>
+              {visibleUpcomingRows.map((row) => {
+                const item = itemById.get(row.event.item_id)
+                const amount = formatEventAmount(row.event.amount, isIncomeItem(item ?? { item_type: 'Unknown' }))
+
+                return (
+                  <li key={row.event.id} data-testid="dashboard-action-queue-row" data-action-queue-row="upcoming">
+                    <article className="rounded-xl border border-border/70 bg-card p-3">
+                      <p className="text-sm font-semibold text-foreground">{row.event.type}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{labels.dueDate}: {formatDateLabel(row.event.due_date)}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+                        <span>{labels.amount}: {amount ?? labels.amountPending}</span>
+                        <span>{labels.linkedItem}:</span>
+                        <Link to={`/items/${row.event.item_id}`} state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
+                          {itemNameById.get(row.event.item_id) ?? labels.itemLabel(row.event.item_id)}
+                        </Link>
+                        <Link to="/events" state={{ from: returnTo }} className="font-medium text-primary underline-offset-2 hover:underline">
+                          {labels.openEvents}
+                        </Link>
+                      </div>
+                    </article>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         )}
       </section>
     </div>

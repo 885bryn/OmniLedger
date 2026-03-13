@@ -152,6 +152,9 @@
     },
     "actionQueue": {
       "upcoming": "Upcoming",
+      "previewHint": "Showing first {{shown}} of {{total}} rows.",
+      "showAllRows": "Show all {{total}} rows",
+      "showFewerRows": "Show fewer rows",
       "ageBuckets": {
         "1-7d": "1-7d",
         "8-30d": "8-30d",

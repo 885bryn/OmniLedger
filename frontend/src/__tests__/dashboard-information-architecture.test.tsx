@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
@@ -591,6 +592,11 @@ describe('dashboard information architecture', () => {
     expect(within(suvCard).getByText('Needs Attention')).toBeTruthy()
     expect(within(suvCard).getByText('1 overdue linked row')).toBeTruthy()
 
+    const portfolioGrid = screen.getByTestId('dashboard-asset-card-asset-1').closest('.grid') as HTMLElement | null
+    expect(portfolioGrid).toBeTruthy()
+    expect(portfolioGrid?.className).toContain('grid-cols-1')
+    expect(portfolioGrid?.className).not.toContain('sm:grid-cols-2')
+
     const recentRows = screen.getAllByRole('listitem').filter((node) => node.getAttribute('data-recent-activity-row-id'))
     expect(recentRows).toHaveLength(2)
     expect(within(recentRows[0]).getByText('Completed')).toBeTruthy()
@@ -718,6 +724,41 @@ describe('dashboard information architecture', () => {
     expect(attentionRows).toHaveLength(9)
     expect(screen.queryByText('Showing first 6 of 9 rows.')).toBeNull()
     expect(screen.getByRole('heading', { name: 'Recent Activity' })).toBeTruthy()
+  })
+
+  it('shows only the first six upcoming rows by default and reveals the rest on demand', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
+    globalThis.fetch = createDashboardFetchMock({
+      pendingGroups: [
+        {
+          due_date: '2026-03-11',
+          events: Array.from({ length: 9 }, (_, index) => ({
+            id: `event-upcoming-${index + 1}`,
+            item_id: index % 2 === 0 ? 'item-1' : 'item-2',
+            type: index % 2 === 0 ? 'Mortgage' : 'Insurance',
+            amount: index % 2 === 0 ? 1450 : 220,
+            due_date: `2026-03-${String(index + 11).padStart(2, '0')}`,
+            status: 'Pending',
+            updated_at: '2026-03-10T00:00:00.000Z',
+          })),
+        },
+      ],
+      completedGroups: [],
+    }) as typeof fetch
+
+    renderDashboardPage()
+
+    const upcomingSection = await screen.findByTestId('dashboard-action-queue-upcoming')
+    expect(within(upcomingSection).getByText('Showing first 6 of 9 rows.')).toBeTruthy()
+
+    let upcomingRows = within(upcomingSection).getAllByTestId('dashboard-action-queue-row')
+    expect(upcomingRows).toHaveLength(6)
+
+    await userEvent.click(within(upcomingSection).getByRole('button', { name: 'Show all 9 rows' }))
+
+    upcomingRows = within(upcomingSection).getAllByTestId('dashboard-action-queue-row')
+    expect(upcomingRows).toHaveLength(9)
+    expect(within(upcomingSection).getByRole('button', { name: 'Show fewer rows' }).getAttribute('aria-expanded')).toBe('true')
   })
 
   it('locks the summary band to a stacked mobile order instead of a cramped small-screen grid', async () => {
