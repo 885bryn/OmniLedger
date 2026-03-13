@@ -601,6 +601,44 @@ describe('dashboard information architecture', () => {
     expect(screen.getAllByRole('link', { name: 'Maple Mortgage' }).length).toBeGreaterThan(0)
   })
 
+  it('renders recent activity as a compact audit log with supporting period trend context and exact summary microcopy', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
+    globalThis.fetch = createDashboardFetchMock() as typeof fetch
+
+    renderDashboardPage()
+
+    await screen.findByRole('heading', { name: 'Recent Activity' })
+
+    const trendStrip = screen.getByTestId('dashboard-activity-trend-strip')
+    expect(within(trendStrip).getByText('Period activity trend')).toBeTruthy()
+    expect(within(trendStrip).getByText('1 overdue row still open')).toBeTruthy()
+    expect(within(trendStrip).getByText('1 upcoming row left this period')).toBeTruthy()
+    expect(within(trendStrip).getByText('2 completed rows closed in Mar 1 - Mar 31')).toBeTruthy()
+
+    const recentActivityList = screen.getByTestId('dashboard-recent-activity-list')
+    expect(recentActivityList.getAttribute('data-recent-activity-density')).toBe('compact')
+    expect(recentActivityList.getAttribute('data-recent-activity-style')).toBe('audit-log')
+
+    const auditRows = within(recentActivityList)
+      .getAllByRole('listitem')
+      .filter((node) => node.getAttribute('data-recent-activity-row-id'))
+
+    expect(auditRows).toHaveLength(2)
+    expect(auditRows[0].getAttribute('data-recent-activity-variant')).toBe('audit-log-row')
+    expect(within(auditRows[0]).getByText('Mortgage')).toBeTruthy()
+    expect(within(auditRows[0]).getByText('Paid on Mar 10, 2026')).toBeTruthy()
+    expect(within(auditRows[1]).getByText('Manual override')).toBeTruthy()
+
+    const cards = screen.getAllByRole('article').filter((node) => node.getAttribute('data-dashboard-metric-card') === 'true')
+    expect(within(cards[0]).getByText('Based on events due in Mar 1 - Mar 31.')).toBeTruthy()
+    expect(within(cards[1]).getByText('1 upcoming rows due in Mar 1 - Mar 31.')).toBeTruthy()
+    expect(within(cards[2]).getByText('1 row overdue in Mar 1 - Mar 31.')).toBeTruthy()
+    expect(within(cards[3]).getByText('2 completed in Mar 1 - Mar 31, including 1 manual overrides.')).toBeTruthy()
+
+    expect(screen.queryByText('Based on March activity.')).toBeNull()
+    expect(screen.queryByText('1 upcoming due this month.')).toBeNull()
+  })
+
   it('keeps action queue split into overdue and upcoming sections with the 14-day upcoming window', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-03-11T12:00:00.000Z').getTime())
     globalThis.fetch = createDashboardFetchMock({
