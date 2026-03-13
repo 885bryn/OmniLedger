@@ -11,6 +11,12 @@ type DashboardActionEvent = {
   type: string
   amount: number | null
   due_date: string
+  status: string
+}
+
+type DashboardQueueRow = {
+  event: DashboardActionEvent
+  dayOffset: number
 }
 
 type DashboardActionItem = {
@@ -112,9 +118,9 @@ export function DashboardActionQueue({
 }: DashboardActionQueueProps) {
   const [showAllUpcoming, setShowAllUpcoming] = useState(false)
   const today = new Date(Date.now())
-  const queueRows = events
+  const queueRows: DashboardQueueRow[] = events
     .map((event) => ({ event, dayOffset: dueOffsetInDays(event.due_date, today) }))
-    .filter((row) => row.dayOffset !== null)
+    .filter((row): row is DashboardQueueRow => row.dayOffset !== null)
 
   const overdueRows = queueRows
     .filter((row) => row.dayOffset < 0)
