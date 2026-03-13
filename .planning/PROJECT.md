@@ -10,19 +10,20 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ## Current State
 
-- **Latest shipped milestone:** v4.2 Cashflow Frequency Normalization & Cadence Toggle (2026-03-10)
-- **Archive references:** `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
-- **Completion stance:** shipped, with new milestone planning focused on extending ledger workflows rather than revisiting cadence-toggle behavior.
+- **Latest shipped milestone:** v4.4 Dashboard Utility Redesign with shadcn/ui (2026-03-13)
+- **Archive references:** `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.4-ROADMAP.md`
+- **Completion stance:** shipped, with the dashboard now acting as the primary finance control center and the next milestone open for fresh planning.
 
-## Current Milestone: v4.3 Smart Grouped Ledger & Historical Event Injection
+## Current State Details
 
-**Goal:** Turn the events experience into a usable ledger by grouping upcoming obligations, supporting pay/log-history actions, and letting users inject past completed events without breaking origin-boundary safety.
+- The product now combines a grouped events ledger, historical event injection, cadence-aware item detail summaries, and an information-dense dashboard that supports direct triage from the main surface.
+- Frontend utility work now centers on shared shadcn/ui primitives, spring motion, and dashboard-first workflows rather than isolated overview widgets.
+- Known follow-up debt remains mostly in planning/verification artifacts: missing Phase 35 verification, stale Phase 36 verification markdown, and manual dashboard comfort sign-off for DASH-09.
 
-**Target features:**
-- Replace the global Events page with shadcn `Upcoming` and `History` ledger tabs.
-- Group upcoming pending/overdue events into chronologically meaningful sticky-header sections with strong visual status cues.
-- Let users mark projected upcoming events as paid so they materialize into completed history with motion-backed removal from Upcoming.
-- Add manual historical event injection from item detail using completed events with explicit manual-override semantics.
+## Next Milestone Goals
+
+- Define the next milestone through `/gsd-new-milestone` with fresh requirements and roadmap scope.
+- Consider follow-on work for progress/reconciliation (`VIEW-06`, `FLOW-05`), ledger filtering/editing (`LEDGER-05`, `EVENT-04`), and dashboard quality-of-life follow-ups like midnight month-rollover refresh.
 
 ## Requirements
 
@@ -37,13 +38,19 @@ Users can see each asset together with its linked obligations and timeline statu
 - ✓ Users interact with consistent shadcn-based cards, controls, forms, and list/grid layouts using shared spacing, radii, and contrast tokens. - v4.1
 - ✓ Users see shared spring motion during add/remove/reflow interactions so dense layout changes stay legible. - v4.1
 - ✓ Engineers have reusable theme, shadcn surface, and Framer Motion patterns for continued dashboard rollout. - v4.1
+- ✓ Users can review pending and overdue events in a grouped ledger with separate Upcoming and History views. - v4.3
+- ✓ Users can mark projected upcoming events as paid and immediately see them leave Upcoming and appear in completed history. - v4.3
+- ✓ Users can log a completed historical event from item detail even when the event predates the system-generated origin boundary. - v4.3
+- ✓ Users can trust that system-generated pre-origin events remain blocked unless the event was explicitly created as a manual override. - v4.3
+- ✓ Users can operate from a dashboard that surfaces month-bounded summaries, urgent event triage, direct item drill-in, and supporting exception/trend context. - v4.4
 
 ### Active
 
-- [ ] Users can review pending and overdue events in a grouped ledger with separate Upcoming and History views.
-- [ ] Users can mark projected upcoming events as paid and immediately see them leave Upcoming and appear in completed history.
-- [ ] Users can log a completed historical event from item detail even when the event predates the system-generated origin boundary.
-- [ ] Users can trust that system-generated pre-origin events remain blocked unless the event was explicitly created as a manual override.
+- [ ] Users can see completed/total obligation and income progress for the selected cadence period, based on completed events vs total due events in-period.
+- [ ] Users can reconcile multiple historical events in one bulk logging workflow.
+- [ ] Users can filter or search the History ledger by item, date range, or note text.
+- [ ] Users can edit or reverse a manually injected historical event from the UI.
+- [ ] Users can keep long-lived dashboard tabs period-accurate through automatic local-midnight month-rollover refresh.
 
 ### Out of Scope
 
@@ -62,6 +69,21 @@ Users can see each asset together with its linked obligations and timeline statu
 - **Visual language:** Preserve a structured, high-contrast, developer-tool dashboard aesthetic rather than a marketing-style redesign.
 - **Motion model:** Layout changes should use Framer Motion spring physics instead of generic linear CSS transitions where the UI reflows.
 - **UI primitives:** Use shadcn/ui Nova components from `@/components/ui` for buttons, cards, forms, dialogs, tabs, and toast surfaces instead of bespoke Tailwind primitives.
+
+<details>
+<summary>Archived Prior Milestone Snapshot (v4.3 In-Progress Framing)</summary>
+
+## Current Milestone: v4.3 Smart Grouped Ledger & Historical Event Injection
+
+**Goal:** Turn the events experience into a usable ledger by grouping upcoming obligations, supporting pay/log-history actions, and letting users inject past completed events without breaking origin-boundary safety.
+
+**Target features:**
+- Replace the global Events page with shadcn `Upcoming` and `History` ledger tabs.
+- Group upcoming pending/overdue events into chronologically meaningful sticky-header sections with strong visual status cues.
+- Let users mark projected upcoming events as paid so they materialize into completed history with motion-backed removal from Upcoming.
+- Add manual historical event injection from item detail using completed events with explicit manual-override semantics.
+
+</details>
 
 <details>
 <summary>Archived Prior Milestone Snapshot (v4.1 In-Progress Framing)</summary>
@@ -95,4 +117,4 @@ Users can see each asset together with its linked obligations and timeline statu
 </details>
 
 ---
-*Last updated: 2026-03-10 after starting milestone v4.3*
+*Last updated: 2026-03-13 after completing milestone v4.4*

@@ -1,15 +1,15 @@
 # Project State
 ## Project Reference
-See: `.planning/PROJECT.md` (updated 2026-03-10)
-Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
+See: `.planning/PROJECT.md` (updated 2026-03-13)
+Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.4-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** v4.4 dashboard redesign is complete and ready for milestone closeout.
+**Current focus:** Planning the next milestone after shipping v4.4.
 ## Current Position
-Phase: 37 - Exceptions, Trends, and Dashboard Polish
-Plan: 02/02
+Phase: Milestone Closeout
+Plan: v4.4 archive
 Status: Complete
-Last activity: 2026-03-13 - Completed Plan 02 compact activity polish, trend strip, and precision microcopy lock
+Last activity: 2026-03-13 - Archived milestone v4.4 planning artifacts and prepared next-milestone handoff
 Progress: [##########] 100%
 ## Performance Metrics
 **Velocity:**
@@ -140,5 +140,5 @@ Progress: [##########] 100%
 
 ## Session Continuity
 Last session: 2026-03-13
-Stopped at: Completed 37-exceptions-trends-and-dashboard-polish-02-PLAN.md.
+Stopped at: Completed v4.4 milestone closeout preparation.
 Resume file: `None`

@@ -110,3 +110,33 @@
 **What's next:** Start next milestone discovery and define fresh requirements/roadmap with `/gsd-new-milestone`.
 
 ---
+
+## v4.4 Dashboard Utility Redesign with shadcn/ui (Shipped: 2026-03-13)
+
+**Delivered:** A dashboard-first control center with month-bounded financial summaries, inline event triage, item drill-through continuity, and calmer right-rail exception/trend support.
+
+**Phases completed:** 3 phases (35-37), 6 plans, 15 tasks
+
+**Key accomplishments:**
+- Rebuilt the dashboard into a summary-first finance control center with a reusable shell and mobile-safe hierarchy.
+- Added month-bounded summary cards, clearer Needs Attention and Recent Activity surfaces, and a host-aware local API fallback that unblocked browser verification.
+- Shipped an urgency-first action queue with deterministic ordering, age buckets, and inline event completion directly from the dashboard.
+- Added dashboard-to-item workflow continuity, including first-class return-to-dashboard behavior from item detail.
+- Rebalanced the page around right-rail portfolio and exception context plus compact Recent Activity and trend-strip support.
+- Locked the redesign with broad dashboard/events regression coverage.
+
+**Stats:**
+- 30 files changed, 3,854 insertions, 269 deletions
+- 3 phases, 6 plans, 15 tasks
+- Timeline: 2026-03-11 to 2026-03-13 (~2 days)
+
+**Known deferred checks / debt:**
+- Phase 35 still lacks `35-VERIFICATION.md`.
+- Phase 36 verification markdown should be refreshed so artifacts match the final shipped UI.
+- DASH-09 responsive comfort still needs manual browser sign-off.
+
+**Git range:** `feat(35-01)` -> `feat(37-02)`
+
+**What's next:** Start the next milestone with fresh requirements and roadmap scope via `/gsd-new-milestone`.
+
+---
