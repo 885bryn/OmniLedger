@@ -157,8 +157,8 @@ Plans:
   3. User can use the redesigned dashboard comfortably on desktop and mobile, with the same utility-first hierarchy preserved across breakpoints.
 **Plans**: 2 plans
 Plans:
-- [ ] `37-exceptions-trends-and-dashboard-polish-01-PLAN.md` - Add exception and notice panels plus admin-aware dashboard context using the existing data contracts.
-- [ ] `37-exceptions-trends-and-dashboard-polish-02-PLAN.md` - Add supporting trend/timeline context, responsive polish, and final shadcn dashboard refinements with focused regressions.
+- [ ] `37-exceptions-trends-and-dashboard-polish-01-PLAN.md` - Remove duplicate financial snapshot surface, move portfolio into a right-rail companion, and add prominent overdue exception signals using existing data.
+- [ ] `37-exceptions-trends-and-dashboard-polish-02-PLAN.md` - Convert Recent Activity into a compact audit-log surface, add supporting period trend context, and lock exact Current position precision microcopy.
 **Manual Test Gate**: Stop after this phase for final browser verification and explicit approval before milestone closeout.
 
 ## Progress
@@ -171,8 +171,8 @@ Plans:
 | 33. Historical Injection UI | 2/2 | Complete    | 2026-03-10 |
 | 34. Item Detail Events Tab Clarity | 1/1 | Complete   | 2026-03-10 |
 | 35. Dashboard Information Architecture | 2/2 | Complete   | 2026-03-11 |
-| 36. Action Queue and Financial Snapshot | 2/2 | Complete   | 2026-03-12 |
-| 37. Exceptions, Trends, and Dashboard Polish | 0/2 | Planned |  |
+| 36. Action Queue and Financial Snapshot | 2/2 | Complete    | 2026-03-12 |
+| 37. Exceptions, Trends, and Dashboard Polish | 1/2 | In Progress|  |
 
 ---
-*Last updated: 2026-03-11 after closing Phase 35 dashboard information architecture*
+*Last updated: 2026-03-13 after completing Phase 37 Plan 01 dashboard hierarchy polish*

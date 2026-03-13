@@ -6,23 +6,23 @@ See: `.planning/PROJECT.md` (updated 2026-03-10)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** v4.4 dashboard redesign is in progress with the new shell hierarchy shipped and richer dashboard surfaces queued next.
+**Current focus:** v4.4 dashboard redesign is in progress with the queue/right-rail hierarchy shipped and supporting trend polish queued next.
 
 ## Current Position
 
-Phase: 36 - Action Queue and Financial Snapshot
-Plan: 02/02
-Status: Complete
-Last activity: 2026-03-12 - Completed Plan 02 dense financial snapshot integration and approved browser checkpoint
+Phase: 37 - Exceptions, Trends, and Dashboard Polish
+Plan: 01/02
+Status: In Progress
+Last activity: 2026-03-13 - Completed Plan 01 dashboard de-duplication, right-rail portfolio, and exception notice refactor
 
-Progress: [##########] 100%
+Progress: [#####-----] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 74
+- Total plans completed: 75
 - Average duration: 4 min
-- Total execution time: 6.0 hours
+- Total execution time: 6.1 hours
 
 **By Phase:**
 
@@ -59,16 +59,13 @@ Progress: [##########] 100%
 | Phase 35-dashboard-information-architecture P01 | 3 min | 2 tasks | 5 files |
 | Phase 36-action-queue-and-financial-snapshot P01 | 5 min | 2 tasks | 6 files |
 | Phase 36 P02 | 1 min | 3 tasks | 6 files |
+| Phase 37-exceptions-trends-and-dashboard-polish P01 | 8 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in `.planning/PROJECT.md`.
 - v4.2 phase numbering starts at 27 and continues current roadmap sequence.
-- v4.2 scope is limited to rollup calculation correctness and cadence selector clarity.
-- Existing RBAC, audit visibility, and deployment guarantees remain unchanged in this milestone.
-- No broad redesign or schema replatforming is allowed in v4.2 scope.
 - [Phase 27]: Use one shared one-time inclusion path for both commitment and income rows with inclusive active-month due-date checks.
 - [Phase 27]: Expose summary.active_period and summary.one_time_rule metadata so UI copy consumes backend period context without recomputation.
 - [Phase 27]: Exclude malformed, null, and zero amounts before subtype allocation so net cashflow remains symmetric and predictable.
@@ -133,10 +130,13 @@ Decisions are logged in `.planning/PROJECT.md`.
 - [Phase 36]: Kept the financial snapshot as a reusable feature component wired from existing dashboard/item queries.
 - [Phase 36]: Preserved workflow continuity by routing summary/action links to /events and snapshot rows to /items/:itemId with return context.
 - [Phase 36]: Prioritized narrow-width readability by restructuring snapshot rows and adding a mobile jump path to the snapshot section.
+- [Phase 37]: Removed the dashboard financial snapshot list so Needs Attention remains the only due-work list on the page.
+- [Phase 37]: Moved portfolio cards and exception notices into the right rail while keeping Recent Activity below the dashboard body.
+- [Phase 37]: Derived overdue asset alerts from existing linked asset ids on financial items instead of adding new backend fields.
 
 ### Pending Todos
 
-- Phase 37 planning: define exception panels, supporting trends, and responsive polish requirements.
+- Phase 37 Plan 02: add supporting trend context and lock exact current-position precision microcopy.
 - Future milestone note: add dashboard month-rollover auto-refresh at local midnight for open tabs.
 
 ### Blockers/Concerns
@@ -145,6 +145,6 @@ Decisions are logged in `.planning/PROJECT.md`.
 
 ## Session Continuity
 
-Last session: 2026-03-12
-Stopped at: Completed 36-action-queue-and-financial-snapshot-02-PLAN.md.
+Last session: 2026-03-13
+Stopped at: Completed 37-exceptions-trends-and-dashboard-polish-01-PLAN.md.
 Resume file: `None`

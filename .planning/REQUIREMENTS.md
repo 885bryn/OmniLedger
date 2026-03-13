@@ -15,9 +15,9 @@ Requirements for milestone v4.4 Dashboard Utility Redesign with shadcn/ui.
 - [x] **DASH-04**: User can review overdue and upcoming obligations from a dashboard action queue and jump directly into the relevant workflow.
 - [x] **DASH-05**: User can scan a financial snapshot section that shows dense but readable item-level status and metadata.
 - [x] **DASH-06**: User can navigate from dashboard summary and queue surfaces into `/events` and item detail pages without losing context.
-- [ ] **DASH-07**: User sees exceptions and notices surfaced calmly on the dashboard when manual overrides, admin-only signals, or unusual conditions matter.
+- [x] **DASH-07**: User sees exceptions and notices surfaced calmly on the dashboard when manual overrides, admin-only signals, or unusual conditions matter.
 - [ ] **DASH-08**: User sees supporting trend or timeline context that helps interpret upcoming and recent activity for the active period.
-- [ ] **DASH-09**: User can use the redesigned dashboard comfortably on desktop and mobile with the same information hierarchy preserved.
+- [x] **DASH-09**: User can use the redesigned dashboard comfortably on desktop and mobile with the same information hierarchy preserved.
 
 ### Prior Milestone Coverage
 
