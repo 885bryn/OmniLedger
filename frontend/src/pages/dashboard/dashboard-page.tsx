@@ -6,7 +6,7 @@ import { MotionPanelList } from '@/components/ui/motion-panel-list'
 import { Pressable } from '@/components/ui/pressable'
 import { Button } from '@/components/ui/button'
 import { DashboardActionQueue } from '../../features/dashboard/dashboard-action-queue'
-import { DashboardFinancialSnapshot, type DashboardFinancialSnapshotRow } from '../../features/dashboard/dashboard-financial-snapshot'
+import { DashboardExceptionNotices, type DashboardExceptionNotice } from '../../features/dashboard/dashboard-exception-notices'
 import { DataCard } from '../../features/dashboard/data-card'
 import { DashboardBody, DashboardDescription, DashboardEyebrow, DashboardHeader, DashboardLayout, DashboardSection, DashboardTitle } from '../../features/dashboard/dashboard-layout'
 import { DashboardRecentActivity } from '../../features/dashboard/dashboard-recent-activity'
@@ -15,7 +15,7 @@ import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { formatCurrency } from '../../lib/currency'
 import { compareByNearestDue } from '../../lib/date-ordering'
-import { getFinancialSubtype, getItemDisplayName, isIncomeItem } from '../../lib/item-display'
+import { getItemDisplayName, isIncomeItem } from '../../lib/item-display'
 import { lensScopeToParams, queryKeys } from '../../lib/query-keys'
 
 type EventRow = {
@@ -44,6 +44,8 @@ type ItemRow = {
   id: string
   item_type: string
   type?: string | null
+  linked_asset_item_id?: string | null
+  parent_item_id?: string | null
   attributes: Record<string, unknown>
   updated_at: string
 }
@@ -93,6 +95,28 @@ function toCalendarDayKey(value: string) {
   return parsed.getFullYear() * 10000 + (parsed.getMonth() + 1) * 100 + parsed.getDate()
 }
 
+function resolveLinkedAssetId(item: ItemRow | undefined) {
+  if (!item) {
+    return null
+  }
+
+  if (item.parent_item_id) {
+    return item.parent_item_id
+  }
+
+  if (item.linked_asset_item_id) {
+    return item.linked_asset_item_id
+  }
+
+  const attrParent = item.attributes?.parentItemId
+  if (typeof attrParent === 'string' && attrParent.length > 0) {
+    return attrParent
+  }
+
+  const attrLinked = item.attributes?.linkedAssetItemId
+  return typeof attrLinked === 'string' && attrLinked.length > 0 ? attrLinked : null
+}
+
 function eventSignedAmount(event: EventRow, item: ItemRow | undefined) {
   if (event.amount === null || Number.isNaN(event.amount)) {
     return 0
@@ -110,19 +134,6 @@ function compareActivityByLatest(left: EventRow, right: EventRow) {
   }
 
   return left.id.localeCompare(right.id)
-}
-
-function formatDateLabel(value: string) {
-  const parsed = parseCalendarDate(value)
-  if (!parsed) {
-    return value
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(parsed)
 }
 
 function DashboardSkeleton() {
@@ -236,12 +247,12 @@ export function DashboardPage() {
     const rows = itemLookupQuery.data?.items ?? []
     return new Map(rows.map((item) => [item.id, getItemDisplayName(item)]))
   }, [itemLookupQuery.data?.items])
+  const currentDayKey = useMemo(() => {
+    const today = new Date(Date.now())
+    return today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
+  }, [])
 
   const assets = assetsQuery.data?.items ?? []
-  const financialItems = useMemo(() => {
-    const rows = itemLookupQuery.data?.items ?? []
-    return rows.filter((item) => item.item_type === 'FinancialItem')
-  }, [itemLookupQuery.data?.items])
 
   const assetGridClassName = useMemo(() => {
     if (assets.length <= 1) {
@@ -262,7 +273,6 @@ export function DashboardPage() {
   const metrics = useMemo(() => {
     const now = Date.now()
     const nowDate = new Date(now)
-    const currentDayKey = nowDate.getFullYear() * 10000 + (nowDate.getMonth() + 1) * 100 + nowDate.getDate()
     const monthStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1)
     const monthEnd = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 0)
     const monthStartDayKey = monthStart.getFullYear() * 10000 + (monthStart.getMonth() + 1) * 100 + monthStart.getDate()
@@ -324,7 +334,7 @@ export function DashboardPage() {
       activityRows: activityRows.length,
       manualOverrideCount,
     }
-  }, [attentionEvents, completedEvents, itemById, t])
+  }, [attentionEvents, completedEvents, currentDayKey, itemById, t])
 
   const metricCards = [
     {
@@ -374,70 +384,69 @@ export function DashboardPage() {
     },
   ]
 
-  const financialSnapshotRows = useMemo<DashboardFinancialSnapshotRow[]>(() => {
-    const pendingByItemId = new Map<string, EventRow[]>()
+  const overdueLinkedCountsByAssetId = useMemo(() => {
+    const counts = new Map<string, number>()
+
     for (const event of attentionEvents) {
-      const rows = pendingByItemId.get(event.item_id) ?? []
-      rows.push(event)
-      pendingByItemId.set(event.item_id, rows)
+      const dueDayKey = toCalendarDayKey(event.due_date)
+      if (dueDayKey === null || dueDayKey >= currentDayKey) {
+        continue
+      }
+
+      const linkedAssetId = resolveLinkedAssetId(itemById.get(event.item_id))
+      if (!linkedAssetId) {
+        continue
+      }
+
+      counts.set(linkedAssetId, (counts.get(linkedAssetId) ?? 0) + 1)
     }
 
-    const today = new Date(Date.now())
-    const todayDayKey = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
+    return counts
+  }, [attentionEvents, currentDayKey, itemById])
 
-    return financialItems
-      .map((item) => {
-        const candidateEvents = (pendingByItemId.get(item.id) ?? []).filter((event) => toCalendarDayKey(event.due_date) !== null)
-        const sortedEvents = candidateEvents.sort(compareByNearestDue)
-        const nextEvent = sortedEvents[0]
-        const dueDayKey = nextEvent ? toCalendarDayKey(nextEvent.due_date) : null
-        const dueDayOffset = dueDayKey === null ? null : dueDayKey - todayDayKey
-        const subtype = getFinancialSubtype(item) ?? item.type ?? item.item_type
-        const dueLabel = nextEvent
-          ? t('dashboard.financialSnapshot.nextDue', { date: formatDateLabel(nextEvent.due_date) })
-          : t('dashboard.financialSnapshot.noPending')
-        const amountLabel =
-          nextEvent && nextEvent.amount !== null && !Number.isNaN(nextEvent.amount)
-            ? `${isIncomeItem(item) ? '+' : ''}${formatCurrency(Math.abs(Number(nextEvent.amount)))}`
-            : t('dashboard.amountPending')
+  const exceptionNotices = useMemo<DashboardExceptionNotice[]>(() => {
+    const notices: DashboardExceptionNotice[] = []
+    const overdueAssetCount = Array.from(overdueLinkedCountsByAssetId.values()).filter((count) => count > 0).length
 
-        let statusTone: DashboardFinancialSnapshotRow['statusTone'] = 'clear'
-        let statusLabel = t('dashboard.financialSnapshot.status.clear')
-
-        if (dueDayOffset !== null && dueDayOffset < 0) {
-          statusTone = 'overdue'
-          statusLabel = t('dashboard.financialSnapshot.status.overdue', { days: Math.abs(dueDayOffset) })
-        } else if (dueDayOffset !== null) {
-          statusTone = 'upcoming'
-          statusLabel = t('dashboard.financialSnapshot.status.upcoming', { days: dueDayOffset })
-        }
-
-        return {
-          itemId: item.id,
-          itemName: getItemDisplayName(item),
-          subtype,
-          nextEventType: nextEvent?.type ?? null,
-          statusTone,
-          statusLabel,
-          dueLabel,
-          amountLabel,
-          sortScore: dueDayOffset === null ? Number.POSITIVE_INFINITY : dueDayOffset,
-          updatedAt: Date.parse(item.updated_at),
-        }
+    if (metrics.overdue > 0) {
+      notices.push({
+        id: 'overdue-linked-rows',
+        eyebrow: t('dashboard.exceptionNotices.overdue.eyebrow'),
+        title: t('dashboard.exceptionNotices.overdue.title', { count: metrics.overdue }),
+        description: t('dashboard.exceptionNotices.overdue.description', {
+          count: metrics.overdue,
+          assetCount: overdueAssetCount,
+          period: metrics.netPeriodLabel,
+        }),
+        tone: 'warning',
       })
-      .sort((left, right) => {
-        if (left.sortScore !== right.sortScore) {
-          return left.sortScore - right.sortScore
-        }
+    }
 
-        if (left.updatedAt !== right.updatedAt) {
-          return right.updatedAt - left.updatedAt
-        }
-
-        return left.itemName.localeCompare(right.itemName)
+    if (metrics.manualOverrideCount > 0) {
+      notices.push({
+        id: 'manual-overrides',
+        eyebrow: t('dashboard.exceptionNotices.manualOverride.eyebrow'),
+        title: t('dashboard.exceptionNotices.manualOverride.title'),
+        description: t('dashboard.exceptionNotices.manualOverride.description', {
+          count: metrics.manualOverrideCount,
+          period: metrics.netPeriodLabel,
+        }),
+        tone: 'neutral',
       })
-      .map(({ sortScore: _sortScore, updatedAt: _updatedAt, ...row }) => row)
-  }, [attentionEvents, financialItems, t])
+    }
+
+    if (notices.length === 0) {
+      notices.push({
+        id: 'all-clear',
+        eyebrow: t('dashboard.exceptionNotices.clear.eyebrow'),
+        title: t('dashboard.exceptionNotices.clear.title'),
+        description: t('dashboard.exceptionNotices.clear.description', { period: metrics.netPeriodLabel }),
+        tone: 'clear',
+      })
+    }
+
+    return notices
+  }, [metrics.manualOverrideCount, metrics.netPeriodLabel, metrics.overdue, overdueLinkedCountsByAssetId, t])
 
   if (eventsQuery.isLoading || recentActivityQuery.isLoading || assetsQuery.isLoading || itemLookupQuery.isLoading) {
     return <DashboardSkeleton />
@@ -489,122 +498,137 @@ export function DashboardPage() {
       </DashboardSection>
 
       <DashboardBody>
-        <DashboardSection
-          title={t('dashboard.sections.needsAttention.title')}
-          description={t('dashboard.sections.needsAttention.description')}
-          action={
-            <div className="flex flex-wrap items-center gap-2">
-              <Button asChild size="sm" variant="ghost">
-                <Link to="/events">{t('dashboard.openEvents')}</Link>
-              </Button>
-              <Button asChild size="sm" variant="outline" className="xl:hidden" data-testid="dashboard-financial-snapshot-jump-link">
-                <a href="#dashboard-financial-snapshot">{t('dashboard.sections.needsAttention.jumpToSnapshot')}</a>
-              </Button>
-            </div>
-          }
-          data-dashboard-section="needs-attention"
-        >
-          {attentionEvents.length === 0 ? (
-            <DashboardEmptyState />
-          ) : (
-            <DashboardActionQueue
-              events={attentionEvents}
-              itemById={itemById}
-              itemNameById={itemNameById}
-              returnTo={location.pathname + location.search}
-              labels={{
-                overdue: t('dashboard.attention.overdue'),
-                upcoming: t('dashboard.actionQueue.upcoming'),
-                dueDate: t('dashboard.attention.dueDate'),
-                amount: t('dashboard.attention.amount'),
-                amountPending: t('dashboard.amountPending'),
-                itemLabel: (itemId) => t('dashboard.itemLabel', { itemId }),
-                openEvents: t('dashboard.openEvents'),
-                linkedItem: t('dashboard.attention.linkedItem'),
-                ageBucket: (bucket) => t(`dashboard.actionQueue.ageBuckets.${bucket}`),
-              }}
-            />
-          )}
-        </DashboardSection>
-
-        <DashboardSection
-          id="dashboard-financial-snapshot"
-          title={t('dashboard.sections.financialSnapshot.title')}
-          description={t('dashboard.sections.financialSnapshot.description')}
-          data-dashboard-section="financial-snapshot"
-        >
-          <DashboardFinancialSnapshot
-            rows={financialSnapshotRows}
-            returnTo={location.pathname + location.search}
-            labels={{
-              itemColumn: t('dashboard.financialSnapshot.columns.item'),
-              statusColumn: t('dashboard.financialSnapshot.columns.status'),
-              dueColumn: t('dashboard.financialSnapshot.columns.due'),
-              amountColumn: t('dashboard.financialSnapshot.columns.amount'),
-              openItem: t('dashboard.financialSnapshot.openItem'),
-              empty: t('dashboard.financialSnapshot.empty'),
-            }}
-          />
-        </DashboardSection>
-
-        <DashboardSection
-          title={t('dashboard.sections.recentActivity.title')}
-          description={t('dashboard.sections.recentActivity.description')}
-          data-dashboard-section="recent-activity"
-        >
-          <DataCard as="section" cardClassName="bg-card" contentClassName="space-y-3">
-            {completedEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t('dashboard.recentActivity.empty')}</p>
+        <div data-dashboard-body-column="primary" className="space-y-6">
+          <DashboardSection
+            title={t('dashboard.sections.needsAttention.title')}
+            description={t('dashboard.sections.needsAttention.description')}
+            action={
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild size="sm" variant="ghost">
+                  <Link to="/events">{t('dashboard.openEvents')}</Link>
+                </Button>
+              </div>
+            }
+            data-dashboard-section="needs-attention"
+          >
+            {attentionEvents.length === 0 ? (
+              <DashboardEmptyState />
             ) : (
-              <DashboardRecentActivity
-                events={completedEvents.slice(0, 5)}
+              <DashboardActionQueue
+                events={attentionEvents}
                 itemById={itemById}
                 itemNameById={itemNameById}
                 returnTo={location.pathname + location.search}
                 labels={{
-                  completed: t('dashboard.recentActivity.completedBadge'),
-                  manualOverride: t('events.manualOverride.badge'),
-                  paidOn: (date) => t('dashboard.recentActivity.paidOn', { date }),
+                  overdue: t('dashboard.attention.overdue'),
+                  upcoming: t('dashboard.actionQueue.upcoming'),
+                  dueDate: t('dashboard.attention.dueDate'),
+                  amount: t('dashboard.attention.amount'),
                   amountPending: t('dashboard.amountPending'),
                   itemLabel: (itemId) => t('dashboard.itemLabel', { itemId }),
+                  openEvents: t('dashboard.openEvents'),
+                  linkedItem: t('dashboard.attention.linkedItem'),
+                  ageBucket: (bucket) => t(`dashboard.actionQueue.ageBuckets.${bucket}`),
                 }}
               />
             )}
-          </DataCard>
-        </DashboardSection>
+          </DashboardSection>
+        </div>
+
+        <div data-dashboard-body-column="secondary" className="space-y-6">
+          <DashboardSection
+            title={t('dashboard.assetsTitle')}
+            description={t('dashboard.sections.portfolio.description')}
+            action={
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/items?filter=assets">{t('dashboard.viewAllItems')}</Link>
+              </Button>
+            }
+            data-dashboard-section="portfolio-snapshot"
+          >
+            <DataCard as="section" cardClassName="bg-card" contentClassName="pt-0">
+              {assets.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t('dashboard.assetsEmpty')}</p>
+              ) : (
+                <MotionPanelList
+                  items={assets}
+                  getItemKey={(asset) => asset.id}
+                  className={assetGridClassName}
+                  itemClassName="h-full w-full min-w-0"
+                  renderItem={(asset) => {
+                    const overdueLinkedCount = overdueLinkedCountsByAssetId.get(asset.id) ?? 0
+                    const hasOverdueLinkedRows = overdueLinkedCount > 0
+
+                    return (
+                      <Pressable className="!flex h-full !w-full min-w-0" data-testid={`dashboard-asset-card-${asset.id}`} data-dashboard-asset-alert={hasOverdueLinkedRows ? 'overdue' : 'clear'}>
+                        <Link
+                          to={`/items/${asset.id}`}
+                          state={{ from: location.pathname + location.search }}
+                          aria-label={getItemDisplayName(asset)}
+                          className={[
+                            'hover-lift flex h-full w-full flex-col rounded-xl border bg-background/80 p-4 shadow-sm shadow-black/5 dark:shadow-none',
+                            hasOverdueLinkedRows
+                              ? 'border-destructive/70 bg-[linear-gradient(180deg,rgba(254,242,242,0.96),rgba(255,255,255,0.98))]'
+                              : 'border-border',
+                          ].join(' ')}
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <span className="text-sm font-semibold text-primary underline-offset-2 hover:underline">{getItemDisplayName(asset)}</span>
+                              <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{asset.item_type}</p>
+                            </div>
+                            {hasOverdueLinkedRows ? (
+                              <span className="inline-flex rounded-full border border-destructive/40 bg-destructive/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-destructive">
+                                {t('dashboard.portfolio.needsAttentionBadge')}
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                            {hasOverdueLinkedRows
+                              ? t('dashboard.portfolio.overdueLinkedRows', { count: overdueLinkedCount })
+                              : t('dashboard.portfolio.clearLinkedRows')}
+                          </p>
+                        </Link>
+                      </Pressable>
+                    )
+                  }}
+                />
+              )}
+            </DataCard>
+          </DashboardSection>
+
+          <DashboardSection
+            title={t('dashboard.sections.exceptionNotices.title')}
+            description={t('dashboard.sections.exceptionNotices.description')}
+            data-dashboard-section="exception-notices"
+          >
+            <DashboardExceptionNotices notices={exceptionNotices} />
+          </DashboardSection>
+        </div>
       </DashboardBody>
 
       <DashboardSection
-        title={t('dashboard.assetsTitle')}
-        description={t('dashboard.sections.portfolio.description')}
-        action={
-          <Button asChild size="sm" variant="ghost">
-            <Link to="/items?filter=assets">{t('dashboard.viewAllItems')}</Link>
-          </Button>
-        }
-        data-dashboard-section="portfolio-snapshot"
+        title={t('dashboard.sections.recentActivity.title')}
+        description={t('dashboard.sections.recentActivity.description')}
+        data-dashboard-section="recent-activity"
       >
-        <DataCard as="section" cardClassName="bg-card" contentClassName="pt-0">
-          {assets.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('dashboard.assetsEmpty')}</p>
+        <DataCard as="section" cardClassName="bg-card/90" contentClassName="space-y-3 pt-0">
+          {completedEvents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('dashboard.recentActivity.empty')}</p>
           ) : (
-            <MotionPanelList
-              items={assets}
-              getItemKey={(asset) => asset.id}
-              className={assetGridClassName}
-              itemClassName="h-full w-full min-w-0"
-              renderItem={(asset) => (
-                <Pressable className="!flex h-full !w-full min-w-0">
-                  <Link
-                    to={`/items/${asset.id}`}
-                    state={{ from: location.pathname + location.search }}
-                    className="hover-lift flex h-full w-full flex-col rounded-xl border border-border bg-background/80 p-4 shadow-sm shadow-black/5 dark:shadow-none"
-                  >
-                    <span className="text-sm font-semibold text-primary underline-offset-2 hover:underline">{getItemDisplayName(asset)}</span>
-                    <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{asset.item_type}</p>
-                  </Link>
-                </Pressable>
-              )}
+            <DashboardRecentActivity
+              events={completedEvents.slice(0, 5)}
+              itemById={itemById}
+              itemNameById={itemNameById}
+              returnTo={location.pathname + location.search}
+              labels={{
+                completed: t('dashboard.recentActivity.completedBadge'),
+                manualOverride: t('events.manualOverride.badge'),
+                paidOn: (date) => t('dashboard.recentActivity.paidOn', { date }),
+                amountPending: t('dashboard.amountPending'),
+                itemLabel: (itemId) => t('dashboard.itemLabel', { itemId }),
+              }}
             />
           )}
         </DataCard>

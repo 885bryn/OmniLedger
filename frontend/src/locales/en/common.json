@@ -103,19 +103,18 @@
       },
       "needsAttention": {
         "title": "Needs Attention",
-        "description": "Overdue rows land first, then due-soon obligations, so the main work queue stays easy to scan.",
-        "jumpToSnapshot": "Jump to financial snapshot"
+        "description": "Overdue rows land first, then due-soon obligations, so the main work queue stays easy to scan."
       },
       "recentActivity": {
         "title": "Recent Activity",
         "description": "A calmer companion feed keeps the latest completions and manual overrides nearby without competing with the queue."
       },
-      "financialSnapshot": {
-        "title": "Financial snapshot",
-        "description": "Dense item-level rows keep subtype, status, due timing, and amount context visible before you drill into details."
+      "exceptionNotices": {
+        "title": "Exceptions and notices",
+        "description": "Keep unusual conditions visible in a calm side panel so the main queue stays focused on execution."
       },
       "portfolio": {
-        "description": "Supporting portfolio context stays below the main queue so the dashboard keeps its hierarchy without losing useful context."
+        "description": "Supporting portfolio context sits beside the main queue so item health and linked obligations stay visible together."
       }
     },
     "summaryCards": {
@@ -159,21 +158,29 @@
         "30+d": "30+d"
       }
     },
-    "financialSnapshot": {
-      "empty": "No financial items available for snapshot scanning yet.",
-      "openItem": "Open item",
-      "noPending": "No pending events",
-      "nextDue": "Due {{date}}",
-      "columns": {
-        "item": "Item",
-        "status": "Status",
-        "due": "Next due",
-        "amount": "Amount"
+    "portfolio": {
+      "needsAttentionBadge": "Needs Attention",
+      "overdueLinkedRows_one": "{{count}} overdue linked row",
+      "overdueLinkedRows_other": "{{count}} overdue linked rows",
+      "clearLinkedRows": "No overdue linked rows for this asset right now."
+    },
+    "exceptionNotices": {
+      "overdue": {
+        "eyebrow": "Overdue watch",
+        "title_one": "{{count}} overdue row needs follow-up",
+        "title_other": "{{count}} overdue rows need follow-up",
+        "description": "{{count}} overdue rows are still active in {{period}}, touching {{assetCount}} portfolio assets."
       },
-      "status": {
-        "overdue": "Overdue {{days}}d",
-        "upcoming": "Upcoming {{days}}d",
-        "clear": "Clear"
+      "manualOverride": {
+        "eyebrow": "Audit signal",
+        "title": "Manual overrides in period",
+        "description_one": "{{count}} completed row landed through a manual override in {{period}}.",
+        "description_other": "{{count}} completed rows landed through manual overrides in {{period}}."
+      },
+      "clear": {
+        "eyebrow": "All clear",
+        "title": "No unusual dashboard exceptions",
+        "description": "No manual overrides or overdue-linked asset spikes are active in {{period}}."
       }
     },
     "recentActivity": {

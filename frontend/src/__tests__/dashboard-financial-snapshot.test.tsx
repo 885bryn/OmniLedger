@@ -64,7 +64,17 @@ function createFetchMock(pendingGroups: DashboardGroup[]) {
     }
 
     if (url.pathname === '/items' && url.searchParams.get('filter') === 'assets' && method === 'GET') {
-      return createResponse({ items: [], total_count: 0 })
+      return createResponse({
+        items: [
+          {
+            id: 'asset-1',
+            item_type: 'Property',
+            attributes: { name: 'Primary Home' },
+            updated_at: '2026-03-10T00:00:00.000Z',
+          },
+        ],
+        total_count: 1,
+      })
     }
 
     if (url.pathname === '/items' && url.searchParams.get('filter') === 'all' && method === 'GET') {

@@ -586,10 +586,10 @@ describe('dashboard information architecture', () => {
     expect(within(exceptionPanel).getByText('Manual overrides in period')).toBeTruthy()
     expect(within(exceptionPanel).getByText('1 completed row landed through a manual override in Mar 1 - Mar 31.')).toBeTruthy()
 
-    const primaryHomeCard = screen.getByTestId('dashboard-asset-card-asset-1')
-    expect(primaryHomeCard.getAttribute('data-dashboard-asset-alert')).toBe('overdue')
-    expect(within(primaryHomeCard).getByText('Needs Attention')).toBeTruthy()
-    expect(within(primaryHomeCard).getByText('1 overdue linked row')).toBeTruthy()
+    const suvCard = screen.getByTestId('dashboard-asset-card-asset-2')
+    expect(suvCard.getAttribute('data-dashboard-asset-alert')).toBe('overdue')
+    expect(within(suvCard).getByText('Needs Attention')).toBeTruthy()
+    expect(within(suvCard).getByText('1 overdue linked row')).toBeTruthy()
 
     const recentRows = screen.getAllByRole('listitem').filter((node) => node.getAttribute('data-recent-activity-row-id'))
     expect(recentRows).toHaveLength(2)

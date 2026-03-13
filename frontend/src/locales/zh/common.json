@@ -103,19 +103,18 @@
       },
       "needsAttention": {
         "title": "需要关注",
-        "description": "逾期事项优先，其次是即将到期义务，让主工作队列保持紧凑且易于扫描。",
-        "jumpToSnapshot": "跳转到财务快照"
+        "description": "逾期事项优先，其次是即将到期义务，让主工作队列保持紧凑且易于扫描。"
       },
       "recentActivity": {
         "title": "最近动态",
         "description": "更平静的陪伴式动态流会保留最新完成和手动覆盖信息，但不会与主队列争抢注意力。"
       },
-      "financialSnapshot": {
-        "title": "财务快照",
-        "description": "用高密度条目同时显示子类型、状态、到期上下文和金额，在进入详情前先完成快速扫描。"
+      "exceptionNotices": {
+        "title": "异常与提示",
+        "description": "用平静的侧栏保持异常状态可见，同时让主队列继续聚焦执行。"
       },
       "portfolio": {
-        "description": "补充性的资产上下文放在主队列下方，让仪表盘保持清晰层级，同时不丢失有用背景。"
+        "description": "补充性的资产上下文放在主队列旁边，让资产健康和关联义务能一起被看到。"
       }
     },
     "summaryCards": {
@@ -159,21 +158,29 @@
         "30+d": "30+d"
       }
     },
-    "financialSnapshot": {
-      "empty": "暂无可用于快照扫描的财务项目。",
-      "openItem": "打开项目",
-      "noPending": "暂无待处理事件",
-      "nextDue": "到期 {{date}}",
-      "columns": {
-        "item": "项目",
-        "status": "状态",
-        "due": "下次到期",
-        "amount": "金额"
+    "portfolio": {
+      "needsAttentionBadge": "需要关注",
+      "overdueLinkedRows_one": "{{count}} 条关联记录已逾期",
+      "overdueLinkedRows_other": "{{count}} 条关联记录已逾期",
+      "clearLinkedRows": "该资产当前没有逾期的关联记录。"
+    },
+    "exceptionNotices": {
+      "overdue": {
+        "eyebrow": "逾期观察",
+        "title_one": "有 {{count}} 条逾期记录需要跟进",
+        "title_other": "有 {{count}} 条逾期记录需要跟进",
+        "description": "{{period}} 内仍有 {{count}} 条逾期记录处于活动状态，影响到 {{assetCount}} 个资产。"
       },
-      "status": {
-        "overdue": "逾期 {{days}} 天",
-        "upcoming": "{{days}} 天后到期",
-        "clear": "清晰"
+      "manualOverride": {
+        "eyebrow": "审计信号",
+        "title": "本期手动覆盖",
+        "description_one": "{{period}} 内有 {{count}} 条完成记录来自手动覆盖。",
+        "description_other": "{{period}} 内有 {{count}} 条完成记录来自手动覆盖。"
+      },
+      "clear": {
+        "eyebrow": "一切正常",
+        "title": "当前没有异常仪表盘提示",
+        "description": "{{period}} 内没有手动覆盖或逾期资产激增信号。"
       }
     },
     "recentActivity": {
