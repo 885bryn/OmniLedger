@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { ComponentProps } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../lib/i18n'
 import { ReconcileLedgerAction } from '../features/events/reconcile-ledger-action'
@@ -53,7 +54,7 @@ function createTestQueryClient() {
   })
 }
 
-function renderAction(props?: Partial<React.ComponentProps<typeof ReconcileLedgerAction>>) {
+function renderAction(props?: Partial<ComponentProps<typeof ReconcileLedgerAction>>) {
   const queryClient = createTestQueryClient()
 
   return render(
@@ -94,8 +95,6 @@ describe('reconcile ledger action', () => {
   const mockedApiRequest = vi.mocked(apiRequest)
 
   beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-03-24T08:00:00.000Z'))
     adminScopeState = {
       isAdmin: false,
       mode: 'owner',
@@ -107,7 +106,6 @@ describe('reconcile ledger action', () => {
 
   afterEach(() => {
     cleanup()
-    vi.useRealTimers()
     vi.restoreAllMocks()
     mockedApiRequest.mockReset()
     toastMocks.pushSafetyToast.mockReset()
@@ -131,11 +129,11 @@ describe('reconcile ledger action', () => {
 
     renderAction()
 
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: 'Reconcile' }))
 
-    expect(screen.getByLabelText('Amount')).toHaveValue(1400)
-    expect(screen.getByLabelText('Paid date')).toHaveValue('2026-03-24')
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('1400')
+    expect((screen.getByLabelText('Paid date') as HTMLInputElement).value).toBe('2026-03-24')
     expect(screen.getByText('Projected: $1,400 due Mar 10, 2026')).toBeTruthy()
   })
 
@@ -152,7 +150,7 @@ describe('reconcile ledger action', () => {
 
     renderAction()
 
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: 'Reconcile' }))
 
     await user.clear(screen.getByLabelText('Amount'))
@@ -188,7 +186,7 @@ describe('reconcile ledger action', () => {
 
     renderAction()
 
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: 'Reconcile' }))
 
     const amountInput = screen.getByLabelText('Amount')
@@ -198,7 +196,7 @@ describe('reconcile ledger action', () => {
 
     expect(await screen.findByText('Could not reconcile this row. Try again. (Transition blocked)')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
-    expect(screen.getByLabelText('Amount')).toHaveValue(1450)
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('1450')
 
     await user.click(screen.getByRole('button', { name: 'Retry' }))
     await waitFor(() => {
@@ -210,7 +208,7 @@ describe('reconcile ledger action', () => {
     stubMatchMedia(false)
     renderAction()
 
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: 'Reconcile' }))
 
     const sheetContent = screen.getByTestId('reconcile-sheet-content')
@@ -231,7 +229,7 @@ describe('reconcile ledger action', () => {
 
     renderAction()
 
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: 'Reconcile' }))
     await user.click(screen.getByRole('button', { name: 'Save reconciliation' }))
 
