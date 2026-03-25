@@ -130,6 +130,43 @@ describe("listEvents domain service", () => {
     expect(completedOnly.total_count).toBe(0);
   });
 
+  it("uses reconciled actual amounts for completed events", async () => {
+    const owner = await createUser();
+    const ownerItem = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      attributes: {
+        title: "Mortgage",
+        status: "Open",
+        financialType: "Loan",
+        amount: 1200,
+        dueDate: "2026-03-10"
+      }
+    });
+
+    const event = await models.Event.create({
+      item_id: ownerItem.id,
+      event_type: "MortgagePayment",
+      due_date: "2026-03-10",
+      amount: "1200.00",
+      status: "Completed",
+      actual_amount: "1350.25",
+      actual_date: "2026-03-11",
+      is_recurring: false,
+      completed_at: "2026-03-11T12:00:00.000Z"
+    });
+
+    const result = await listEvents({ actorUserId: owner.id, status: "completed" });
+
+    expect(result.total_count).toBe(1);
+    expect(result.groups).toHaveLength(1);
+    const listed = result.groups[0].events[0];
+    expect(listed.id).toBe(event.id);
+    expect(listed.amount).toBe(1350.25);
+    expect(listed.actual_amount).toBe(1350.25);
+    expect(listed.actual_date).toBe("2026-03-11");
+  });
+
   it("rejects invalid due ranges", async () => {
     const owner = await createUser();
 

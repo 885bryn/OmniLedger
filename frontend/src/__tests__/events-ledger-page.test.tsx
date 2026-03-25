@@ -349,6 +349,8 @@ describe('events ledger page', () => {
                   type: 'Mortgage payment',
                   due_date: '2026-03-10',
                   amount: 1400,
+                  actual_amount: 1450.25,
+                  actual_date: '2026-03-10',
                   status: 'Completed',
                   completed_at: '2026-03-10T12:00:00.000Z',
                 },
@@ -402,6 +404,7 @@ describe('events ledger page', () => {
     await user.click(screen.getByRole('tab', { name: 'History' }))
 
     expect(await screen.findByText('Mortgage payment')).toBeTruthy()
+    expect(screen.getByText('$1,450.25')).toBeTruthy()
     expect(screen.getByText('Saved successfully. History is catching up in the background.')).toBeTruthy()
 
     const movedRow = screen.getByText('Mortgage payment').closest('[data-history-highlighted]')

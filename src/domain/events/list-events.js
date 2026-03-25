@@ -8,6 +8,7 @@ const { resolveOwnerFilter } = require("../../api/auth/scope-context");
 const STATUS_FILTERS = Object.freeze(["all", "pending", "completed"]);
 const CASHFLOW_ITEM_TYPES = new Set(["FinancialItem"]);
 const FINANCIAL_ITEM_TYPE = "FinancialItem";
+const COMPLETED_STATUS = "completed";
 
 function getDeletedAt(attributes) {
   if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) {
@@ -68,6 +69,19 @@ function isPlainObject(value) {
 
 function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeMoneyValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function shouldUseReconciledAmount(raw) {
+  return normalizeString(raw.status).toLowerCase() === COMPLETED_STATUS;
 }
 
 function toTime(value, fallback = Number.POSITIVE_INFINITY) {
@@ -175,12 +189,17 @@ function normalizeInput(input) {
 
 function normalizeEvent(eventInstance) {
   const raw = eventInstance.get({ plain: true });
+  const baseAmount = normalizeMoneyValue(raw.amount);
+  const actualAmount = normalizeMoneyValue(raw.actual_amount);
+  const resolvedAmount = shouldUseReconciledAmount(raw) && actualAmount !== null ? actualAmount : baseAmount;
 
   const normalized = {
     id: raw.id,
     item_id: raw.item_id,
     type: raw.event_type,
-    amount: raw.amount,
+    amount: resolvedAmount,
+    actual_amount: actualAmount,
+    actual_date: raw.actual_date || null,
     due_date: raw.due_date,
     status: raw.status,
     recurring: Boolean(raw.is_recurring),

@@ -18,6 +18,8 @@ type EventRow = {
   item_id: string
   type: string
   amount: number | null
+  actual_amount?: number | null
+  actual_date?: string | null
   due_date: string
   status: string
   updated_at: string
@@ -157,8 +159,16 @@ function formatCurrency(value: number | null) {
   return formatNullableCurrency(value)
 }
 
+function resolveEventAmount(event: EventRow) {
+  if (isCompletedEvent(event) && typeof event.actual_amount === 'number' && Number.isFinite(event.actual_amount)) {
+    return event.actual_amount
+  }
+
+  return event.amount
+}
+
 function formatEventAmount(event: EventRow, item: ItemRow | undefined) {
-  const formatted = formatCurrency(event.amount)
+  const formatted = formatCurrency(resolveEventAmount(event))
   if (!formatted) {
     return null
   }
@@ -615,12 +625,35 @@ export function EventsPage() {
     void itemsQuery.refetch()
   }
 
-  const markEventAsPaid = (event: EventRow) => ({
-    ...event,
-    status: 'Completed',
-    completed_at: todayDateKey,
-    updated_at: new Date().toISOString(),
-  })
+  const markEventAsPaid = (
+    event: EventRow,
+    completion?: {
+      amount?: number | null
+      actual_amount?: number | null
+      actual_date?: string | null
+      completed_at?: string | null
+    },
+  ) => {
+    const resolvedAmount =
+      typeof completion?.actual_amount === 'number' && Number.isFinite(completion.actual_amount)
+        ? completion.actual_amount
+        : typeof completion?.amount === 'number' && Number.isFinite(completion.amount)
+          ? completion.amount
+          : event.amount
+
+    return {
+      ...event,
+      amount: resolvedAmount,
+      actual_amount:
+        typeof completion?.actual_amount === 'number' && Number.isFinite(completion.actual_amount)
+          ? completion.actual_amount
+          : event.actual_amount,
+      actual_date: completion?.actual_date ?? event.actual_date,
+      status: 'Completed',
+      completed_at: completion?.completed_at || todayDateKey,
+      updated_at: new Date().toISOString(),
+    }
+  }
 
   const scheduleHistoryHighlight = (eventId: string) => {
     setHighlightedHistoryKeys((current) => (current.includes(eventId) ? current : [...current, eventId]))
@@ -635,8 +668,16 @@ export function EventsPage() {
     }, 1400)
   }
 
-  const handleMarkPaidSuccess = (event: EventRow) => {
-    const nextEvent = markEventAsPaid(event)
+  const handleMarkPaidSuccess = (
+    event: EventRow,
+    completion?: {
+      amount?: number | null
+      actual_amount?: number | null
+      actual_date?: string | null
+      completed_at?: string | null
+    },
+  ) => {
+    const nextEvent = markEventAsPaid(event, completion)
 
     setLocalCompletions((current) => ({
       ...current,
@@ -845,7 +886,7 @@ export function EventsPage() {
                                     return current === event.id ? null : current
                                   })
                                 }}
-                                onSuccess={() => handleMarkPaidSuccess(event)}
+                                onSuccess={(payload) => handleMarkPaidSuccess(event, payload)}
                               />
                             </div>
                          </div>
