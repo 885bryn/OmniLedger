@@ -26,7 +26,7 @@ Requirements for milestone v4.5 Financial Reconciliation Flow (Projected vs. Act
 
 ### UI Consistency
 
-- [ ] **UX-02**: User sees the reconciliation flow built with shadcn dialog, input, and badge primitives that remain usable on desktop and mobile.
+- [x] **UX-02**: User sees the reconciliation flow built with shadcn dialog, input, and badge primitives that remain usable on desktop and mobile.
 
 ## v2 Requirements
 
@@ -69,7 +69,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEDGER-07 | Phase 40 | Pending |
 | LEDGER-08 | Phase 40 | Pending |
 | VIEW-07 | Phase 40 | Pending |
-| UX-02 | Phase 39 | Pending |
+| UX-02 | Phase 39 | Complete |
 
 **Coverage:**
 - v1 requirements: 9 total
