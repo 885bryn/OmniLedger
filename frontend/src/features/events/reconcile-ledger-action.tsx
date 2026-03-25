@@ -19,7 +19,9 @@ type CompletionPayload = {
   item_id: string
   type: string
   due_date: string
-  amount: number | null
+  amount: number | string | null
+  actual_amount?: number | string | null
+  actual_date?: string | null
   status: string
   completed_at: string | null
 }
@@ -74,6 +76,31 @@ function getTodayIsoDate() {
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const day = String(now.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+function toFiniteNumber(value: number | string | null | undefined) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  return null
+}
+
+function normalizeCompletionPayload(payload: CompletionPayload): CompletionPayload {
+  const amount = toFiniteNumber(payload.amount)
+  const actualAmount = toFiniteNumber(payload.actual_amount)
+
+  return {
+    ...payload,
+    amount,
+    actual_amount: actualAmount,
+    actual_date: payload.actual_date ?? null,
+  }
 }
 
 function useDesktopMode() {
@@ -183,7 +210,7 @@ export function ReconcileLedgerAction({
     },
     onSuccess: async (payload) => {
       setInlineFailure(null)
-      onSuccess(payload)
+      onSuccess(normalizeCompletionPayload(payload))
       setOpen(false)
       onOpenChange?.(false)
 

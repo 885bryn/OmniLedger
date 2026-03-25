@@ -35,6 +35,7 @@ describe("listItems domain service", () => {
 
   beforeEach(async () => {
     await sequelize.query("PRAGMA foreign_keys = OFF");
+    await models.Event.destroy({ where: {}, force: true });
     await models.Item.destroy({ where: {}, force: true });
     await models.User.destroy({ where: {}, force: true });
     await sequelize.query("PRAGMA foreign_keys = ON");
@@ -276,5 +277,46 @@ describe("listItems domain service", () => {
       "user_id"
     ]);
     expect(Number(recurringContract.default_amount)).toBe(610);
+  });
+
+  it("applies reconciled actual amounts when deriving commitment rollups", async () => {
+    const owner = await createUser();
+    const commitment = await models.Item.create({
+      user_id: owner.id,
+      item_type: "FinancialItem",
+      title: "Mortgage rollup",
+      type: "Commitment",
+      frequency: "monthly",
+      default_amount: 1200,
+      status: "Active",
+      attributes: {
+        financialSubtype: "Commitment",
+        amount: 1200,
+        dueDate: "2026-06-10",
+        dynamicTrackingEnabled: true,
+        trackingStartingRemainingBalance: 8000,
+        remainingBalance: 8000
+      }
+    });
+
+    await models.Event.create({
+      item_id: commitment.id,
+      event_type: "MortgagePayment",
+      due_date: "2026-06-10",
+      amount: "1200.00",
+      actual_amount: "1275.25",
+      actual_date: "2026-06-11",
+      status: "Completed",
+      is_recurring: true,
+      completed_at: "2026-06-11T08:00:00.000Z"
+    });
+
+    const result = await listItems({ actorUserId: owner.id, filter: "commitments" });
+    const listed = result.items.find((item) => item.id === commitment.id);
+
+    expect(listed).toBeTruthy();
+    expect(listed.attributes.trackingCompletedTotal).toBe(1275.25);
+    expect(listed.attributes.remainingBalance).toBe(6724.75);
+    expect(listed.attributes.lastPaymentAmount).toBe(1275.25);
   });
 });

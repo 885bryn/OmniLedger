@@ -3,6 +3,7 @@
 const { Op } = require("sequelize");
 
 const FINANCIAL_ITEM_TYPE = "FinancialItem";
+const COMPLETED_STATUS = "completed";
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
@@ -19,6 +20,24 @@ function toFiniteNumber(value) {
   }
 
   return null;
+}
+
+function normalizeStatus(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function resolveTrackedEventAmount(event) {
+  if (!event) {
+    return null;
+  }
+
+  const status = normalizeStatus(event.status);
+  const actualAmount = toFiniteNumber(event.actual_amount);
+  if (status === COMPLETED_STATUS && actualAmount !== null) {
+    return actualAmount;
+  }
+
+  return toFiniteNumber(event.amount);
 }
 
 function normalizeSubtype(itemType, attributes) {
@@ -101,7 +120,7 @@ function deriveFinancialMetrics(item, completedEvents) {
   const events = Array.isArray(completedEvents) ? completedEvents : [];
   const completedTotal = roundToCents(
     events.reduce((total, event) => {
-      const amount = toFiniteNumber(event.amount);
+      const amount = resolveTrackedEventAmount(event);
       return amount === null ? total : total + amount;
     }, 0)
   );
@@ -117,7 +136,7 @@ function deriveFinancialMetrics(item, completedEvents) {
     .at(0);
 
   const latestDate = resolveCompletedAt(latestCompleted);
-  const latestAmount = latestCompleted ? toFiniteNumber(latestCompleted.amount) : null;
+  const latestAmount = latestCompleted ? resolveTrackedEventAmount(latestCompleted) : null;
   const attrs = getAttributes(item);
 
   const base = {

@@ -159,12 +159,26 @@ function formatCurrency(value: number | null) {
   return formatNullableCurrency(value)
 }
 
-function resolveEventAmount(event: EventRow) {
-  if (isCompletedEvent(event) && typeof event.actual_amount === 'number' && Number.isFinite(event.actual_amount)) {
-    return event.actual_amount
+function toFiniteNumber(value: number | string | null | undefined) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
   }
 
-  return event.amount
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  return null
+}
+
+function resolveEventAmount(event: EventRow) {
+  const actualAmount = toFiniteNumber(event.actual_amount)
+  if (isCompletedEvent(event) && actualAmount !== null) {
+    return actualAmount
+  }
+
+  return toFiniteNumber(event.amount) ?? null
 }
 
 function formatEventAmount(event: EventRow, item: ItemRow | undefined) {
@@ -628,26 +642,22 @@ export function EventsPage() {
   const markEventAsPaid = (
     event: EventRow,
     completion?: {
-      amount?: number | null
-      actual_amount?: number | null
+      amount?: number | string | null
+      actual_amount?: number | string | null
       actual_date?: string | null
       completed_at?: string | null
     },
   ) => {
-    const resolvedAmount =
-      typeof completion?.actual_amount === 'number' && Number.isFinite(completion.actual_amount)
-        ? completion.actual_amount
-        : typeof completion?.amount === 'number' && Number.isFinite(completion.amount)
-          ? completion.amount
-          : event.amount
+    const completionActualAmount = toFiniteNumber(completion?.actual_amount)
+    const completionAmount = toFiniteNumber(completion?.amount)
+    const eventAmount = toFiniteNumber(event.amount)
+    const eventActualAmount = toFiniteNumber(event.actual_amount)
+    const resolvedAmount = completionActualAmount ?? completionAmount ?? eventAmount
 
     return {
       ...event,
       amount: resolvedAmount,
-      actual_amount:
-        typeof completion?.actual_amount === 'number' && Number.isFinite(completion.actual_amount)
-          ? completion.actual_amount
-          : event.actual_amount,
+      actual_amount: completionActualAmount ?? eventActualAmount,
       actual_date: completion?.actual_date ?? event.actual_date,
       status: 'Completed',
       completed_at: completion?.completed_at || todayDateKey,
@@ -671,8 +681,8 @@ export function EventsPage() {
   const handleMarkPaidSuccess = (
     event: EventRow,
     completion?: {
-      amount?: number | null
-      actual_amount?: number | null
+      amount?: number | string | null
+      actual_amount?: number | string | null
       actual_date?: string | null
       completed_at?: string | null
     },

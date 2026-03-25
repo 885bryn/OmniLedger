@@ -364,6 +364,26 @@ describe("completeEvent domain service", () => {
     expect(updatedCommitment.attributes.lastPaymentDate).toBe("2026-06-03");
   });
 
+  it("uses reconciled actual amounts for commitment tracking totals and remaining balance", async () => {
+    const owner = await createUser();
+    const commitment = await createCommitment({ userId: owner.id, remainingBalance: 8000 });
+    const event = await createEvent({ itemId: commitment.id, amount: "1200.00" });
+
+    await completeEvent({
+      eventId: event.id,
+      actorUserId: owner.id,
+      now: new Date("2026-06-06T10:00:00.000Z"),
+      actual_amount: "1275.25",
+      actual_date: "2026-06-05"
+    });
+
+    const updatedCommitment = await models.Item.findByPk(commitment.id);
+    expect(updatedCommitment.attributes.trackingCompletedTotal).toBe(1275.25);
+    expect(updatedCommitment.attributes.remainingBalance).toBe(6724.75);
+    expect(updatedCommitment.attributes.lastPaymentAmount).toBe(1275.25);
+    expect(updatedCommitment.attributes.lastPaymentDate).toBe("2026-06-06");
+  });
+
   it("does not update rollups when dynamic tracking is disabled", async () => {
     const owner = await createUser();
     const commitment = await models.Item.create({
