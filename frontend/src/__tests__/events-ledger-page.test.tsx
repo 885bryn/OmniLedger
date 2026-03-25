@@ -317,9 +317,10 @@ describe('events ledger page', () => {
     expect(screen.getByText('$1,400')).toBeTruthy()
   })
 
-  it('marks an upcoming row paid inline, disables duplicate taps while pending, and moves it into History without manual refresh', async () => {
+  it('reconciles an upcoming row, disables other row actions while open, and moves it into History without manual refresh', async () => {
     let eventsResponse = buildLedgerEventsResponse({ completed: [] })
     const completionCalls: string[] = []
+    const completionBodies: Array<{ actual_amount?: number; actual_date?: string }> = []
     let resolveCompletion: (() => void) | null = null
 
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -336,6 +337,7 @@ describe('events ledger page', () => {
 
       if (url.includes('/events/event-today/complete') && method === 'PATCH') {
         completionCalls.push(url)
+        completionBodies.push(init?.body ? JSON.parse(String(init.body)) : {})
         return new Promise((resolve: (value: Response) => void) => {
           resolveCompletion = () => {
             resolve(
@@ -365,17 +367,27 @@ describe('events ledger page', () => {
 
     const user = userEvent.setup()
     const mortgageRow = (await screen.findByText('Mortgage payment')).closest('[data-event-row-id="event-today"]')
+    const insuranceRow = screen.getByText('Insurance premium').closest('[data-event-row-id="event-overdue"]')
     expect(mortgageRow).toBeTruthy()
-    const markPaidButton = within(mortgageRow as HTMLElement).getByRole('button', { name: 'Mark Paid' })
+    expect(insuranceRow).toBeTruthy()
+    const reconcileButton = within(mortgageRow as HTMLElement).getByRole('button', { name: 'Reconcile' })
+    const insuranceReconcileButton = within(insuranceRow as HTMLElement).getByRole('button', { name: 'Reconcile' })
 
-    expect(screen.queryByText('Confirm completion')).toBeNull()
+    expect(screen.queryByText('Reconcile payment')).toBeNull()
+    expect(insuranceReconcileButton.hasAttribute('disabled')).toBe(false)
 
-    await user.click(markPaidButton)
+    await user.click(reconcileButton)
+    expect(await screen.findByText('Reconcile payment')).toBeTruthy()
+    expect(insuranceReconcileButton.hasAttribute('disabled')).toBe(true)
+
+    await user.clear(screen.getByLabelText('Amount'))
+    await user.type(screen.getByLabelText('Amount'), '1450.25')
+    await user.click(screen.getByRole('button', { name: 'Save reconciliation' }))
     const pendingButton = await screen.findByRole('button', { name: 'Saving...' })
-    expect(pendingButton.hasAttribute('disabled')).toBe(true)
-
-    await user.click(pendingButton)
     expect(completionCalls).toHaveLength(1)
+    expect(completionBodies[0]).toMatchObject({ actual_amount: 1450.25 })
+    expect(typeof completionBodies[0]?.actual_date).toBe('string')
+    expect(pendingButton.hasAttribute('disabled')).toBe(true)
 
     await act(async () => {
       resolveCompletion?.()
@@ -396,7 +408,7 @@ describe('events ledger page', () => {
     expect(movedRow?.getAttribute('data-history-highlighted')).toBe('true')
   })
 
-  it('keeps failures inline on the same row and allows retry', async () => {
+  it('keeps reconciliation failures inline on the same row and allows retry', async () => {
     let completionAttempt = 0
     const completedOnRetry: EventRow = {
       id: 'event-today',
@@ -468,17 +480,63 @@ describe('events ledger page', () => {
     const user = userEvent.setup()
     const mortgageRow = (await screen.findByText('Mortgage payment')).closest('[data-event-row-id="event-today"]')
     expect(mortgageRow).toBeTruthy()
-    await user.click(within(mortgageRow as HTMLElement).getByRole('button', { name: 'Mark Paid' }))
+    await user.click(within(mortgageRow as HTMLElement).getByRole('button', { name: 'Reconcile' }))
+    expect(await screen.findByText('Reconcile payment')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Save reconciliation' }))
 
-    expect(await screen.findByText('Could not mark this row paid. Try again. (Transition blocked)')).toBeTruthy()
+    expect(await screen.findByText('Could not reconcile this row. Try again. (Transition blocked)')).toBeTruthy()
     expect(screen.getByText('Mortgage payment').closest('[data-event-row-id="event-today"]')).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Retry' }))
     await waitFor(() => {
-      expect(screen.queryByText('Could not mark this row paid. Try again. (Transition blocked)')).toBeNull()
+      expect(screen.queryByText('Could not reconcile this row. Try again. (Transition blocked)')).toBeNull()
     })
     await user.click(screen.getByRole('tab', { name: 'History' }))
     expect(await screen.findByText('Mortgage payment')).toBeTruthy()
+  })
+
+  it('closing reconciliation keeps the row in Upcoming without cancellation status copy', async () => {
+    const completionCalls: string[] = []
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = init?.method ?? 'GET'
+
+      if (url.includes('/events?status=all') && method === 'GET') {
+        return createResponse({ status: 200, json: buildLedgerEventsResponse({ completed: [] }) })
+      }
+
+      if (url.includes('/items?filter=all&sort=recently_updated') && method === 'GET') {
+        return createResponse({ status: 200, json: buildItemsResponse() })
+      }
+
+      if (url.includes('/events/event-today/complete') && method === 'PATCH') {
+        completionCalls.push(url)
+        return createResponse({ status: 200, json: { id: 'event-today' } })
+      }
+
+      throw new Error(`Unhandled request: ${method} ${url}`)
+    })
+
+    globalThis.fetch = fetchMock as typeof fetch
+
+    renderEventsPage()
+
+    const user = userEvent.setup()
+    const mortgageRow = (await screen.findByText('Mortgage payment')).closest('[data-event-row-id="event-today"]')
+    expect(mortgageRow).toBeTruthy()
+
+    await user.click(within(mortgageRow as HTMLElement).getByRole('button', { name: 'Reconcile' }))
+    expect(await screen.findByText('Reconcile payment')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => {
+      expect(screen.queryByText('Reconcile payment')).toBeNull()
+    })
+
+    expect(screen.getByText('Mortgage payment').closest('[data-event-row-id="event-today"]')).toBeTruthy()
+    expect(completionCalls).toHaveLength(0)
+    expect(screen.queryByText(/cancell/i)).toBeNull()
   })
 
   it('shows loading skeletons and recovers when the initial ledger request fails', async () => {

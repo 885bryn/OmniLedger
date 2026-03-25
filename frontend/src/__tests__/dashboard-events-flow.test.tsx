@@ -134,6 +134,7 @@ describe('dashboard/events completion flow', () => {
 
   it('completes event without showing recurring schedule follow-up modal', async () => {
     let listCalls = 0
+    const completionBodies: Array<{ actual_amount?: number; actual_date?: string }> = []
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = init?.method ?? 'GET'
@@ -178,6 +179,7 @@ describe('dashboard/events completion flow', () => {
       }
 
       if (url.includes('/events/event-1/complete') && method === 'PATCH') {
+        completionBodies.push(init?.body ? JSON.parse(String(init.body)) : {})
         return createResponse({
           status: 200,
           json: {
@@ -203,7 +205,13 @@ describe('dashboard/events completion flow', () => {
     expect(screen.getByRole('tab', { name: 'Upcoming' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'History' })).toBeTruthy()
     expect(screen.getByText(/Monthly, (next on|no upcoming date)/)).toBeTruthy()
-    await userEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Reconcile' }))
+    expect(await screen.findByText('Reconcile payment')).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Save reconciliation' }))
+
+    expect(completionBodies).toHaveLength(1)
+    expect(typeof completionBodies[0]?.actual_amount).toBe('number')
+    expect(typeof completionBodies[0]?.actual_date).toBe('string')
 
     await waitFor(() => {
       expect(screen.queryByText('Schedule the next date')).toBeNull()
@@ -221,7 +229,7 @@ describe('dashboard/events completion flow', () => {
     })
 
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Mark Paid' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Reconcile' })).toBeNull()
     })
   })
 
@@ -280,7 +288,9 @@ describe('dashboard/events completion flow', () => {
     renderEventsPage()
 
     await screen.findByText('Mortgage')
-    await userEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Reconcile' }))
+    expect(await screen.findByText('Reconcile payment')).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Save reconciliation' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Schedule the next date')).toBeNull()
