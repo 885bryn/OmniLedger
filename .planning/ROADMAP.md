@@ -64,7 +64,11 @@ Plans:
   2. User can complete the reconciliation flow through shadcn dialog and input primitives that feel consistent with the current dashboard UI language.
   3. User can use the reconciliation flow on desktop and mobile without the dialog becoming unusable or obscuring the required completion controls.
 **Manual Gate**: Stop after execution for manual browser testing and explicit approval before Phase 40 begins.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 39-reconciliation-modal-and-completion-ux-01-PLAN.md - Build reusable shadcn reconciliation action component with desktop dialog/mobile sheet behavior and localization.
+- [ ] 39-reconciliation-modal-and-completion-ux-02-PLAN.md - Integrate reconciliation launch into Upcoming rows, update regressions, and run blocking desktop/mobile browser gate.
 
 ### Phase 40: Actual-Based History and Metrics
 **Goal**: Users can review settled event outcomes using actual paid values, actual paid chronology, and visible variance wherever this milestone changes completion-derived math.
