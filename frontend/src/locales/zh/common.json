@@ -292,6 +292,25 @@
       "today": "支付于 {{date}}",
       "historyCatchingUp": "已保存成功，History 正在后台同步。"
     },
+    "reconcile": {
+      "button": "核对入账",
+      "pending": "保存中...",
+      "retry": "重试",
+      "title": "核对付款",
+      "helper": "保存前请先核对预测值，并按需要调整实际值。",
+      "projectedReference": "预测值：{{date}} 到期，金额 {{amount}}",
+      "failed": "无法核对该条记录，请重试。",
+      "fields": {
+        "amount": "实际金额",
+        "date": "支付日期"
+      },
+      "errors": {
+        "amountInvalid": "请输入大于 0 的有效金额。",
+        "generic": "无法核对该条记录，请重试。"
+      },
+      "submit": "保存核对",
+      "cancel": "取消"
+    },
     "stateLegend": {
       "label": "状态：",
       "projected": "预测",

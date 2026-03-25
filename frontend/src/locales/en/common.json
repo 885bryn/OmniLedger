@@ -292,6 +292,25 @@
       "today": "Paid {{date}}",
       "historyCatchingUp": "Saved successfully. History is catching up in the background."
     },
+    "reconcile": {
+      "button": "Reconcile",
+      "pending": "Saving...",
+      "retry": "Retry",
+      "title": "Reconcile payment",
+      "helper": "Review the projected values and adjust if needed before saving.",
+      "projectedReference": "Projected: {{amount}} due {{date}}",
+      "failed": "Could not reconcile this row. Try again.",
+      "fields": {
+        "amount": "Amount",
+        "date": "Paid date"
+      },
+      "errors": {
+        "amountInvalid": "Enter a valid amount greater than zero.",
+        "generic": "Could not reconcile this row. Try again."
+      },
+      "submit": "Save reconciliation",
+      "cancel": "Cancel"
+    },
     "stateLegend": {
       "label": "State:",
       "projected": "Projected",
