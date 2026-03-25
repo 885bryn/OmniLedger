@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 import { MotionPanelList } from '@/components/ui/motion-panel-list'
-import { MarkPaidLedgerAction } from '../../features/events/mark-paid-ledger-action'
+import { ReconcileLedgerAction } from '../../features/events/reconcile-ledger-action'
 import { useAdminScope } from '../../features/admin-scope/admin-scope-context'
 import { apiRequest } from '../../lib/api-client'
 import { formatNullableCurrency } from '../../lib/currency'
@@ -452,6 +452,7 @@ export function EventsPage() {
   const location = useLocation()
   const { isAdmin, mode, lensUserId } = useAdminScope()
   const [activeTab, setActiveTab] = useState<LedgerTab>('upcoming')
+  const [activeReconcileEventId, setActiveReconcileEventId] = useState<string | null>(null)
   const [localCompletions, setLocalCompletions] = useState<Record<string, LocalCompletionState>>({})
   const [highlightedHistoryKeys, setHighlightedHistoryKeys] = useState<string[]>([])
   const acknowledgementTimersRef = useRef<Record<string, number>>({})
@@ -756,12 +757,15 @@ export function EventsPage() {
                    getItemKey={(event) => event.id}
                    className="space-y-2"
                    itemClassName="overflow-hidden rounded-3xl"
-                   renderItem={(event) => {
-                     const localCompletion = localCompletions[event.id]
-                     const item = itemById.get(event.item_id)
-                     const projected = isProjectedEvent(event)
-                     const recurrence = getRecurrenceText(item, event, nextDueByItemId, t)
-                     const overdue = bucket.key === 'overdue'
+                    renderItem={(event) => {
+                      const localCompletion = localCompletions[event.id]
+                      const item = itemById.get(event.item_id)
+                      const projected = isProjectedEvent(event)
+                      const recurrence = getRecurrenceText(item, event, nextDueByItemId, t)
+                      const overdue = bucket.key === 'overdue'
+                      const isAnotherReconcileActive = activeReconcileEventId !== null && activeReconcileEventId !== event.id
+                      const isPendingAcknowledgement = localCompletion?.phase === 'acknowledged' || localCompletion?.isSyncing === true
+                      const disableReconcile = isAnotherReconcileActive || isPendingAcknowledgement
 
                      if (localCompletion?.phase === 'acknowledged') {
                        return <PaidAcknowledgementRow event={localCompletion.event} />
@@ -826,12 +830,28 @@ export function EventsPage() {
                                  <dd className="mt-1 font-medium text-foreground">{formatEventAmount(event, item) ?? t('events.amountPending')}</dd>
                                </div>
                              </dl>
-                             <MarkPaidLedgerAction eventId={event.id} itemId={event.item_id} onSuccess={() => handleMarkPaidSuccess(event)} />
-                           </div>
-                        </div>
-                      </article>
-                    )
-                  }}
+                              <ReconcileLedgerAction
+                                eventId={event.id}
+                                itemId={event.item_id}
+                                projectedAmount={event.amount}
+                                projectedDate={event.due_date}
+                                disabled={disableReconcile}
+                                onOpenChange={(open) => {
+                                  setActiveReconcileEventId((current) => {
+                                    if (open) {
+                                      return event.id
+                                    }
+
+                                    return current === event.id ? null : current
+                                  })
+                                }}
+                                onSuccess={() => handleMarkPaidSuccess(event)}
+                              />
+                            </div>
+                         </div>
+                       </article>
+                     )
+                   }}
                 />
               </section>
             ))
