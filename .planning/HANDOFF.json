@@ -1,0 +1,92 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-03-25T07:01:58.113Z",
+  "phase": "39",
+  "phase_name": "reconciliation-modal-and-completion-ux",
+  "phase_dir": ".planning/phases/39-reconciliation-modal-and-completion-ux",
+  "plan": 2,
+  "task": 3,
+  "total_tasks": 3,
+  "status": "paused",
+  "completed_tasks": [
+    {
+      "id": 1,
+      "name": "Replace Upcoming row action with ReconcileLedgerAction and single-active-flow coordination",
+      "status": "done",
+      "commit": "78ccea1"
+    },
+    {
+      "id": 2,
+      "name": "Update ledger and dashboard regression tests for reconciliation launch behavior",
+      "status": "done",
+      "commit": "6cf4b4f"
+    },
+    {
+      "id": 3,
+      "name": "Manual browser verification gate for desktop and mobile reconciliation UX",
+      "status": "in_progress",
+      "progress": "Follow-up fixes for reconciled decimal propagation were committed (705f318, a653f04); waiting on user re-verification in browser."
+    }
+  ],
+  "remaining_tasks": [
+    {
+      "id": 3,
+      "name": "Manual browser verification approval after decimal reconcile retest",
+      "status": "pending_human"
+    }
+  ],
+  "blockers": [
+    {
+      "description": "User still reports a real-world decimal reconcile case (Supra mortgage) where history amount and parent totals did not reflect actual_amount before latest fix validation.",
+      "type": "human_action",
+      "workaround": "Re-run manual scenario after commit a653f04 and confirm value propagation end-to-end."
+    }
+  ],
+  "human_actions_pending": [
+    {
+      "action": "Manual approval checkpoint for plan 39-02",
+      "context": "Verify reconciled decimal value appears in History and parent completed totals/remaining balance.",
+      "blocking": true
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Treat post-checkpoint amount/totals mismatch as in-scope for Phase 39-02 and fix before closing phase.",
+      "rationale": "FLOW-06 completion correctness and UX-02 manual gate require reconciled completion behavior to be correct before handoff.",
+      "phase": "39"
+    },
+    {
+      "decision": "Prefer normalized actual_amount (including numeric strings/decimals) for completed history rendering and item financial rollups.",
+      "rationale": "Completion payload and downstream domain aggregation can carry decimal values that must remain authoritative.",
+      "phase": "39"
+    }
+  ],
+  "background_processes": [
+    {
+      "process": "frontend dev server",
+      "status": "running",
+      "endpoint": "http://127.0.0.1:5173"
+    }
+  ],
+  "uncommitted_files": [
+    ".planning/config.json",
+    ".planning/phases/39-reconciliation-modal-and-completion-ux/39-CONTEXT.md",
+    ".tmp/hact-dev.sqlite.bak-20260227-194724",
+    ".tmp/hact-dev.sqlite.bak-20260227-194729",
+    ".tmp/lockcheck/",
+    ".tmp/phase33-plan2-backend.log",
+    ".tmp/phase33-plan2-frontend.log",
+    ".tmp/phase35-plan02-frontend-dev.log",
+    ".tmp/phase35-resume-frontend.err.log",
+    ".tmp/phase35-resume-frontend.log",
+    ".tmp/phase36-plan02-frontend-dev.log",
+    ".tmp/phase36-plan02-verify-dev.log",
+    ".tmp/phase37-plan02-backend.log",
+    ".tmp/phase37-plan02-frontend.log",
+    ".tmp/phase39-plan02-frontend-dev.log",
+    ".tmp/phase39-plan02-verify-dev.log",
+    "nul"
+  ],
+  "next_action": "Resume from plan 39-02 task 3 and rerun the exact Supra mortgage decimal reconciliation scenario in browser to confirm History + parent totals match the reconciled decimal amount; then collect 'approved' or exact failing evidence.",
+  "context_notes": "Phase 39 execution is almost complete and blocked only by manual checkpoint approval. Multiple follow-up fixes were applied after user bug reports to normalize decimal actual_amount usage in UI transition state and domain financial rollups. Keep focus tight: verify decimal propagation end-to-end before closing plan/phase."
+}
