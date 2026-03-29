@@ -87,7 +87,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 38. Reconciliation Contract and Safe Completion API | 2/2 | Complete    | 2026-03-14 |
-| 39. Reconciliation Modal and Completion UX | 2/2 | Complete   | 2026-03-29 |
+| 39. Reconciliation Modal and Completion UX | 2/2 | Complete    | 2026-03-29 |
 | 40. Actual-Based History and Metrics | 0/TBD | Not started | - |
 
 ---
