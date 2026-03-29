@@ -10,7 +10,7 @@ Requirements for milestone v4.5 Financial Reconciliation Flow (Projected vs. Act
 ### Reconciliation Contract
 
 - [x] **EVENT-05**: User can complete an upcoming event while the system preserves projected `amount` and `due_date` and stores nullable `actual_amount` and `actual_date` on the event record.
-- [ ] **FLOW-06**: User can open a reconciliation dialog from the Upcoming ledger instead of instantly completing the event.
+- [x] **FLOW-06**: User can open a reconciliation dialog from the Upcoming ledger instead of instantly completing the event.
 - [x] **FLOW-07**: User can submit actual amount paid and date paid from the reconciliation dialog, with server-side defaults to projected amount and today's date when values are omitted.
 - [x] **SAFE-04**: Existing RBAC scoping, projected-event materialization, audit attribution, and `completed_at` system timestamps remain intact while reconciliation fields are added.
 
@@ -62,7 +62,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | EVENT-05 | Phase 38 | Complete |
-| FLOW-06 | Phase 39 | Pending |
+| FLOW-06 | Phase 39 | Complete |
 | FLOW-07 | Phase 38 | Complete |
 | SAFE-04 | Phase 38 | Complete |
 | LEDGER-06 | Phase 40 | Pending |

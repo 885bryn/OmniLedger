@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v4.5
 milestone_name: Financial Reconciliation Flow
 status: unknown
-stopped_at: Completed 39-01-PLAN.md
-last_updated: "2026-03-25T06:34:37.346Z"
+stopped_at: Completed 39-02-PLAN.md
+last_updated: "2026-03-29T23:52:50.828Z"
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -20,11 +20,11 @@ See: `.planning/PROJECT.md` (updated 2026-03-13)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.4-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 39 — reconciliation-modal-and-completion-ux
+**Current focus:** Phase 40 — actual-based-history-and-metrics
 
 ## Current Position
 
-Phase: 39 (reconciliation-modal-and-completion-ux) — EXECUTING
+Phase: 39 (reconciliation-modal-and-completion-ux) — COMPLETE
 Plan: 2 of 2
 
 ## Performance Metrics
@@ -48,6 +48,7 @@ Plan: 2 of 2
 | Phase 38 P01 | 4 min | 3 tasks | 4 files |
 | Phase 38 P02 | 0 min | 3 tasks | 2 files |
 | Phase 39 P01 | 7 min | 3 tasks | 4 files |
+| Phase 39 P02 | 11 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,9 @@ Plan: 2 of 2
 - [Phase 39]: Use Radix Dialog for desktop and shadcn Sheet side=bottom for mobile in one reusable reconciliation action.
 - [Phase 39]: Omit actual_amount and actual_date from PATCH body when fields are cleared so backend defaults remain authoritative.
 - [Phase 39]: Keep reconciliation failures inline with retry controls instead of toast-driven interruption.
+- [Phase 39]: Keep handleMarkPaidSuccess as the transition bridge so acknowledged-to-history UX remains unchanged while launch action switched to reconciliation.
+- [Phase 39]: Treat post-checkpoint decimal reconciliation mismatches as in-scope correctness fixes before phase closeout.
+- [Phase 39]: Require backend restart validation when manual behavior appears stale against committed reconciliation fixes.
 
 ### Pending Todos
 
@@ -77,6 +81,6 @@ Plan: 2 of 2
 
 ## Session Continuity
 
-Last session: 2026-03-25T06:34:37.344Z
-Stopped at: Completed 39-01-PLAN.md
+Last session: 2026-03-29T23:52:50.826Z
+Stopped at: Completed 39-02-PLAN.md
 Resume file: None
