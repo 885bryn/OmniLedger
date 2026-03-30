@@ -228,10 +228,18 @@ describe('reconcile ledger action', () => {
   })
 
   it('shows trigger and pending labels while submitting', async () => {
-    let resolveRequest: ((value: unknown) => void) | null = null
+    let resolveRequest!: (value: {
+      id: string
+      item_id: string
+      type: string
+      due_date: string
+      amount: number
+      status: string
+      completed_at: string
+    }) => void
     mockedApiRequest.mockImplementation(
       () => new Promise((resolve) => {
-        resolveRequest = resolve
+        resolveRequest = resolve as typeof resolveRequest
       }),
     )
 
@@ -243,7 +251,7 @@ describe('reconcile ledger action', () => {
 
     expect(await screen.findByRole('button', { name: 'Saving...' })).toBeTruthy()
 
-    resolveRequest?.({
+    resolveRequest({
       id: 'event-1',
       item_id: 'item-1',
       type: 'Mortgage payment',
