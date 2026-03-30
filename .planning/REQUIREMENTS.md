@@ -22,7 +22,7 @@ Requirements for milestone v4.5 Financial Reconciliation Flow (Projected vs. Act
 
 ### Completion-Derived Metrics
 
-- [ ] **VIEW-07**: User can trust completion-derived tracking metrics that depend on settled payments to use actual paid amount and actual paid date rather than projected values.
+- [x] **VIEW-07**: User can trust completion-derived tracking metrics that depend on settled payments to use actual paid amount and actual paid date rather than projected values.
 
 ### UI Consistency
 
@@ -68,7 +68,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEDGER-06 | Phase 40 | Pending |
 | LEDGER-07 | Phase 40 | Pending |
 | LEDGER-08 | Phase 40 | Pending |
-| VIEW-07 | Phase 40 | Pending |
+| VIEW-07 | Phase 40 | Complete |
 | UX-02 | Phase 39 | Complete |
 
 **Coverage:**

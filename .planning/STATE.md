@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v4.5
 milestone_name: Financial Reconciliation Flow
 status: unknown
-stopped_at: Phase 40 UI-SPEC approved
-last_updated: "2026-03-30T00:17:36.703Z"
+stopped_at: Completed 40-01-PLAN.md
+last_updated: "2026-03-30T00:33:35.056Z"
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
 ---
 
 # Project State
@@ -24,7 +24,7 @@ Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestone
 
 ## Current Position
 
-Phase: 39 (reconciliation-modal-and-completion-ux) — COMPLETE
+Phase: 40 (actual-based-history-and-metrics) — EXECUTING
 Plan: 2 of 2
 
 ## Performance Metrics
@@ -49,6 +49,7 @@ Plan: 2 of 2
 | Phase 38 P02 | 0 min | 3 tasks | 2 files |
 | Phase 39 P01 | 7 min | 3 tasks | 4 files |
 | Phase 39 P02 | 11 min | 3 tasks | 7 files |
+| Phase 40 P01 | 3 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,8 @@ Plan: 2 of 2
 - [Phase 39]: Keep handleMarkPaidSuccess as the transition bridge so acknowledged-to-history UX remains unchanged while launch action switched to reconciliation.
 - [Phase 39]: Treat post-checkpoint decimal reconciliation mismatches as in-scope correctness fixes before phase closeout.
 - [Phase 39]: Require backend restart validation when manual behavior appears stale against committed reconciliation fixes.
+- [Phase 40]: Export resolveCompletedAt and related financial metric helpers for direct unit assertions.
+- [Phase 40]: Parse DATEONLY actual_date using Date.UTC to prevent timezone drift in derived metric dates.
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ Plan: 2 of 2
 
 ## Session Continuity
 
-Last session: 2026-03-30T00:17:36.701Z
-Stopped at: Phase 40 UI-SPEC approved
-Resume file: .planning/phases/40-actual-based-history-and-metrics/40-UI-SPEC.md
+Last session: 2026-03-30T00:33:35.054Z
+Stopped at: Completed 40-01-PLAN.md
+Resume file: None
