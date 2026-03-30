@@ -10,9 +10,9 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ## Current State
 
-- **Latest shipped milestone:** v4.4 Dashboard Utility Redesign with shadcn/ui (2026-03-13)
-- **Archive references:** `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.4-ROADMAP.md`
-- **Completion stance:** v4.5 phase execution is complete (phases 38-40); milestone closeout and archival are next.
+- **Latest shipped milestone:** v4.5 Financial Reconciliation Flow (Projected vs. Actuals) (2026-03-30)
+- **Archive references:** `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.4-ROADMAP.md`, `.planning/milestones/v4.5-ROADMAP.md`, `.planning/milestones/v4.5-REQUIREMENTS.md`, `.planning/milestones/v4.5-MILESTONE-AUDIT.md`
+- **Completion stance:** v4.5 is archived; next milestone discovery and requirements definition are the active planning focus.
 
 ## Current State Details
 
@@ -20,7 +20,7 @@ Users can see each asset together with its linked obligations and timeline statu
 - Frontend utility work now centers on shared shadcn/ui primitives, spring motion, and dashboard-first workflows rather than isolated overview widgets.
 - Known follow-up debt remains mostly in planning/verification artifacts: missing Phase 35 verification, stale Phase 36 verification markdown, and manual dashboard comfort sign-off for DASH-09.
 
-## Current Milestone: v4.5 Financial Reconciliation Flow (Projected vs. Actuals)
+## Most Recent Milestone: v4.5 Financial Reconciliation Flow (Projected vs. Actuals)
 
 **Goal:** Turn event completion into an explicit reconciliation step that preserves projections, captures actual paid values, and makes variance visible in History.
 
@@ -31,9 +31,9 @@ Users can see each asset together with its linked obligations and timeline statu
 
 ## Next Milestone Goals
 
-- Ship projected-vs-actual reconciliation in the Events ledger with backend-defaulted actual values and shadcn-first UI.
-- Keep item-level and dashboard tracking math aligned with settled actuals where completion-derived metrics depend on paid amount/date.
-- Defer broader follow-on work like progress dashboards, ledger filtering/editing, reversals, and month-rollover refresh until after reconciliation ships cleanly.
+- Extend actual/variance visibility beyond Events History into dashboard and deeper item-detail completed surfaces.
+- Add month-rollover freshness behavior (local-midnight refresh) so open dashboards stay temporally accurate.
+- Define whether to prioritize history filtering/edit/reversal tools or bulk historical reconciliation workflows next.
 
 ## Requirements
 
@@ -135,4 +135,4 @@ Users can see each asset together with its linked obligations and timeline statu
 </details>
 
 ---
-*Last updated: 2026-03-30 after completing phase 40 in milestone v4.5*
+*Last updated: 2026-03-30 after archiving milestone v4.5*

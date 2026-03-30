@@ -1,10 +1,29 @@
 # Milestones
 
+## v4.5 Financial Reconciliation Flow (Shipped: 2026-03-30)
+
+**Phases completed:** 3 phases, 6 plans, 17 tasks
+
+**Key accomplishments:**
+
+- Added reconciliation-aware completion contract fields and API defaults while preserving projected values and SAFE-04 guarantees.
+- Shipped reconciliation-first Upcoming completion UX with desktop dialog/mobile sheet behavior and one-active-flow safeguards.
+- Updated History to use actual-paid chronology with explicit overpaid/underpaid variance badges and projected reference context.
+- Aligned completion-derived metrics with `actual_date` and `actual_amount` semantics to keep downstream totals chronologically accurate.
+
+**Known debt / follow-up:**
+
+- Nyquist validation artifacts are missing for phases 38-40 (`/gsd-validate-phase 38`, `/gsd-validate-phase 39`, `/gsd-validate-phase 40`).
+- Milestone audit used inline integration fallback because the integration-checker model was unavailable in this runtime.
+
+---
+
 ## v1.0 MVP (Shipped: 2026-02-25)
 
 **Phases completed:** 7 phases, 19 plans, 50 tasks
 
 **Key accomplishments:**
+
 - Established the full backend domain and API contract for users, items, events, net-status, completion, and audit history.
 - Delivered local runtime operations with Docker Compose, migration-on-boot startup, and readiness health checks.
 - Shipped a responsive bilingual frontend for dashboard, events, and complete item journeys.
@@ -12,6 +31,7 @@
 - Backfilled missing phase verification artifacts and consolidated milestone audit traceability for v1.0 closure.
 
 **Known deferred checks:**
+
 - Second-device LAN curl verification for Phase 05.
 - Responsive shell/journey manual sign-off for Phase 06.
 - Completion/follow-up confirm UX clarity sign-off for Phase 06.
@@ -23,6 +43,7 @@
 **Phases completed:** 6 phases (8-13), 31 plans, 62 tasks
 
 **Key accomplishments:**
+
 - Replaced client actor shims with session-authenticated routes and protected frontend navigation.
 - Enforced RBAC scope with admin all-data/lens controls and persistent safety attribution signals.
 - Refactored financial modeling into FinancialItem parent contracts plus child Event occurrences with projection materialization.
@@ -31,6 +52,7 @@
 - Closed admin cross-owner mutation and drill-through consistency gaps in Phase 13 with backend+frontend regressions.
 
 **Known deferred checks / debt:**
+
 - Item detail ledger invalidation continuity after event mutation (`itemLedger` refresh path).
 - Human UX sign-off debt in Phases 10 and 11.
 - Deferred second-device LAN verification.
@@ -42,6 +64,7 @@
 **Phases completed:** 5 phases (14-18), 11 plans, 30 tasks
 
 **Key accomplishments:**
+
 - Delivered a full scope-authoritative export pipeline from app trigger to binary `.xlsx` download with owner/all/lens enforcement.
 - Added deterministic workbook modeling across `Assets`, `Financial Contracts`, and `Event History` with stable relationship references.
 - Hardened workbook safety/usability defaults with formula sanitization, deterministic date policy/fallback, and freeze/filter defaults.
@@ -49,6 +72,7 @@
 - Added export audit traceability and surfaced actor/lens-attributed export outcomes in the existing activity timeline.
 
 **Known deferred checks / debt:**
+
 - Low-risk timeline-noise risk at high export volume because global export events are merged into per-item activity feed.
 
 ---
@@ -60,6 +84,7 @@
 **Phases completed:** 5 phases (19-23), 10 plans, 27 tasks
 
 **Key accomplishments:**
+
 - Externalized production network, identity, and DB configuration with startup fail-fast validation and deterministic diagnostics.
 - Shipped backend/frontend production container contracts with strict NAS-driven gateway routing behavior.
 - Delivered Portainer-ready three-service stack wiring with GHCR publish/pull deployment flow and NAS persistence mapping.
@@ -67,12 +92,14 @@
 - Closed DOCS-01 audit blocker by aligning backend-direct runbook commands to live backend route mounts and re-verifying milestone closure.
 
 **Stats:**
+
 - 62 files changed in milestone commit range (`08c757f` -> `5ac6e67`)
 - 59 commits in milestone execution range
 - 5 phases, 10 plans, 27 tasks
 - Timeline: 2026-03-04 to 2026-03-06 (~2 days)
 
 **Known deferred checks / debt:**
+
 - Runtime/container/browser verification remains human-needed for phases 20-21 in live NAS Docker environment.
 - Live operator drills remain human-needed for phases 22-23 to fully close runtime confidence.
 - `API_URL` contract surface should be clarified/reduced to avoid compose/runbook ambiguity.
@@ -90,6 +117,7 @@
 **Phases completed:** 3 phases (24-26), 10 plans, 19 tasks
 
 **Key accomplishments:**
+
 - Enforced deterministic light-first theme boot and persisted manual light/dark toggling without OS preference drift.
 - Rolled out shared shadcn-aligned shell, card, form, dialog, and toast surfaces with consistent contrast, spacing, and radius language.
 - Introduced shared motion primitives for spring entry/exit, tactile press feedback, stagger, and create-highlight confirmation.
@@ -97,11 +125,13 @@
 - Closed final verification gaps by moving all phase-26 exits to the shared spring baseline and removing legacy events header CSS animation.
 
 **Stats:**
+
 - 66 files changed in milestone commit range
 - 3 phases, 10 plans, 19 tasks
 - Timeline: 2026-03-06 23:43 to 2026-03-07 12:45 (~13 hours)
 
 **Known deferred checks / debt:**
+
 - Phase 24 responsive placement and first-paint transition polish still require human browser confirmation.
 - Phase 26 experiential motion-feel validation across dashboard, events, and items remains human-needed.
 
@@ -118,6 +148,7 @@
 **Phases completed:** 3 phases (35-37), 6 plans, 15 tasks
 
 **Key accomplishments:**
+
 - Rebuilt the dashboard into a summary-first finance control center with a reusable shell and mobile-safe hierarchy.
 - Added month-bounded summary cards, clearer Needs Attention and Recent Activity surfaces, and a host-aware local API fallback that unblocked browser verification.
 - Shipped an urgency-first action queue with deterministic ordering, age buckets, and inline event completion directly from the dashboard.
@@ -126,11 +157,13 @@
 - Locked the redesign with broad dashboard/events regression coverage.
 
 **Stats:**
+
 - 30 files changed, 3,854 insertions, 269 deletions
 - 3 phases, 6 plans, 15 tasks
 - Timeline: 2026-03-11 to 2026-03-13 (~2 days)
 
 **Known deferred checks / debt:**
+
 - Phase 35 still lacks `35-VERIFICATION.md`.
 - Phase 36 verification markdown should be refreshed so artifacts match the final shipped UI.
 - DASH-09 responsive comfort still needs manual browser sign-off.
