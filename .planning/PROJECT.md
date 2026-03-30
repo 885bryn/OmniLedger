@@ -12,7 +12,7 @@ Users can see each asset together with its linked obligations and timeline statu
 
 - **Latest shipped milestone:** v4.4 Dashboard Utility Redesign with shadcn/ui (2026-03-13)
 - **Archive references:** `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.4-ROADMAP.md`
-- **Completion stance:** v4.5 is in active execution; phases 38 and 39 are complete, with phase 40 remaining before milestone closeout.
+- **Completion stance:** v4.5 phase execution is complete (phases 38-40); milestone closeout and archival are next.
 
 ## Current State Details
 
@@ -55,10 +55,11 @@ Users can see each asset together with its linked obligations and timeline statu
 - ✓ Users can operate from a dashboard that surfaces month-bounded summaries, urgent event triage, direct item drill-in, and supporting exception/trend context. - v4.4
 - ✓ Users can reconcile an upcoming event before completion by confirming actual amount paid and date paid without losing the original projection. - Validated in Phase 39: Reconciliation Modal and Completion UX
 - ✓ Users can rely on backend-authoritative defaults so omitted reconciliation inputs fall back to projected amount and today's date. - Validated in Phase 38: Reconciliation Contract and Safe Completion API
+- ✓ Users can review completed History rows using actual paid values and immediately see overpayment or underpayment variance against the projection. - Validated in Phase 40: Actual-Based History and Metrics
 
 ### Active
 
-- [ ] Users can review completed History rows using actual paid values and immediately see overpayment or underpayment variance against the projection.
+- [ ] Users can see actual/variance context beyond Events History (dashboard and deeper item-detail surfaces) in a follow-on milestone.
 
 ### Out of Scope
 
@@ -134,4 +135,4 @@ Users can see each asset together with its linked obligations and timeline statu
 </details>
 
 ---
-*Last updated: 2026-03-29 after completing phase 39 in milestone v4.5*
+*Last updated: 2026-03-30 after completing phase 40 in milestone v4.5*
