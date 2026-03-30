@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v4.5
 milestone_name: Financial Reconciliation Flow
-status: unknown
-stopped_at: Completed 40-01-PLAN.md
-last_updated: "2026-03-30T00:33:35.056Z"
+status: complete
+stopped_at: Completed 40-02-PLAN.md
+last_updated: "2026-03-30T00:45:41.770Z"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -20,12 +20,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-13)
 Milestone archives: `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v2.0-ROADMAP.md`, `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v4.0-ROADMAP.md`, `.planning/milestones/v4.1-ROADMAP.md`, `.planning/milestones/v4.3-ROADMAP.md`, `.planning/milestones/v4.4-ROADMAP.md`
 
 **Core value:** Users can see each asset together with its linked obligations and timeline status so they can make clear, timely household financial decisions.
-**Current focus:** Phase 40 — actual-based-history-and-metrics
+**Current focus:** Phase 40 — actual-based-history-and-metrics (complete)
 
 ## Current Position
 
-Phase: 40 (actual-based-history-and-metrics) — EXECUTING
-Plan: 2 of 2
+Phase: 40 (actual-based-history-and-metrics) — COMPLETE
+Plan: 2 of 2 (complete)
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Plan: 2 of 2
 | Phase 39 P01 | 7 min | 3 tasks | 4 files |
 | Phase 39 P02 | 11 min | 3 tasks | 7 files |
 | Phase 40 P01 | 3 min | 2 tasks | 4 files |
+| Phase 40 P02 | 12 min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Plan: 2 of 2
 - [Phase 39]: Require backend restart validation when manual behavior appears stale against committed reconciliation fixes.
 - [Phase 40]: Export resolveCompletedAt and related financial metric helpers for direct unit assertions.
 - [Phase 40]: Parse DATEONLY actual_date using Date.UTC to prevent timezone drift in derived metric dates.
+- [Phase 40]: Preserve projected amount in optimistic completion state so variance badges and projected references remain visible before history refetch.
+- [Phase 40]: Translate browser checkpoint feedback into explicit history regression assertions for overpaid and projected reference copy.
 
 ### Pending Todos
 
@@ -84,6 +87,6 @@ Plan: 2 of 2
 
 ## Session Continuity
 
-Last session: 2026-03-30T00:33:35.054Z
-Stopped at: Completed 40-01-PLAN.md
+Last session: 2026-03-30T00:45:28.938Z
+Stopped at: Completed 40-02-PLAN.md
 Resume file: None

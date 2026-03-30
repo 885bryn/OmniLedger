@@ -16,9 +16,9 @@ Requirements for milestone v4.5 Financial Reconciliation Flow (Projected vs. Act
 
 ### History and Variance Visibility
 
-- [ ] **LEDGER-06**: User sees completed History rows display actual paid amount and actual paid date instead of the original projection.
-- [ ] **LEDGER-07**: User sees completed History grouped and ordered by actual paid date so reconciled chronology reflects when payment happened.
-- [ ] **LEDGER-08**: User sees an explicit overpayment or underpayment badge when actual amount differs from the projected amount.
+- [x] **LEDGER-06**: User sees completed History rows display actual paid amount and actual paid date instead of the original projection.
+- [x] **LEDGER-07**: User sees completed History grouped and ordered by actual paid date so reconciled chronology reflects when payment happened.
+- [x] **LEDGER-08**: User sees an explicit overpayment or underpayment badge when actual amount differs from the projected amount.
 
 ### Completion-Derived Metrics
 
@@ -65,9 +65,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FLOW-06 | Phase 39 | Complete |
 | FLOW-07 | Phase 38 | Complete |
 | SAFE-04 | Phase 38 | Complete |
-| LEDGER-06 | Phase 40 | Pending |
-| LEDGER-07 | Phase 40 | Pending |
-| LEDGER-08 | Phase 40 | Pending |
+| LEDGER-06 | Phase 40 | Complete |
+| LEDGER-07 | Phase 40 | Complete |
+| LEDGER-08 | Phase 40 | Complete |
 | VIEW-07 | Phase 40 | Complete |
 | UX-02 | Phase 39 | Complete |
 

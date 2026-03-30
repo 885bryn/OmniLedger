@@ -36,7 +36,7 @@
 
 - [x] **Phase 38: Reconciliation Contract and Safe Completion API** - Add immutable projected-vs-actual event completion fields and backend-authoritative defaults, then pause for browser approval. (completed 2026-03-13)
 - [x] **Phase 39: Reconciliation Modal and Completion UX** - Replace instant Upcoming completion with a shadcn reconciliation dialog that works on desktop and mobile, then pause for browser approval. (completed 2026-03-29)
-- [ ] **Phase 40: Actual-Based History and Metrics** - Show actual-paid chronology, variance, and completion-derived actual math wherever this milestone changes settled outcomes, then pause for final browser approval.
+- [x] **Phase 40: Actual-Based History and Metrics** - Show actual-paid chronology, variance, and completion-derived actual math wherever this milestone changes settled outcomes, then pause for final browser approval. (completed 2026-03-30)
 
 ## Phase Details
 
@@ -92,7 +92,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 38. Reconciliation Contract and Safe Completion API | 2/2 | Complete    | 2026-03-14 |
 | 39. Reconciliation Modal and Completion UX | 2/2 | Complete    | 2026-03-29 |
-| 40. Actual-Based History and Metrics | 1/2 | In Progress|  |
+| 40. Actual-Based History and Metrics | 2/2 | Complete   | 2026-03-30 |
 
 ---
 *Last updated: 2026-03-29 after planning phase 40*
