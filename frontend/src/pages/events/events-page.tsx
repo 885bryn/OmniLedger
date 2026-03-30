@@ -678,11 +678,11 @@ export function EventsPage() {
     const completionAmount = toFiniteNumber(completion?.amount)
     const eventAmount = toFiniteNumber(event.amount)
     const eventActualAmount = toFiniteNumber(event.actual_amount)
-    const resolvedAmount = completionActualAmount ?? completionAmount ?? eventAmount
+    const projectedAmount = completionAmount ?? eventAmount
 
     return {
       ...event,
-      amount: resolvedAmount,
+      amount: projectedAmount,
       actual_amount: completionActualAmount ?? eventActualAmount,
       actual_date: completion?.actual_date ?? event.actual_date,
       status: 'Completed',

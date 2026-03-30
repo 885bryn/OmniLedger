@@ -44,6 +44,8 @@ type EventRow = {
   item_id: string
   type: string
   amount: number | null
+  actual_amount?: number | null
+  actual_date?: string | null
   due_date: string
   status: string
   updated_at: string
@@ -403,12 +405,17 @@ describe('events ledger page', () => {
 
     await user.click(screen.getByRole('tab', { name: 'History' }))
 
-    expect(await screen.findByText('Mortgage payment')).toBeTruthy()
+    const movedRowTitle = await screen.findByText('Mortgage payment')
     expect(screen.getByText('$1,450.25')).toBeTruthy()
     expect(screen.getByText('Saved successfully. History is catching up in the background.')).toBeTruthy()
 
-    const movedRow = screen.getByText('Mortgage payment').closest('[data-history-highlighted]')
+    const movedRow = movedRowTitle.closest('[data-history-highlighted]')
     expect(movedRow?.getAttribute('data-history-highlighted')).toBe('true')
+    expect(within(movedRow as HTMLElement).getByText('Overpaid')).toBeTruthy()
+    expect(within(movedRow as HTMLElement).getByText('Actual date')).toBeTruthy()
+    expect(within(movedRow as HTMLElement).getByText('Actual paid')).toBeTruthy()
+    expect(within(movedRow as HTMLElement).getByText('— projected: Mar 10, 2026')).toBeTruthy()
+    expect(within(movedRow as HTMLElement).getByText('— projected: $1,400')).toBeTruthy()
   })
 
   it('keeps reconciliation failures inline on the same row and allows retry', async () => {
