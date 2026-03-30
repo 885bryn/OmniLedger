@@ -190,6 +190,28 @@ function formatEventAmount(event: EventRow, item: ItemRow | undefined) {
   return item && isIncomeItem(item) ? `+${formatted}` : formatted
 }
 
+function getEventVariance(event: EventRow): { type: 'overpaid' | 'underpaid'; projectedAmount: number; actualAmount: number } | null {
+  if (!isCompletedEvent(event)) {
+    return null
+  }
+
+  const actualAmount = toFiniteNumber(event.actual_amount)
+  if (actualAmount === null) {
+    return null
+  }
+
+  const projectedAmount = toFiniteNumber(event.amount)
+  if (projectedAmount === null || actualAmount === projectedAmount) {
+    return null
+  }
+
+  return {
+    type: actualAmount > projectedAmount ? 'overpaid' : 'underpaid',
+    projectedAmount,
+    actualAmount,
+  }
+}
+
 function isProjectedEvent(event: EventRow) {
   if (event.source_state === 'projected') {
     return true
@@ -215,7 +237,11 @@ function isManualOverrideEvent(event: EventRow) {
 }
 
 function getCompletedDateKey(event: EventRow) {
-  return toDateKey(event.completed_at || event.updated_at || event.due_date)
+  return toDateKey(event.actual_date || event.completed_at || event.updated_at || event.due_date)
+}
+
+function getHistoryDisplayDate(event: EventRow): string {
+  return event.actual_date || (event.completed_at ? event.completed_at.slice(0, 10) : null) || event.due_date
 }
 
 function getHistoryMonthKey(event: EventRow) {
