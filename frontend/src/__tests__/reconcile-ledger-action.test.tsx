@@ -71,6 +71,14 @@ function renderAction(props?: Partial<ComponentProps<typeof ReconcileLedgerActio
   )
 }
 
+function getLocalDateIso() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function stubMatchMedia(isDesktop: boolean) {
   const matcher = vi.fn().mockImplementation((query: string) => ({
     matches: query === '(min-width: 768px)' ? isDesktop : false,
@@ -133,7 +141,7 @@ describe('reconcile ledger action', () => {
     await user.click(screen.getByRole('button', { name: 'Reconcile' }))
 
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('1400')
-    expect((screen.getByLabelText('Paid date') as HTMLInputElement).value).toBe('2026-03-24')
+    expect((screen.getByLabelText('Paid date') as HTMLInputElement).value).toBe(getLocalDateIso())
     expect(screen.getByText('Projected: $1,400 due Mar 10, 2026')).toBeTruthy()
   })
 

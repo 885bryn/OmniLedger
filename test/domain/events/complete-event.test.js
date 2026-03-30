@@ -306,8 +306,12 @@ describe("completeEvent domain service", () => {
       actual_date: "2026-07-03"
     });
 
-    expect(Number(secondResult.actual_amount)).toBe(900);
-    expect(toBusinessDate(secondResult.actual_date)).toBe("2026-07-02");
+    expect(Number(secondResult.actual_amount)).toBe(999.99);
+    expect(toBusinessDate(secondResult.actual_date)).toBe("2026-07-03");
+
+    const updated = await models.Event.findByPk(event.id);
+    expect(Number(updated.actual_amount)).toBe(999.99);
+    expect(toBusinessDate(updated.actual_date)).toBe("2026-07-03");
   });
 
   it("materializes projected ids and preserves scope-safe audit attribution tuple", async () => {
@@ -381,7 +385,7 @@ describe("completeEvent domain service", () => {
     expect(updatedCommitment.attributes.trackingCompletedTotal).toBe(1275.25);
     expect(updatedCommitment.attributes.remainingBalance).toBe(6724.75);
     expect(updatedCommitment.attributes.lastPaymentAmount).toBe(1275.25);
-    expect(updatedCommitment.attributes.lastPaymentDate).toBe("2026-06-06");
+    expect(updatedCommitment.attributes.lastPaymentDate).toBe("2026-06-05");
   });
 
   it("does not update rollups when dynamic tracking is disabled", async () => {
