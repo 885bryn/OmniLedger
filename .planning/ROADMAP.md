@@ -92,7 +92,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 38. Reconciliation Contract and Safe Completion API | 2/2 | Complete    | 2026-03-14 |
 | 39. Reconciliation Modal and Completion UX | 2/2 | Complete    | 2026-03-29 |
-| 40. Actual-Based History and Metrics | 2/2 | Complete   | 2026-03-30 |
+| 40. Actual-Based History and Metrics | 2/2 | Complete    | 2026-03-30 |
 
 ---
 *Last updated: 2026-03-29 after planning phase 40*
