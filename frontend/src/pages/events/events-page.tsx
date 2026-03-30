@@ -960,6 +960,8 @@ export function EventsPage() {
                    renderItem={(event) => {
                      const item = itemById.get(event.item_id)
                      const manualOverride = isManualOverrideEvent(event)
+                     const variance = getEventVariance(event)
+                     const displayDate = getHistoryDisplayDate(event)
                      const isSyncing = localCompletions[event.id]?.phase === 'history' && localCompletions[event.id]?.isSyncing
                      const isHighlighted = highlightedHistoryKeys.includes(event.id)
 
@@ -983,12 +985,23 @@ export function EventsPage() {
                                    {t('events.manualOverride.badge')}
                                  </span>
                                ) : null}
-                               <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                                 {t('events.historyPaidBadge')}
-                               </span>
-                             </div>
-                              <p className="text-sm text-muted-foreground">{t('events.historyPaidOn', { date: formatDueLabel(event.completed_at || event.due_date) })}</p>
-                             {manualOverride ? <p className="text-sm font-medium leading-6 text-amber-900">{t('events.manualOverride.description')}</p> : null}
+                                <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                                  {t('events.historyPaidBadge')}
+                                </span>
+                                {variance ? (
+                                  <span
+                                    className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                                      variance.type === 'overpaid'
+                                        ? 'border-red-300 bg-red-50 text-red-700'
+                                        : 'border-amber-300 bg-amber-50 text-amber-700'
+                                    }`}
+                                  >
+                                    {t(`events.varianceBadge.${variance.type}`)}
+                                  </span>
+                                ) : null}
+                              </div>
+                               <p className="text-sm text-muted-foreground">{t('events.historyPaidOn', { date: formatDueLabel(displayDate) })}</p>
+                              {manualOverride ? <p className="text-sm font-medium leading-6 text-amber-900">{t('events.manualOverride.description')}</p> : null}
                              <p className="text-sm text-muted-foreground">
                                <Link
                                  to={`/items/${event.item_id}`}
@@ -1003,12 +1016,14 @@ export function EventsPage() {
 
                           <dl className="grid min-w-[12rem] grid-cols-2 gap-3 text-sm lg:max-w-xs">
                             <div className="rounded-2xl bg-background/70 px-3 py-2">
-                              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.historyCard.paidDate')}</dt>
-                              <dd className="mt-1 font-medium text-foreground">{formatDueLabel(event.completed_at || event.due_date)}</dd>
+                              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.historyCard.actualDate')}</dt>
+                              <dd className="mt-1 font-medium text-foreground">{formatDueLabel(displayDate)}</dd>
+                              {variance ? <p className="mt-0.5 text-xs text-muted-foreground">{t('events.historyCard.projectedDate', { date: formatDueLabel(event.due_date) })}</p> : null}
                             </div>
                             <div className="rounded-2xl bg-background/70 px-3 py-2">
-                              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.historyCard.amount')}</dt>
+                              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t('events.historyCard.actualPaid')}</dt>
                               <dd className="mt-1 font-medium text-foreground">{formatEventAmount(event, item) ?? t('events.amountPending')}</dd>
+                              {variance ? <p className="mt-0.5 text-xs text-muted-foreground">{t('events.historyCard.projectedAmount', { amount: formatCurrency(toFiniteNumber(event.amount)) ?? t('events.amountPending') })}</p> : null}
                             </div>
                           </dl>
                         </div>
