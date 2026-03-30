@@ -273,7 +273,15 @@
     },
     "historyCard": {
       "paidDate": "Paid date",
-      "amount": "Amount"
+      "amount": "Amount",
+      "actualDate": "Actual date",
+      "actualPaid": "Actual paid",
+      "projectedDate": "— projected: {{date}}",
+      "projectedAmount": "— projected: {{amount}}"
+    },
+    "varianceBadge": {
+      "overpaid": "Overpaid",
+      "underpaid": "Underpaid"
     },
     "error": {
       "eyebrow": "Ledger status",

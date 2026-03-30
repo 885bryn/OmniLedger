@@ -273,7 +273,15 @@
     },
     "historyCard": {
       "paidDate": "支付日期",
-      "amount": "金额"
+      "amount": "金额",
+      "actualDate": "实际日期",
+      "actualPaid": "实际支付",
+      "projectedDate": "— 预计: {{date}}",
+      "projectedAmount": "— 预计: {{amount}}"
+    },
+    "varianceBadge": {
+      "overpaid": "超额支付",
+      "underpaid": "不足支付"
     },
     "error": {
       "eyebrow": "台账状态",
