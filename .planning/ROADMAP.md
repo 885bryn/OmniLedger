@@ -28,7 +28,7 @@
 
 </details>
 
-### 📋 v4.5 Financial Reconciliation Flow (Projected vs. Actuals)
+### v4.5 Financial Reconciliation Flow (Projected vs. Actuals)
 
 **Milestone Goal:** Turn event completion into an explicit reconciliation flow that preserves projected fields, captures actual paid values, and rolls settled actuals into history and completion-derived metrics.
 
@@ -80,7 +80,11 @@ Plans:
   3. User sees a clear overpayment or underpayment indicator whenever actual amount differs from the projection.
   4. User can trust completion-derived tracking metrics affected by settled payments to use `actual_amount` and `actual_date` where applicable.
 **Manual Gate**: Stop after execution for manual browser testing and explicit approval before milestone closeout.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 40-01-PLAN.md - Fix resolveCompletedAt to prefer actual_date for completion-derived metrics, add i18n keys for new labels and badges.
+- [ ] 40-02-PLAN.md - Update History row rendering with actual-based dates, variance badges, projected reference lines, and browser verification gate.
 
 ## Progress
 
@@ -88,7 +92,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 38. Reconciliation Contract and Safe Completion API | 2/2 | Complete    | 2026-03-14 |
 | 39. Reconciliation Modal and Completion UX | 2/2 | Complete    | 2026-03-29 |
-| 40. Actual-Based History and Metrics | 0/TBD | Not started | - |
+| 40. Actual-Based History and Metrics | 0/2 | Not started | - |
 
 ---
-*Last updated: 2026-03-13 after creating milestone v4.5 roadmap*
+*Last updated: 2026-03-29 after planning phase 40*
