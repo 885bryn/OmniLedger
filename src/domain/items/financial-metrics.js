@@ -68,6 +68,22 @@ function resolveCompletedAt(event) {
     return null;
   }
 
+  const actualDate = event.actual_date || event.actualDate;
+  if (actualDate) {
+    const parts = String(actualDate).split("-");
+    if (parts.length === 3) {
+      const year = Number(parts[0]);
+      const month = Number(parts[1]);
+      const day = Number(parts[2]);
+      if (Number.isInteger(year) && Number.isInteger(month) && Number.isInteger(day)) {
+        const parsedActualDate = new Date(Date.UTC(year, month - 1, day));
+        if (!Number.isNaN(parsedActualDate.getTime())) {
+          return parsedActualDate;
+        }
+      }
+    }
+  }
+
   const candidate = event.completed_at || event.completedAt || event.updated_at || event.updatedAt || event.due_date || event.dueDate;
   const parsed = new Date(candidate);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -306,6 +322,9 @@ async function applyComputedFinancialProgress(items, models) {
 }
 
 module.exports = {
+  applyDerivedMetrics,
   applyComputedFinancialProgress,
-  recalculateAndPersistFinancialProgress
+  deriveFinancialMetrics,
+  recalculateAndPersistFinancialProgress,
+  resolveCompletedAt
 };
