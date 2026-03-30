@@ -33,7 +33,7 @@ Declared values (must be multiples of 4):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon gaps, inline badge padding (py-0.5 = 2px, px-2 = 8px matches badge) |
+| xs | 4px | Icon gaps, inline badge padding (px-2 = 8px matches badge) |
 | sm | 8px | Compact element spacing, gap between badges |
 | md | 16px | Default element spacing, card horizontal padding (px-4) |
 | lg | 24px | Section padding (px-6 on section containers) |
@@ -43,8 +43,11 @@ Declared values (must be multiples of 4):
 
 Exceptions:
 - History card cells use `px-3 py-2` (12px/8px) — existing pattern, preserved as-is.
-- Badge pill uses `px-2 py-0.5` — existing pattern, preserved as-is.
-- Projected reference text uses `mt-0.5` (2px top gap) below the `<dd>` value — subordinate line.
+
+> **Inherited Tailwind Utilities (not spacing scale tokens)**
+> The following utilities are preserved from the existing codebase and are not evaluated as spacing scale declarations:
+> - `py-0.5` (2px) — badge pill vertical padding; existing pattern in badge pill (`px-2 py-0.5`).
+> - `mt-0.5` (2px) — projected reference text top gap below `<dd>` value; subordinate line spacing.
 
 Source: `frontend/src/pages/events/events-page.tsx` lines 956–986
 
@@ -56,7 +59,7 @@ Source: `frontend/src/pages/events/events-page.tsx` lines 956–986
 |------|------|--------|-------------|
 | Body | 14px (text-sm) | 400 (regular) | 1.5 (leading-6) |
 | Label / Card dt | 11px (text-[11px]) | 600 (semibold) | 1.2 |
-| Card value / dd | 14px (text-sm) | 500 (medium) | 1.4 |
+| Card value / dd | 14px (text-sm) | 400 (regular) | 1.4 |
 | Heading (event title) | 16px (text-base) | 600 (semibold) | 1.4 |
 
 Source: existing card cell pattern (`events-page.tsx` lines 980–986), `40-CONTEXT.md` specifics section.
